@@ -180,9 +180,14 @@ function persistSurfacePaint(editor, component, styles) {
                 for (const [property, value] of Object.entries(styles)) {
                     if (value == null || value === '') {
                         el.style.removeProperty?.(property);
-                    } else {
-                        el.style.setProperty?.(property, String(value));
+                        continue;
                     }
+
+                    const raw = String(value);
+                    const important = /\s*!important\s*$/i.test(raw);
+                    const cssValue = raw.replace(/\s*!important\s*$/i, '').trim();
+
+                    el.style.setProperty?.(property, cssValue, important ? 'important' : '');
                 }
             }
         } catch {
@@ -193,6 +198,65 @@ function persistSurfacePaint(editor, component, styles) {
     }
 
     target.addStyle?.(styles, { inline: true, noEvent: true });
+}
+
+/**
+ * Force alpha background-color over opaque `bg-*` utilities (canvas + publish).
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function withImportantCssValue(value) {
+    const raw = String(value ?? '').trim();
+
+    if (raw === '') {
+        return '';
+    }
+
+    return /\s*!important\s*$/i.test(raw) ? raw : `${raw} !important`;
+}
+
+/**
+ * Page wallpaper defaults: cover the viewport and stay put while scrolling.
+ * Size/position/repeat keep author choices when already set on the #id rule.
+ *
+ * @param {object} editor
+ * @param {object} component
+ * @param {Record<string, string>} paint
+ * @returns {Record<string, string>}
+ */
+function withPageSurfaceWallpaperDefaults(editor, component, paint) {
+    const target = resolveVisualStyleTarget(component) ?? component;
+
+    if (! isPageSurfaceComponent(target, editor)) {
+        return paint;
+    }
+
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+    const existing = id && editor?.Css?.getIdRule
+        ? { ...(editor.Css.getIdRule(id)?.getStyle?.() ?? {}) }
+        : {};
+
+    const next = { ...paint };
+
+    if (! String(existing['background-size'] ?? next['background-size'] ?? '').trim()) {
+        next['background-size'] = 'cover';
+    }
+
+    if (! String(existing['background-position'] ?? next['background-position'] ?? '').trim()) {
+        next['background-position'] = 'center';
+    }
+
+    if (! String(existing['background-repeat'] ?? next['background-repeat'] ?? '').trim()) {
+        next['background-repeat'] = 'no-repeat';
+    }
+
+    // Page photos should not scroll away with content (nav-only glimpse).
+    next['background-attachment'] = String(
+        existing['background-attachment'] ?? next['background-attachment'] ?? 'fixed',
+    ).trim() || 'fixed';
+
+    return next;
 }
 
 /** Map Style panel bg-* utilities → CSS background-* values. */
@@ -1219,13 +1283,21 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
 
     const hex = resolveSolidBackgroundColorCss(base);
     const alpha = Math.min(1, Math.max(0, Number.parseInt(pct, 10) / 100));
-    const painted = hex
-        ? (toRgbaWithAlpha(hex, alpha) ?? `color-mix(in oklab, ${hex} ${pct}%, transparent)`)
-        : `color-mix(in oklab, currentColor ${pct}%, transparent)`;
+    // Prefer resolved CSS (hex / theme var). Never fall back to currentColor —
+    // that left opaque bg-* utilities looking like opacity did nothing.
+    const colorCss = hex || cssColorFromBackgroundUtility(base);
 
-    // Neutralize opaque utility paint — inline alpha must win on canvas + frontend.
-    // Page wrapper: CssComposer + DOM only (no Grapes style events → Save freeze).
-    persistSurfacePaint(editor, component, { 'background-color': painted });
+    if (colorCss === '') {
+        return;
+    }
+
+    const painted = toRgbaWithAlpha(colorCss, alpha)
+        ?? `color-mix(in oklab, ${colorCss} ${pct}%, transparent)`;
+
+    // Neutralize opaque utility paint — !important beats compiled .bg-* on canvas.
+    persistSurfacePaint(editor, component, {
+        'background-color': withImportantCssValue(painted),
+    });
 }
 
 function applyGroup(editor, component, groupId, value) {
@@ -2573,11 +2645,11 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
 
     // Page wrapper: CssComposer + DOM only — Grapes addStyle on body/wrapper
     // re-enters chrome-shell refresh and freezes Save.
-    persistSurfacePaint(editor, component, {
+    persistSurfacePaint(editor, component, withPageSurfaceWallpaperDefaults(editor, component, {
         'background-image': cssValue,
         // Kill solid Color flash: tint is only in overlay layers above the photo.
         'background-color': 'transparent',
-    });
+    }));
 
     // Do NOT scrub live page CSS here — Save / reload need #id{url} as a
     // recovery source. Scrub only happens on Clear.

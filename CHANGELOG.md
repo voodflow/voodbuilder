@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.162] - 2026-09-25
+
+### Fixed
+
+- Page background image publishes as a full-viewport wallpaper (`html`/`body`, cover/center/no-repeat, `background-attachment: fixed`) instead of a scroll-away strip behind the nav
+- Element Background opacity % resolves theme `bg-vp-*` tokens and paints with `!important` so opaque utilities no longer ignore the slider
+
 ## [0.1.161] - 2026-09-25
 
 ### Fixed

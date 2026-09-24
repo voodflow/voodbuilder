@@ -151,5 +151,7 @@ describe('style-background-image', () => {
         expect(cssColorFromBackgroundUtility('bg-red-700')).toBe('#b91c1c');
         expect(cssColorFromBackgroundUtility('bg-black')).toBe('#000000');
         expect(cssColorFromBackgroundUtility('bg-transparent')).toBe('');
+        expect(cssColorFromBackgroundUtility('bg-vp-brand-1')).toBe('var(--color-vp-brand-1)');
+        expect(cssColorFromBackgroundUtility('bg-vp-bg-alt')).toBe('var(--color-vp-bg-alt)');
     });
 });

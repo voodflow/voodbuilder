@@ -100,16 +100,33 @@ describe('page-surface-styles', () => {
         expect(trigger).toHaveBeenCalled();
     });
 
-    it('remapPageSurfaceCssForPublish rewrites wrapper id rules to body', () => {
+    it('remapPageSurfaceCssForPublish rewrites wrapper id rules to html/body wallpaper', () => {
         const editor = {
             getWrapper: () => ({ getId: () => 'iabc123' }),
         };
         const css = '#iabc123 { background-image: url(/x.jpg); } .keep { color: red; }';
         const remapped = remapPageSurfaceCssForPublish(editor, css);
 
-        expect(remapped).toContain(`body, body.${PAGE_SURFACE_CLASS}, .${PAGE_SURFACE_CLASS}`);
+        expect(remapped).toContain(`html, body, body.${PAGE_SURFACE_CLASS}, .${PAGE_SURFACE_CLASS}`);
         expect(remapped).toContain('background-image: url(/x.jpg)');
+        expect(remapped).toContain('background-size: cover');
+        expect(remapped).toContain('background-position: center');
+        expect(remapped).toContain('background-repeat: no-repeat');
+        expect(remapped).toContain('background-attachment: fixed');
         expect(remapped).not.toContain('#iabc123');
         expect(remapped).toContain('.keep { color: red; }');
+    });
+
+    it('remapPageSurfaceCssForPublish keeps author size/position when already set', () => {
+        const editor = {
+            getWrapper: () => ({ getId: () => 'iabc123' }),
+        };
+        const css = '#iabc123 { background-image: url(/x.jpg); background-size: contain; background-position: top; }';
+        const remapped = remapPageSurfaceCssForPublish(editor, css);
+
+        expect(remapped).toContain('background-size: contain');
+        expect(remapped).toContain('background-position: top');
+        expect(remapped).toContain('background-attachment: fixed');
+        expect(remapped).not.toMatch(/background-size:\s*cover/);
     });
 });

@@ -201,7 +201,8 @@ export function selectPageSurface(editor) {
 }
 
 /**
- * Remap wrapper #id author rules to body so published pages keep full-bleed backgrounds.
+ * Remap wrapper #id author rules to body/html so published pages keep full-bleed
+ * fixed wallpapers (not a scroll-away strip behind the nav).
  *
  * @param {import('grapesjs').Editor | null | undefined} editor
  * @param {string} css
@@ -222,11 +223,60 @@ export function remapPageSurfaceCssForPublish(editor, css) {
     }
 
     const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const bodyTarget = `body, body.${PAGE_SURFACE_CLASS}, .${PAGE_SURFACE_CLASS}`;
+    // html + body: fixed backgrounds are more reliable on html in WebKit.
+    const bodyTarget = `html, body, body.${PAGE_SURFACE_CLASS}, .${PAGE_SURFACE_CLASS}`;
 
-    return raw
+    const remapped = raw
         .replace(new RegExp(`#${escaped}(?=[\\s,{.:#[])`, 'g'), bodyTarget)
         .replace(new RegExp(`\\[data-gjs-type=["']wrapper["']\\]`, 'g'), bodyTarget);
+
+    return ensurePageSurfaceWallpaperLayout(remapped);
+}
+
+/**
+ * Fill missing wallpaper layout props on remapped page-surface rules that paint
+ * a background-image (cover/center/no-repeat/fixed).
+ *
+ * @param {string} css
+ * @returns {string}
+ */
+export function ensurePageSurfaceWallpaperLayout(css) {
+    const source = String(css ?? '');
+
+    if (source === '' || ! /background-image\s*:/i.test(source)) {
+        return source;
+    }
+
+    return source.replace(
+        /(html\s*,\s*body[^,{]*(?:,[^,{]*)*|body[^,{]*(?:,[^,{]*voodbuilder-page-surface[^,{]*)*)\{([^{}]*)\}/gi,
+        (match, selectors, body) => {
+            if (! /background-image\s*:/i.test(body) || ! /url\s*\(/i.test(body)) {
+                return match;
+            }
+
+            let next = body;
+
+            if (! /background-size\s*:/i.test(next)) {
+                next += '; background-size: cover';
+            }
+
+            if (! /background-position\s*:/i.test(next)) {
+                next += '; background-position: center';
+            }
+
+            if (! /background-repeat\s*:/i.test(next)) {
+                next += '; background-repeat: no-repeat';
+            }
+
+            if (! /background-attachment\s*:/i.test(next)) {
+                next += '; background-attachment: fixed';
+            }
+
+            next = next.replace(/;;+/g, ';').replace(/^;\s*/, '').trim();
+
+            return `${selectors} {${next}}`;
+        },
+    );
 }
 
 /**

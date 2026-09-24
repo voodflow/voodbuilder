@@ -441,6 +441,13 @@ export function cssColorFromBackgroundUtility(utility) {
         return hex;
     }
 
+    // Theme tokens: bg-vp-brand-1 → var(--color-vp-brand-1)
+    const theme = token.match(/^bg-(vp-[\w-]+)$/);
+
+    if (theme) {
+        return `var(--color-${theme[1]})`;
+    }
+
     // Theme tokens e.g. bg-[var(--color-vp-brand-1)] — keep as-is when possible.
     const arbitrary = token.match(/^bg-\[(.+)\]$/);
 
