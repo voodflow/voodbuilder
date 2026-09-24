@@ -4,6 +4,7 @@ import {
     registerFontProvider,
     registerFonts,
 } from './fonts/catalog.js';
+import { registerBlockSettings } from './blocks/settings/index.js';
 
 /**
  * JS plugin bridge for companion packages (Popups, Components, Dynamic Data, Templates…).
@@ -98,6 +99,7 @@ function discoverCompanionPlugins() {
             '../../../../voodbuilder-elements/resources/js/editor/plugin.js',
             '../../../../vevents/resources/js/editor/plugin.js',
             '../../../../vexhibitors/resources/js/editor/plugin.js',
+            '../../../../voodpricing/resources/js/editor/plugin.js',
             // Anystack Developer bundle: vendor/voodflow/voodbuilder-developer/{addon}/…
             '../../../../voodbuilder-developer/voodbuilder-elements/resources/js/editor/plugin.js',
             '../../../../voodbuilder-developer/voodbuilder-dynamic-data/resources/js/editor/plugin.js',
@@ -149,6 +151,7 @@ export function exposeEditorBridge() {
         registerPlugin: registerEditorPlugin,
         listPlugins: listEditorPlugins,
         getEditor: getBootedEditor,
+        registerBlockSettings,
         registerFonts,
         registerFontProvider,
         getFontCatalog,
