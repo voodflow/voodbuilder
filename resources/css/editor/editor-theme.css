@@ -307,6 +307,18 @@
     background: color-mix(in srgb, var(--color-vp-bg-alt, #f8fafc) 80%, transparent);
 }
 
+.voodbuilder-editor-page-surface-action__btn.is-status,
+.voodbuilder-editor-page-surface-action__btn.is-active {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 40%, var(--color-vp-divider, #e2e8f0));
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+    color: var(--color-vp-text-1, #3c3c43);
+    cursor: default;
+}
+
+.voodbuilder-editor-page-surface-action__btn.is-status:hover {
+    background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 12%, transparent);
+}
+
 .voodbuilder-editor-styles-mount .gjs-sm-sector:last-child,
 .voodbuilder-editor-root .gjs-sm-sector:last-child {
     margin-bottom: 0;

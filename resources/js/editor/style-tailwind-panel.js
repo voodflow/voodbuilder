@@ -3761,17 +3761,38 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         }
     };
 
-    const scheduleEnsure = () => {
-        if (isEditorBooting(editor) || ensuring) {
+    const scheduleEnsure = (force = false) => {
+        if ((! force && isEditorBooting(editor)) || ensuring) {
             return;
         }
 
         window.clearTimeout(ensureTimer);
-        ensureTimer = window.setTimeout(runEnsure, 160);
+        ensureTimer = window.setTimeout(runEnsure, force ? 0 : 160);
     };
 
-    const ensure = () => {
-        scheduleEnsure();
+    const ensure = (force = false) => {
+        scheduleEnsure(force);
+    };
+
+    const syncPageSurfaceStyles = () => {
+        const pageTarget = resolveStyleTarget(editor);
+
+        if (! pageTarget) {
+            return;
+        }
+
+        if (! sectorsReady()) {
+            runEnsure();
+        }
+
+        if (! sectorsReady()) {
+            scheduleEnsure(true);
+
+            return;
+        }
+
+        syncSelectsFromComponent(stylesMount, pageTarget, editor, syncOpts({ resetLinkPref: true }));
+        attachClassWatch(pageTarget);
     };
 
     twObserver = new MutationObserver((mutations) => {
@@ -3839,7 +3860,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         });
     };
 
-    editor.on('load', () => window.setTimeout(ensure, 60));
+    editor.on('load', () => window.setTimeout(() => ensure(), 60));
     editor.on('load', () => {
         window.setTimeout(() => {
             try {
@@ -3849,6 +3870,15 @@ export function registerStyleTailwindPanel(editor, options = {}) {
                 // Optional hydrate after frame mount.
             }
         }, 120);
+    });
+    editor.on('voodbuilder:boot-finished', () => {
+        window.setTimeout(() => {
+            ensure(true);
+
+            if (resolveStyleTarget(editor)) {
+                syncPageSurfaceStyles();
+            }
+        }, 0);
     });
     editor.on('component:selected', (component) => {
         window.setTimeout(() => {
@@ -3899,23 +3929,13 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         stopClassWatch = null;
 
         window.requestAnimationFrame(() => {
-            const pageTarget = resolveStyleTarget(editor);
-
-            if (pageTarget && sectorsReady()) {
-                syncSelectsFromComponent(stylesMount, pageTarget, editor, syncOpts());
-                attachClassWatch(pageTarget);
-            }
+            syncPageSurfaceStyles();
         });
     });
 
     editor.on(PAGE_SURFACE_FOCUS_EVENT, () => {
         window.requestAnimationFrame(() => {
-            const pageTarget = resolveStyleTarget(editor);
-
-            if (pageTarget && sectorsReady()) {
-                syncSelectsFromComponent(stylesMount, pageTarget, editor, syncOpts({ resetLinkPref: true }));
-                attachClassWatch(pageTarget);
-            }
+            syncPageSurfaceStyles();
         });
     });
 

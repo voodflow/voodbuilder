@@ -194,7 +194,10 @@ export function remapPageSurfaceCssForPublish(editor, css) {
 }
 
 /**
- * Compact Style affordance: switch to page styles while another target is active.
+ * Compact Style affordance / status for page-level styles.
+ *
+ * - Targeting page → status chip “Pagina” (so the panel is never blank/silent).
+ * - Editing another element → compact “Stile pagina” switch.
  *
  * @param {import('grapesjs').Editor} editor
  * @param {HTMLElement|null|undefined} stylePanel
@@ -208,14 +211,12 @@ export function ensurePageSurfaceAction(editor, stylePanel, labels = {}) {
     }
 
     const targetingPage = isTargetingPageSurface(editor);
+    const pageLabel = labels.pageSurfaceLabel ?? labels.classStylePage ?? 'Page';
+    const switchLabel = labels.pageSurfaceSwitch ?? pageLabel;
+    const hint = labels.pageSurfaceHint
+        ?? 'Background and base styles for the whole page (not a single block).';
+
     let bar = stylePanel.querySelector(`[${PAGE_SURFACE_ACTION_ATTR}]`);
-
-    // While Style already targets the page, keep the panel clean — badge only.
-    if (targetingPage) {
-        bar?.remove();
-
-        return null;
-    }
 
     if (! bar) {
         bar = document.createElement('div');
@@ -230,27 +231,29 @@ export function ensurePageSurfaceAction(editor, stylePanel, labels = {}) {
         bar.querySelector('[data-voodbuilder-page-surface-select]')?.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
+
+            if (isTargetingPageSurface(editor)) {
+                return;
+            }
+
             selectPageSurface(editor);
             editor.__voodbuilderActivateInspectorTab?.('style', { userInitiated: true });
         });
     }
 
-    const pageLabel = labels.pageSurfaceSwitch
-        ?? labels.pageSurfaceLabel
-        ?? labels.classStylePage
-        ?? 'Page styles';
-    const hint = labels.pageSurfaceHint
-        ?? 'Background and base styles for the whole page (not a single block).';
     const btn = bar.querySelector('[data-voodbuilder-page-surface-select]');
 
     if (btn) {
-        btn.textContent = pageLabel;
-        btn.classList.remove('is-active');
-        btn.setAttribute('aria-pressed', 'false');
+        btn.textContent = targetingPage ? pageLabel : switchLabel;
+        btn.classList.toggle('is-active', targetingPage);
+        btn.classList.toggle('is-status', targetingPage);
+        btn.disabled = targetingPage;
+        btn.setAttribute('aria-pressed', targetingPage ? 'true' : 'false');
         btn.title = hint;
     }
 
     bar.hidden = false;
+    bar.dataset.voodbuilderPageSurfaceMode = targetingPage ? 'status' : 'switch';
 
     return bar;
 }

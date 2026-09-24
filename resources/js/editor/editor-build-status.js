@@ -488,6 +488,12 @@ export function finishEditorBoot(editor) {
     setEditorBootPhase(editor, 'ready');
     editor.__voodbuilderBooting = false;
     syncBootOverlay(editor);
+
+    try {
+        editor.trigger?.('voodbuilder:boot-finished');
+    } catch {
+        // Optional UI hooks (Style sectors, page surface) after splash unlock.
+    }
 }
 
 export async function waitForEditorBootTasks(editor, tasks = []) {
