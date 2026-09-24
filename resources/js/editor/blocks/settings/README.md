@@ -42,6 +42,33 @@ Call registration from `wireInspector()` (or the plugin bootstrap) **before** `r
 Custom `findRoot` / `matchesRoot` remain supported for non-standard roots (e.g. newsletter
 forms located by `data-voodbuilder-form` instead of `data-voodbuilder-block`).
 
+## Declarative HTML fields (`data-vb-field`)
+
+Any section (or item) can expose Content-panel controls **only by marking the HTML**.
+VoodBuilder discovers the markers, renders inputs, and writes values back into the canvas —
+save/load is the page HTML (no extra PHP config required for static sections).
+
+```html
+<section data-voodbuilder-section-block="my-block" data-vb-item-count="3" data-vb-item-min="1" data-vb-item-max="8" data-vb-items-layout="preserve">
+  <h2 data-vb-field="heading" data-vb-field-type="text" data-vb-field-label="Heading">Title</h2>
+  <div data-vb-items-root data-vb-items-layout="preserve">
+    <div data-vb-item>
+      <span data-voodbuilder-icon data-vb-icon="star" data-vb-field="icon" data-vb-field-type="icon" data-vb-field-label="Icon"></span>
+      <h4 data-vb-field="title" data-vb-field-type="text" data-vb-field-label="Title">Card</h4>
+      <p data-vb-field="text" data-vb-field-type="textarea" data-vb-field-label="Text">Body</p>
+    </div>
+  </div>
+</section>
+```
+
+| Attribute | Purpose |
+| --- | --- |
+| `data-vb-field` | Field key (required) |
+| `data-vb-field-type` | `text` \| `textarea` \| `icon` \| `number` (default `text`; icons auto-detect) |
+| `data-vb-field-label` | Label in the Content panel |
+| `data-vb-items-root` / `data-vb-item` | Repeating cards (item count in Layout items) |
+| `data-vb-items-layout="preserve"` | Clone/remove items without rewriting grid/`p-4` classes |
+
 ## Selection contract
 
 Inspector settings follow a single pipeline regardless of how the user selected a component

@@ -956,7 +956,7 @@ function createSegmentedControl({ label, name, value, options, onChange }) {
     };
 }
 
-function createIconPicker({
+export function createIconPicker({
     value,
     categoryId = 'all',
     style = DEFAULT_TABLER_ICON_STYLE,

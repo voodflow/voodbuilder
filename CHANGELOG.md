@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.144] - 2026-09-24
+
+### Added
+
+- Declarative Content fields via HTML markers (`data-vb-field`, `data-vb-field-type`, `data-vb-field-label`) — VoodBuilder builds the inspector and persists values in page HTML
+- `data-vb-items-layout="preserve"` so item-count cloning does not rewrite author grid/card classes
+- Features · toolkit pills (`vb-landing02-toolkit`): editable items (icon / title / text) from the Content panel
+
 ## [0.1.127] - 2026-09-23
 
 ### Added

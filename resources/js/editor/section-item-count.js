@@ -4,6 +4,12 @@
 
 import { registerBlockSettings } from './blocks/settings/index.js';
 import {
+    appendDeclarativeFields,
+    appendDeclarativeItemEditors,
+    findDeclarativeFields,
+    scopeHasDeclarativeFields,
+} from './declarative-fields.js';
+import {
     applyAnimatedStatsCounterDefaults,
     applyCounterConfig,
     normalizeCounterTrigger,
@@ -217,6 +223,24 @@ export function findSectionItems(section) {
  * @param {number} nextCount
  * @param {{ columns?: number }} [options]
  */
+/**
+ * @param {object} section
+ * @param {object|null} [itemsRoot]
+ * @returns {boolean}
+ */
+export function shouldPreserveItemsLayout(section, itemsRoot = null) {
+    const sectionAttrs = section?.getAttributes?.() ?? {};
+
+    if (sectionAttrs['data-vb-items-layout'] === 'preserve') {
+        return true;
+    }
+
+    const root = itemsRoot ?? findItemsRoot(section);
+    const rootAttrs = root?.getAttributes?.() ?? {};
+
+    return rootAttrs['data-vb-items-layout'] === 'preserve';
+}
+
 export function applySectionItemCount(section, nextCount, options = {}) {
     const { root, items, min, max, columns: currentColumns } = findSectionItems(section);
 
@@ -224,6 +248,7 @@ export function applySectionItemCount(section, nextCount, options = {}) {
         return;
     }
 
+    const preserveLayout = shouldPreserveItemsLayout(section, root);
     const target = Math.max(min, Math.min(max, Number(nextCount) || min));
     const columns = Math.max(
         1,
@@ -244,29 +269,32 @@ export function applySectionItemCount(section, nextCount, options = {}) {
         working.push(root.components().at(root.components().length - 1));
     }
 
-    applyItemsRootLayout(root, columns);
+    if (! preserveLayout) {
+        applyItemsRootLayout(root, columns);
 
-    markedItems(root).forEach((item) => {
-        // Grid parent owns columns; keep padding/alignment utilities only.
-        replaceWidthClasses(item, []);
-        const classes = [...(item.getClasses?.() ?? [])];
+        markedItems(root).forEach((item) => {
+            // Grid parent owns columns; keep padding/alignment utilities only.
+            replaceWidthClasses(item, []);
+            const classes = [...(item.getClasses?.() ?? [])];
 
-        if (! classes.includes('p-4')) {
-            item.addClass('p-4');
-        }
+            if (! classes.includes('p-4')) {
+                item.addClass('p-4');
+            }
 
-        if (! classes.includes('text-center')) {
-            item.addClass('text-center');
-        }
+            if (! classes.includes('text-center')) {
+                item.addClass('text-center');
+            }
 
-        void widthClasses;
-    });
+            void widthClasses;
+        });
+    }
 
     section.addAttributes({
         'data-vb-item-count': String(target),
         'data-vb-item-columns': String(columns),
         'data-vb-item-min': String(min),
         'data-vb-item-max': String(max),
+        ...(preserveLayout ? { 'data-vb-items-layout': 'preserve' } : {}),
     });
     section.set?.({
         'data-vb-item-count': target,
@@ -348,9 +376,10 @@ export function registerSectionItemCountSettings(editor) {
 
             return Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count') && items.length > 0;
         },
-        render: ({ mount, root }) => {
+        render: ({ mount, root, editor }) => {
             const attrs = root.getAttributes?.() ?? {};
             const { items, min, max, columns } = findSectionItems(root);
+            const preserveLayout = shouldPreserveItemsLayout(root);
             const current = Math.max(
                 min,
                 Math.min(max, Number.parseInt(attrs['data-vb-item-count'] ?? String(items.length), 10) || items.length),
@@ -391,17 +420,25 @@ export function registerSectionItemCountSettings(editor) {
                 }),
             );
 
-            fields.append(
-                createSelectField({
-                    label: 'Columns',
-                    name: 'vbItemColumns',
-                    value: String(currentColumns),
-                    options: columnOptions,
-                    onChange: (value) => applySectionItemColumns(root, Number.parseInt(value, 10)),
-                }),
-            );
+            if (! preserveLayout) {
+                fields.append(
+                    createSelectField({
+                        label: 'Columns',
+                        name: 'vbItemColumns',
+                        value: String(currentColumns),
+                        options: columnOptions,
+                        onChange: (value) => applySectionItemColumns(root, Number.parseInt(value, 10)),
+                    }),
+                );
+            }
 
             mount.appendChild(section);
+
+            if (scopeHasDeclarativeFields(root)) {
+                const sectionFields = findDeclarativeFields(root);
+                appendDeclarativeFields(mount, sectionFields, editor, { heading: 'Content' });
+                appendDeclarativeItemEditors(mount, items, editor);
+            }
 
             if (! isAnimatedStatsRoot(root)) {
                 return;

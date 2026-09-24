@@ -70,6 +70,30 @@ final class SectionItemCountAnnotator
             'min' => 2,
             'max' => 4,
         ],
+        'vb-voodpricing-cards' => [
+            'root' => ".//*[@data-vb-items-root]",
+            'item' => './div[@data-vb-item]',
+            'min' => 2,
+            'max' => 6,
+        ],
+        'vb-voodpricing-spotlight' => [
+            'root' => ".//*[@data-vb-items-root]",
+            'item' => './div[@data-vb-item]',
+            'min' => 2,
+            'max' => 5,
+        ],
+        'vb-voodpricing-minimal' => [
+            'root' => ".//*[@data-vb-items-root]",
+            'item' => './div[@data-vb-item]',
+            'min' => 2,
+            'max' => 6,
+        ],
+        'vb-landing02-toolkit' => [
+            'root' => ".//*[@data-vb-items-root]",
+            'item' => './div[@data-vb-item]',
+            'min' => 1,
+            'max' => 8,
+        ],
         'vb-ecommerce-1' => [
             'root' => ".//*[contains(@class, 'flex-wrap') and contains(@class, '-m-4')]",
             'item' => './div[contains(@class, "p-4")]',
