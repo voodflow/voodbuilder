@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.153] - 2026-09-24
+
+### Fixed
+
+- Converting to Rich Text no longer freezes the editor: Content tab re-activation no longer re-enters the settings render loop
+
 ## [0.1.152] - 2026-09-24
 
 ### Added
