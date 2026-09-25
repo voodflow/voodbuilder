@@ -190,9 +190,9 @@ final class EditorChromeLayoutEditorGate
         }
 
         .vp-reading-sidebar-group,
-        .vp-outline__title { margin: 0 0 0.5rem; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1.5; letter-spacing: 0.08em; text-transform: uppercase; }
-        .vp-reading-sidebar-link,
-        .vp-outline__link { font-size: 0.875rem; line-height: 1.5; }
+        .vp-outline__title { margin: 0 0 0.5rem; font-family: var(--vp-font-family-doc-heading, inherit); font-size: var(--vp-doc-h5-size, 0.75rem); font-weight: var(--vp-doc-h5-weight, 700); line-height: var(--vp-doc-h5-leading, 1.5); letter-spacing: 0.08em; text-transform: uppercase; }
+        .vp-reading-sidebar-link { font-size: var(--vp-doc-link-size, 0.875rem); font-weight: var(--vp-doc-link-weight, 500); line-height: var(--vp-doc-link-leading, 1.5); }
+        .vp-outline__link { font-size: var(--vp-doc-link-size, 0.875rem); font-weight: var(--vp-doc-link-weight, 400); line-height: var(--vp-doc-link-leading, 1.5); }
 CSS;
     }
 

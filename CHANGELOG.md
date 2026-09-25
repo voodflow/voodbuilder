@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-09-25
+
+### Added
+
+- VitePress-style mobile reading layout for companion plugins: below 960px the sidebar becomes an off-canvas drawer opened from a sticky local nav (“Menu”), below 1280px the “On this page” outline moves into a local-nav dropdown, and a prev/next pager closes every page (`<x-voodbuilder::reading-local-nav>`, `<x-voodbuilder::reading-pager>`)
+- Layout Integration tab: **H5 · column titles** and **Column links** rows to tune sidebar / “On this page” titles and links per viewport
+- Layout editor canvas previews the mobile/tablet reading layout (local nav, hidden columns, pager)
+
+### Changed
+
+- Column titles (sidebar groups, “On this page”) use the **Heading font**; column links keep the body font
+
+### Fixed
+
+- Mobile site menu: links were swallowed by the click handler and did not navigate on the public site
+
 ## [1.10.0] - 2026-09-25
 
 ### Added

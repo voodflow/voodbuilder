@@ -8,7 +8,18 @@ import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { ensureFontLoaded } from './fonts/font-loader.js';
 
-const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'p'];
+const ARTICLE_ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'p'];
+
+/** Side columns: `h5` = sidebar group / "On this page" titles, `link` = sidebar + TOC links. */
+const COLUMN_ELEMENTS = ['h5', 'link'];
+
+const ELEMENTS = [...ARTICLE_ELEMENTS, ...COLUMN_ELEMENTS];
+
+/** Same defaults as ChromeLayoutReadingTypography::columnDefaults(). */
+const COLUMN_DEFAULTS = {
+    h5: { size: 'xs', sizeMd: null, sizeLg: null, weight: '700', leading: '1.5' },
+    link: { size: 'sm', sizeMd: null, sizeLg: null, weight: '500', leading: '1.5' },
+};
 
 /** Same labels as Style → Typography font-size (style-tailwind-class-groups). */
 const FONT_SIZE_TOKEN_OPTIONS = [
@@ -227,7 +238,7 @@ function normalizeInherited(raw) {
     const typeScale = {};
 
     for (const element of ELEMENTS) {
-        const row = sourceScale[element] ?? {};
+        const row = sourceScale[element] ?? COLUMN_DEFAULTS[element] ?? {};
         typeScale[element] = {
             size: optionalValue(row.size, { size: true }) ?? DEFAULT_BODY_SIZE,
             sizeMd: optionalValue(row.sizeMd, { size: true }),
@@ -323,16 +334,33 @@ function buildCssVariables(state, fontOptions, viewportIndex) {
     for (const element of ELEMENTS) {
         const row = state.typeScale[element];
         const size = cascadedSize(row, viewportIndex);
-        vars[`--vp-doc-${element}-size`] = size === null ? `var(--vp-app-${element}-size)` : cssSizeFor(size);
-        vars[`--vp-doc-${element}-weight`] = row.weight ?? `var(--vp-app-${element}-weight)`;
-        vars[`--vp-doc-${element}-leading`] = row.leading ?? `var(--vp-app-${element}-leading)`;
+        const values = {
+            size: size === null ? inheritedCssValue(element, 'size') : cssSizeFor(size),
+            weight: row.weight ?? inheritedCssValue(element, 'weight'),
+            leading: row.leading ?? inheritedCssValue(element, 'leading'),
+        };
+
+        // Unset column vars fall back to each stylesheet rule's own default.
+        for (const [prop, value] of Object.entries(values)) {
+            vars[`--vp-doc-${element}-${prop}`] = value ?? '';
+        }
     }
 
     return vars;
 }
 
+/** @returns {string|null} null = leave the var unset (side-column elements). */
+function inheritedCssValue(element, prop) {
+    if (COLUMN_ELEMENTS.includes(element)) {
+        return null;
+    }
+
+    return `var(--vp-app-${element}-${prop})`;
+}
+
 function styleAttrFromVars(vars) {
     return Object.entries(vars)
+        .filter(([, value]) => value !== '')
         .map(([key, value]) => `${key}: ${value}`)
         .join('; ');
 }
@@ -452,6 +480,48 @@ function defaultAsideHtml(preview, labels) {
     `;
 }
 
+/** Mobile / tablet local nav (VitePress): shown by chrome-layout-canvas.css per device. */
+function localNavPreviewHtml(labels, { showSecondary, showAside }) {
+    if (! showSecondary && ! showAside) {
+        return '';
+    }
+
+    const menu = showSecondary
+        ? `<span class="voodbuilder-editor-reading__local-nav-menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h16" /></svg>
+                ${escapeHtml(labels.readingLocalNavMenu ?? 'Menu')}
+            </span>`
+        : '';
+    const outline = showAside
+        ? `<span class="voodbuilder-editor-reading__local-nav-outline">
+                ${escapeHtml(labels.readingOnThisPage ?? labels.readingTocTitle ?? 'On this page')}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+            </span>`
+        : '';
+
+    return `
+        <div class="voodbuilder-editor-reading__local-nav${showSecondary ? ' has-sidebar' : ''}${showAside ? ' has-outline' : ''}">
+            ${menu}
+            ${outline}
+        </div>
+    `;
+}
+
+function pagerPreviewHtml(labels) {
+    return `
+        <nav class="voodbuilder-editor-reading__pager" aria-label="Pager">
+            <a class="voodbuilder-editor-reading__pager-link" href="#">
+                <span class="voodbuilder-editor-reading__pager-desc">${escapeHtml(labels.readingPagerPrev ?? 'Previous page')}</span>
+                <span class="voodbuilder-editor-reading__pager-title">${escapeHtml(labels.readingNavGroup ?? 'Getting Started')}</span>
+            </a>
+            <a class="voodbuilder-editor-reading__pager-link is-next" href="#">
+                <span class="voodbuilder-editor-reading__pager-desc">${escapeHtml(labels.readingPagerNext ?? 'Next page')}</span>
+                <span class="voodbuilder-editor-reading__pager-title">${escapeHtml(labels.readingNavItem ?? 'Section')}</span>
+            </a>
+        </nav>
+    `;
+}
+
 function buildPreviewMarkup(preview, vars, labels, { showSecondary, showAside }) {
     const frameClass = [
         'voodbuilder-editor-reading__preview-frame',
@@ -486,9 +556,11 @@ function buildPreviewMarkup(preview, vars, labels, { showSecondary, showAside })
             ${sidebar}
             <div class="voodbuilder-editor-reading__main">
                 <div class="voodbuilder-editor-reading__main-pad" data-vb-reading-clear-pad>
+                    ${localNavPreviewHtml(labels, { showSecondary, showAside })}
                     <div class="voodbuilder-editor-reading__main-row">
                         <article class="vp-doc voodbuilder-editor-reading__article">
                             ${preview.html ?? ''}
+                            ${pagerPreviewHtml(labels)}
                         </article>
                         ${aside}
                     </div>
@@ -794,6 +866,18 @@ export function registerReadingTypographyUi(editor, options = {}) {
         const inheritLabel = (value) => formatLabel(labels.readingInheritValue ?? 'Inherit ({value})', { value });
         const siteFontLabel = (font) => formatLabel(labels.readingInheritSiteFont ?? 'From site settings ({font})', { font });
 
+        const elementLabel = (element) => {
+            if (element === 'h5') {
+                return labels.readingElementH5 ?? 'H5 · column titles';
+            }
+
+            if (element === 'link') {
+                return labels.readingElementLink ?? 'Column links';
+            }
+
+            return element.toUpperCase();
+        };
+
         const primaryDetails = (element) => {
             const panelKey = `primary.${element}`;
             const openAttr = openScalePanels.has(panelKey) ? ' open' : '';
@@ -808,7 +892,7 @@ export function registerReadingTypographyUi(editor, options = {}) {
             return `
                 <details class="voodbuilder-editor-reading-element${overridden ? ' is-overridden' : ''}" data-vb-reading-scale="${escapeHtml(panelKey)}"${openAttr}>
                     <summary>
-                        <span>${escapeHtml(element.toUpperCase())}</span>
+                        <span>${escapeHtml(elementLabel(element))}</span>
                         <span class="voodbuilder-editor-reading-element__meta">${escapeHtml(`${effectiveSize ?? ''} · ${optionLabel(WEIGHT_OPTIONS, effectiveWeight)}`)}</span>
                     </summary>
                     <div class="voodbuilder-editor-reading-element__grid">
@@ -843,7 +927,9 @@ export function registerReadingTypographyUi(editor, options = {}) {
             return `<button type="button" class="voodbuilder-editor-style-viewport__btn${active ? ' is-active' : ''}" data-vb-reading-viewport="${device}" aria-pressed="${active ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
         }).join('');
 
-        const elementBlocks = ELEMENTS.map(primaryDetails).join('');
+        const elementBlocks = ARTICLE_ELEMENTS.map(primaryDetails).join('')
+            + `<p class="voodbuilder-editor-reading-viewport__hint">${escapeHtml(labels.readingColumnsHeading ?? 'Side columns (sidebar and “On this page”)')}</p>`
+            + COLUMN_ELEMENTS.map(primaryDetails).join('');
         const headingFontOptions = [{ value: '', label: siteFontLabel(inherited.headingLabel) }, ...fontOptions];
         const bodyFontOptions = [{ value: '', label: siteFontLabel(inherited.bodyLabel) }, ...fontOptions];
 

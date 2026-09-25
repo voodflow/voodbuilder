@@ -30,8 +30,16 @@ final class ChromeLayoutReadingTypography
     /** Inter Variable (bundled in theme.css / fonts.css). */
     public const DEFAULT_FONT = 'inter';
 
+    /**
+     * Article elements (inherit the site scale) plus the side-column elements:
+     * `h5` = sidebar group / "On this page" titles, `link` = sidebar + TOC links.
+     *
+     * @var list<string>
+     */
+    public const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'link'];
+
     /** @var list<string> */
-    public const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'p'];
+    public const COLUMN_ELEMENTS = ['h5', 'link'];
 
     /** @var list<string> */
     public const SCALE_PROPS = ['size', 'sizeMd', 'sizeLg', 'weight', 'leading'];
@@ -51,6 +59,33 @@ final class ChromeLayoutReadingTypography
         $row = array_fill_keys(self::SCALE_PROPS, null);
 
         return array_fill_keys(self::ELEMENTS, $row);
+    }
+
+    /**
+     * VitePress-like defaults for side-column elements (no site Settings equivalent).
+     *
+     * @return array<string, array{size: string, sizeMd: ?string, sizeLg: ?string, weight: string, leading: string}>
+     */
+    public static function columnDefaults(): array
+    {
+        return [
+            'h5' => ['size' => 'xs', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '700', 'leading' => '1.5'],
+            'link' => ['size' => 'sm', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '500', 'leading' => '1.5'],
+        ];
+    }
+
+    /**
+     * CSS value used when a layout does not override `$prop` of `$element`.
+     * Null for side-column elements: nothing is emitted and each stylesheet rule
+     * keeps its own fallback (sidebar links 500, TOC links 400, …).
+     */
+    public static function inheritedCssValue(string $element, string $prop): ?string
+    {
+        if (in_array($element, self::COLUMN_ELEMENTS, true)) {
+            return null;
+        }
+
+        return "var(--vp-app-{$element}-{$prop})";
     }
 
     /**
@@ -246,14 +281,19 @@ final class ChromeLayoutReadingTypography
             '--vp-font-family-doc-heading' => $headingFont === ''
                 ? 'var(--vp-font-family-heading, var(--font-heading))'
                 : self::stackFor($headingFont),
-            // Sidebar / TOC use fixed UI sizes and only follow the reading body font.
+            // Sidebar / TOC links use the body font; their titles (h5) the heading font.
             '--vp-font-family-sidebar' => 'var(--vp-font-family-doc)',
             '--vp-font-size-doc' => 'var(--vp-doc-p-size)',
         ];
 
         foreach ($typeScale as $element => $row) {
-            $cssVariables["--vp-doc-{$element}-weight"] = $row['weight'] ?? "var(--vp-app-{$element}-weight)";
-            $cssVariables["--vp-doc-{$element}-leading"] = $row['leading'] ?? "var(--vp-app-{$element}-leading)";
+            foreach (['weight', 'leading'] as $prop) {
+                $value = $row[$prop] ?? self::inheritedCssValue($element, $prop);
+
+                if ($value !== null) {
+                    $cssVariables["--vp-doc-{$element}-{$prop}"] = $value;
+                }
+            }
         }
 
         $sizeVariables = self::sizeVariables($typeScale);
@@ -271,7 +311,7 @@ final class ChromeLayoutReadingTypography
                 'headingFont' => $appTypography['headingFont'],
                 'bodyLabel' => $appTypography['bodyLabel'],
                 'headingLabel' => $appTypography['headingLabel'],
-                'typeScale' => $appTypography['typeScale'],
+                'typeScale' => array_merge($appTypography['typeScale'], self::columnDefaults()),
             ],
             'stylesheetUrls' => FontStylesheets::urlsFor($fontIds),
             'cssVariables' => $cssVariables,
@@ -297,9 +337,9 @@ final class ChromeLayoutReadingTypography
 
             foreach (TypographyBreakpoints::KEYS as $breakpoint) {
                 $token = TypographyBreakpoints::cascadedSize($row, $breakpoint);
-                $value = $token === null ? "var(--vp-app-{$element}-size)" : self::cssSizeFor($token);
+                $value = $token === null ? self::inheritedCssValue($element, 'size') : self::cssSizeFor($token);
 
-                if ($value !== $previous) {
+                if ($value !== null && $value !== $previous) {
                     $variables[$breakpoint]["--vp-doc-{$element}-size"] = $value;
                 }
 

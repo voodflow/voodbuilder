@@ -50,6 +50,28 @@ class ChromeLayoutReadingTypographyTest extends TestCase
         $this->assertArrayNotHasKey('--vp-doc-h1-size', $resolved['cssVariables']);
     }
 
+    public function test_column_elements_emit_vars_only_when_overridden(): void
+    {
+        $defaults = ChromeLayoutReadingTypography::resolve(null);
+
+        $this->assertArrayNotHasKey('--vp-doc-h5-weight', $defaults['cssVariables']);
+        $this->assertArrayNotHasKey('--vp-doc-link-size', $defaults['sizeVariables']['base']);
+        $this->assertSame('xs', $defaults['inherited']['typeScale']['h5']['size']);
+        $this->assertSame('sm', $defaults['inherited']['typeScale']['link']['size']);
+
+        $resolved = ChromeLayoutReadingTypography::resolve(new ChromeLayout([
+            'reading_type_scale' => [
+                'h5' => ['size' => 'sm', 'weight' => '600'],
+                'link' => ['sizeMd' => 'base'],
+            ],
+        ]));
+
+        $this->assertSame('var(--text-sm)', $resolved['sizeVariables']['base']['--vp-doc-h5-size']);
+        $this->assertSame('600', $resolved['cssVariables']['--vp-doc-h5-weight']);
+        $this->assertArrayNotHasKey('--vp-doc-link-size', $resolved['sizeVariables']['base']);
+        $this->assertSame('var(--text-base)', $resolved['sizeVariables']['md']['--vp-doc-link-size']);
+    }
+
     public function test_unknown_fonts_fall_back_to_site_fonts(): void
     {
         $layout = new ChromeLayout([

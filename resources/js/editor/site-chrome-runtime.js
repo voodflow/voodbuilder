@@ -308,8 +308,16 @@ export function initMobileNav(scope = document) {
             return;
         }
 
-        event.preventDefault();
-        event.stopPropagation();
+        const doc = scope.ownerDocument ?? scope;
+        const isEditorCanvas = doc.documentElement?.hasAttribute?.('data-voodbuilder-editor-device') === true;
+        const isLink = target.matches('a[href]');
+
+        // Public links must still navigate; only the editor canvas swallows them.
+        if (isEditorCanvas || ! isLink) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
         setMobileNavOpen(scope, false);
     }, true);
 
@@ -320,9 +328,87 @@ export function initMobileNav(scope = document) {
     });
 }
 
+const READING_DRAWER_OPEN_CLASS = 'vp-reading-drawer-open';
+
+function setReadingDrawerOpen(doc, open) {
+    doc.documentElement?.classList?.toggle(READING_DRAWER_OPEN_CLASS, open);
+
+    doc.querySelectorAll('[data-vp-reading-drawer-toggle]').forEach((toggle) => {
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+}
+
+/**
+ * Companion reading pages (vdocs / vtuts): local nav "Menu" opens the left
+ * sidebar as a drawer below 960px; "On this page" is a native <details> dropdown.
+ */
+export function initReadingLocalNav(scope = document) {
+    const doc = scope.ownerDocument ?? scope;
+
+    if (! scope.querySelector?.('[data-vp-local-nav]') || doc.__voodbuilderReadingLocalNavBound) {
+        return;
+    }
+
+    doc.__voodbuilderReadingLocalNavBound = true;
+
+    const isDrawerOpen = () => doc.documentElement?.classList?.contains(READING_DRAWER_OPEN_CLASS) === true;
+
+    doc.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+
+        if (! target) {
+            return;
+        }
+
+        if (target.closest('[data-vp-reading-drawer-toggle]')) {
+            event.preventDefault();
+            setReadingDrawerOpen(doc, ! isDrawerOpen());
+
+            return;
+        }
+
+        if (isDrawerOpen() && (target.closest('[data-vp-reading-drawer-close]') || target.closest('[data-vp-reading-drawer] a[href]'))) {
+            setReadingDrawerOpen(doc, false);
+        }
+
+        const outlineLink = target.closest('[data-vp-local-outline] a[href]');
+
+        if (outlineLink) {
+            outlineLink.closest('[data-vp-local-outline]')?.removeAttribute('open');
+
+            if (outlineLink.matches('[data-vp-local-outline-top]')) {
+                event.preventDefault();
+                doc.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        doc.querySelectorAll('[data-vp-local-outline][open]').forEach((details) => {
+            if (! details.contains(target)) {
+                details.removeAttribute('open');
+            }
+        });
+    });
+
+    doc.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') {
+            return;
+        }
+
+        setReadingDrawerOpen(doc, false);
+        doc.querySelectorAll('[data-vp-local-outline][open]').forEach((details) => details.removeAttribute('open'));
+    });
+
+    doc.defaultView?.matchMedia?.('(min-width: 960px)')?.addEventListener?.('change', (query) => {
+        if (query.matches) {
+            setReadingDrawerOpen(doc, false);
+        }
+    });
+}
+
 export function initSiteChrome(scope = document) {
     initProfileMenus(scope);
     initNavDropdowns(scope);
     initMobileNavSections(scope);
     initMobileNav(scope);
+    initReadingLocalNav(scope);
 }
