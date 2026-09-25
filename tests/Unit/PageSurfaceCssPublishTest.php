@@ -89,4 +89,71 @@ CSS;
         $this->assertStringContainsString('background-color: transparent !important', $overlay);
         $this->assertStringContainsString('.voodbuilder-events-shell', $overlay);
     }
+
+    public function test_remap_for_public_rewrites_dark_orphan_wallpaper_to_dark_fixed_layer(): void
+    {
+        $css = <<<'CSS'
+#iwrap { background-image: url(/light.jpg); }
+html.dark #iwrap { background-image: url(/dark.jpg); }
+CSS;
+
+        $remapped = PageSurfaceCssPublish::remapForPublic($css, '');
+
+        $this->assertStringContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $remapped);
+        $this->assertStringContainsString(PageSurfaceCssPublish::darkFixedLayerSelector(), $remapped);
+        $this->assertStringContainsString('url(/light.jpg)', $remapped);
+        $this->assertStringContainsString('url(/dark.jpg)', $remapped);
+        $this->assertStringNotContainsString('#iwrap', $remapped);
+    }
+
+    public function test_remap_for_public_drops_grapes_comma_html_dark_wallpaper(): void
+    {
+        $css = <<<'CSS'
+#iwrap { background-image: url(/light.jpg); background-size: cover; }
+#iwrap, html.dark { background-image: url(/dark.jpg); background-size: cover; }
+html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; }
+CSS;
+
+        $remapped = PageSurfaceCssPublish::remapForPublic($css, '');
+
+        $this->assertStringNotContainsString('#iwrap, html.dark', $remapped);
+        $this->assertStringContainsString('url(/light.jpg)', $remapped);
+        $this->assertStringContainsString(PageSurfaceCssPublish::darkFixedLayerSelector(), $remapped);
+        $this->assertStringContainsString('url(/dark.jpg)', $remapped);
+    }
+
+    public function test_public_wallpaper_overlay_emits_dark_orphan_wallpaper(): void
+    {
+        $css = 'html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; }';
+
+        $overlay = PageSurfaceCssPublish::publicWallpaperOverlay($css, '');
+
+        $this->assertStringContainsString(PageSurfaceCssPublish::darkFixedLayerSelector(), $overlay);
+        $this->assertStringContainsString('url(/dark.jpg)', $overlay);
+    }
+
+    public function test_public_wallpaper_overlay_keeps_light_and_dark_layers_separate(): void
+    {
+        $css = <<<'CSS'
+#iwrap { background-image: url(/light.jpg); background-size: cover; }
+html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; }
+CSS;
+
+        $overlay = PageSurfaceCssPublish::publicWallpaperOverlay($css, '');
+
+        $this->assertStringContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $overlay);
+        $this->assertStringContainsString(PageSurfaceCssPublish::darkFixedLayerSelector(), $overlay);
+        $this->assertStringContainsString('url(/light.jpg)', $overlay);
+        $this->assertStringContainsString('url(/dark.jpg)', $overlay);
+
+        // Light layer must not be wrapped in html.dark — otherwise light mode keeps the dark photo.
+        $this->assertMatchesRegularExpression(
+            '/'.preg_quote(PageSurfaceCssPublish::fixedLayerSelector(), '/').'\s*\{[^}]*url\(\/light\.jpg\)/i',
+            $overlay,
+        );
+        $this->assertMatchesRegularExpression(
+            '/'.preg_quote(PageSurfaceCssPublish::darkFixedLayerSelector(), '/').'\s*\{[^}]*url\(\/dark\.jpg\)/i',
+            $overlay,
+        );
+    }
 }

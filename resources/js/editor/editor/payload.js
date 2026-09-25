@@ -41,6 +41,142 @@ import {
     syncSpacingStylesForExport,
 } from '../tailwind-visual-style.js';
 import { shouldOmitAuthorStyleValue } from '../theme-tokens.js';
+import { withoutUndo } from '../editor-undo.js';
+import {
+    getPageSurfaceWallpaperUrlCache,
+    isPageSurfaceMode,
+    pageSurfaceDarkRuleSelector,
+    purgeBrokenPageSurfaceDarkCssRules,
+    readPageSurfaceDarkWallpaperStyles,
+    readPageSurfaceWallpaperStyles,
+    withWallpaperLayoutDefaults,
+} from '../page-surface-styles.js';
+import { STYLE_BG_SRC_ATTR, STYLE_BG_SRC_DARK_ATTR } from '../style-background-image.js';
+
+/**
+ * Emit page-surface light + dark wallpaper rules for Save.
+ * Chrome-shell HTML omits the wrapper, so durable recovery is CSS-only.
+ *
+ * @param {object} editor
+ * @returns {string}
+ */
+export function collectPageSurfaceWallpaperCssForPersist(editor) {
+    if (! editor || ! isPageSurfaceMode(editor)) {
+        return '';
+    }
+
+    const wrapper = editor.getWrapper?.();
+    const id = String(wrapper?.getId?.() ?? '').trim();
+
+    if (id === '') {
+        return '';
+    }
+
+    purgeBrokenPageSurfaceDarkCssRules(editor, id);
+
+    const attrs = wrapper?.getAttributes?.() ?? {};
+    const cache = getPageSurfaceWallpaperUrlCache(editor);
+    const lightAttr = String(
+        attrs[STYLE_BG_SRC_ATTR]
+        ?? cache.light
+        ?? '',
+    ).trim();
+    const darkAttr = String(
+        attrs[STYLE_BG_SRC_DARK_ATTR]
+        ?? cache.dark
+        ?? '',
+    ).trim();
+
+    let light = withWallpaperLayoutDefaults(readPageSurfaceWallpaperStyles(editor));
+    let dark = withWallpaperLayoutDefaults(readPageSurfaceDarkWallpaperStyles(editor));
+
+    // Attrs / session cache are the Style-panel source of truth per theme — always
+    // win over CssComposer (Grapes cannot store real html.dark #id companions).
+    if (lightAttr !== '') {
+        light = withWallpaperLayoutDefaults({
+            ...light,
+            'background-image': `url('${lightAttr.replace(/'/g, "\\'")}')`,
+        });
+    }
+
+    if (darkAttr !== '') {
+        dark = withWallpaperLayoutDefaults({
+            ...dark,
+            'background-image': `url('${darkAttr.replace(/'/g, "\\'")}')`,
+        });
+    }
+
+    // If light still equals dark URL, light was never stored separately — omit light
+    // rather than publishing dark as the light wallpaper.
+    const lightUrl = extractWallpaperUrl(light['background-image']);
+    const darkUrl = extractWallpaperUrl(dark['background-image']);
+
+    if (lightUrl !== '' && darkUrl !== '' && lightUrl === darkUrl && lightAttr === '' && cache.light === '') {
+        light = { ...light, 'background-image': '' };
+    }
+
+    const rules = [];
+    const lightRule = wallpaperStylesToCssRule(`#${id}`, light);
+
+    if (lightRule !== '') {
+        rules.push(lightRule);
+    }
+
+    const darkSelector = pageSurfaceDarkRuleSelector(id);
+    const darkRule = wallpaperStylesToCssRule(darkSelector, dark);
+
+    if (darkRule !== '') {
+        rules.push(darkRule);
+    }
+
+    return rules.join('\n');
+}
+
+/**
+ * @param {string|null|undefined} image
+ * @returns {string}
+ */
+function extractWallpaperUrl(image) {
+    const match = String(image ?? '').match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/i);
+
+    return match?.[1]?.trim() ?? '';
+}
+
+/**
+ * @param {string} selector
+ * @param {Record<string, string>} styles
+ * @returns {string}
+ */
+function wallpaperStylesToCssRule(selector, styles) {
+    const sel = String(selector ?? '').trim();
+    const image = String(styles?.['background-image'] ?? '').trim();
+
+    if (sel === '' || image === '' || image === 'none' || ! /url\s*\(/i.test(image)) {
+        return '';
+    }
+
+    const prepared = withWallpaperLayoutDefaults(styles);
+    const decls = [];
+
+    for (const prop of [
+        'background-image',
+        'background-size',
+        'background-position',
+        'background-repeat',
+        'background-attachment',
+        'background-color',
+    ]) {
+        const value = String(prepared[prop] ?? '').trim();
+
+        if (value === '' || shouldOmitAuthorStyleValue(prop, value)) {
+            continue;
+        }
+
+        decls.push(`${prop}:${value}`);
+    }
+
+    return decls.length === 0 ? '' : `${sel} {${decls.join(';')}}`;
+}
 
 /**
  * GrapesJS private style classes (c1234) must not be persisted — clones share
@@ -264,7 +400,7 @@ export function extractGrapesComposerCss(css) {
 }
 
 /**
- * Last-resort Save trim: keep only bare `#id { … }` Style Manager paints.
+ * Last-resort Save trim: keep only `#id` / `html.dark #id` Style Manager paints.
  * Drops custom BEM / Library class rules when the author CSS still exceeds max_css.
  *
  * @param {string} css
@@ -287,8 +423,8 @@ export function extractBareIdAuthorCss(css) {
             continue;
         }
 
-        // Single #id (optional pseudo) — no classes / descendants.
-        if (! /^(?:#[A-Za-z_][\w-]*(?::+[A-Za-z_-][\w-]*)*)(?:\s*,\s*#[A-Za-z_][\w-]*(?::+[A-Za-z_-][\w-]*)*)*$/.test(selectors)) {
+        // Bare #id (optional pseudo) OR html.dark #id — page light + dark wallpaper.
+        if (! /^(?:html\.dark\s+)?(?:#[A-Za-z_][\w-]*(?::+[A-Za-z_-][\w-]*)*)(?:\s*,\s*(?:html\.dark\s+)?#[A-Za-z_][\w-]*(?::+[A-Za-z_-][\w-]*)*)*$/i.test(selectors)) {
             continue;
         }
 
@@ -357,6 +493,8 @@ export function stripAuthorIdRules(css) {
     }
 
     return source
+        // Dark page wallpaper companions (`html.dark #id`) before bare #id.
+        .replace(/html\.dark\s+#[A-Za-z][\w-]*\s*\{[^{}]*\}/gi, ' ')
         .replace(/#[A-Za-z][\w-]*(?:\s*,\s*#[A-Za-z][\w-]*)*\s*\{[^{}]*\}/g, ' ')
         .replace(/\n{3,}/g, '\n\n')
         .trim();
@@ -368,20 +506,22 @@ export function stripAuthorIdRules(css) {
  * Manager paints vanish from builder_payload.css on chrome-shell save.
  *
  * @param {object} editor
+ * @param {{ root?: object }} [options]
  * @returns {string}
  */
-export function collectAuthorIdCssFromComponents(editor) {
+export function collectAuthorIdCssFromComponents(editor, options = {}) {
     const wrapper = editor?.getWrapper?.();
+    const root = options.root ?? wrapper;
     const cssApi = editor?.Css;
 
-    if (! wrapper?.onAll) {
+    if (! root?.onAll) {
         return '';
     }
 
     const rules = [];
     const seen = new Set();
 
-    wrapper.onAll((component) => {
+    root.onAll((component) => {
         const id = String(component?.getId?.() ?? '').trim();
 
         if (id === '' || seen.has(id)) {
@@ -432,18 +572,14 @@ export function collectAuthorIdCssFromComponents(editor) {
 }
 
 /**
- * Read Grapes CssComposer CSS, preferring keepUnusedStyles so #id paints that
- * are not referenced as classes still serialize.
- *
- * @param {object} editor
- * @returns {string}
- */
-/**
  * Read Grapes CssComposer author CSS for Save.
  *
  * Prefer enumerating CssRule models over `getCss({ keepUnusedStyles: true })`:
  * on chrome-shell pages the latter can serialize the live utility bundle and
  * freeze Save for tens of seconds.
+ *
+ * Never fall back to `getCss({ keepUnusedStyles: true })` — when CssComposer only
+ * holds utilities, that fallback used to block Save for ~10–20s.
  *
  * @param {object} editor
  * @returns {string}
@@ -454,9 +590,32 @@ export function readComposerCssForPersist(editor) {
     if (cssApi?.getAll) {
         try {
             const rules = [];
+            let scanned = 0;
 
             for (const rule of cssApi.getAll()) {
+                scanned += 1;
+
+                // Soft cap: a polluted CssComposer (full JIT sheet) must not dominate Save.
+                if (scanned > 4_000) {
+                    break;
+                }
+
                 const sel = cssRuleSelectorText(rule);
+
+                // Reject utilities BEFORE getStyle() — getStyle on thousands of JIT
+                // rules is what made Save feel frozen even when nothing author-owned
+                // needed serializing.
+                if (sel === '' || ! isAuthorStyleSelector(sel)) {
+                    continue;
+                }
+
+                // Grapes selectorsAdd "html.dark" means comma-additional → `#id, html.dark`.
+                // That paints dark onto #id and must never be persisted (pageSurfaceCss emits
+                // real `html.dark #id` instead).
+                if (/html\.dark/i.test(sel) && ! /^html\.dark\s+#/i.test(sel.trim())) {
+                    continue;
+                }
+
                 const style = rule?.getStyle?.() ?? {};
                 const decls = [];
 
@@ -468,36 +627,22 @@ export function readComposerCssForPersist(editor) {
                     decls.push(`${property}:${value}`);
                 }
 
-                if (sel === '' || decls.length === 0 || ! isAuthorStyleSelector(sel)) {
+                if (decls.length === 0) {
                     continue;
                 }
 
                 rules.push(`${sel} {${decls.join(';')}}`);
             }
 
-            if (rules.length > 0) {
-                return rules.join('\n');
-            }
-        } catch {
-            // Fall through to getCss().
+            return rules.join('\n');
+        } catch (error) {
+            console.warn('VoodBuilder readComposerCssForPersist: Css.getAll failed', error);
         }
     }
 
-    if (typeof editor?.getCss !== 'function') {
-        return '';
-    }
-
-    try {
-        const withUnused = editor.getCss({ keepUnusedStyles: true });
-
-        if (typeof withUnused === 'string' && withUnused.trim() !== '') {
-            return withUnused.trim();
-        }
-    } catch {
-        // Older Grapes builds may not accept options.
-    }
-
-    return String(editor.getCss() ?? '').trim();
+    // Do NOT call getCss({ keepUnusedStyles: true }) — it freezes Save on chrome-shell
+    // pages by serializing the live utility bundle. Component #id walk covers paints.
+    return '';
 }
 
 /**
@@ -509,42 +654,74 @@ function cssRuleSelectorText(rule) {
         return '';
     }
 
-    if (typeof rule.selectorsToString === 'function') {
-        const text = String(rule.selectorsToString() ?? '').trim();
+    // Never persist Grapes selectorsAdd "html.dark" as `#id, html.dark` — that is
+    // comma-additional, not the descendant `html.dark #id` we need for dual themes.
+    const addRaw = String(rule.get?.('selectorsAdd') ?? '').replace(/\s+/g, ' ').trim();
 
-        if (text !== '') {
-            return text;
+    if (addRaw.toLowerCase() === 'html.dark') {
+        return '';
+    }
+
+    let base = '';
+
+    if (typeof rule.selectorsToString === 'function') {
+        try {
+            base = String(rule.selectorsToString({ skipAdd: true }) ?? '').trim();
+        } catch {
+            base = String(rule.selectorsToString() ?? '').trim();
         }
     }
 
-    const selectors = rule.get?.('selectors');
+    if (base === '') {
+        const selectors = rule.get?.('selectors');
 
-    if (selectors && typeof selectors.map === 'function') {
-        return selectors
-            .map((item) => (typeof item === 'string' ? item : String(item?.get?.('name') ?? item?.id ?? '')))
-            .filter(Boolean)
-            .join(', ');
+        if (selectors && typeof selectors.map === 'function') {
+            base = selectors
+                .map((item) => (typeof item === 'string' ? item : String(item?.get?.('name') ?? item?.id ?? '')))
+                .filter(Boolean)
+                .join(', ');
+        } else if (Array.isArray(selectors)) {
+            base = selectors
+                .map((item) => (typeof item === 'string' ? item : String(item?.get?.('name') ?? '')))
+                .filter(Boolean)
+                .join(', ');
+        }
     }
 
-    if (Array.isArray(selectors)) {
-        return selectors
-            .map((item) => (typeof item === 'string' ? item : String(item?.get?.('name') ?? '')))
-            .filter(Boolean)
-            .join(', ');
+    // Strip a trailing ", html.dark" Grapes may bake into selectorsToString().
+    base = base.replace(/,\s*html\.dark\b/gi, '').trim();
+
+    if (/html\.dark/i.test(base) && ! /^html\.dark\s+#/i.test(base)) {
+        return '';
     }
 
-    return String(rule.get?.('selectorsAdd') ?? '').trim();
+    const add = addRaw;
+
+    if (add !== '' && base !== '') {
+        if (base.toLowerCase().includes(add.toLowerCase())) {
+            return base;
+        }
+
+        // Prefix compound (descendant), never comma-list.
+        return `${add} ${base}`.replace(/\s+/g, ' ').trim();
+    }
+
+    if (base !== '') {
+        return base;
+    }
+
+    return add;
 }
 
 /**
- * Merge CSS chunks, preferring the first declaration block per `#id` selector
- * (later duplicates from live/composer are skipped).
+ * Merge CSS chunks, preferring the first declaration block per selector.
+ * Light `#id` and dark `html.dark #id` are distinct (both must survive Save).
  *
  * @param {string[]} chunks
  * @returns {string}
  */
 export function mergeAuthorCssChunks(chunks) {
-    const seenIds = new Set();
+    const seenSelectors = new Set();
     const out = [];
 
     for (const chunk of chunks) {
@@ -555,7 +732,7 @@ export function mergeAuthorCssChunks(chunks) {
         }
 
         // Split into rules while keeping non-# utility blobs intact.
-        if (! source.includes('#')) {
+        if (! source.includes('#') && ! /html\.dark/i.test(source)) {
             if (! out.includes(source)) {
                 out.push(source);
             }
@@ -578,16 +755,14 @@ export function mergeAuthorCssChunks(chunks) {
             const selectors = match[1].trim();
             const body = match[2].trim();
             const rule = `${selectors} {${body}}`;
+            const key = selectors.replace(/\s+/g, ' ').toLowerCase();
 
-            if (selectors.includes('#')) {
-                const ids = [...selectors.matchAll(/#([A-Za-z][\w-]*)/g)].map((m) => m[1]);
-                const already = ids.some((id) => seenIds.has(id));
+            if (key !== '' && seenSelectors.has(key)) {
+                continue;
+            }
 
-                if (already) {
-                    continue;
-                }
-
-                ids.forEach((id) => seenIds.add(id));
+            if (key !== '') {
+                seenSelectors.add(key);
             }
 
             out.push(rule);
@@ -646,12 +821,17 @@ export function encodeJsonDataGjsAttributes(html) {
 
 /**
  * @param {object} editor
- * @param {{ mutate?: boolean }} [options]
+ * @param {{ mutate?: boolean, light?: boolean }} [options]
  *   mutate=false → read-only snapshot for onUpdate (must not wipe CssComposer / styles).
  *   mutate=true (default) → save path: sync/bake/purge then serialize.
+ *   light=true → Save-fast path: skip non-essential full-tree syncs (bindings/video/…).
  */
 export function buildPayload(editor, options = {}) {
     const mutate = options.mutate !== false;
+    const light = options.light === true;
+    const chromeShell = Boolean(editor.__voodbuilderChromeShellMode);
+    const exportRoot = chromeShell ? (findPageContentSlotInEditor(editor) ?? null) : null;
+    const scoped = exportRoot ? { root: exportRoot } : {};
 
     const runExportStep = (label, step) => {
         try {
@@ -661,166 +841,182 @@ export function buildPayload(editor, options = {}) {
         }
     };
 
-    if (mutate) {
-        runExportStep('detachReadingPreview', () => editor.trigger?.('voodbuilder:reading-preview:detach'));
-        runExportStep('normalizeDynamicBlockComponents', () => normalizeDynamicBlockComponents(editor));
-        runExportStep('pruneEmptyDynamicBlocks', () => pruneEmptyDynamicBlocks(editor));
-        runExportStep('syncBindingsForExport', () => syncBindingsForExport(editor));
-        runExportStep('ensureComponentInstancesForExport', () => ensureComponentInstancesForExport(editor));
-        runExportStep('purgeDesyncedBackgroundCssRules', () => purgeDesyncedBackgroundCssRules(editor));
-        runExportStep('syncSpacingStylesForExport', () => syncSpacingStylesForExport(editor));
-        runExportStep('syncPaintStylesForExport', () => syncPaintStylesForExport(editor));
-        runExportStep('syncComponentInstancePaintForExport', () => syncComponentInstancePaintForExport(editor));
-        runExportStep('bakeSvgPaintForExport', () => bakeSvgPaintForExport(editor));
-        runExportStep('pruneRedundantSpacingZerosForExport', () => pruneRedundantSpacingZerosForExport(editor));
-        runExportStep('syncComponentInstancesForExport', () => syncComponentInstancesForExport(editor));
-        runExportStep('syncRepeatBindingsForExport', () => syncRepeatBindingsForExport(editor));
-        runExportStep('syncAnimatedCountersForExport', () => syncAnimatedCountersForExport(editor));
-        runExportStep('syncConditionsForExport', () => syncConditionsForExport(editor));
-        runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
-        runExportStep('purgeOrphanPageContentNodes', () => {
-            const slot = findPageContentSlotInEditor(editor);
+    const assemble = () => {
+        if (mutate) {
+            // Prevent live JIT / chrome refresh storms while we touch styles for export.
+            editor.__voodbuilderSetCssRebuildSuspended?.(true);
+            editor.__voodbuilderBulkStructureUpdate = true;
 
-            if (slot) {
-                purgeOrphanPageContentNodes(slot);
-            }
-        });
-        runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
-        runExportStep('detachInnerDropSlotsForExport', () => detachInnerDropSlotsForExport(editor));
-        runExportStep('ensureCtaButtonsForExport', () => ensureCtaButtonsForExport(editor));
-        runExportStep('ensureIconsForExport', () => ensureIconsForExport(editor));
-        runExportStep('ensureLayoutContainersForExport', () => ensureLayoutContainersForExport(editor));
-        runExportStep('restoreContentWidthFromAttributes', () => restoreContentWidthFromAttributes(editor));
-        // One bake after syncs — a second full-tree bake doubled Save cost on large pages.
-        runExportStep('bakeAuthorStylesToComposerForExport', () => bakeAuthorStylesToComposerForExport(editor));
-        // After bake/layout sync: force Layers hide onto inline + data-vb-layer-hidden
-        // so getHtml does not depend on fragile CssComposer #id {display:none} alone.
-        runExportStep('syncLayerVisibilityForExport', () => syncLayerVisibilityForExport(editor));
-    }
-
-    let html;
-
-    try {
-        html = editor.getHtml({
-            cleanId: false,
-            // withProps:true calls Component.toJSON() for every node (full subtree each
-            // time) — on large pasted pages that overflows the call stack. Server
-            // normalizePayload already strips data-gjs-* anyway.
-            withProps: false,
-            keepInlineStyle: true,
-        });
-    } catch (error) {
-        console.error('VoodBuilder getHtml failed; retrying without inline style opts', error);
-        html = editor.getHtml();
-    }
-
-    if (editor.__voodbuilderChromeShellMode) {
-        const slotHtml = extractChromeShellPageHtml(editor);
-
-        if (slotHtml !== null) {
-            const trimmed = slotHtml.trim();
-
-            // Never wipe page content when the slot still has Grapes children but
-            // serialization returned an empty string (regression that blanked Home).
-            if (trimmed !== '') {
-                html = slotHtml;
-            } else {
-                const childCount = findPageContentSlotInEditor(editor)?.components?.()?.length ?? 0;
-
-                if (childCount === 0) {
-                    // Author cleared the page content slot — empty save is intentional.
-                    html = '';
-                } else {
-                    console.error(
-                        'VoodBuilder: chrome shell HTML extract was empty while the content slot still has children — keeping full canvas HTML for server strip.',
-                        { childCount },
-                    );
-                    // Keep `html` from getHtml(); server stripSiteChromeFromPageHtml removes chrome.
+            try {
+                if (! light) {
+                    runExportStep('detachReadingPreview', () => editor.trigger?.('voodbuilder:reading-preview:detach'));
+                    runExportStep('normalizeDynamicBlockComponents', () => normalizeDynamicBlockComponents(editor));
+                    runExportStep('pruneEmptyDynamicBlocks', () => pruneEmptyDynamicBlocks(editor));
+                    runExportStep('syncBindingsForExport', () => syncBindingsForExport(editor));
+                    runExportStep('ensureComponentInstancesForExport', () => ensureComponentInstancesForExport(editor));
+                    runExportStep('purgeDesyncedBackgroundCssRules', () => purgeDesyncedBackgroundCssRules(editor));
+                    runExportStep('syncSpacingStylesForExport', () => syncSpacingStylesForExport(editor, scoped));
+                    runExportStep('syncPaintStylesForExport', () => syncPaintStylesForExport(editor, scoped));
+                    runExportStep('syncComponentInstancePaintForExport', () => syncComponentInstancePaintForExport(editor));
+                    runExportStep('bakeSvgPaintForExport', () => bakeSvgPaintForExport(editor));
+                    runExportStep('pruneRedundantSpacingZerosForExport', () => pruneRedundantSpacingZerosForExport(editor));
+                    runExportStep('syncComponentInstancesForExport', () => syncComponentInstancesForExport(editor));
+                    runExportStep('syncRepeatBindingsForExport', () => syncRepeatBindingsForExport(editor));
+                    runExportStep('syncAnimatedCountersForExport', () => syncAnimatedCountersForExport(editor));
+                    runExportStep('syncConditionsForExport', () => syncConditionsForExport(editor));
+                    runExportStep('syncVideoComponentsForExport', () => syncVideoComponentsForExport(editor));
+                    runExportStep('purgeOrphanPageContentNodes', () => {
+                        if (exportRoot) {
+                            purgeOrphanPageContentNodes(exportRoot);
+                        }
+                    });
+                    runExportStep('ensureCtaButtonsForExport', () => ensureCtaButtonsForExport(editor));
+                    runExportStep('ensureIconsForExport', () => ensureIconsForExport(editor));
+                    runExportStep('ensureLayoutContainersForExport', () => ensureLayoutContainersForExport(editor));
+                    runExportStep('restoreContentWidthFromAttributes', () => restoreContentWidthFromAttributes(editor));
                 }
+
+                runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
+                runExportStep('detachInnerDropSlotsForExport', () => detachInnerDropSlotsForExport(editor));
+                // Chrome shell: bake only the page content slot (nav/footer are separate).
+                runExportStep('bakeAuthorStylesToComposerForExport', () => {
+                    bakeAuthorStylesToComposerForExport(editor, scoped);
+                });
+                runExportStep('syncLayerVisibilityForExport', () => syncLayerVisibilityForExport(editor));
+            } finally {
+                editor.__voodbuilderBulkStructureUpdate = false;
+                // Do not flush a deferred JIT on resume — Save already ships author CSS;
+                // the server compiles utilities. Flushing here re-queued 10s+ compiles.
+                editor.__voodbuilderFlushCssRebuildOnResume = false;
+                editor.__voodbuilderSetCssRebuildSuspended?.(false);
             }
         }
-    }
 
-    if (editor.__voodbuilderChromeLayoutMode) {
-        html = extractChromeLayoutHtml(editor);
-    }
+        let html = '';
 
-    // Click-to-play cover must survive export (GrapesJS still serializes embed iframes).
-    html = applyVideoFacadesToExportedHtml(editor, html);
+        if (chromeShell) {
+            // Never serialize the full chrome shell via getHtml() — nav/footer dwarfs
+            // page content and dominated Save on chrome-shell pages.
+            const slotHtml = extractChromeShellPageHtml(editor);
 
-    html = encodeJsonDataGjsAttributes(html);
+            if (slotHtml !== null) {
+                const trimmed = slotHtml.trim();
 
-    // Intentionally empty page content must persist (delete-all / remove last block).
-    // Do NOT restore __voodbuilderLastSavedPageHtml here — that blocked deletes from
-    // reaching the front while the editor looked cleared.
-    editor.__voodbuilderLastSavedPageHtml = String(html);
-    // Persist Style Manager / #id author rules only — never ship live JIT utilities in the
-    // Save JSON (those routinely exceed Laravel max_css_bytes and shared-host body limits).
-    // The server recompiles utilities from HTML (+ author CSS) and may store a CSS artifact.
-    // Skip extracting #id rules from the live JIT sheet: on large pages that regex pass
-    // blocked the main thread for tens of seconds. CssComposer + component walk cover paints.
-    const composerCss = readComposerCssForPersist(editor);
-    const styleManagerCss = extractGrapesComposerCss(composerCss);
-    const componentAuthorCss = collectAuthorIdCssFromComponents(editor);
-    let css = mergeAuthorCssChunks([
-        styleManagerCss,
-        componentAuthorCss,
-        // Boot / empty composer: keep a second pass so the first Save still has author CSS.
-        styleManagerCss === '' && componentAuthorCss === ''
-            ? extractGrapesComposerCss(composerCss)
-            : '',
-    ]);
+                if (trimmed !== '') {
+                    html = slotHtml;
+                } else {
+                    const childCount = exportRoot?.components?.()?.length ?? 0;
 
-    // Hard safety: if author extract still ballooned (legacy live sheet / escaped \# false
-    // positives), keep bare Style Manager #id paints only so Save never 422s on max_css.
-    const maxCssBytes = Number(editor.__voodbuilderMaxCssBytes ?? 1_000_000);
+                    if (childCount === 0) {
+                        html = '';
+                    } else {
+                        console.error(
+                            'VoodBuilder: chrome shell HTML extract was empty while the content slot still has children — falling back to slot.toHTML.',
+                            { childCount },
+                        );
+                        html = String(exportRoot?.toHTML?.({
+                            keepInlineStyle: true,
+                            withProps: false,
+                        }) ?? '');
+                    }
+                }
+            }
+        } else if (editor.__voodbuilderChromeLayoutMode) {
+            html = extractChromeLayoutHtml(editor);
+        } else {
+            try {
+                html = editor.getHtml({
+                    cleanId: false,
+                    withProps: false,
+                    keepInlineStyle: true,
+                });
+            } catch (error) {
+                console.error('VoodBuilder getHtml failed; retrying without inline style opts', error);
+                html = editor.getHtml();
+            }
+        }
 
-    if (css.length > maxCssBytes) {
-        css = mergeAuthorCssChunks([
-            extractBareIdAuthorCss(styleManagerCss),
-            extractBareIdAuthorCss(componentAuthorCss),
+        // Click-to-play cover must survive export (GrapesJS still serializes embed iframes).
+        html = applyVideoFacadesToExportedHtml(editor, html);
+        html = encodeJsonDataGjsAttributes(html);
+
+        editor.__voodbuilderLastSavedPageHtml = String(html);
+
+        // Author #id / BEM only — never ship live JIT. Avoid getCss(keepUnusedStyles).
+        const composerCss = readComposerCssForPersist(editor);
+        const styleManagerCss = extractGrapesComposerCss(composerCss);
+        const componentAuthorCss = collectAuthorIdCssFromComponents(editor, scoped);
+        // Chrome-shell Save skips the wrapper in HTML — emit light + dark page
+        // wallpaper #id rules explicitly so refresh can reclaim both themes.
+        const pageSurfaceCss = collectPageSurfaceWallpaperCssForPersist(editor);
+        // Page-surface light+dark from attrs/cache must win over CssComposer #id —
+        // Grapes often holds only the last painted theme on bare `#id`.
+        let css = mergeAuthorCssChunks([
+            pageSurfaceCss,
+            styleManagerCss,
+            componentAuthorCss,
         ]);
-    }
 
-    if (css.length > maxCssBytes) {
-        css = '';
-    }
+        // Final guard: never ship Grapes comma form `#id, html.dark`.
+        css = css.replace(/#[\w-]+\s*,\s*html\.dark\s*\{[^{}]*\}/gi, '').trim();
 
-    // Keep page-surface wallpaper on the wrapper #id for editor round-trip
-    // (Size/Position/Repeat hydrate). Public remap happens in PHP EditorRenderer.
+        const maxCssBytes = Number(editor.__voodbuilderMaxCssBytes ?? 1_000_000);
 
-    const payload = {
-        html,
-        css,
-        js: editor.getJs(),
+        if (css.length > maxCssBytes) {
+            css = mergeAuthorCssChunks([
+                extractBareIdAuthorCss(pageSurfaceCss),
+                extractBareIdAuthorCss(styleManagerCss),
+                extractBareIdAuthorCss(componentAuthorCss),
+            ]);
+        }
+
+        if (css.length > maxCssBytes) {
+            css = '';
+        }
+
+        const payload = {
+            html,
+            css,
+            js: editor.getJs(),
+        };
+
+        // Canvas already JIT-compiled utilities (author sees new classes live). Ship
+        // them so the server can skip a second Node compile on Save.
+        const liveCss = String(editor.__voodbuilderPageLiveCss ?? '').trim();
+
+        if (liveCss !== '') {
+            payload.live_css = stripAuthorIdRules(liveCss);
+        }
+
+        if (editor.__voodbuilderChromeLayoutMode && editor.__voodbuilderReadingTypography) {
+            payload.readingTypography = {
+                font: editor.__voodbuilderReadingTypography.font,
+                sidebarFont: editor.__voodbuilderReadingTypography.sidebarFont,
+                size: editor.__voodbuilderReadingTypography.size,
+                typeScale: editor.__voodbuilderReadingTypography.typeScale,
+                sidebarTypeScale: editor.__voodbuilderReadingTypography.sidebarTypeScale,
+            };
+        }
+
+        restoreTopDropSpacerAfterExport(editor);
+
+        if (mutate && ! light) {
+            runExportStep('attachReadingPreview', () => editor.trigger?.('voodbuilder:reading-preview:attach'));
+        }
+
+        restoreSvgPaintInspectorStyles(editor);
+
+        const selected = editor.getSelected?.();
+
+        if (selected && String(selected.get?.('tagName') ?? '').toLowerCase() === 'svg') {
+            window.requestAnimationFrame(() => {
+                restoreSvgPaintInspectorStyle(selected);
+                editor.StyleManager?.select?.(selected);
+            });
+        }
+
+        return payload;
     };
 
-    if (editor.__voodbuilderChromeLayoutMode && editor.__voodbuilderReadingTypography) {
-        payload.readingTypography = {
-            font: editor.__voodbuilderReadingTypography.font,
-            sidebarFont: editor.__voodbuilderReadingTypography.sidebarFont,
-            size: editor.__voodbuilderReadingTypography.size,
-            typeScale: editor.__voodbuilderReadingTypography.typeScale,
-            sidebarTypeScale: editor.__voodbuilderReadingTypography.sidebarTypeScale,
-        };
-    }
-
-    restoreTopDropSpacerAfterExport(editor);
-
-    if (mutate) {
-        runExportStep('attachReadingPreview', () => editor.trigger?.('voodbuilder:reading-preview:attach'));
-    }
-
-    restoreSvgPaintInspectorStyles(editor);
-
-    const selected = editor.getSelected?.();
-
-    if (selected && String(selected.get?.('tagName') ?? '').toLowerCase() === 'svg') {
-        window.requestAnimationFrame(() => {
-            restoreSvgPaintInspectorStyle(selected);
-            editor.StyleManager?.select?.(selected);
-        });
-    }
-
-    return payload;
+    return mutate ? withoutUndo(editor, assemble) : assemble();
 }

@@ -1,17 +1,24 @@
 /**
- * Style panel ↔ canvas device: mobile-first Tailwind breakpoint prefixes.
+ * Style panel ↔ canvas device + theme: mobile-first Tailwind prefixes.
  *
  * UI labels (Mobile / Tablet / Desktop) — CSS stays mobile-first:
- *   Mobile  (mobilePortrait canvas) → no prefix (applies everywhere)
- *   Tablet                          → md:  (from md up)
- *   Desktop                         → lg:  (from lg up)
+ *   Mobile  (mobilePortrait canvas) → no breakpoint prefix
+ *   Tablet                          → md:
+ *   Desktop                         → lg:
+ *
+ * Theme comes from the top-bar toggle (not a second Style strip):
+ *   Light → base / md: / lg:
+ *   Dark  → dark: / dark:md: / dark:lg:
  */
 
-/** Prefixes the Style panel can author (v1). */
+/** Breakpoint prefixes the Style panel can author (v1). */
 export const STYLE_BREAKPOINT_PREFIXES = Object.freeze(['', 'md:', 'lg:']);
 
 /** Strip sm:/md:/lg:/xl:/2xl: from a utility name. */
 export const RESPONSIVE_VARIANT_PREFIX_RE = /^(?:sm:|md:|lg:|xl:|2xl:)/;
+
+/** Strip optional dark: then a responsive prefix. */
+export const STYLE_VARIANT_PREFIX_RE = /^(?:dark:)?(?:sm:|md:|lg:|xl:|2xl:)?/;
 
 /**
  * @param {string|null|undefined} deviceId
@@ -51,6 +58,69 @@ export function deviceIdFromBreakpointPrefix(prefix) {
 }
 
 /**
+ * Whether Style edits should author `dark:` variants / dark page wallpaper.
+ *
+ * Prefer the live editor flag set by the top-bar theme toggle — Filament and
+ * localStorage `theme` can race, which painted dark wallpapers onto light `#id`.
+ *
+ * @param {object|null|undefined} editor
+ * @returns {boolean}
+ */
+export function isStyleEditingDark(editor = null) {
+    if (typeof editor?.__voodbuilderStyleThemeDark === 'boolean') {
+        return editor.__voodbuilderStyleThemeDark;
+    }
+
+    try {
+        const stored = window.localStorage?.getItem('theme');
+
+        if (stored === 'dark') {
+            return true;
+        }
+
+        if (stored === 'light') {
+            return false;
+        }
+    } catch {
+        // Ignore storage failures.
+    }
+
+    try {
+        if (document.documentElement.classList.contains('dark')) {
+            return true;
+        }
+    } catch {
+        // Host document may be unavailable.
+    }
+
+    try {
+        const doc = editor?.Canvas?.getDocument?.();
+
+        if (doc?.documentElement) {
+            return doc.documentElement.classList.contains('dark');
+        }
+    } catch {
+        // Frame may be unavailable during boot.
+    }
+
+    return false;
+}
+
+/**
+ * Pin Style theme to the top-bar toggle (avoids Filament/localStorage races).
+ *
+ * @param {object|null|undefined} editor
+ * @param {boolean} isDark
+ */
+export function setStyleEditingDark(editor, isDark) {
+    if (! editor) {
+        return;
+    }
+
+    editor.__voodbuilderStyleThemeDark = Boolean(isDark);
+}
+
+/**
  * @param {object|null|undefined} editor
  * @returns {''|'md:'|'lg:'}
  */
@@ -71,17 +141,44 @@ export function currentStyleBreakpointPrefix(editor) {
 }
 
 /**
+ * Compose dark: + breakpoint prefix for Style writes/reads.
+ *
+ * @param {{ dark?: boolean, breakpoint?: string }} [options]
+ * @returns {string} e.g. '', 'lg:', 'dark:', 'dark:md:'
+ */
+export function composeVariantPrefix(options = {}) {
+    const dark = Boolean(options.dark);
+    const bp = normalizeBreakpointPrefix(options.breakpoint);
+
+    return dark ? `dark:${bp}` : bp;
+}
+
+/**
+ * Active Style variant prefix from top-bar theme + canvas device.
+ *
+ * @param {object|null|undefined} editor
+ * @returns {string}
+ */
+export function currentStyleVariantPrefix(editor) {
+    return composeVariantPrefix({
+        dark: isStyleEditingDark(editor),
+        breakpoint: currentStyleBreakpointPrefix(editor),
+    });
+}
+
+/**
  * @param {string|null|undefined} prefix
  * @returns {''|'md:'|'lg:'}
  */
 export function normalizeBreakpointPrefix(prefix) {
     const raw = String(prefix ?? '').trim();
+    const withoutDark = raw.startsWith('dark:') ? raw.slice(5) : raw;
 
-    if (raw === 'md:' || raw === 'md') {
+    if (withoutDark === 'md:' || withoutDark === 'md') {
         return 'md:';
     }
 
-    if (raw === 'lg:' || raw === 'lg') {
+    if (withoutDark === 'lg:' || withoutDark === 'lg') {
         return 'lg:';
     }
 
@@ -89,23 +186,43 @@ export function normalizeBreakpointPrefix(prefix) {
 }
 
 /**
- * Read cascade: exact breakpoint → smaller breakpoints → base.
+ * Normalize a full Style variant prefix (theme + breakpoint).
  *
  * @param {string|null|undefined} prefix
- * @returns {Array<''|'md:'|'lg:'>}
+ * @returns {string}
+ */
+export function normalizeVariantPrefix(prefix) {
+    const raw = String(prefix ?? '').trim();
+    const dark = raw === 'dark' || raw === 'dark:' || raw.startsWith('dark:');
+    const bp = normalizeBreakpointPrefix(raw);
+
+    return composeVariantPrefix({ dark, breakpoint: bp });
+}
+
+/**
+ * Read cascade for a variant prefix.
+ * Dark prefers dark:* then falls back to light cascade so selects show inheritance.
+ *
+ * @param {string|null|undefined} prefix
+ * @returns {string[]}
  */
 export function cascadePrefixesFor(prefix) {
-    const bp = normalizeBreakpointPrefix(prefix);
+    const full = normalizeVariantPrefix(prefix);
+    const dark = full.startsWith('dark:');
+    const bp = normalizeBreakpointPrefix(full);
+    const lightCascade = bp === 'lg:'
+        ? ['lg:', 'md:', '']
+        : bp === 'md:'
+            ? ['md:', '']
+            : [''];
 
-    if (bp === 'lg:') {
-        return ['lg:', 'md:', ''];
+    if (! dark) {
+        return lightCascade;
     }
 
-    if (bp === 'md:') {
-        return ['md:', ''];
-    }
+    const darkCascade = lightCascade.map((item) => `dark:${item}`);
 
-    return [''];
+    return [...darkCascade, ...lightCascade];
 }
 
 /**
@@ -117,8 +234,24 @@ export function stripResponsivePrefix(name) {
 }
 
 /**
+ * Strip dark: and responsive prefixes → bare utility.
+ *
+ * @param {string|null|undefined} name
+ * @returns {string}
+ */
+export function stripVariantPrefixes(name) {
+    let next = String(name ?? '').trim();
+
+    if (next.startsWith('dark:')) {
+        next = next.slice(5);
+    }
+
+    return next.replace(RESPONSIVE_VARIANT_PREFIX_RE, '');
+}
+
+/**
  * @param {string|null|undefined} value bare utility (e.g. text-6xl)
- * @param {string|null|undefined} prefix
+ * @param {string|null|undefined} prefix variant prefix (e.g. dark:lg:)
  * @returns {string}
  */
 export function prefixedUtility(value, prefix = '') {
@@ -128,15 +261,15 @@ export function prefixedUtility(value, prefix = '') {
         return '';
     }
 
-    if (RESPONSIVE_VARIANT_PREFIX_RE.test(bare)) {
+    if (stripVariantPrefixes(bare) !== bare) {
         return bare;
     }
 
-    return `${normalizeBreakpointPrefix(prefix)}${bare}`;
+    return `${normalizeVariantPrefix(prefix)}${bare}`;
 }
 
 /**
- * Exact match at one breakpoint (no cascade). Used for compound spacing state.
+ * Exact match at one variant prefix (no cascade).
  *
  * @param {Iterable<string>|string[]} classes
  * @param {Array<{value: string, label?: string}>} options
@@ -144,7 +277,7 @@ export function prefixedUtility(value, prefix = '') {
  * @returns {string}
  */
 export function resolveGroupValueExact(classes, options, prefix = '') {
-    const bp = normalizeBreakpointPrefix(prefix);
+    const bp = normalizeVariantPrefix(prefix);
     const set = new Set(
         [...(classes ?? [])].map((name) => String(name ?? '').trim()).filter(Boolean),
     );
@@ -161,8 +294,7 @@ export function resolveGroupValueExact(classes, options, prefix = '') {
 }
 
 /**
- * Resolve the option value for the active Style breakpoint (with cascade).
- * Returns the bare option value (no prefix) for select binding.
+ * Resolve the option value for the active Style variant (with cascade).
  *
  * @param {Iterable<string>|string[]} classes
  * @param {Array<{value: string, label?: string}>} options
@@ -188,8 +320,7 @@ export function resolveGroupValueAtBreakpoint(classes, options, prefix = '') {
 }
 
 /**
- * Replace one exclusive utility group at a single breakpoint only.
- * Does not touch the same family at other breakpoints.
+ * Replace one exclusive utility group at a single variant prefix only.
  *
  * @param {object|null|undefined} component
  * @param {Set<string>} groupSet bare utility names
@@ -202,7 +333,7 @@ export function replaceClassGroupAtBreakpoint(component, groupSet, nextClass, pr
         return;
     }
 
-    const bp = normalizeBreakpointPrefix(prefix);
+    const bp = normalizeVariantPrefix(prefix);
     const clearSets = [groupSet, ...(options.alsoClear ?? [])];
     const drop = new Set();
 
@@ -245,12 +376,11 @@ export function replaceClassGroupAtBreakpoint(component, groupSet, nextClass, pr
 }
 
 /**
- * Clear (or set on base only) a group across Style-authored breakpoints.
- * Used for mode switches (e.g. exit text gradient) that should not leave orphans.
+ * Clear (or set on light base only) a group across Style-authored variants.
  *
  * @param {object|null|undefined} component
  * @param {Set<string>} groupSet
- * @param {string|null|undefined} nextClass applied only at base when non-empty
+ * @param {string|null|undefined} nextClass applied only at light base when non-empty
  * @param {{ alsoClear?: Iterable<Set<string>> }} [options]
  */
 export function replaceClassGroupAllBreakpoints(component, groupSet, nextClass = null, options = {}) {
@@ -262,14 +392,17 @@ export function replaceClassGroupAllBreakpoints(component, groupSet, nextClass =
         ? null
         : String(nextClass).trim();
 
-    for (const bp of STYLE_BREAKPOINT_PREFIXES) {
-        replaceClassGroupAtBreakpoint(
-            component,
-            groupSet,
-            bp === '' ? next : null,
-            bp,
-            options,
-        );
+    for (const dark of [false, true]) {
+        for (const bp of STYLE_BREAKPOINT_PREFIXES) {
+            const prefix = composeVariantPrefix({ dark, breakpoint: bp });
+            replaceClassGroupAtBreakpoint(
+                component,
+                groupSet,
+                ! dark && bp === '' ? next : null,
+                prefix,
+                options,
+            );
+        }
     }
 }
 

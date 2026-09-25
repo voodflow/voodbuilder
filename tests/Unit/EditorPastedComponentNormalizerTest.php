@@ -353,6 +353,93 @@ CSS;
         $this->assertStringNotContainsString('.voodbuilder-pasted-component .bg-red-200', $resolved);
     }
 
+    public function test_resolve_published_page_css_for_save_reuses_live_canvas_utilities(): void
+    {
+        $html = '<section class="p-4 bg-cyan-400">Hi</section>';
+        $author = '#keep { color: #fff; }';
+        $live = '.p-4 { padding: 1rem; } .bg-cyan-400 { background-color: var(--color-cyan-400); }';
+
+        $resolved = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave(
+            $html,
+            $author,
+            null,
+            null,
+            $live,
+        );
+
+        $this->assertStringContainsString('bg-cyan-400', $resolved);
+        $this->assertStringContainsString('#keep', $resolved);
+        $this->assertStringContainsString('padding', $resolved);
+    }
+
+    public function test_resolve_published_page_css_for_save_reuses_previous_when_classes_unchanged(): void
+    {
+        $html = '<section class="p-4 bg-red-200">Hi</section>';
+        $author = '#keep { color: #fff; }';
+
+        $full = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave($html, $author);
+        $fingerprint = EditorPastedComponentNormalizer::pageUtilityClassFingerprint($html);
+
+        $this->assertStringContainsString('p-4', $full);
+        $this->assertStringContainsString('#keep', $full);
+
+        $reused = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave(
+            '<section class="p-4 bg-red-200">Changed copy only</section>',
+            $author,
+            $full,
+            $fingerprint,
+        );
+
+        $this->assertStringContainsString('padding', $reused);
+        $this->assertStringContainsString('#keep', $reused);
+        $this->assertStringContainsString('bg-red-200', $reused);
+
+        $authorUpdated = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave(
+            '<section class="p-4 bg-red-200">Changed copy only</section>',
+            '#keep { color: #0f0; }',
+            $full,
+            $fingerprint,
+        );
+
+        $this->assertStringContainsString('#keep', $authorUpdated);
+        $this->assertStringContainsString('#0f0', $authorUpdated);
+        $this->assertStringContainsString('bg-red-200', $authorUpdated);
+    }
+
+    public function test_resolve_published_page_css_for_save_recompiles_when_classes_change(): void
+    {
+        $html = '<section class="p-4">Hi</section>';
+        $author = '#keep { color: #fff; }';
+        $full = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave($html, $author);
+        $fingerprint = EditorPastedComponentNormalizer::pageUtilityClassFingerprint($html);
+
+        $resolved = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave(
+            '<section class="p-8 bg-blue-200">Hi</section>',
+            $author,
+            $full,
+            $fingerprint,
+        );
+
+        $this->assertStringContainsString('bg-blue-200', $resolved);
+        $this->assertStringContainsString('#keep', $resolved);
+    }
+
+    public function test_page_utility_class_fingerprint_ignores_text_content(): void
+    {
+        $a = EditorPastedComponentNormalizer::pageUtilityClassFingerprint(
+            '<section class="p-4 text-lg">One</section>',
+        );
+        $b = EditorPastedComponentNormalizer::pageUtilityClassFingerprint(
+            '<section class="p-4 text-lg">Two different words</section>',
+        );
+        $c = EditorPastedComponentNormalizer::pageUtilityClassFingerprint(
+            '<section class="p-8 text-lg">One</section>',
+        );
+
+        $this->assertSame($a, $b);
+        $this->assertNotSame($a, $c);
+    }
+
     public function test_resolve_published_page_css_for_save_skips_recompile_when_utilities_present(): void
     {
         $html = '<section class="p-4">Hi</section>';
@@ -444,6 +531,22 @@ CSS;
         $manual = EditorPastedComponentNormalizer::grapesComposerRulesFromStoredCss($storedCss);
 
         $this->assertStringContainsString('#iabc', $manual);
+        $this->assertStringNotContainsString('bg-blue-200', $manual);
+    }
+
+    public function test_grapes_composer_rules_keep_html_dark_id_wallpaper(): void
+    {
+        $storedCss = <<<'CSS'
+#ilvj { background-image: url(/light.jpg); }
+html.dark #ilvj { background-image: url(/dark.jpg); }
+.bg-blue-200 { background-color: blue; }
+CSS;
+
+        $manual = EditorPastedComponentNormalizer::grapesComposerRulesFromStoredCss($storedCss);
+
+        $this->assertStringContainsString('url(/light.jpg)', $manual);
+        $this->assertStringContainsString('html.dark #ilvj', $manual);
+        $this->assertStringContainsString('url(/dark.jpg)', $manual);
         $this->assertStringNotContainsString('bg-blue-200', $manual);
     }
 

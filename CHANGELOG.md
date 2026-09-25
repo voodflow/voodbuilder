@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-25
+
+First stable release line; rolls up 0.1.167 – 0.1.169 (dual light/dark page wallpaper, theme-aware Style panel, Code block layout).
+
+### Fixed
+
+- Dual page wallpaper: Save keeps light `#id` and dark `html.dark #id` as separate rules (Grapes no longer merges dark into light via `#id, html.dark`); `FontStylesheets` no longer collapses the dark companion into the light rule, so the public page switches photo with the theme
+- Editor canvas preview shows the right wallpaper in both themes and refreshes on Light/Dark toggle: reads the saved author CSS (Grapes `getCss()` drops `html.dark #id`), light reads ignore `html.dark` rules, preview style stays last in the iframe head and the Grapes wrapper is transparent
+
+## [0.1.169] - 2026-09-25
+
+### Fixed
+
+- Code block no longer stretches to the full column height in flex layouts (`self-start` + height auto overrides); Style Manager `h-full` on the inner `<pre>` is stripped, shell children stay non-selectable after Shiki highlight, and trailing blank lines in the source are trimmed so `whitespace-pre-wrap` cannot invent empty space
+
+## [0.1.168] - 2026-09-25
+
+### Added
+
+- Style panel authors `dark:` / `dark:md:` / `dark:lg:` utilities from the top-bar Light/Dark theme (no second Style theme strip); hint shows “Editing: {device} · {theme}”
+- Page wallpaper can differ per theme: light uses `#id`, dark uses `html.dark #id` + `data-vb-style-bg-src-dark`; publish emits `html.dark body::before`
+
+## [0.1.167] - 2026-09-25
+
+### Fixed
+
+- Page wallpaper visible again in the editor canvas (realtime + after reload): inject a canvas `body::before` fixed layer and transparent site/events shells (parity with public publish), and reclaim orphan wrapper `#id` wallpaper rules when Grapes regenerates the wrapper id on reload
+
+### Changed
+
+- Page Style panel shows only Background (color / image / gradient): Dimension, Spacing, Typography, Animation, and Decorations border / rounded / shadow stay hidden while editing the page surface
+- “Page / Page styles” chip removed from the top of Style: infrequent escape hatch is now a quiet footer link (“Page background…”) shown only while an element is selected
+- Page-mode Style sector titled “Page background” (not “Background”); selecting an element after page mode restores Dimension / Typography / … again
+- Opening Style with nothing selected no longer flashes CLASSES / Dimension before Page background (chrome applied synchronously)
+
 ## [0.1.166] - 2026-09-25
 
 ### Fixed

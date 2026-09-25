@@ -100,6 +100,20 @@ class EditorPageSaveTest extends TestCase
         $this->assertStringContainsString('var(--color-vp-bg)', $storedCss);
         $this->assertSame('', $page->builder_payload['js']);
         $this->assertStringContainsString('.bg-vp-bg', (string) $response->json('css'));
+        $this->assertArrayHasKey(\Voodflow\Voodbuilder\Http\Controllers\EditorPageController::SAVE_INPUT_HASH_KEY, $page->builder_payload);
+        $this->assertArrayHasKey(\Voodflow\Voodbuilder\Http\Controllers\EditorPageController::CSS_CLASS_FINGERPRINT_KEY, $page->builder_payload);
+
+        $again = $this->putJson(route('voodbuilder.editor.pages.update', $page), [
+            'html' => '<section>Updated</section>',
+            'css' => '.updated { color: red; }',
+            'project' => ['pages' => []],
+        ]);
+
+        $again->assertOk()->assertJson([
+            'saved' => true,
+            'css_unchanged' => true,
+        ]);
+        $this->assertNull($again->json('css'));
     }
 
     public function test_admin_can_save_editor_component_scripts(): void

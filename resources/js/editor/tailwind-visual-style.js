@@ -932,24 +932,30 @@ export function clearStyleProperty(editor, component, property, options = {}) {
  * Strategy: union(component live, existing #id rule) → write both #id rule and inline
  * so getHtml() and getCss() both carry author styles to the front and through reload.
  */
-export function bakeAuthorStylesToComposerForExport(editor) {
+export function bakeAuthorStylesToComposerForExport(editor, options = {}) {
     const wrapper = editor.getWrapper?.();
+    // Chrome-shell page Save: walk the content slot only — baking the whole
+    // shell (nav/footer) on every click dominated Save time on large layouts.
+    const root = options.root ?? wrapper;
 
-    if (! wrapper || ! editor.Css) {
+    if (! wrapper || ! root || ! editor.Css) {
         return;
     }
 
     // HTML clones reuse .cXXXX — promote every private class onto unique #id
     // rules before baking, with #id/inline winning over shared class paints.
-    promotePrivateStyleClassesToIdRules(editor);
+    promotePrivateStyleClassesToIdRules(editor, options.root ? { root: options.root } : {});
 
     // Nav/footer menu nodes are re-rendered from the CMS on every load — lift
     // typography off ephemeral links onto durable structural CSS selectors.
-    promoteChromeMenuSlotAuthorStyles(editor);
+    // Skip on chrome-shell page Save when baking only the content slot.
+    if (! options.root) {
+        promoteChromeMenuSlotAuthorStyles(editor);
+    }
 
     const seen = new Set();
 
-    wrapper.onAll((component) => {
+    root.onAll((component) => {
         if (seen.has(component.cid)) {
             return;
         }
@@ -1357,18 +1363,19 @@ function getPrivateClassRule(editor, className) {
  * @param {object} editor
  * @returns {number} components updated
  */
-export function promotePrivateStyleClassesToIdRules(editor) {
+export function promotePrivateStyleClassesToIdRules(editor, options = {}) {
     const wrapper = editor?.getWrapper?.();
+    const root = options.root ?? wrapper;
     const css = editor?.Css;
 
-    if (! wrapper?.onAll || ! css) {
+    if (! root?.onAll || ! css) {
         return 0;
     }
 
     let updated = 0;
     const removedClassNames = new Set();
 
-    wrapper.onAll((component) => {
+    root.onAll((component) => {
         const privateNames = normalizeClassNames(component.getClasses?.() ?? [])
             .filter((name) => isComponentPrivateClass(name));
 
@@ -1791,16 +1798,17 @@ export function pruneRedundantSpacingZerosForExport(editor) {
     });
 }
 
-export function syncSpacingStylesForExport(editor) {
+export function syncSpacingStylesForExport(editor, options = {}) {
     const wrapper = editor.getWrapper?.();
+    const root = options.root ?? wrapper;
 
-    if (! wrapper) {
+    if (! root) {
         return;
     }
 
     const seen = new Set();
 
-    wrapper.onAll((component) => {
+    root.onAll((component) => {
         if (seen.has(component.cid)) {
             return;
         }
@@ -3007,16 +3015,17 @@ function applyPaintStyle(component, style) {
     }
 }
 
-export function syncPaintStylesForExport(editor) {
+export function syncPaintStylesForExport(editor, options = {}) {
     const wrapper = editor.getWrapper?.();
+    const root = options.root ?? wrapper;
 
-    if (! wrapper) {
+    if (! root) {
         return;
     }
 
     const seen = new Set();
 
-    wrapper.onAll((component) => {
+    root.onAll((component) => {
         if (seen.has(component.cid)) {
             return;
         }

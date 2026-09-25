@@ -404,18 +404,39 @@ function renderSuggestList(list, suggestions, compiled, onPick) {
     list.hidden = false;
 }
 
-function scheduleClassCompile(editor) {
-    // Only compile when at least one class is missing from live CSS.
+function scheduleClassCompile(editor, tokens = []) {
+    const list = Array.isArray(tokens) ? tokens : [];
+    const uncovered = [];
+
+    for (const token of list) {
+        const name = String(token ?? '').trim().replace(/^\./, '');
+
+        if (name === '' || pageCssCoversClass(editor, name)) {
+            continue;
+        }
+
+        uncovered.push(name);
+    }
+
+    // Paste/replace from another node on the same page is almost always fully covered
+    // by the live JIT sheet — a soft schedule that still hit a stale pendingInvalidate
+    // used to force a multi-second full-page compile-css for nothing.
+    if (uncovered.length === 0) {
+        return false;
+    }
+
     editor.__voodbuilderSchedulePageCssRebuild?.(0);
+
+    return true;
 }
 
 export function addClassesToComponent(editor, component, tokens) {
     if (! component || ! Array.isArray(tokens) || tokens.length === 0) {
-        return 0;
+        return { added: 0, compiling: false };
     }
 
     const existing = new Set(component.getClasses?.() ?? []);
-    let added = 0;
+    const addedTokens = [];
 
     for (const token of tokens) {
         const name = String(token ?? '').trim().replace(/^\./, '');
@@ -424,21 +445,36 @@ export function addClassesToComponent(editor, component, tokens) {
             continue;
         }
 
-        component.addClass(name);
+        addedTokens.push(name);
         existing.add(name);
-        added += 1;
     }
 
-    if (added > 0) {
-        scheduleClassCompile(editor);
+    if (addedTokens.length === 0) {
+        return { added: 0, compiling: false };
     }
 
-    return added;
+    const suspend = editor.__voodbuilderSetCssRebuildSuspended;
+
+    suspend?.(true);
+
+    try {
+        for (const name of addedTokens) {
+            component.addClass(name);
+        }
+    } finally {
+        editor.__voodbuilderFlushCssRebuildOnResume = false;
+        suspend?.(false);
+    }
+
+    return {
+        added: addedTokens.length,
+        compiling: scheduleClassCompile(editor, addedTokens),
+    };
 }
 
 export function replaceClassesOnComponent(editor, component, tokens) {
     if (! component || ! Array.isArray(tokens)) {
-        return 0;
+        return { count: 0, compiling: false };
     }
 
     const next = [];
@@ -451,10 +487,21 @@ export function replaceClassesOnComponent(editor, component, tokens) {
         }
     }
 
-    component.setClass(next);
-    scheduleClassCompile(editor);
+    const suspend = editor.__voodbuilderSetCssRebuildSuspended;
 
-    return next.length;
+    suspend?.(true);
+
+    try {
+        component.setClass(next);
+    } finally {
+        editor.__voodbuilderFlushCssRebuildOnResume = false;
+        suspend?.(false);
+    }
+
+    return {
+        count: next.length,
+        compiling: scheduleClassCompile(editor, next),
+    };
 }
 
 function removeClassFromSelected(editor, className) {
@@ -478,7 +525,7 @@ function removeClassFromSelected(editor, className) {
         selected.removeClass?.(name);
     }
 
-    scheduleClassCompile(editor);
+    scheduleClassCompile(editor, [name]);
 
     return true;
 }
@@ -487,9 +534,11 @@ async function applyPastedClassTokens(editor, selected, tokens, labels) {
     const existing = selected.getClasses?.() ?? [];
 
     if (existing.length === 0) {
-        addClassesToComponent(editor, selected, tokens);
+        const result = addClassesToComponent(editor, selected, tokens);
         showCopyToast(
-            labels.classPasteApplied ?? 'Classes added and compiling…',
+            result.compiling
+                ? (labels.classPasteApplied ?? 'Classes added and compiling…')
+                : (labels.classPasteAppliedReady ?? labels.classPasteApplied ?? 'Classes added'),
             tokens.join(' '),
         );
 
@@ -520,9 +569,11 @@ async function applyPastedClassTokens(editor, selected, tokens, labels) {
     });
 
     if (choice === 'replace') {
-        replaceClassesOnComponent(editor, selected, tokens);
+        const result = replaceClassesOnComponent(editor, selected, tokens);
         showCopyToast(
-            labels.classPasteReplaced ?? 'Classes replaced and compiling…',
+            result.compiling
+                ? (labels.classPasteReplaced ?? 'Classes replaced and compiling…')
+                : (labels.classPasteReplacedReady ?? 'Classes replaced'),
             tokens.join(' '),
         );
 
@@ -530,9 +581,11 @@ async function applyPastedClassTokens(editor, selected, tokens, labels) {
     }
 
     if (choice === 'keep') {
-        addClassesToComponent(editor, selected, tokens);
+        const result = addClassesToComponent(editor, selected, tokens);
         showCopyToast(
-            labels.classPasteApplied ?? 'Classes added and compiling…',
+            result.compiling
+                ? (labels.classPasteApplied ?? 'Classes added and compiling…')
+                : (labels.classPasteAppliedReady ?? labels.classPasteApplied ?? 'Classes added'),
             tokens.join(' '),
         );
     }

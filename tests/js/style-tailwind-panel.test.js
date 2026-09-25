@@ -694,4 +694,34 @@ describe('style viewport breakpoints', () => {
         expect(state.sides.t).toBe('12');
         expect(state.sides.b).toBe('12');
     });
+
+    it('authors dark: variants and cascades dark → light', () => {
+        expect(cascadePrefixesFor('dark:lg:')).toEqual(['dark:lg:', 'dark:md:', 'dark:', 'lg:', 'md:', '']);
+        expect(cascadePrefixesFor('dark:')).toEqual(['dark:', '']);
+
+        const classes = ['text-4xl', 'dark:text-6xl', 'dark:lg:text-7xl'];
+
+        expect(resolveGroupValueAtBreakpoint(classes, FONT_SIZE_OPTIONS, 'dark:')).toBe('text-6xl');
+        expect(resolveGroupValueAtBreakpoint(classes, FONT_SIZE_OPTIONS, 'dark:lg:')).toBe('text-7xl');
+        expect(resolveGroupValueAtBreakpoint(['text-4xl'], FONT_SIZE_OPTIONS, 'dark:md:')).toBe('text-4xl');
+
+        let next = ['text-4xl'];
+        const component = {
+            getClasses: () => [...next],
+            removeClass: (name) => {
+                next = next.filter((item) => item !== name);
+            },
+            addClass: (name) => {
+                if (! next.includes(name)) {
+                    next = [...next, name];
+                }
+            },
+        };
+
+        const fontSet = classSetFromOptions(FONT_SIZE_OPTIONS);
+        replaceClassGroupAtBreakpoint(component, fontSet, 'text-5xl', 'dark:md:');
+
+        expect(next).toContain('text-4xl');
+        expect(next).toContain('dark:md:text-5xl');
+    });
 });

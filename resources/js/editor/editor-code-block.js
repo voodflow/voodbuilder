@@ -16,6 +16,9 @@ const CODE_PROP = 'voodbuilderCodeContent';
 const LANG_PROP = 'voodbuilderCodeLang';
 const LEGACY_CODE_ATTR = 'custom-code-plugin__code';
 const EMPTY_PLACEHOLDER = 'Double-click to add code…';
+const PRE_SHELL_CLASSES = 'm-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]';
+/** Height utilities that make the snippet fill a flex column (Style Manager / paste). */
+const STRETCH_HEIGHT_CLASS_RE = /^(sm:|md:|lg:|xl:|2xl:)?(h|min-h)-(?!auto$)/;
 
 const LANGUAGE_OPTIONS = [
     { id: 'text', name: 'Plain text' },
@@ -38,6 +41,21 @@ function escapeHtml(value) {
         .replace(/"/g, '&quot;');
 }
 
+/**
+ * Keep only the author source: drop leading/trailing blank space that would
+ * render as a tall empty <pre> (whitespace-pre-wrap).
+ */
+export function normalizeCodeContent(code) {
+    return String(code ?? '').replace(/\r\n/g, '\n').trim();
+}
+
+function stripStretchHeightClasses(className) {
+    return String(className ?? '')
+        .split(/\s+/)
+        .filter((cls) => cls !== '' && ! STRETCH_HEIGHT_CLASS_RE.test(cls))
+        .join(' ');
+}
+
 function readLanguageFromElement(element) {
     const codeEl = element.querySelector('code[class*="language-"]');
 
@@ -53,7 +71,7 @@ function readLanguageFromElement(element) {
 function readCodeFromElement(element) {
     const codeEl = element.querySelector('code');
 
-    return codeEl?.textContent ?? '';
+    return normalizeCodeContent(codeEl?.textContent ?? '');
 }
 
 function languageLabel(language) {
@@ -69,23 +87,23 @@ function languageLabel(language) {
 function buildCodeBlockHtml(language, code) {
     const lang = language || 'text';
     const label = languageLabel(lang);
-    const trimmed = String(code ?? '').trim();
+    const trimmed = normalizeCodeContent(code);
     const isEmpty = trimmed === '';
     const escaped = isEmpty
         ? `<span class="vp-code-block__placeholder">${EMPTY_PLACEHOLDER}</span>`
-        : escapeHtml(code);
+        : escapeHtml(trimmed);
 
     return `<div class="vp-code-block__header">
         <span class="vp-code-block__lang">${label}</span>
         <button type="button" class="vp-code-block__copy" data-code-copy data-voodbuilder-skip-cta="true"${isEmpty ? ' disabled' : ''}>Copy</button>
     </div>
     <div class="vp-code-block__body${isEmpty ? ' vp-code-block__body--empty' : ''}">
-        <pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-${lang}">${escaped}</code></pre>
+        <pre class="${PRE_SHELL_CLASSES}"><code class="language-${lang}">${escaped}</code></pre>
     </div>`;
 }
 
 function guessLanguage(code) {
-    const trimmed = String(code ?? '').trim();
+    const trimmed = normalizeCodeContent(code);
 
     if (trimmed === '') {
         return 'text';
@@ -137,7 +155,7 @@ function wireCodeCopyButtons(documentRoot) {
             event.stopPropagation();
 
             const block = button.closest('[data-code-block]');
-            const code = block?.querySelector('code')?.textContent?.trim() ?? '';
+            const code = normalizeCodeContent(block?.querySelector('code')?.textContent ?? '');
 
             if (code === '' || code === EMPTY_PLACEHOLDER) {
                 return;
@@ -165,15 +183,7 @@ function extractHighlightedInnerHtml(html) {
     return block?.innerHTML ?? null;
 }
 
-function renderCodeBlockComponent(component, options = {}) {
-    const language = component.get(LANG_PROP) || 'text';
-    const code = component.get(CODE_PROP) || '';
-    const token = (component._voodbuilderCodeRenderToken ?? 0) + 1;
-    component._voodbuilderCodeRenderToken = token;
-
-    component.components(buildCodeBlockHtml(language, code));
-
-    // Keep chrome (header/copy/pre) out of layers and CTA morph.
+function lockCodeBlockShell(component) {
     const lockShell = (node) => {
         if (! node?.set) {
             return;
@@ -190,11 +200,18 @@ function renderCodeBlockComponent(component, options = {}) {
         }, { silent: true });
 
         const attrs = node.getAttributes?.() ?? {};
-        const isCopy = Object.prototype.hasOwnProperty.call(attrs, 'data-code-copy')
-            || String(attrs.class ?? '').includes('vp-code-block__copy');
+        const nextClass = stripStretchHeightClasses(attrs.class ?? '');
+
+        if (nextClass !== String(attrs.class ?? '')) {
+            node.setAttributes({ ...attrs, class: nextClass }, { silent: true });
+        }
+
+        const refreshed = node.getAttributes?.() ?? {};
+        const isCopy = Object.prototype.hasOwnProperty.call(refreshed, 'data-code-copy')
+            || String(refreshed.class ?? '').includes('vp-code-block__copy');
 
         if (isCopy) {
-            const next = { ...attrs };
+            const next = { ...refreshed };
             delete next['data-voodbuilder-cta'];
             delete next['data-voodbuilder-cta-label'];
             delete next['data-vb-link-type'];
@@ -213,7 +230,31 @@ function renderCodeBlockComponent(component, options = {}) {
         node.components?.()?.forEach?.((child) => lockShell(child));
     };
 
+    const rootAttrs = component.getAttributes?.() ?? {};
+    const rootClass = stripStretchHeightClasses(rootAttrs.class ?? 'vp-code-block voodbuilder-code-block');
+    const withSelfStart = rootClass.split(/\s+/).includes('self-start')
+        ? rootClass
+        : `${rootClass} self-start`.trim();
+
+    if (withSelfStart !== String(rootAttrs.class ?? '')) {
+        component.setAttributes({ ...rootAttrs, class: withSelfStart }, { silent: true });
+    }
+
     component.components?.()?.forEach?.((child) => lockShell(child));
+}
+
+function renderCodeBlockComponent(component, options = {}) {
+    const language = component.get(LANG_PROP) || 'text';
+    const code = normalizeCodeContent(component.get(CODE_PROP) || '');
+    const token = (component._voodbuilderCodeRenderToken ?? 0) + 1;
+    component._voodbuilderCodeRenderToken = token;
+
+    if (code !== String(component.get(CODE_PROP) ?? '')) {
+        component.set(CODE_PROP, code, { silent: true });
+    }
+
+    component.components(buildCodeBlockHtml(language, code));
+    lockCodeBlockShell(component);
 
     const viewEl = component.getView()?.el;
 
@@ -221,10 +262,9 @@ function renderCodeBlockComponent(component, options = {}) {
         wireCodeCopyButtons(viewEl);
     }
 
-    const trimmed = String(code).trim();
     const { codeHighlightUrl, csrf } = options;
 
-    if (! trimmed || ! codeHighlightUrl) {
+    if (! code || ! codeHighlightUrl) {
         return;
     }
 
@@ -257,6 +297,8 @@ function renderCodeBlockComponent(component, options = {}) {
             }
 
             component.components(inner);
+            // Highlight remounts children — re-lock so Style Manager cannot stretch <pre>.
+            lockCodeBlockShell(component);
 
             const highlightedEl = component.getView()?.el;
 
@@ -271,7 +313,7 @@ function renderCodeBlockComponent(component, options = {}) {
 
 function openCodeEditorModal(editor, component) {
     const language = component.get(LANG_PROP) || 'text';
-    const code = component.get(CODE_PROP) || '';
+    const code = normalizeCodeContent(component.get(CODE_PROP) || '');
     const modal = editor.Modal;
 
     modal.setTitle('Edit code');
@@ -298,7 +340,7 @@ function openCodeEditorModal(editor, component) {
     textarea?.focus();
 
     saveButton?.addEventListener('click', () => {
-        const nextCode = textarea?.value ?? '';
+        const nextCode = normalizeCodeContent(textarea?.value ?? '');
         const nextLang = select?.value || guessLanguage(nextCode);
 
         component.set({
@@ -320,14 +362,14 @@ function migrateLegacyCustomCode(editor, render) {
         const legacyCode = component.get(LEGACY_CODE_ATTR)
             ?? component.components().map((child) => child.get('content') ?? '').join('');
 
-        if (! legacyCode?.trim()) {
+        if (! normalizeCodeContent(legacyCode)) {
             continue;
         }
 
         const replacement = editor.Components.createComponent({
             type: 'voodbuilder-code-block',
             [LANG_PROP]: guessLanguage(legacyCode),
-            [CODE_PROP]: legacyCode.trim(),
+            [CODE_PROP]: normalizeCodeContent(legacyCode),
         });
 
         component.replaceWith(replacement);
@@ -342,12 +384,34 @@ function migrateLegacyCustomCode(editor, render) {
             component.set(LANG_PROP, readLanguageFromElement(component.getEl()), { silent: true });
         }
 
-        if (! component.get(CODE_PROP)) {
+        const existing = normalizeCodeContent(component.get(CODE_PROP) || '');
+
+        if (! existing) {
             component.set(CODE_PROP, readCodeFromElement(component.getEl()), { silent: true });
+        } else if (existing !== String(component.get(CODE_PROP) ?? '')) {
+            component.set(CODE_PROP, existing, { silent: true });
         }
 
         renderCodeBlockComponent(component, render.options);
     });
+}
+
+function selectCodeBlockRootIfShellChild(editor, component) {
+    if (! component || component.get?.('type') === 'voodbuilder-code-block') {
+        return;
+    }
+
+    let current = component.parent?.();
+
+    while (current) {
+        if (current.get?.('type') === 'voodbuilder-code-block') {
+            editor.select(current);
+
+            return;
+        }
+
+        current = current.parent?.();
+    }
 }
 
 export function configureEditorCodeBlock(editor, options = {}) {
@@ -385,7 +449,7 @@ export function configureEditorCodeBlock(editor, options = {}) {
                 droppable: false,
                 editable: false,
                 attributes: {
-                    class: 'vp-code-block voodbuilder-code-block',
+                    class: 'vp-code-block voodbuilder-code-block self-start',
                     'data-code-block': '',
                     'data-line-numbers': '',
                     'data-voodbuilder-code': '',
@@ -417,6 +481,8 @@ export function configureEditorCodeBlock(editor, options = {}) {
                         [LANG_PROP]: readLanguageFromElement(this.getEl()),
                         [CODE_PROP]: readCodeFromElement(this.getEl()),
                     }, { silent: true });
+                } else if (this.get(CODE_PROP)) {
+                    this.set(CODE_PROP, normalizeCodeContent(this.get(CODE_PROP)), { silent: true });
                 }
 
                 render(this);
@@ -453,7 +519,10 @@ export function configureEditorCodeBlock(editor, options = {}) {
     });
 
     editor.on('component:selected', (component) => {
+        selectCodeBlockRootIfShellChild(editor, component);
+
         if (component?.get('type') === 'voodbuilder-code-block') {
+            lockCodeBlockShell(component);
             const viewEl = component.getView()?.el;
 
             if (viewEl) {
@@ -502,4 +571,3 @@ export function registerCodeBlockTile(editor) {
 export function registerCompanionCodeBlock(editor) {
     registerCodeBlockTile(editor);
 }
-

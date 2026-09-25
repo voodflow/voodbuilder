@@ -44,8 +44,9 @@ final class MarkdownCodeBlocks
     public static function fromPlainCode(string $language, string $code): string
     {
         $language = self::normalizeLanguage($language);
+        $code = self::normalizeSource($code);
 
-        if (trim($code) !== '' && self::codeHighlightingEnabled()) {
+        if ($code !== '' && self::codeHighlightingEnabled()) {
             return self::toHighlightedHtml($language, $code);
         }
 
@@ -58,11 +59,20 @@ final class MarkdownCodeBlocks
     public static function toHighlightedHtml(string $language, string $code): string
     {
         $language = self::normalizeLanguage($language);
+        $code = self::normalizeSource($code);
         $markdown = "```{$language}\n{$code}\n```";
         $markdown = self::normalizeFencedCodeBlocks($markdown);
         $html = app(MarkdownRenderer::class)->toHtml($markdown);
 
         return self::enhance($html, $markdown);
+    }
+
+    /**
+     * Drop leading/trailing blank lines so whitespace-pre-wrap does not grow the shell.
+     */
+    public static function normalizeSource(string $code): string
+    {
+        return trim(str_replace("\r\n", "\n", $code));
     }
 
     public static function enhance(string $html, ?string $markdown = null): string
@@ -185,7 +195,7 @@ final class MarkdownCodeBlocks
             : '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e($language).'">'.$body.'</code></pre>';
 
         return <<<HTML
-<div class="vp-code-block" data-code-block data-line-numbers>
+<div class="vp-code-block self-start" data-code-block data-line-numbers>
     <div class="vp-code-block__header">
         <span class="vp-code-block__lang">{$label}</span>
         <button type="button" class="vp-code-block__copy" data-code-copy data-voodbuilder-skip-cta="true">Copy</button>

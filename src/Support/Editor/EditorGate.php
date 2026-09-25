@@ -484,11 +484,13 @@ final class EditorGate
             'classCopyAllEmpty' => __('voodbuilder::pro.editor_ui.class_copy_all_empty'),
             'classPasteHint' => __('voodbuilder::pro.editor_ui.class_paste_hint'),
             'classPasteApplied' => __('voodbuilder::pro.editor_ui.class_paste_applied'),
+            'classPasteAppliedReady' => __('voodbuilder::pro.editor_ui.class_paste_applied_ready'),
             'classPasteTitle' => __('voodbuilder::pro.editor_ui.class_paste_title'),
             'classPasteConflict' => __('voodbuilder::pro.editor_ui.class_paste_conflict'),
             'classPasteKeep' => __('voodbuilder::pro.editor_ui.class_paste_keep'),
             'classPasteReplace' => __('voodbuilder::pro.editor_ui.class_paste_replace'),
             'classPasteReplaced' => __('voodbuilder::pro.editor_ui.class_paste_replaced'),
+            'classPasteReplacedReady' => __('voodbuilder::pro.editor_ui.class_paste_replaced_ready'),
             'classAnimationTitle' => __('voodbuilder::pro.editor_ui.class_animation_title'),
             'classAnimationAdd' => __('voodbuilder::pro.editor_ui.class_animation_add'),
             'classAnimationType' => __('voodbuilder::pro.editor_ui.class_animation_type'),
@@ -542,6 +544,7 @@ final class EditorGate
             'classStyleBackground' => __('voodbuilder::pro.editor_ui.class_style_background'),
             'pageSurfaceLabel' => __('voodbuilder::pro.editor_ui.page_surface_label'),
             'pageSurfaceSwitch' => __('voodbuilder::pro.editor_ui.page_surface_switch'),
+            'pageSurfaceSector' => __('voodbuilder::pro.editor_ui.page_surface_sector'),
             'pageSurfaceHint' => __('voodbuilder::pro.editor_ui.page_surface_hint'),
             'classStyleBackgroundColor' => __('voodbuilder::pro.editor_ui.class_style_background_color'),
             'classStyleBackgroundColorOpacity' => __('voodbuilder::pro.editor_ui.class_style_background_color_opacity'),
@@ -646,6 +649,8 @@ final class EditorGate
             'classStyleViewportCascade' => __('voodbuilder::pro.editor_ui.class_style_viewport_cascade'),
             'classStyleViewportInherited' => __('voodbuilder::pro.editor_ui.class_style_viewport_inherited'),
             'classStyleViewportAria' => __('voodbuilder::pro.editor_ui.class_style_viewport_aria'),
+            'classStyleThemeLight' => __('voodbuilder::pro.editor_ui.class_style_theme_light'),
+            'classStyleThemeDark' => __('voodbuilder::pro.editor_ui.class_style_theme_dark'),
             'undo' => __('voodbuilder::pro.editor_ui.undo'),
             'redo' => __('voodbuilder::pro.editor_ui.redo'),
             'outline' => __('voodbuilder::pro.editor_ui.outline'),
@@ -1191,10 +1196,15 @@ final class EditorGate
 
     /**
      * @param  array{html?: string, css?: string, js?: string, project?: mixed}  $payload
-     * @return array{html: string, css: string, js: string, project: mixed, fonts: list<string>}
+     * @return array{html: string, css: string, js: string, project: mixed, fonts: list<string>, css_class_fingerprint?: string}
      */
-    public static function normalizePayload(array $payload, bool $recompilePageCss = false): array
-    {
+    public static function normalizePayload(
+        array $payload,
+        bool $recompilePageCss = false,
+        ?string $previousFullCss = null,
+        ?string $previousClassFingerprint = null,
+        ?string $liveUtilitiesCss = null,
+    ): array {
         $html = EditorHtmlSanitizer::sanitize((string) ($payload['html'] ?? ''));
         $html = EditorHtmlSanitizer::stripOrphanPageContentText($html);
         // Drop data-gjs-* before editor reload/save. Stale props (e.g. corrupted
@@ -1227,12 +1237,18 @@ final class EditorGate
         );
 
         $resolvedCss = $recompilePageCss
-            ? EditorPastedComponentNormalizer::resolvePublishedPageCssForSave($migratedHtml, $css)
+            ? EditorPastedComponentNormalizer::resolvePublishedPageCssForSave(
+                $migratedHtml,
+                $css,
+                $previousFullCss,
+                $previousClassFingerprint,
+                $liveUtilitiesCss,
+            )
             : EditorPastedComponentNormalizer::resolvePublishedPageCss($migratedHtml, $css);
 
         $resolvedCss = ThemePalette::stripEmbeddedPaletteOverrides($resolvedCss);
 
-        return FontStylesheets::withDetectedFonts([
+        $normalized = FontStylesheets::withDetectedFonts([
             'html' => $migratedHtml,
             'css' => $resolvedCss,
             'js' => EditorJsSanitizer::sanitize($js),
@@ -1240,6 +1256,14 @@ final class EditorGate
                 ? VoodbuilderThemeTokenMigrator::migrateProject($project)
                 : $project,
         ]);
+
+        if ($recompilePageCss) {
+            $normalized['css_class_fingerprint'] = EditorPastedComponentNormalizer::pageUtilityClassFingerprint(
+                $normalized['html'],
+            );
+        }
+
+        return $normalized;
     }
 
     /**

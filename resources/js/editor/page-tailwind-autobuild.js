@@ -762,15 +762,14 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             return;
         }
 
-        if (pendingInvalidate) {
-            schedule(delay);
-
+        // Soft schedule must not promote a stale pendingInvalidate into a full
+        // compile when every page utility is already covered (paste/replace of
+        // classes copied from another node on the same page).
+        if (! classSetNeedsCompile(currentPageClassSet())) {
             return;
         }
 
-        if (classSetNeedsCompile(currentPageClassSet())) {
-            schedule(delay);
-        }
+        schedule(delay);
     };
 
     const beginDragLock = () => {

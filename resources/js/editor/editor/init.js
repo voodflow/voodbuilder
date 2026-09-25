@@ -239,6 +239,9 @@ function applyInitialContent(editor, initial, options = {}) {
 
     if (initial.css) {
         editor.setStyle(initial.css);
+        // Keep the raw author sheet for page wallpaper hydrate — Grapes setStyle
+        // mangles `html.dark #id` (selectorsAdd), so getCss() cannot restore dark.
+        editor.__voodbuilderAuthorPageCss = String(initial.css);
         // CssComposer alone does not reliably paint Tailwind utilities in the iframe.
         // Seed the live JIT sheet immediately so reload matches the saved frontend CSS.
         if (typeof editor.__voodbuilderApplyPageLiveCss === 'function') {
@@ -424,6 +427,8 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
         const prefersDark = resolveDark(isDark);
         const root = doc.documentElement;
 
+        editor.__voodbuilderStyleThemeDark = Boolean(prefersDark);
+
         // Re-stamp `.dark` even when already set so late-inserted Grapes nodes
         // pick up html.dark custom properties without a manual theme toggle.
         if (prefersDark) {
@@ -443,6 +448,17 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
 
         ensureChromeLayoutStyle(doc);
         ensurePaletteStyle(doc);
+
+        try {
+            // Wallpaper ::before must refresh when html.dark toggles.
+            const sync = editor.__voodbuilderSyncPageSurfaceWallpaper;
+
+            if (typeof sync === 'function') {
+                sync(editor);
+            }
+        } catch {
+            // Optional — Style panel wires this after mount.
+        }
     };
 
     editor.__voodbuilderApplyCanvasTheme = apply;
@@ -1015,9 +1031,10 @@ export function initVoodbuilderEditor(container, options = {}) {
     });
     registerPageSurfaceStyles(editor, {
         pageSurfaceLabel: labels.pageSurfaceLabel ?? labels.classStylePage ?? 'Page',
-        pageSurfaceSwitch: labels.pageSurfaceSwitch ?? labels.pageSurfaceLabel ?? 'Page styles',
+        pageSurfaceSwitch: labels.pageSurfaceSwitch ?? 'Page background…',
+        pageSurfaceSector: labels.pageSurfaceSector ?? 'Page background',
         pageSurfaceHint: labels.pageSurfaceHint
-            ?? 'Background and base styles for the whole page (not a single block).',
+            ?? 'Background for the whole page (not the selected element).',
     });
     registerJoditImageEditor(editor, {
         enabled: options.imageEditor !== false,
@@ -2473,7 +2490,9 @@ function mountFrontendEditor() {
         config.labels ?? {},
     );
 
+    editor.__voodbuilderPageSaveClean = true;
     editor.__voodbuilderMarkPageUnsaved = () => {
+        editor.__voodbuilderPageSaveClean = false;
         saveStatus.unsaved();
     };
 
@@ -2491,9 +2510,49 @@ function mountFrontendEditor() {
                 return;
             }
 
+            if (editor.__voodbuilderTrackSaveDirty === false) {
+                return;
+            }
+
+            editor.__voodbuilderPageSaveClean = false;
             saveStatus.unsaved();
         },
     });
+
+    // Boot/chrome refresh fires Grapes `update` constantly — ignore until canvas is ready
+    // or an unchanged Save after refresh still walks the heavy mutate path (~2s).
+    editor.__voodbuilderTrackSaveDirty = false;
+    editor.on('update', () => {
+        if (editor.__voodbuilderTrackSaveDirty === false) {
+            return;
+        }
+
+        editor.__voodbuilderPageSaveClean = false;
+    });
+
+    const hashSavePayload = (payload) => {
+        const html = String(payload?.html ?? '');
+        const css = String(payload?.css ?? '');
+        const js = String(payload?.js ?? '');
+        let hash = 2166136261;
+
+        const feed = (value) => {
+            for (let index = 0; index < value.length; index += 1) {
+                hash ^= value.charCodeAt(index);
+                hash = Math.imul(hash, 16777619);
+            }
+
+            hash ^= value.length;
+        };
+
+        feed(html);
+        feed('\0');
+        feed(css);
+        feed('\0');
+        feed(js);
+
+        return (hash >>> 0).toString(16);
+    };
 
     if (autosave) {
         // Only once the canvas actually holds the saved page: the draft is compared
@@ -2501,8 +2560,40 @@ function mountFrontendEditor() {
         // blank canvas asks about work the author cannot see.
         void Promise.resolve(editor.__voodbuilderCanvasReady)
             .then(() => autosave.recover())
+            .then(() => {
+                try {
+                    const baseline = buildPayload(editor, { mutate: false });
+                    editor.__voodbuilderLastSavePayloadHash = hashSavePayload(baseline);
+                    editor.__voodbuilderPageSaveClean = true;
+                } catch (error) {
+                    console.warn('VoodBuilder: could not seed save baseline.', error);
+                }
+
+                window.setTimeout(() => {
+                    editor.__voodbuilderTrackSaveDirty = true;
+                }, 400);
+            })
             .catch((error) => {
+                editor.__voodbuilderTrackSaveDirty = true;
                 console.warn('VoodBuilder autosave: recovery check failed.', error);
+            });
+    } else {
+        void Promise.resolve(editor.__voodbuilderCanvasReady)
+            .then(() => {
+                try {
+                    const baseline = buildPayload(editor, { mutate: false });
+                    editor.__voodbuilderLastSavePayloadHash = hashSavePayload(baseline);
+                    editor.__voodbuilderPageSaveClean = true;
+                } catch {
+                    // Ignore.
+                }
+
+                window.setTimeout(() => {
+                    editor.__voodbuilderTrackSaveDirty = true;
+                }, 400);
+            })
+            .catch(() => {
+                editor.__voodbuilderTrackSaveDirty = true;
             });
     }
 
@@ -2546,8 +2637,7 @@ function mountFrontendEditor() {
 
         try {
             // Do NOT wait for canvas Tailwind JIT here. Save only ships author #id CSS;
-            // the server recompiles utilities. Waiting used to park Save on
-            // "Compiling styles…" for up to 20s whenever a rebuild was queued.
+            // live_css carries canvas JIT so the server can skip Node when classes are new.
             setSaveLabel(savingLabel);
             saveStatus.saving();
             await yieldToBrowser();
@@ -2555,13 +2645,39 @@ function mountFrontendEditor() {
             let payload;
 
             try {
-                payload = buildPayload(editor);
+                // Clean re-Save: skip bake/purge (read-only snapshot) — still compare hash.
+                // Dirty Save: light mutate (bake scoped + HTML/CSS only) — full syncs are
+                // for template apply / rare structural repairs, not every color click.
+                const useReadonly = editor.__voodbuilderPageSaveClean === true
+                    && Boolean(editor.__voodbuilderLastSavePayloadHash);
+
+                payload = buildPayload(editor, {
+                    mutate: ! useReadonly,
+                    light: true,
+                });
             } catch (buildError) {
                 console.error('VoodBuilder buildPayload failed', buildError);
                 throw buildError;
             }
 
-            await yieldToBrowser();
+            const payloadHash = hashSavePayload(payload);
+
+            // Keep raw author CSS (incl. html.dark #id wallpaper) for canvas hydrate.
+            if (typeof payload?.css === 'string' && payload.css.trim() !== '') {
+                editor.__voodbuilderAuthorPageCss = payload.css;
+            }
+
+            if (
+                payloadHash
+                && payloadHash === editor.__voodbuilderLastSavePayloadHash
+                && ! config.popupMode
+            ) {
+                autosave?.markSaved();
+                saveStatus.saved();
+                editor.__voodbuilderPageSaveClean = true;
+
+                return true;
+            }
 
             const saveUrl = resolveSaveUrl(config);
             const response = await persistPagePayload(
@@ -2597,7 +2713,9 @@ function mountFrontendEditor() {
 
             const saved = await response.json().catch(() => ({}));
 
-            if (typeof saved?.css === 'string' && saved.css.trim() !== '') {
+            if (saved?.css_unchanged === true) {
+                // Server reused the published sheet — keep the live canvas CSS as-is.
+            } else if (typeof saved?.css === 'string' && saved.css.trim() !== '') {
                 editor.__voodbuilderApplyPageLiveCss?.(stripAuthorIdRules(saved.css));
                 void prefetchFontsFromCss(editor, saved.css);
             } else {
@@ -2605,12 +2723,15 @@ function mountFrontendEditor() {
                     ?? editor.__voodbuilderSchedulePageCssRebuild?.(0);
             }
 
+            editor.__voodbuilderLastSavePayloadHash = payloadHash;
+            editor.__voodbuilderPageSaveClean = true;
             autosave?.markSaved();
             saveStatus.saved();
 
             return true;
         } catch (error) {
             saveStatus.unsaved();
+            editor.__voodbuilderPageSaveClean = false;
 
             console.error('VoodBuilder page save failed', error);
 

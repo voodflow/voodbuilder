@@ -84,17 +84,27 @@ final class EditorComponentTailwindCompiler
         return dirname(__DIR__, 3).'/scripts/compile-component-tailwind.mjs';
     }
 
+    protected static ?string $resolvedNodeBinary = null;
+
+    protected static bool $nodeBinaryResolved = false;
+
     protected static function resolveNodeBinary(): ?string
     {
+        if (self::$nodeBinaryResolved) {
+            return self::$resolvedNodeBinary;
+        }
+
+        self::$nodeBinaryResolved = true;
+
         foreach (['node', 'nodejs'] as $candidate) {
             $probe = Process::run([$candidate, '--version']);
 
             if ($probe->successful()) {
-                return $candidate;
+                return self::$resolvedNodeBinary = $candidate;
             }
         }
 
-        return null;
+        return self::$resolvedNodeBinary = null;
     }
 
     /**

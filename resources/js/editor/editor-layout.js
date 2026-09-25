@@ -1099,22 +1099,42 @@ function syncChromeLayoutStylePanel(editor, mounts) {
 
     const selected = editor.getSelected?.();
     // Empty canvas / Cmd+click deselect → Style edits the page (no empty-state).
-    // Locked chrome keeps its notice; compact “Page styles” switch is the escape hatch.
+    // Locked chrome keeps its notice; footer “Page background…” is the escape hatch.
     const targetingPage = isTargetingPageSurface(editor);
     const noticeText = targetingPage
         ? null
         : inspectorSelectionNotice(selected, editor, labels);
     const hideControls = noticeText !== null;
-    const styleMounts = [mounts.selectors, mounts.styles].filter(Boolean);
 
-    styleMounts.forEach((el) => {
-        el.hidden = hideControls;
-        const sector = el.closest?.('.voodbuilder-editor-inspector-sector');
-
-        if (sector) {
-            sector.hidden = hideControls;
+    // Apply page-surface chrome *before* the Style panel paints — otherwise CLASSES /
+    // Dimension flash for a frame when opening Style with nothing selected.
+    if (! hideControls && targetingPage) {
+        try {
+            editor.__voodbuilderSyncPageSurfaceStyleChrome?.();
+        } catch {
+            // Style panel may not be registered yet.
         }
-    });
+    }
+
+    if (mounts.styles) {
+        mounts.styles.hidden = hideControls;
+        const stylesSector = mounts.styles.closest?.('.voodbuilder-editor-inspector-sector');
+
+        if (stylesSector) {
+            stylesSector.hidden = hideControls;
+        }
+    }
+
+    // Classes are element-only — hide immediately in page mode (no flash).
+    if (mounts.selectors) {
+        const hideSelectors = hideControls || targetingPage;
+        mounts.selectors.hidden = hideSelectors;
+        const selectorsSector = mounts.selectors.closest?.('.voodbuilder-editor-inspector-sector');
+
+        if (selectorsSector) {
+            selectorsSector.hidden = hideSelectors;
+        }
+    }
 
     let notice = panel.querySelector('[data-voodbuilder-chrome-layout-notice]');
 
@@ -1127,6 +1147,8 @@ function syncChromeLayoutStylePanel(editor, mounts) {
 
         if (targetingPage) {
             try {
+                // Sync chrome again after mounts are visible (still sync — no rAF).
+                editor.__voodbuilderSyncPageSurfaceStyleChrome?.();
                 editor.trigger?.('voodbuilder:page-surface-focus');
             } catch {
                 // Style panel may not be mounted yet.
@@ -1145,12 +1167,12 @@ function syncChromeLayoutStylePanel(editor, mounts) {
     notice.hidden = false;
     notice.className = 'voodbuilder-editor-inspector-empty-state voodbuilder-editor-chrome-layout-notice';
     notice.textContent = noticeText;
-    // Compact switch after the notice (not a persistent full-width card).
+    // Compact switch after the notice (footer link — not a persistent top card).
     ensurePageSurfaceAction(editor, panel, labels);
     const pageAction = panel.querySelector('[data-voodbuilder-page-surface-action]');
 
-    if (pageAction && notice.nextSibling !== pageAction) {
-        notice.after(pageAction);
+    if (pageAction && notice.parentElement === panel) {
+        panel.appendChild(pageAction);
     }
 }
 

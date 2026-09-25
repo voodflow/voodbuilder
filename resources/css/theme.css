@@ -982,8 +982,13 @@
     }
 
     .vp-code-block {
-        @apply my-4 h-auto max-h-none w-full max-w-full min-w-0 overflow-visible rounded-lg border border-vp-divider font-mono;
+        @apply my-4 h-auto max-h-none w-full max-w-full min-w-0 self-start overflow-visible rounded-lg border border-vp-divider font-mono;
         background-color: var(--color-vp-code-bg);
+        /* Flex columns stretch children by default — keep the shell content-sized. */
+        align-self: flex-start;
+        height: auto !important;
+        min-height: 0 !important;
+        flex: none;
     }
 
     .vp-code-block__header {
@@ -1009,6 +1014,9 @@
 
     .vp-code-block__body {
         @apply h-auto max-h-none overflow-visible px-3.5 py-2.5;
+        height: auto !important;
+        min-height: 0 !important;
+        flex: none;
     }
 
     .vp-code-block pre.shiki,
@@ -1018,11 +1026,17 @@
         white-space: pre-wrap;
         overflow-wrap: anywhere;
         word-break: break-word;
+        /* Accidental Style Manager h-full must not stretch the snippet. */
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
     }
 
     .vp-code-block pre.shiki code {
         @apply block h-auto max-h-none max-w-none min-w-0 overflow-visible bg-transparent text-[13.5px] leading-snug;
         counter-reset: vp-line;
+        height: auto !important;
+        min-height: 0 !important;
     }
 
     .vp-code-block .line {

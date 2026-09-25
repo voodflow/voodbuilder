@@ -272,22 +272,29 @@ final class FontStylesheets
         foreach ($inlineFonts as $id => $stack) {
             $pattern = '/#'.preg_quote($id, '/').'(?![\w-])\s*\{([^{}]*)\}/';
             $replaced = false;
-            $css = (string) preg_replace_callback(
-                $pattern,
-                static function (array $m) use ($id, $stack, &$replaced): string {
+
+            if (preg_match_all($pattern, $css, $idMatches, PREG_OFFSET_CAPTURE) > 0) {
+                // Walk from the end so offsets stay valid while splicing.
+                for ($i = count($idMatches[0]) - 1; $i >= 0; $i--) {
+                    $full = $idMatches[0][$i][0];
+                    $offset = (int) $idMatches[0][$i][1];
+                    $body = $idMatches[1][$i][0];
+
+                    if (self::isHtmlDarkPrefixedIdRule($css, $offset)) {
+                        continue;
+                    }
+
                     if ($replaced) {
-                        return $m[0];
+                        continue;
                     }
 
                     $replaced = true;
-                    $body = trim($m[1]);
-                    $withoutFont = trim((string) preg_replace('/(?:^|;)\s*font-family\s*:[^;]*/i', '', $body), '; ');
+                    $withoutFont = trim((string) preg_replace('/(?:^|;)\s*font-family\s*:[^;]*/i', '', trim($body)), '; ');
                     $next = ($withoutFont !== '' ? $withoutFont.'; ' : '').'font-family: '.$stack;
-
-                    return '#'.$id.' {'.$next.';}';
-                },
-                $css,
-            );
+                    $replacement = '#'.$id.' {'.$next.';}';
+                    $css = substr($css, 0, $offset).$replacement.substr($css, $offset + strlen($full));
+                }
+            }
 
             if (! $replaced) {
                 $css = '#'.$id.' {font-family: '.$stack.';}'."\n".$css;
@@ -447,6 +454,10 @@ final class FontStylesheets
     /**
      * Merge repeated `#id { … }` rules so later declarations win per property.
      * Leaves class/utility rules untouched.
+     *
+     * Never touches `html.dark #id` (page dark wallpaper): matching bare `#id`
+     * inside that selector used to leave a dangling `html.dark` and merge the
+     * dark photo into the light `#id` rule on Save.
      */
     public static function collapseDuplicateIdRules(string $css): string
     {
@@ -464,9 +475,13 @@ final class FontStylesheets
 
         for ($i = 0; $i < $count; $i++) {
             $full = $matches[0][$i][0];
-            $offset = $matches[0][$i][1];
+            $offset = (int) $matches[0][$i][1];
             $id = $matches[1][$i][0];
             $body = $matches[2][$i][0];
+
+            if (self::isHtmlDarkPrefixedIdRule($css, $offset)) {
+                continue;
+            }
 
             if (! isset($byId[$id])) {
                 $byId[$id] = [
@@ -524,6 +539,20 @@ final class FontStylesheets
         }
 
         return trim((string) preg_replace("/\n{3,}/", "\n\n", $result));
+    }
+
+    /**
+     * True when `#id {…}` at $offset is the id part of `html.dark #id {…}`.
+     */
+    private static function isHtmlDarkPrefixedIdRule(string $css, int $offset): bool
+    {
+        if ($offset <= 0) {
+            return false;
+        }
+
+        $before = substr($css, max(0, $offset - 24), min(24, $offset));
+
+        return (bool) preg_match('/html\.dark\s*$/i', $before);
     }
 
     /**

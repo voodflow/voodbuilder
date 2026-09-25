@@ -747,6 +747,40 @@ describe('theme-tokens background clear', () => {
         expect(merged).toContain('.flex {display:flex}');
     });
 
+    it('mergeAuthorCssChunks keeps both light #id and html.dark #id wallpaper', async () => {
+        const { mergeAuthorCssChunks } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const merged = mergeAuthorCssChunks([
+            '#wrap {background-image:url(/light.jpg);background-size:cover}',
+            'html.dark #wrap {background-image:url(/dark.jpg);background-size:cover}',
+            '#wrap {background-image:url(/dup.jpg)}',
+        ]);
+
+        expect(merged).toContain('url(/light.jpg)');
+        expect(merged).toContain('html.dark #wrap');
+        expect(merged).toContain('url(/dark.jpg)');
+        expect(merged).not.toContain('url(/dup.jpg)');
+    });
+
+    it('extractBareIdAuthorCss keeps html.dark #id rules', async () => {
+        const { extractBareIdAuthorCss } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+
+        const extracted = extractBareIdAuthorCss(`
+#wrap { background-image: url(/l.jpg); background-size: cover }
+html.dark #wrap { background-image: url(/d.jpg); background-size: cover }
+.keep-bem { color: red }
+`);
+
+        expect(extracted).toContain('#wrap');
+        expect(extracted).toContain('html.dark #wrap');
+        expect(extracted).toContain('url(/d.jpg)');
+        expect(extracted).not.toContain('.keep-bem');
+    });
+
     it('stripAuthorIdRules removes #id but keeps utilities', async () => {
         const { stripAuthorIdRules } = await import(
             '../../resources/js/editor/editor/payload.js'

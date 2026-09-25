@@ -268,21 +268,167 @@ final class EditorPastedComponentNormalizer
     }
 
     /**
-     * Save path: always compile utilities from HTML and merge with author/manual rules.
+     * Save path: compile utilities from HTML and merge with author/manual rules.
      *
      * The editor Save JSON ships author CSS only (Style Manager / #id) so shared hosts
      * stay under body-size limits. Theme-covered classes (e.g. `bg-vp-*`) are skipped by
      * {@see htmlHasTailwindUtilitiesMissingFromCss()}, so the smart publish resolve would
-     * incorrectly keep an author-only sheet. Compiling here is the durable fix.
+     * incorrectly keep an author-only sheet.
+     *
+     * When the previous published sheet + class fingerprint are provided and utility
+     * classes are unchanged, Node JIT is skipped and the prior utilities are reused
+     * (author #id rules may still be re-merged).
+     *
+     * When the canvas already has a live JIT sheet that covers page utilities (e.g. the
+     * author just added `bg-cyan-400` and saw it immediately), that sheet is reused
+     * instead of spawning Node again.
      */
-    public static function resolvePublishedPageCssForSave(string $html, ?string $storedCss): string
+    public static function resolvePublishedPageCssForSave(
+        string $html,
+        ?string $storedCss,
+        ?string $previousFullCss = null,
+        ?string $previousClassFingerprint = null,
+        ?string $liveUtilitiesCss = null,
+    ): string {
+        $pageHtml = EditorComponentPageHtml::htmlForPageTailwindCompile($html);
+        $authorCss = self::manualPageCssFromStoredCss($storedCss);
+        $fingerprint = self::pageUtilityClassFingerprint($html);
+        $previousFullCss = trim((string) $previousFullCss);
+        $liveUtilitiesCss = trim((string) $liveUtilitiesCss);
+
+        if (
+            $previousFullCss !== ''
+            && is_string($previousClassFingerprint)
+            && $previousClassFingerprint !== ''
+            && hash_equals($previousClassFingerprint, $fingerprint)
+            && ! self::storedCssIsCorrupted($previousFullCss)
+            && ! self::pageCssIncludesTailwindPreflight($previousFullCss)
+            && ! self::pageCssMissingThemeVariables($previousFullCss)
+        ) {
+            $previousAuthor = self::manualPageCssFromStoredCss($previousFullCss);
+
+            if ($authorCss === $previousAuthor) {
+                return EditorCssSanitizer::sanitize(
+                    VoodbuilderThemeTokenMigrator::migratePublishedPageCss(
+                        self::stripTailwindPreflightFromPageCss($previousFullCss),
+                    ),
+                );
+            }
+
+            $utilities = self::utilitiesCssFromPublishedPageCss($previousFullCss);
+
+            if ($utilities !== '') {
+                return self::finalizePublishedPageCss($authorCss, $utilities);
+            }
+        }
+
+        if ($liveUtilitiesCss !== '') {
+            $liveClean = self::stripTailwindPreflightFromPageCss(
+                self::stripPublishedPageCssRuntimeStyles($liveUtilitiesCss),
+            );
+            $previousClean = $previousFullCss !== ''
+                ? self::stripTailwindPreflightFromPageCss(
+                    self::stripPublishedPageCssRuntimeStyles($previousFullCss),
+                )
+                : '';
+            // Coverage against the raw sheets (not utilitiesCssFromPublishedPageCss): that
+            // helper drops valid TW rules whose selectors include :focus / escaped `:` etc.
+            $coverageCss = trim($previousClean."\n".$liveClean);
+
+            if (
+                $coverageCss !== ''
+                && ! self::storedCssIsCorrupted($coverageCss)
+                && ! self::pageCssIncludesTailwindPreflight($coverageCss)
+                && ! self::htmlHasTailwindUtilitiesMissingFromCss($pageHtml, $coverageCss)
+            ) {
+                $mergedUtilities = trim((string) self::mergeCss(
+                    $previousClean !== '' ? $previousClean : null,
+                    $liveClean !== '' ? $liveClean : null,
+                ));
+
+                return self::finalizePublishedPageCss($authorCss, $mergedUtilities);
+            }
+        }
+
+        return self::compileAndMergePublishedPageCss($pageHtml, $authorCss);
+    }
+
+    /**
+     * Stable hash of Tailwind class tokens on the page (ignores text / structure).
+     *
+     * Used to skip Node JIT on Save when utilities cannot have changed.
+     */
+    public static function pageUtilityClassFingerprint(string $html): string
     {
         $pageHtml = EditorComponentPageHtml::htmlForPageTailwindCompile($html);
 
-        return self::compileAndMergePublishedPageCss(
-            $pageHtml,
-            self::manualPageCssFromStoredCss($storedCss),
-        );
+        if ($pageHtml === '') {
+            return hash('sha256', '');
+        }
+
+        $classes = [];
+
+        if (preg_match_all('/\bclass=(["\'])(.*?)\1/si', $pageHtml, $matches) > 0) {
+            foreach ($matches[2] as $list) {
+                foreach (preg_split('/\s+/', trim((string) $list)) ?: [] as $token) {
+                    $token = trim((string) $token);
+
+                    if ($token !== '') {
+                        $classes[$token] = true;
+                    }
+                }
+            }
+        }
+
+        $tokens = array_keys($classes);
+        sort($tokens);
+
+        return hash('sha256', implode(' ', $tokens));
+    }
+
+    /**
+     * Compiled utility / theme rules from a published sheet (drops author #id / BEM).
+     */
+    public static function utilitiesCssFromPublishedPageCss(string $fullCss): string
+    {
+        $fullCss = self::stripTailwindPreflightFromPageCss(trim($fullCss));
+
+        if ($fullCss === '') {
+            return '';
+        }
+
+        $kept = [];
+
+        foreach (self::splitTopLevelCssRules($fullCss) as $rule) {
+            $rule = trim($rule);
+
+            if ($rule === '') {
+                continue;
+            }
+
+            if (str_starts_with($rule, '@')) {
+                $kept[] = $rule;
+
+                continue;
+            }
+
+            if (preg_match('/^([^{]+)\{(.*)\}$/s', $rule, $match) !== 1) {
+                $kept[] = $rule;
+
+                continue;
+            }
+
+            $selectors = trim($match[1]);
+            $body = trim($match[2]);
+
+            if (self::shouldPreserveManualPageCssRule($selectors, $body)) {
+                continue;
+            }
+
+            $kept[] = $rule;
+        }
+
+        return self::dedupeCssRules(trim(implode("\n", $kept)));
     }
 
     private static function compileAndMergePublishedPageCss(string $pageHtml, ?string $manualCss): string
@@ -290,9 +436,7 @@ final class EditorPastedComponentNormalizer
         $manualCss = filled($manualCss) ? trim((string) $manualCss) : '';
 
         if ($pageHtml === '') {
-            return $manualCss !== ''
-                ? EditorCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migratePublishedPageCss($manualCss))
-                : '';
+            return self::finalizePublishedPageCss($manualCss, '');
         }
 
         $compiled = self::compilePageTailwindCss($pageHtml);
@@ -301,13 +445,21 @@ final class EditorPastedComponentNormalizer
             $compiled = self::stripPublishedPageCssRuntimeStyles($compiled);
         }
 
-        if ($compiled === '') {
+        return self::finalizePublishedPageCss($manualCss, $compiled);
+    }
+
+    private static function finalizePublishedPageCss(string $manualCss, string $compiledUtilities): string
+    {
+        $manualCss = trim($manualCss);
+        $compiledUtilities = trim($compiledUtilities);
+
+        if ($compiledUtilities === '') {
             return $manualCss !== ''
                 ? EditorCssSanitizer::sanitize(VoodbuilderThemeTokenMigrator::migratePublishedPageCss($manualCss))
                 : '';
         }
 
-        $merged = self::mergeCss($manualCss !== '' ? $manualCss : null, $compiled);
+        $merged = self::mergeCss($manualCss !== '' ? $manualCss : null, $compiledUtilities);
 
         return EditorCssSanitizer::sanitize(
             VoodbuilderThemeTokenMigrator::migratePublishedPageCss(
@@ -584,7 +736,9 @@ final class EditorPastedComponentNormalizer
             return '';
         }
 
-        if (! preg_match_all('/#[^{]+\{[^{}]*\}/s', $storedCss, $matches)) {
+        // Include optional `html.dark ` prefix so dark page wallpaper is not torn into
+        // a bare `#id` rule (which overwrites light and leaves dangling `html.dark`).
+        if (! preg_match_all('/(?:html\.dark\s+)?#[^{]+\{[^{}]*\}/s', $storedCss, $matches)) {
             return '';
         }
 
@@ -775,15 +929,41 @@ final class EditorPastedComponentNormalizer
                     continue;
                 }
 
-                $escaped = preg_quote($className, '/');
-
-                if (preg_match('/\.'.$escaped.'(?:\b|[\[:])/', $storedCss) !== 1) {
+                if (! self::cssDefinesUtilityClass($storedCss, $className)) {
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    /**
+     * True when $css contains a selector for $className, including Tailwind's
+     * escaped form (e.g. sm:px-10 → .sm\:px-10, max-w-[80rem] → .max-w-\[80rem\]).
+     */
+    public static function cssDefinesUtilityClass(string $css, string $className): bool
+    {
+        $className = trim($className);
+
+        if ($className === '' || $css === '') {
+            return false;
+        }
+
+        // Tailwind escapes non [a-zA-Z0-9_-] in compiled selectors (one backslash).
+        $cssToken = preg_replace_callback(
+            '/([^a-zA-Z0-9_-])/',
+            static fn (array $match): string => '\\'.$match[1],
+            $className,
+        ) ?? $className;
+
+        if (str_contains($css, '.'.$cssToken) || str_contains($css, '.'.$className)) {
+            return true;
+        }
+
+        $escaped = preg_quote($cssToken, '/');
+
+        return preg_match('/\.'.$escaped.'(?:\s|\{|,|:|\/|$)/', $css) === 1;
     }
 
     /**

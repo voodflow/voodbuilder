@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     PAGE_SURFACE_CLASS,
+    buildPageSurfaceCanvasWallpaperCss,
+    extractOrphanWallpaperStylesFromCss,
     extractPageSurfaceWallpaperStylesFromCss,
     hydratePageSurfaceWallpaperFromCss,
     isPageSurfaceMode,
     isTargetingPageSurface,
+    readPageSurfaceDarkWallpaperStyles,
+    readPageSurfaceWallpaperStyles,
     remapPageSurfaceCssForPublish,
     resolveStyleTarget,
     selectPageSurface,
@@ -151,6 +155,7 @@ describe('page-surface-styles', () => {
                 setIdRule,
             },
             __voodbuilderPageLiveCss: `html, body { background-image: url(/w.jpg); background-size: cover; background-position: top; background-repeat: no-repeat; }`,
+            Canvas: { getDocument: () => null },
         };
 
         expect(hydratePageSurfaceWallpaperFromCss(editor)).toBe(true);
@@ -160,5 +165,205 @@ describe('page-surface-styles', () => {
             'background-position': 'top',
             'background-repeat': 'no-repeat',
         }));
+    });
+
+    it('extractOrphanWallpaperStylesFromCss reclaims previous wrapper wallpaper ids', () => {
+        const css = `
+#i40b { background-size:cover; background-position:center; background-repeat:no-repeat; background-image:url(/page.jpg); background-attachment:fixed }
+#hero { background-image:url(/card.jpg) }
+`;
+        const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['inew']));
+
+        expect(orphan['background-image']).toContain('/page.jpg');
+        expect(orphan['background-size']).toBe('cover');
+        expect(orphan['background-attachment']).toBe('fixed');
+    });
+
+    it('extractOrphanWallpaperStylesFromCss ignores ids still present in the tree', () => {
+        const css = `#i40b { background-image:url(/page.jpg); background-size:cover }`;
+        const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['i40b']));
+
+        expect(orphan['background-image']).toBeUndefined();
+    });
+
+    it('hydratePageSurfaceWallpaperFromCss restores orphan #id wallpaper onto the current wrapper', () => {
+        const setIdRule = vi.fn();
+        const wrapper = {
+            getId: () => 'inew',
+            onAll: (cb) => cb({ getId: () => 'inew' }),
+        };
+        const editor = {
+            getWrapper: () => wrapper,
+            Css: {
+                getIdRule: () => ({ getStyle: () => ({}) }),
+                setIdRule,
+            },
+            __voodbuilderPageLiveCss: `#i40b { background-image:url(/page.jpg); background-size:cover; background-position:center; background-repeat:no-repeat; background-attachment:fixed }`,
+            Canvas: { getDocument: () => null },
+        };
+
+        expect(hydratePageSurfaceWallpaperFromCss(editor)).toBe(true);
+        expect(setIdRule).toHaveBeenCalledWith('inew', expect.objectContaining({
+            'background-image': expect.stringContaining('/page.jpg'),
+            'background-size': 'cover',
+        }));
+    });
+
+    it('buildPageSurfaceCanvasWallpaperCss mirrors public fixed layer + transparent shells', () => {
+        const css = buildPageSurfaceCanvasWallpaperCss({
+            'background-image': "url('/w.jpg')",
+            'background-size': 'cover',
+            'background-position': 'center',
+            'background-repeat': 'no-repeat',
+        }, null, { hostId: 'iwrap1' });
+
+        expect(css).toContain('body::before');
+        expect(css).toContain('position: fixed');
+        expect(css).toContain("url('/w.jpg')");
+        expect(css).toContain('.voodbuilder-site-shell');
+        expect(css).toContain('background-color: transparent !important');
+        expect(css).toContain('#iwrap1');
+        expect(css).toContain('background-image: none !important');
+        expect(buildPageSurfaceCanvasWallpaperCss({})).toBe('');
+    });
+
+    it('buildPageSurfaceCanvasWallpaperCss hides light under html.dark when dark missing', () => {
+        const css = buildPageSurfaceCanvasWallpaperCss({
+            'background-image': "url('/light.jpg')",
+            'background-size': 'cover',
+        });
+
+        expect(css).toContain('body::before');
+        expect(css).toContain("url('/light.jpg')");
+        expect(css).toContain('html.dark body::before');
+        expect(css).toMatch(/html\.dark body::before\s*\{[^}]*background-image:\s*none\s*!important/s);
+    });
+
+    it('buildPageSurfaceCanvasWallpaperCss keeps separate light and dark layers', () => {
+        const css = buildPageSurfaceCanvasWallpaperCss(
+            { 'background-image': "url('/light.jpg')" },
+            { 'background-image': "url('/dark.jpg')" },
+        );
+
+        expect(css).toContain("url('/light.jpg')");
+        expect(css).toContain("url('/dark.jpg')");
+        expect(css).toContain('html.dark body::before');
+        expect(css).not.toMatch(/html\.dark body::before\s*\{[^}]*background-image:\s*none\s*!important/s);
+    });
+
+    it('setPageSurfaceDarkWallpaperRule stores dark in memory without CssComposer', async () => {
+        const { setPageSurfaceDarkWallpaperRule, getPageSurfaceDarkWallpaperRuleStyles, getPageSurfaceWallpaperUrlCache } = await import(
+            '../../resources/js/editor/page-surface-styles.js'
+        );
+
+        const removed = [];
+        const editor = {
+            Css: {
+                getAll: () => [{
+                    get: (key) => (key === 'selectorsAdd' ? 'html.dark' : undefined),
+                    selectorsToString: () => '#iwrap, html.dark',
+                    getStyle: () => ({ 'background-image': "url('/bad.jpg')" }),
+                }],
+                remove: (rule) => removed.push(rule),
+                add: vi.fn(),
+                setIdRule: vi.fn(),
+            },
+        };
+
+        const ok = setPageSurfaceDarkWallpaperRule(editor, 'iwrap', {
+            'background-image': "url('/dark.jpg')",
+            'background-size': 'cover',
+        });
+
+        expect(ok).toBe(true);
+        expect(editor.Css.add).not.toHaveBeenCalled();
+        expect(editor.Css.setIdRule).not.toHaveBeenCalled();
+        expect(getPageSurfaceDarkWallpaperRuleStyles(editor, 'iwrap')['background-image']).toContain('/dark.jpg');
+        expect(getPageSurfaceWallpaperUrlCache(editor).dark).toContain('/dark.jpg');
+        expect(removed.length).toBeGreaterThan(0);
+    });
+
+    it('buildPageSurfaceCanvasWallpaperCss defaults cover/no-repeat when layout missing', () => {
+        const css = buildPageSurfaceCanvasWallpaperCss({
+            'background-image': "url('/w.jpg')",
+        });
+
+        expect(css).toContain('background-size: cover');
+        expect(css).toContain('background-position: center');
+        expect(css).toContain('background-repeat: no-repeat');
+    });
+
+    it('hydratePageSurfaceWallpaperFromCss fills missing layout defaults', () => {
+        const setIdRule = vi.fn();
+        const editor = {
+            getWrapper: () => ({
+                getId: () => 'iwrap2',
+                getAttributes: () => ({}),
+                addAttributes: vi.fn(),
+            }),
+            Css: {
+                getIdRule: () => ({
+                    getStyle: () => ({ 'background-image': 'url(/only.jpg)' }),
+                }),
+                setIdRule,
+            },
+            __voodbuilderPageLiveCss: '',
+            Canvas: { getDocument: () => null },
+        };
+
+        expect(hydratePageSurfaceWallpaperFromCss(editor)).toBe(true);
+        expect(setIdRule).toHaveBeenCalledWith('iwrap2', expect.objectContaining({
+            'background-image': expect.stringContaining('/only.jpg'),
+            'background-size': 'cover',
+            'background-position': 'center',
+            'background-repeat': 'no-repeat',
+        }));
+    });
+
+    it('hydratePageSurfaceWallpaperFromCss reclaims known-id ghost wallpaper onto wrapper', () => {
+        const setIdRule = vi.fn();
+        const addAttributes = vi.fn();
+        const editor = {
+            getWrapper: () => ({
+                getId: () => 'inew',
+                getAttributes: () => ({}),
+                addAttributes,
+                onAll: (fn) => {
+                    fn({ getId: () => 'ighost' });
+                },
+            }),
+            Css: {
+                getIdRule: () => ({ getStyle: () => ({}) }),
+                setIdRule,
+            },
+            __voodbuilderPageLiveCss: `#ighost { background-image:url(/page.jpg); background-size:cover; background-repeat:no-repeat }`,
+            Canvas: { getDocument: () => null },
+        };
+
+        expect(hydratePageSurfaceWallpaperFromCss(editor)).toBe(true);
+        expect(setIdRule).toHaveBeenCalledWith('inew', expect.objectContaining({
+            'background-image': expect.stringContaining('/page.jpg'),
+            'background-size': 'cover',
+        }));
+        expect(addAttributes).toHaveBeenCalledWith(expect.objectContaining({
+            'data-vb-style-bg-src': expect.stringContaining('/page.jpg'),
+        }));
+    });
+
+    it('reads light and dark wallpaper from author CSS on the current wrapper id', () => {
+        const editor = {
+            getWrapper: () => ({
+                getId: () => 'iwrap',
+                getAttributes: () => ({}),
+                onAll: (fn) => fn({ getId: () => 'iwrap' }),
+            }),
+            Css: { getIdRule: () => null },
+            getCss: () => '',
+            __voodbuilderAuthorPageCss: '#iwrap{background-image:url(/light.jpg);background-size:cover}'
+                + 'html.dark #iwrap{background-image:url(/dark.jpg);background-size:cover}',
+        };
+
+        expect(readPageSurfaceWallpaperStyles(editor)['background-image']).toContain('/light.jpg');
+        expect(readPageSurfaceDarkWallpaperStyles(editor)['background-image']).toContain('/dark.jpg');
     });
 });

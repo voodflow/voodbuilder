@@ -23,6 +23,7 @@ import {
     STYLE_BG_OPACITY_ATTR,
     STYLE_BG_OPACITY_OPTIONS,
     STYLE_BG_SRC_ATTR,
+    STYLE_BG_SRC_DARK_ATTR,
     composeDecorationBackgroundImageCss,
     composePhotoAwareGradientLayer,
     composeTailwindGradientLayer,
@@ -114,22 +115,32 @@ import {
 } from './style-tailwind-class-groups.js';
 import {
     STYLE_BREAKPOINT_PREFIXES,
-    currentStyleBreakpointPrefix,
-    deviceIdToBreakpointPrefix,
+    currentStyleVariantPrefix,
+    isStyleEditingDark,
+    setStyleEditingDark,
     prefixedUtility,
     replaceClassGroupAllBreakpoints,
     replaceClassGroupAtBreakpoint,
     resolveGroupValueAtBreakpoint,
     resolveGroupValueExact,
-    stripResponsivePrefix,
+    stripVariantPrefixes,
 } from './style-tailwind-breakpoints.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import {
     PAGE_SURFACE_FOCUS_EVENT,
+    clearPageSurfaceDarkWallpaperRule,
+    ensurePageSurfaceAction,
     extractPageSurfaceWallpaperStylesFromCss,
+    getPageSurfaceDarkWallpaperRuleStyles,
+    getPageSurfaceWallpaperUrlCache,
     hydratePageSurfaceWallpaperFromCss,
     isPageSurfaceComponent,
+    isTargetingPageSurface,
+    purgeBrokenPageSurfaceDarkCssRules,
     resolveStyleTarget,
+    setPageSurfaceDarkWallpaperRule,
+    setPageSurfaceWallpaperUrlCache,
+    syncPageSurfaceCanvasWallpaperPreview,
 } from './page-surface-styles.js';
 import {
     injectEditorBreakpointStyleCss,
@@ -162,42 +173,84 @@ function persistSurfacePaint(editor, component, styles) {
         return;
     }
 
-    const target = resolveVisualStyleTarget(component) ?? component;
-    const pageSurface = isPageSurfaceComponent(target, editor);
-    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+    // Page wallpaper must always live on the Grapes wrapper #id — resolveVisualStyleTarget
+    // can redirect to a single child shell and would otherwise overwrite light via setIdRule.
+    const targetingPage = isPageSurfaceComponent(component, editor)
+        || isTargetingPageSurface(editor);
+    const wrapper = targetingPage ? (editor.getWrapper?.() ?? component) : null;
+    const target = targetingPage
+        ? wrapper
+        : (resolveVisualStyleTarget(component) ?? component);
+    const pageSurface = Boolean(targetingPage && target);
+    const id = String(target?.getId?.() ?? component.getId?.() ?? '').trim();
+    const darkPage = pageSurface && isStyleEditingDark(editor);
 
-    if (id && editor.Css?.setIdRule) {
+    if (id && editor.Css) {
         try {
-            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
-            editor.Css.setIdRule(id, {
-                ...existing,
-                ...styles,
-            });
+            if (darkPage) {
+                setPageSurfaceDarkWallpaperRule(editor, id, {
+                    ...getPageSurfaceDarkWallpaperRuleStyles(editor, id),
+                    ...styles,
+                });
+            } else if (editor.Css.setIdRule) {
+                // Ensure a prior broken `#id, html.dark` rule cannot override light.
+                purgeBrokenPageSurfaceDarkCssRules(editor, id);
+
+                const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+                editor.Css.setIdRule(id, {
+                    ...existing,
+                    ...styles,
+                });
+            }
         } catch {
             // CssComposer may be unavailable during boot.
         }
     }
 
     if (pageSurface) {
-        try {
-            const el = target?.getEl?.() ?? target?.view?.el;
+        // Never paint wallpaper on the wrapper DOM — image-only inline styles
+        // tile (browser default repeat/auto). Public + canvas use body::before.
+        // CssComposer #id still holds the full paint for Save / Style hydrate.
+        if (! darkPage) {
+            try {
+                const el = target?.getEl?.() ?? target?.view?.el;
 
-            if (el?.style) {
-                for (const [property, value] of Object.entries(styles)) {
-                    if (value == null || value === '') {
+                if (el?.style) {
+                    for (const property of [
+                        'background-image',
+                        'background-size',
+                        'background-position',
+                        'background-repeat',
+                        'background-attachment',
+                    ]) {
                         el.style.removeProperty?.(property);
-                        continue;
                     }
 
-                    const raw = String(value);
-                    const important = /\s*!important\s*$/i.test(raw);
-                    const cssValue = raw.replace(/\s*!important\s*$/i, '').trim();
+                    const bgColor = styles['background-color'];
 
-                    el.style.setProperty?.(property, cssValue, important ? 'important' : '');
+                    if (bgColor != null && bgColor !== '') {
+                        const raw = String(bgColor);
+                        const important = /\s*!important\s*$/i.test(raw);
+                        const cssValue = raw.replace(/\s*!important\s*$/i, '').trim();
+
+                        el.style.setProperty?.(
+                            'background-color',
+                            cssValue,
+                            important ? 'important' : '',
+                        );
+                    }
                 }
+            } catch {
+                // Frame may be unavailable.
             }
+        }
+
+        // Public pages use body::before + transparent shells; mirror that in the
+        // canvas so page wallpaper is visible under opaque site/events shells.
+        try {
+            syncPageSurfaceCanvasWallpaperPreview(editor, styles);
         } catch {
-            // Frame may be unavailable.
+            // Optional canvas preview.
         }
 
         return;
@@ -224,7 +277,8 @@ function withImportantCssValue(value) {
 
 /**
  * Page wallpaper defaults: cover the viewport and stay put while scrolling.
- * Size/position/repeat keep author choices when already set on the #id rule.
+ * Always emit size/position/repeat on the paint object so CssComposer + Save
+ * keep them (image-only #id rules tile in the canvas).
  *
  * @param {object} editor
  * @param {object} component
@@ -245,21 +299,22 @@ function withPageSurfaceWallpaperDefaults(editor, component, paint) {
 
     const next = { ...paint };
 
-    if (! String(existing['background-size'] ?? next['background-size'] ?? '').trim()) {
-        next['background-size'] = 'cover';
-    }
+    next['background-size'] = String(
+        next['background-size'] ?? existing['background-size'] ?? '',
+    ).trim() || 'cover';
 
-    if (! String(existing['background-position'] ?? next['background-position'] ?? '').trim()) {
-        next['background-position'] = 'center';
-    }
+    next['background-position'] = String(
+        next['background-position'] ?? existing['background-position'] ?? '',
+    ).trim() || 'center';
 
-    if (! String(existing['background-repeat'] ?? next['background-repeat'] ?? '').trim()) {
-        next['background-repeat'] = 'no-repeat';
-    }
+    next['background-repeat'] = String(
+        next['background-repeat'] ?? existing['background-repeat'] ?? '',
+    ).trim() || 'no-repeat';
 
     // Page photos should not scroll away with content (nav-only glimpse).
+    // Canvas preview uses ::before; attachment is kept on #id for Save/hydrate.
     next['background-attachment'] = String(
-        existing['background-attachment'] ?? next['background-attachment'] ?? 'fixed',
+        next['background-attachment'] ?? existing['background-attachment'] ?? 'fixed',
     ).trim() || 'fixed';
 
     return next;
@@ -315,32 +370,70 @@ function applyBackgroundLayoutCss(editor, component, groupId, utilityValue) {
         return;
     }
 
-    const target = resolveVisualStyleTarget(component) ?? component;
+    const targetingPage = isPageSurfaceComponent(component, editor)
+        || isTargetingPageSurface(editor);
+    const wrapper = targetingPage ? (editor.getWrapper?.() ?? component) : null;
+    const target = targetingPage
+        ? wrapper
+        : (resolveVisualStyleTarget(component) ?? component);
     const map = BG_LAYOUT_CSS_VALUES[groupId] ?? {};
     const token = String(utilityValue ?? '').trim();
     const cssValue = token === '' ? '' : String(map[token] ?? '').trim();
-    const id = String(target.getId?.() ?? '').trim();
+    const id = String(target?.getId?.() ?? '').trim();
+    const pageSurface = Boolean(targetingPage);
+    const darkPage = pageSurface && isStyleEditingDark(editor);
 
     if (cssValue === '') {
-        clearStyleProperty(editor, target, prop, { family: false });
+        if (darkPage) {
+            if (prop !== '') {
+                clearPageSurfaceDarkWallpaperRule(editor, id, prop);
+            } else {
+                clearPageSurfaceDarkWallpaperRule(editor, id);
+            }
+        } else {
+            clearStyleProperty(editor, target, prop, { family: false });
+        }
+
+        if (pageSurface) {
+            try {
+                syncPageSurfaceCanvasWallpaperPreview(editor);
+            } catch {
+                // Optional.
+            }
+        }
 
         return;
     }
 
-    if (id && editor.Css?.setIdRule) {
+    if (id && editor.Css) {
         try {
-            const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
-            editor.Css.setIdRule(id, {
-                ...existing,
-                [prop]: cssValue,
-            });
+            if (darkPage && typeof editor.Css.setRule === 'function') {
+                setPageSurfaceDarkWallpaperRule(editor, id, {
+                    ...getPageSurfaceDarkWallpaperRuleStyles(editor, id),
+                    [prop]: cssValue,
+                });
+            } else if (editor.Css.setIdRule) {
+                const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+                editor.Css.setIdRule(id, {
+                    ...existing,
+                    [prop]: cssValue,
+                });
+            }
         } catch {
             // CssComposer may be unavailable during boot.
         }
     }
 
-    if (target.get?.('type') !== 'wrapper') {
+    if (! pageSurface && target.get?.('type') !== 'wrapper') {
         target.addStyle?.({ [prop]: cssValue }, { inline: true, noEvent: true });
+    }
+
+    if (pageSurface) {
+        try {
+            syncPageSurfaceCanvasWallpaperPreview(editor, { [prop]: cssValue });
+        } catch {
+            // Optional canvas preview.
+        }
     }
 }
 
@@ -368,9 +461,42 @@ function resolveBackgroundLayoutGroupValue(classes, group, component, editor, bp
         return '';
     }
 
-    const cssValue = readComponentCssProperty(editor, component, prop).toLowerCase();
+    const cssValue = (() => {
+        if (isPageSurfaceComponent(component, editor) && isStyleEditingDark(editor)) {
+            const id = String(component.getId?.() ?? '').trim();
+            const fromDark = String(getPageSurfaceDarkWallpaperRuleStyles(editor, id)[prop] ?? '')
+                .replace(/\s*!important\s*$/i, '')
+                .trim()
+                .toLowerCase();
+
+            if (fromDark !== '') {
+                return fromDark;
+            }
+        }
+
+        return readComponentCssProperty(editor, component, prop).toLowerCase();
+    })();
 
     if (cssValue === '') {
+        // Page wallpaper with image but no authored layout → UI shows real defaults
+        // (cover / center / no-repeat) that canvas ::before already applies.
+        if (
+            isPageSurfaceComponent(component, editor)
+            && readBackgroundImageUrl(component, editor) !== ''
+        ) {
+            if (group.id === 'bg-size') {
+                return 'bg-cover';
+            }
+
+            if (group.id === 'bg-position') {
+                return 'bg-center';
+            }
+
+            if (group.id === 'bg-repeat') {
+                return 'bg-no-repeat';
+            }
+        }
+
         return '';
     }
 
@@ -392,7 +518,7 @@ function resolveBackgroundLayoutGroupValue(classes, group, component, editor, bp
  * @returns {string}
  */
 function resolveStyleGroup(classes, options, editor = null) {
-    return resolveGroupValueAtBreakpoint(classes, options, currentStyleBreakpointPrefix(editor));
+    return resolveGroupValueAtBreakpoint(classes, options, currentStyleVariantPrefix(editor));
 }
 
 /**
@@ -407,7 +533,7 @@ function replaceStyleGroup(component, groupSet, nextClass, editor = null, option
         component,
         groupSet,
         nextClass,
-        currentStyleBreakpointPrefix(editor),
+        currentStyleVariantPrefix(editor),
         options,
     );
 }
@@ -711,7 +837,7 @@ function spacingTokenFromClass(value) {
         return '';
     }
 
-    return stripResponsivePrefix(value).replace(/^(m|p|mt|mr|mb|ml|pt|pr|pb|pl|mx|my|px|py)-/, '') || '';
+    return stripVariantPrefixes(value).replace(/^(m|p|mt|mr|mb|ml|pt|pr|pb|pl|mx|my|px|py)-/, '') || '';
 }
 
 function spacingSideCellHtml(kind, side, title, scaleLabel) {
@@ -797,19 +923,20 @@ function styleWrittenToken(editor, value) {
         return '';
     }
 
-    return prefixedUtility(bare, currentStyleBreakpointPrefix(editor));
+    return prefixedUtility(bare, currentStyleVariantPrefix(editor));
 }
 
 function scheduleClassCompile(editor, writtenClass = '') {
     // Soft schedule only when the utility already ships in section-utilities.css.
-    // Responsive (md:/lg:) and other uncovered tokens need a forced JIT rebuild —
+    // Responsive (md:/lg:), dark:, and other uncovered tokens need a forced JIT rebuild —
     // soft schedule can no-op if Grapes has not yet reflected addClass in the page
     // class set, so the canvas stays stale until Save.
     const token = String(writtenClass ?? '').trim();
     const needsForce = token !== ''
         && typeof editor?.__voodbuilderForcePageCssRebuild === 'function'
         && (
-            /^(?:sm|md|lg|xl|2xl):/.test(token)
+            /^(?:dark:)?(?:sm|md|lg|xl|2xl):/.test(token)
+            || /^dark:/.test(token)
             || ! pageCssCoversClass(editor, token)
         );
 
@@ -906,14 +1033,19 @@ function syncViewportStrip(root, editor, labels = {}) {
         deviceId = 'desktop';
     }
 
-    const prefix = deviceIdToBreakpointPrefix(deviceId);
+    const variantPrefix = currentStyleVariantPrefix(editor);
+    const dark = isStyleEditingDark(editor);
     const prefixEl = strip.querySelector('[data-voodbuilder-style-viewport-prefix]');
     const hintEl = strip.querySelector('[data-voodbuilder-style-viewport-hint]');
 
     if (prefixEl) {
-        prefixEl.textContent = prefix === ''
-            ? (labels.classStyleViewportBase ?? 'base')
-            : prefix.replace(/:$/, '');
+        if (variantPrefix === '' || variantPrefix === 'dark:') {
+            prefixEl.textContent = dark
+                ? 'dark'
+                : (labels.classStyleViewportBase ?? 'base');
+        } else {
+            prefixEl.textContent = variantPrefix.replace(/:$/, '');
+        }
     }
 
     if (hintEl) {
@@ -922,9 +1054,14 @@ function syncViewportStrip(root, editor, labels = {}) {
             : (deviceId === 'mobilePortrait' || deviceId === 'mobile')
                 ? (labels.classStyleViewportBaseTab ?? labels.deviceMobile ?? 'Mobile')
                 : (labels.deviceDesktop ?? 'Desktop');
+        const themeLabel = dark
+            ? (labels.classStyleThemeDark ?? labels.themeDark ?? 'Dark')
+            : (labels.classStyleThemeLight ?? labels.themeLight ?? 'Light');
         const template = labels.classStyleViewportEditing
-            ?? 'Editing: {device}';
-        hintEl.textContent = String(template).replace('{device}', deviceLabel);
+            ?? 'Editing: {device} · {theme}';
+        hintEl.textContent = String(template)
+            .replace('{device}', deviceLabel)
+            .replace('{theme}', themeLabel);
     }
 
     strip.querySelectorAll('button[data-voodbuilder-style-viewport]').forEach((button) => {
@@ -1075,7 +1212,7 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
     }
 
     const classes = componentClassList(component);
-    const bp = currentStyleBreakpointPrefix(editor);
+    const bp = currentStyleVariantPrefix(editor);
 
     for (const group of STYLE_UTILITY_GROUPS) {
         const el = root.querySelector(`[data-voodbuilder-tw-group="${group.id}"]`);
@@ -1571,13 +1708,16 @@ function applyGroup(editor, component, groupId, value) {
 
         // Color / gradient changed: keep photo and recompose layers (gradient + fade + url).
         if (isBgPaintGroup && preservedBgUrl !== '') {
+            const srcAttr = isPageSurfaceComponent(component, editor) && isStyleEditingDark(editor)
+                ? STYLE_BG_SRC_DARK_ATTR
+                : STYLE_BG_SRC_ATTR;
             component.addAttributes?.({
                 [STYLE_BG_OPACITY_ATTR]: String(preservedBgOpacity),
-                [STYLE_BG_SRC_ATTR]: preservedBgUrl,
+                [srcAttr]: preservedBgUrl,
             });
             // Ensure src is readable even if CSS was touched.
-            if (String(component.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '') !== preservedBgUrl) {
-                component.addAttributes?.({ [STYLE_BG_SRC_ATTR]: preservedBgUrl });
+            if (String(component.getAttributes?.()?.[srcAttr] ?? '') !== preservedBgUrl) {
+                component.addAttributes?.({ [srcAttr]: preservedBgUrl });
             }
             reapplyDecorationBackgroundPaint(editor, component);
         } else if (
@@ -2176,14 +2316,48 @@ function readBackgroundImageUrl(component, editor = null) {
 
     const target = resolveVisualStyleTarget(component) ?? component;
     const nodes = target === component ? [component] : [component, target];
+    const pageSurface = isPageSurfaceComponent(target, editor)
+        || isPageSurfaceComponent(component, editor)
+        || (editor && isTargetingPageSurface(editor));
+    const darkPage = pageSurface && isStyleEditingDark(editor);
+    const srcAttr = darkPage ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
 
     // Durable UI reference — must win over stale composed CSS (old photo under Clear / reselect).
     for (const node of nodes) {
-        const fromAttr = String(node?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+        const fromAttr = String(node?.getAttributes?.()?.[srcAttr] ?? '').trim();
 
         if (fromAttr !== '') {
             return fromAttr;
         }
+    }
+
+    if (pageSurface && editor) {
+        const cache = getPageSurfaceWallpaperUrlCache(editor);
+        const fromCache = String(darkPage ? cache.dark : cache.light ?? '').trim();
+
+        if (fromCache !== '') {
+            return fromCache;
+        }
+    }
+
+    if (darkPage) {
+        const id = String(
+            (pageSurface ? editor?.getWrapper?.()?.getId?.() : null)
+            ?? target.getId?.()
+            ?? component.getId?.()
+            ?? '',
+        ).trim();
+        const fromDarkRule = extractUrlFromBackgroundImage(
+            String(getPageSurfaceDarkWallpaperRuleStyles(editor, id)['background-image'] ?? ''),
+        );
+
+        if (fromDarkRule !== '') {
+            return fromDarkRule;
+        }
+
+        // Do NOT fall back to the light wallpaper — that copied light into dark
+        // attrs on theme switch and made Save emit only one (shared) image.
+        return '';
     }
 
     for (const node of nodes) {
@@ -2239,32 +2413,46 @@ function readBackgroundImageUrl(component, editor = null) {
     return '';
 }
 
-function persistBackgroundImageSrcAttr(component, url) {
+function persistBackgroundImageSrcAttr(component, url, editor = null) {
     if (! component) {
         return;
     }
 
     const src = String(url ?? '').trim();
-    const target = resolveVisualStyleTarget(component) ?? component;
-    const nodes = target === component ? [component] : [component, target];
+    const targetingPage = isPageSurfaceComponent(component, editor)
+        || (editor && isTargetingPageSurface(editor));
+    const wrapper = targetingPage ? (editor?.getWrapper?.() ?? component) : null;
+    const target = targetingPage
+        ? wrapper
+        : (resolveVisualStyleTarget(component) ?? component);
+    const nodes = targetingPage
+        ? [wrapper].filter(Boolean)
+        : (target === component ? [component] : [component, target].filter(Boolean));
+    const pageSurface = Boolean(targetingPage);
+    const darkPage = pageSurface && isStyleEditingDark(editor);
+    const srcAttr = darkPage ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
+
+    if (pageSurface && editor) {
+        setPageSurfaceWallpaperUrlCache(editor, darkPage ? 'dark' : 'light', src);
+    }
 
     for (const node of nodes) {
         if (src === '') {
             try {
-                node.removeAttributes?.(STYLE_BG_SRC_ATTR);
+                node.removeAttributes?.(srcAttr);
             } catch {
                 const attrs = { ...(node.getAttributes?.() ?? {}) };
-                delete attrs[STYLE_BG_SRC_ATTR];
+                delete attrs[srcAttr];
                 node.setAttributes?.(attrs);
             }
 
             continue;
         }
 
-        const current = String(node.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+        const current = String(node.getAttributes?.()?.[srcAttr] ?? '').trim();
 
         if (current !== src) {
-            node.addAttributes?.({ [STYLE_BG_SRC_ATTR]: src });
+            node.addAttributes?.({ [srcAttr]: src });
         }
     }
 }
@@ -2311,11 +2499,18 @@ function clearDecorationBackgroundImage(editor, component) {
         return;
     }
 
-    const id = String(component.getId?.() ?? '').trim();
-    const target = resolveVisualStyleTarget(component) ?? component;
+    const targetingPage = isPageSurfaceComponent(component, editor)
+        || isTargetingPageSurface(editor);
+    const wrapper = targetingPage ? (editor.getWrapper?.() ?? component) : null;
+    const target = targetingPage
+        ? wrapper
+        : (resolveVisualStyleTarget(component) ?? component);
+    const id = String(target?.getId?.() ?? component.getId?.() ?? '').trim();
+    const pageSurface = Boolean(targetingPage);
+    const darkPage = pageSurface && isStyleEditingDark(editor);
 
     // Drop durable reference first so reapply / sync cannot resurrect the photo.
-    persistBackgroundImageSrcAttr(component, '');
+    persistBackgroundImageSrcAttr(component, '', editor);
 
     try {
         component.removeAttributes?.(STYLE_BG_OPACITY_ATTR);
@@ -2323,6 +2518,26 @@ function clearDecorationBackgroundImage(editor, component) {
         const attrs = { ...(component.getAttributes?.() ?? {}) };
         delete attrs[STYLE_BG_OPACITY_ATTR];
         component.setAttributes?.(attrs);
+    }
+
+    // Dark page wallpaper: clear only html.dark #id — keep light wallpaper intact.
+    if (darkPage) {
+        clearPageSurfaceDarkWallpaperRule(editor, id, 'background-image');
+
+        try {
+            syncPageSurfaceCanvasWallpaperPreview(editor, { 'background-image': '' });
+        } catch {
+            // Optional canvas preview clear.
+        }
+
+        try {
+            component.view?.updateStyle?.();
+            component.view?.updateAttributes?.();
+        } catch {
+            // View may be unavailable.
+        }
+
+        return;
     }
 
     // Wipe image paint from inline + CssComposer #id / private rules.
@@ -2389,6 +2604,14 @@ function clearDecorationBackgroundImage(editor, component) {
     // must own that property. An author inline/#id paint (even a gradient layer)
     // after Clear left utilities dead on the canvas.
     restoreSolidBackgroundColorAfterImageClear(editor, component);
+
+    if (pageSurface) {
+        try {
+            syncPageSurfaceCanvasWallpaperPreview(editor, { 'background-image': '' });
+        } catch {
+            // Optional canvas preview clear.
+        }
+    }
 
     try {
         component.view?.updateStyle?.();
@@ -2635,7 +2858,7 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, target);
     const cssValue = composeDecorationBackgroundImageCss(src, opacity, fadeColor, { gradientLayer });
 
-    persistBackgroundImageSrcAttr(component, src);
+    persistBackgroundImageSrcAttr(component, src, editor);
     component.addAttributes?.({
         [STYLE_BG_OPACITY_ATTR]: String(opacity),
     });
@@ -2646,8 +2869,18 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
         });
     }
 
-    // Drop previous image paint before rewrite (keeps solid color classes).
-    clearStyleProperty(editor, target, 'background-image', { family: false });
+    const pageSurface = isPageSurfaceComponent(target, editor)
+        || isPageSurfaceComponent(component, editor);
+    const darkPage = pageSurface && isStyleEditingDark(editor);
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+
+    // Page dark wallpaper must NOT clearStyleProperty on the wrapper — that wipes
+    // the light `#id` rule and leaves only the dark photo after Save/reload.
+    if (darkPage) {
+        clearPageSurfaceDarkWallpaperRule(editor, id, 'background-image');
+    } else {
+        clearStyleProperty(editor, target, 'background-image', { family: false });
+    }
 
     // Page wrapper: CssComposer + DOM only — Grapes addStyle on body/wrapper
     // re-enters chrome-shell refresh and freezes Save.
@@ -2678,14 +2911,17 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
             const nextOpacity = opacity == null
                 ? readBackgroundImageOpacity(component, editor)
                 : normalizeBackgroundImageOpacity(opacity);
+            const pageSurface = isPageSurfaceComponent(component, editor);
+            const srcAttr = pageSurface && isStyleEditingDark(editor)
+                ? STYLE_BG_SRC_DARK_ATTR
+                : STYLE_BG_SRC_ATTR;
 
             component.addAttributes?.({
                 [STYLE_BG_OPACITY_ATTR]: String(nextOpacity),
-                [STYLE_BG_SRC_ATTR]: src,
+                [srcAttr]: src,
             });
 
             const classes = componentClassList(component);
-            const pageSurface = isPageSurfaceComponent(component, editor);
 
             // Page surface: prefer #id CSS layout (wrapper is outside chrome-shell JIT).
             // Other nodes keep TW utility classes as usual.
@@ -2802,8 +3038,14 @@ function syncBackgroundImageField(root, component, editor = null) {
         ?? opacityMount?.querySelector?.('select');
 
     // Persist src attr so Color changes / reload can find the photo without CssComposer.
+    // Skip when empty — do not copy the other theme's URL into this theme's attr.
     if (component && url !== '') {
-        persistBackgroundImageSrcAttr(component, url);
+        persistBackgroundImageSrcAttr(component, url, editor);
+    } else if (component && url === '' && editor && (
+        isPageSurfaceComponent(component, editor) || isTargetingPageSurface(editor)
+    )) {
+        // Keep durable empty state for the active theme (Clear / dark with no image).
+        persistBackgroundImageSrcAttr(component, '', editor);
     }
 
     if (input && String(input.value ?? '') !== url) {
@@ -3245,7 +3487,7 @@ function applySpacingToken(editor, component, kind, side, rawToken, linkMode) {
 }
 
 function setSpacingLinkMode(editor, component, kind, nextLink) {
-    const bp = currentStyleBreakpointPrefix(editor);
+    const bp = currentStyleVariantPrefix(editor);
     const state = resolveSpacingState(kind, componentClassList(component), bp);
     const { sides } = state;
     const token = sides.t || sides.r || sides.b || sides.l || '';
@@ -3334,7 +3576,7 @@ function mirrorLinkedSpacingInputs(block, side, value, linkMode) {
 
 function syncSpacingBox(root, component, options = {}, editor = null) {
     const resetLinkPref = options.resetLinkPref === true;
-    const bp = currentStyleBreakpointPrefix(editor);
+    const bp = currentStyleVariantPrefix(editor);
     const inheritedHint = options.inheritedHint
         ?? 'Inherited from a smaller viewport — change to override here';
 
@@ -3927,6 +4169,113 @@ function placeSectors(stylesMount, sectors) {
 }
 
 /**
+ * Page Style: only Background (color / image / gradient). Hide Dimension,
+ * Spacing, Typography, Animation, and Decoration border/radius/shadow.
+ *
+ * @param {HTMLElement|null|undefined} stylesMount
+ * @param {object|null|undefined} editor
+ */
+function syncPageSurfaceStylePanelChrome(stylesMount, editor) {
+    if (! stylesMount) {
+        return;
+    }
+
+    const pageMode = Boolean(editor && isTargetingPageSurface(editor));
+    stylesMount.dataset.voodbuilderPageSurfaceStyle = pageMode ? '1' : '0';
+
+    const labels = editor?.__voodbuilderLabels ?? {};
+    const pageSectorTitle = labels.pageSurfaceSector
+        ?? labels.pageSurfaceSwitch?.replace(/…|\.\.\.$/u, '').trim()
+        ?? 'Page background';
+    const stylePanel = stylesMount.closest?.('[data-voodbuilder-inspector="style"]') ?? null;
+
+    // Classes / selector manager — irrelevant for page background.
+    if (stylePanel) {
+        const selectors = stylePanel.querySelector('.voodbuilder-editor-selectors-mount');
+
+        if (selectors) {
+            selectors.hidden = pageMode;
+            const sector = selectors.closest?.('.voodbuilder-editor-inspector-sector');
+
+            if (sector) {
+                sector.hidden = pageMode;
+            }
+        }
+    }
+
+    // Viewport strip (Mobile/Tablet/Desktop) — page wallpaper is not breakpoint-scoped here.
+    const viewport = stylesMount.querySelector('[data-voodbuilder-style-viewport-strip]');
+
+    if (viewport) {
+        viewport.hidden = pageMode;
+    }
+
+    for (const id of ['dimension', 'spacing', 'typography']) {
+        const sector = stylesMount.querySelector(`[data-voodbuilder-tw-sector="${id}"]`);
+
+        if (sector) {
+            sector.hidden = pageMode;
+        }
+    }
+
+    const animation = stylesMount.querySelector('[data-voodbuilder-animation-sector]');
+
+    if (animation) {
+        animation.hidden = pageMode;
+    }
+
+    const decorations = stylesMount.querySelector('[data-voodbuilder-tw-sector="decorations"]');
+
+    if (decorations) {
+        decorations.hidden = false;
+
+        const titleText = decorations.querySelector('.gjs-sm-sector-label');
+
+        if (titleText) {
+            if (! titleText.dataset.vbPageSurfaceTitleOrig) {
+                titleText.dataset.vbPageSurfaceTitleOrig = String(titleText.textContent ?? '').trim() || 'Decorations';
+            }
+
+            titleText.textContent = pageMode
+                ? pageSectorTitle
+                : titleText.dataset.vbPageSurfaceTitleOrig;
+        }
+
+        // Inner block heading: keep "Background" for elements; clarify page scope in page mode.
+        const blockLabel = decorations.querySelector('[data-voodbuilder-deco-block="background"] .voodbuilder-editor-deco-block__label');
+
+        if (blockLabel) {
+            if (! blockLabel.dataset.vbPageSurfaceBlockOrig) {
+                blockLabel.dataset.vbPageSurfaceBlockOrig = String(blockLabel.textContent ?? '').trim() || 'Background';
+            }
+
+            blockLabel.textContent = pageMode
+                ? pageSectorTitle
+                : blockLabel.dataset.vbPageSurfaceBlockOrig;
+        }
+
+        for (const block of ['border', 'radius', 'shadow']) {
+            const el = decorations.querySelector(`[data-voodbuilder-deco-block="${block}"]`);
+
+            if (el) {
+                el.hidden = pageMode;
+            }
+        }
+
+        // Keep Image/Gradient folds open only while editing page background.
+        if (pageMode) {
+            for (const fold of decorations.querySelectorAll('[data-voodbuilder-deco-fold]')) {
+                try {
+                    fold.open = true;
+                } catch {
+                    // <details> may be unavailable.
+                }
+            }
+        }
+    }
+}
+
+/**
  * Neutralize Grapes Style Manager inline inventing and mount Tailwind utility sectors.
  *
  * @param {object} editor
@@ -3947,6 +4296,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
     editor.__voodbuilderTailwindStylePanelRegistered = true;
     editor.__voodbuilderTailwindStyleOnly = true;
+    editor.__voodbuilderSyncPageSurfaceWallpaper = syncPageSurfaceCanvasWallpaperPreview;
 
     registerEditorBreakpointFontSizeCss(editor);
 
@@ -3974,6 +4324,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
             if (sectorsReady()) {
                 ensureViewportStrip(stylesMount, labels, editor);
+                syncPageSurfaceStylePanelChrome(stylesMount, editor);
 
                 return;
             }
@@ -3987,13 +4338,30 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             const spacing = buildSpacingSector(labels);
             const decorations = buildDecorationsSector(labels);
             const typography = buildTypographySector(labels, addLabel);
+            const pageMode = isTargetingPageSurface(editor);
+
+            // Pre-hide before insert so opening Style with no selection never flashes
+            // Dimension / Typography / Animation for a frame.
+            if (pageMode) {
+                dimension.hidden = true;
+                spacing.hidden = true;
+                typography.hidden = true;
+            }
 
             for (const sector of [dimension, spacing, decorations, typography]) {
                 wireSectorFields(editor, sector, labels);
             }
 
             placeSectors(stylesMount, [dimension, spacing, decorations, typography]);
+
+            const animation = stylesMount.querySelector('[data-voodbuilder-animation-sector]');
+
+            if (animation && pageMode) {
+                animation.hidden = true;
+            }
+
             ensureViewportStrip(stylesMount, labels, editor);
+            syncPageSurfaceStylePanelChrome(stylesMount, editor);
 
             // Marker for MutationObserver idempotency when sectors move
             if (! stylesMount.querySelector('[data-voodbuilder-tw-root]')) {
@@ -4005,6 +4373,7 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
             syncSelectsFromComponent(stylesMount, resolveStyleTarget(editor) ?? editor.getSelected(), editor, syncOpts());
             syncViewportStrip(stylesMount, editor, labels);
+            syncPageSurfaceStylePanelChrome(stylesMount, editor);
         } finally {
             ensuring = false;
             twObserver?.observe(stylesMount, { childList: true, subtree: true });
@@ -4017,7 +4386,9 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         }
 
         window.clearTimeout(ensureTimer);
-        ensureTimer = window.setTimeout(runEnsure, force ? 0 : 160);
+        // Page mode: ensure on the same turn so Style tab never paints full chrome first.
+        const delay = force || isTargetingPageSurface(editor) ? 0 : 160;
+        ensureTimer = window.setTimeout(runEnsure, delay);
     };
 
     const ensure = (force = false) => {
@@ -4026,6 +4397,8 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
     const syncPageSurfaceStyles = () => {
         const pageTarget = resolveStyleTarget(editor);
+
+        syncPageSurfaceStylePanelChrome(stylesMount, editor);
 
         if (! pageTarget) {
             return;
@@ -4041,8 +4414,21 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             return;
         }
 
+        syncPageSurfaceStylePanelChrome(stylesMount, editor);
         syncSelectsFromComponent(stylesMount, pageTarget, editor, syncOpts({ resetLinkPref: true }));
         attachClassWatch(pageTarget);
+
+        if (isPageSurfaceComponent(pageTarget, editor)) {
+            try {
+                syncPageSurfaceCanvasWallpaperPreview(editor);
+            } catch {
+                // Optional canvas preview.
+            }
+        }
+    };
+
+    editor.__voodbuilderSyncPageSurfaceStyleChrome = () => {
+        syncPageSurfaceStylePanelChrome(stylesMount, editor);
     };
 
     twObserver = new MutationObserver((mutations) => {
@@ -4132,20 +4518,32 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     });
     editor.on('component:selected', (component) => {
         window.setTimeout(() => {
+            // Leaving page-background mode: restore Dimension/Typography/… immediately.
+            // Without this, sectors stay hidden after “Page background…” then picking an element.
+            if (editor.__voodbuilderForcePageSurfaceStyle
+                && component
+                && ! isPageSurfaceComponent(component, editor)) {
+                editor.__voodbuilderForcePageSurfaceStyle = false;
+            }
+
             if (! sectorsReady()) {
                 ensure();
             }
+
+            syncPageSurfaceStylePanelChrome(stylesMount, editor);
 
             // After refresh / dynamic remount, paints often live only on #id rules.
             try {
                 hydrateAuthorStylesFromIdRules(editor, component);
                 // Prefer durable src attr when CssComposer lost the photo.
-                const src = String(component?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+                const src = readBackgroundImageUrl(component, editor);
                 const painted = extractUrlFromBackgroundImage(
                     readComponentCssProperty(editor, component, 'background-image'),
                 );
+                const darkPage = isPageSurfaceComponent(component, editor)
+                    && isStyleEditingDark(editor);
 
-                if (src !== '' && painted === '') {
+                if (src !== '' && (painted === '' || darkPage)) {
                     reapplyDecorationBackgroundPaint(editor, component, src);
                 }
             } catch {
@@ -4155,6 +4553,13 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             sanitizeInventedStyles(editor, component);
             syncSelectsFromComponent(stylesMount, component, editor, syncOpts({ resetLinkPref: true }));
             attachClassWatch(component);
+
+            try {
+                const stylePanel = stylesMount.closest?.('[data-voodbuilder-inspector="style"]');
+                ensurePageSurfaceAction(editor, stylePanel, labels);
+            } catch {
+                // Optional — registerPageSurfaceStyles also syncs on select.
+            }
         }, 0);
     });
     editor.on('voodbuilder:dynamic-blocks-refreshed', () => {
@@ -4184,9 +4589,21 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     });
 
     editor.on(PAGE_SURFACE_FOCUS_EVENT, () => {
-        window.requestAnimationFrame(() => {
-            syncPageSurfaceStyles();
-        });
+        // Synchronous — a rAF here caused CLASSES/Dimension to flash when opening Style
+        // with nothing selected (page mode).
+        syncPageSurfaceStyles();
+    });
+
+    editor.on('voodbuilder:inspector-tab', (tabId) => {
+        if (tabId !== 'style') {
+            return;
+        }
+
+        syncPageSurfaceStylePanelChrome(stylesMount, editor);
+
+        if (isTargetingPageSurface(editor) && ! sectorsReady()) {
+            ensure(true);
+        }
     });
 
     // Kept as a fallback when Grapes does emit it (rare for chip edits).
@@ -4210,6 +4627,41 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
     editor.on('device:select', onDeviceChange);
     editor.on('change:device', onDeviceChange);
+
+    const onThemeChange = (event) => {
+        const flagged = typeof event?.detail?.isDark === 'boolean'
+            ? event.detail.isDark
+            : (typeof event?.isDark === 'boolean' ? event.isDark : null);
+
+        if (typeof flagged === 'boolean') {
+            setStyleEditingDark(editor, flagged);
+        } else {
+            // Re-resolve from localStorage / host when the event has no detail.
+            delete editor.__voodbuilderStyleThemeDark;
+            setStyleEditingDark(editor, isStyleEditingDark(editor));
+        }
+
+        syncViewportStrip(stylesMount, editor, labels);
+
+        if (editor.__voodbuilderTwStyleApplying) {
+            return;
+        }
+
+        const selected = resolveStyleTarget(editor) ?? editor.getSelected?.();
+
+        if (selected && sectorsReady()) {
+            syncSelectsFromComponent(stylesMount, selected, editor, syncOpts());
+        }
+
+        try {
+            syncPageSurfaceCanvasWallpaperPreview(editor);
+        } catch {
+            // Optional canvas preview.
+        }
+    };
+
+    window.addEventListener('voodbuilder:theme-changed', onThemeChange);
+    editor.on('voodbuilder:theme-changed', onThemeChange);
 
     // Chip rename updates the Selector model; collection `change` usually covers it,
     // but selector:update is a cheap extra signal when the selected component owns it.
@@ -4300,12 +4752,15 @@ export function hydrateDecorationBackgroundImages(editor) {
         return 0;
     }
 
+    // Prefer the raw saved author sheet — Grapes getCss() drops `html.dark #id`.
+    const authorCss = String(editor.__voodbuilderAuthorPageCss ?? '').trim();
+
     // Legacy saves remapped page wallpaper to body/html — restore wrapper #id so
     // Size/Position/Repeat selects hydrate (image was already visible via body CSS).
-    hydratePageSurfaceWallpaperFromCss(editor);
+    hydratePageSurfaceWallpaperFromCss(editor, authorCss);
 
     // Last-resort map from live/saved CSS: #id { background-image: url(...) }
-    const liveCss = String(editor.__voodbuilderPageLiveCss ?? '');
+    const liveCss = String(authorCss || editor.__voodbuilderPageLiveCss || '');
     const cssUrlById = new Map();
 
     if (liveCss.includes('url(')) {
@@ -4313,6 +4768,14 @@ export function hydrateDecorationBackgroundImages(editor) {
         let match;
 
         while ((match = ruleRe.exec(liveCss)) !== null) {
+            const start = match.index ?? 0;
+            const before = liveCss.slice(Math.max(0, start - 16), start).toLowerCase();
+
+            // Dark companions hydrate via hydratePageSurfaceWallpaperFromCss.
+            if (before.includes('html.dark')) {
+                continue;
+            }
+
             const url = extractUrlFromBackgroundImage(match[2]);
 
             if (url !== '') {
@@ -4336,6 +4799,8 @@ export function hydrateDecorationBackgroundImages(editor) {
     const wasApplying = Boolean(editor.__voodbuilderTwStyleApplying);
     editor.__voodbuilderTwStyleApplying = true;
     let updated = 0;
+    const wrapperId = String(wrapper.getId?.() ?? '').trim();
+    const pageLightSrc = String(wrapper.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
 
     try {
         wrapper.onAll((component) => {
@@ -4343,7 +4808,23 @@ export function hydrateDecorationBackgroundImages(editor) {
                 return;
             }
 
-            const id = String(component.getId?.() ?? '').trim();
+            // Empty chrome-shell ghost that kept the old page wallpaper — do not
+            // re-paint it; page surface hydrate already moved paint onto the wrapper.
+            if (
+                ! isPageSurfaceComponent(component, editor)
+                && isLikelyPageWallpaperGhost(component, pageLightSrc)
+            ) {
+                try {
+                    component.removeAttributes?.(STYLE_BG_SRC_ATTR);
+                    clearStyleProperty(editor, component, 'background-image', { family: false });
+                } catch {
+                    // Optional cleanup.
+                }
+
+                return;
+            }
+
+            const id = String(component?.getId?.() ?? '').trim();
             let src = String(component.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
 
             if (src === '') {
@@ -4367,6 +4848,13 @@ export function hydrateDecorationBackgroundImages(editor) {
                 }
             }
 
+            // Page surface light+dark are hydrated above — never reapplyDecoration
+            // here: in dark chrome theme that would clearStyleProperty the light `#id`
+            // rule and permanently lose the light wallpaper.
+            if (isPageSurfaceComponent(component, editor) || id === wrapperId) {
+                return;
+            }
+
             if (src === '') {
                 return;
             }
@@ -4388,7 +4876,54 @@ export function hydrateDecorationBackgroundImages(editor) {
         }
     }
 
+    try {
+        syncPageSurfaceCanvasWallpaperPreview(editor);
+    } catch {
+        // Optional canvas wallpaper preview after hydrate.
+    }
+
     return updated;
+}
+
+/**
+ * Chrome-shell Save sometimes left page wallpaper on an empty component instance
+ * that reused the old wrapper id — skip re-painting those ghosts.
+ *
+ * @param {object} component
+ * @param {string} pageLightSrc
+ * @returns {boolean}
+ */
+function isLikelyPageWallpaperGhost(component, pageLightSrc) {
+    const classes = component?.getClasses?.() ?? [];
+    const classList = Array.isArray(classes)
+        ? classes.map((c) => (typeof c === 'string' ? c : String(c?.get?.('name') ?? '')))
+        : [];
+
+    if (! classList.includes('voodbuilder-editor-component-instance')) {
+        return false;
+    }
+
+    const childCount = component?.components?.()?.length
+        ?? component?.components?.()?.models?.length
+        ?? 0;
+
+    if (childCount > 0) {
+        return false;
+    }
+
+    const src = String(component.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+
+    if (src === '') {
+        return false;
+    }
+
+    // Same URL as the page wallpaper (already on wrapper) → ghost.
+    if (pageLightSrc !== '' && src === pageLightSrc) {
+        return true;
+    }
+
+    // Empty instance whose only job is the photo — treat as page-wallpaper leak.
+    return true;
 }
 
 export {

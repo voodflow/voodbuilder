@@ -20,8 +20,49 @@ final class EditorCodeBlockNormalizer
         $html = self::wrapLegacyCustomCode($html);
         $html = self::highlightVpCodeBlocks($html);
         $html = self::dedupeNestedVpCodeBlocks($html);
+        $html = self::stripStretchHeightClasses($html);
 
         return $html;
+    }
+
+    /**
+     * Remove Style Manager / flex stretch classes (h-full, min-h-*) from code shells.
+     */
+    protected static function stripStretchHeightClasses(string $html): string
+    {
+        if (! str_contains($html, 'vp-code-block')) {
+            return $html;
+        }
+
+        return (string) preg_replace_callback(
+            '/<div(?=[^>]*\bdata-code-block\b)(?=[^>]*\bvp-code-block\b)[^>]*>[\s\S]*?<\/div>\s*<\/div>/',
+            static function (array $matches): string {
+                $block = $matches[0];
+
+                $block = (string) preg_replace_callback(
+                    '/\bclass=(["\'])([^"\']*)\1/',
+                    static function (array $classMatch): string {
+                        $quote = $classMatch[1];
+                        $classes = preg_split('/\s+/', trim($classMatch[2])) ?: [];
+                        $filtered = array_values(array_filter(
+                            $classes,
+                            static fn (string $class): bool => $class !== ''
+                                && ! preg_match('/^(sm:|md:|lg:|xl:|2xl:)?(h|min-h)-(?!auto$)/', $class),
+                        ));
+
+                        if (in_array('vp-code-block', $filtered, true) && ! in_array('self-start', $filtered, true)) {
+                            $filtered[] = 'self-start';
+                        }
+
+                        return 'class='.$quote.implode(' ', $filtered).$quote;
+                    },
+                    $block,
+                );
+
+                return $block;
+            },
+            $html,
+        );
     }
 
     protected static function highlightVpCodeBlocks(string $html): string
@@ -54,9 +95,11 @@ final class EditorCodeBlockNormalizer
                     return $block;
                 }
 
-                $code = html_entity_decode(strip_tags($codeMatch[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $code = MarkdownCodeBlocks::normalizeSource(
+                    html_entity_decode(strip_tags($codeMatch[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                );
 
-                if (trim($code) === '') {
+                if ($code === '') {
                     return $block;
                 }
 

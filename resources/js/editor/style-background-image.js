@@ -16,6 +16,8 @@ import { hexForUtility } from './tailwind-color-palette.js';
 
 export const STYLE_BG_OPACITY_ATTR = 'data-vb-style-bg-opacity';
 export const STYLE_BG_SRC_ATTR = 'data-vb-style-bg-src';
+/** Page wallpaper URL while editing in dark theme (top-bar toggle). */
+export const STYLE_BG_SRC_DARK_ATTR = 'data-vb-style-bg-src-dark';
 
 export const STYLE_BG_OPACITY_OPTIONS = [
     { value: '0.25', label: '25%' },

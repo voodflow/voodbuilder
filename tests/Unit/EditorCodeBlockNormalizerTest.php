@@ -68,7 +68,32 @@ HTML;
 
         $normalized = EditorCodeBlockNormalizer::normalize($nested);
 
-        $this->assertSame(1, substr_count($normalized, 'class="vp-code-block"'));
+        $this->assertSame(1, substr_count($normalized, 'data-code-block'));
         $this->assertStringContainsString('echo 1;', $normalized);
+    }
+
+    public function test_strips_stretch_height_classes_and_adds_self_start(): void
+    {
+        $html = <<<'HTML'
+<div class="vp-code-block h-full min-h-full" data-code-block data-line-numbers>
+    <div class="vp-code-block__header">
+        <span class="vp-code-block__lang">BASH</span>
+        <button type="button" class="vp-code-block__copy" data-code-copy>Copy</button>
+    </div>
+    <div class="vp-code-block__body h-full">
+        <pre class="m-0 h-full whitespace-pre-wrap"><code class="language-bash">composer require voodflow/voodbuilder
+
+
+</code></pre>
+    </div>
+</div>
+HTML;
+
+        $normalized = EditorCodeBlockNormalizer::normalize($html);
+
+        $this->assertStringNotContainsString('h-full', $normalized);
+        $this->assertStringNotContainsString('min-h-full', $normalized);
+        $this->assertStringContainsString('self-start', $normalized);
+        $this->assertStringContainsString('composer require voodflow/voodbuilder', $normalized);
     }
 }

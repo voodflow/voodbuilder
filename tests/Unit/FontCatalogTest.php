@@ -95,6 +95,26 @@ CSS;
         $this->assertStringNotContainsString('font-family:"', $fixed);
     }
 
+    public function test_sanitize_composer_css_preserves_html_dark_page_wallpaper(): void
+    {
+        $css = <<<'CSS'
+#ilvj {background-image:url(/light.jpg);background-size:cover}
+html.dark #ilvj {background-image:url(/dark.jpg);background-size:cover}
+#ilvj {font-weight:500}
+#i2qwxg {width:100%}
+CSS;
+
+        $fixed = FontStylesheets::sanitizeComposerCss($css);
+
+        $this->assertStringContainsString('url(/light.jpg)', $fixed);
+        $this->assertStringContainsString('html.dark #ilvj', $fixed);
+        $this->assertStringContainsString('url(/dark.jpg)', $fixed);
+        $this->assertStringNotContainsString("html.dark \n", $fixed);
+        $this->assertStringContainsString('font-weight: 500', $fixed);
+        $this->assertEquals(1, preg_match_all('/(?<!html\.dark )#ilvj \{/', $fixed));
+        $this->assertEquals(1, substr_count($fixed, 'html.dark #ilvj {'));
+    }
+
     public function test_sync_id_font_rules_follow_inline_style(): void
     {
         $html = '<h2 id="ikqba7-3" class="text-4xl" style="font-family: \'Literata\', ui-serif, Georgia, serif !important">Hi</h2>';

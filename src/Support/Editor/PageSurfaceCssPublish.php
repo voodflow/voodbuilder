@@ -11,6 +11,9 @@ namespace Voodflow\Voodbuilder\Support\Editor;
  * after reload. The wrapper id is not present in published HTML, so orphan
  * wallpaper #id rules must become public surface rules at publish time.
  *
+ * Dark theme wallpapers use `html.dark #id` in the editor and become
+ * `html.dark body.voodbuilder-page-surface::before` on publish.
+ *
  * Prefer `body::before { position: fixed }` over `background-attachment: fixed` —
  * Chrome repaints/janks fixed attachments when on-page animations use transform.
  */
@@ -30,12 +33,40 @@ final class PageSurfaceCssPublish
             return $source;
         }
 
+        // Grapes selectorsAdd "html.dark" serializes as `#id, html.dark` (comma list),
+        // which paints the dark photo onto #id. Drop those before remap.
+        $source = preg_replace(
+            '/#[A-Za-z][\w-]*\s*,\s*html\.dark\s*\{[^{}]*\}/i',
+            '',
+            $source,
+        ) ?? $source;
+
         $idsInHtml = self::idsPresentInHtml($html);
         $bodyTarget = self::bodyTarget();
+        $darkBodyTarget = self::darkBodyTarget();
+
+        // Dark wallpaper first so `#id` remap does not swallow `html.dark #id`.
+        $remapped = preg_replace_callback(
+            '/html\.dark\s+#([A-Za-z][\w-]*)(?=[\s,{.:#[])/',
+            static function (array $match) use ($idsInHtml, $darkBodyTarget, $source): string {
+                $id = $match[1];
+
+                if (isset($idsInHtml[$id])) {
+                    return $match[0];
+                }
+
+                if (! self::darkIdRuleHasWallpaper($source, $id)) {
+                    return $match[0];
+                }
+
+                return $darkBodyTarget;
+            },
+            $source,
+        ) ?? $source;
 
         $remapped = preg_replace_callback(
             '/#([A-Za-z][\w-]*)(?=[\s,{.:#[])/',
-            static function (array $match) use ($idsInHtml, $bodyTarget, $source): string {
+            static function (array $match) use ($idsInHtml, $bodyTarget, $remapped): string {
                 $id = $match[1];
 
                 if (isset($idsInHtml[$id])) {
@@ -43,14 +74,14 @@ final class PageSurfaceCssPublish
                 }
 
                 // Only remap ids that paint a wallpaper (avoid rewriting unrelated orphans).
-                if (! self::idRuleHasWallpaper($source, $id)) {
+                if (! self::idRuleHasWallpaper($remapped, $id)) {
                     return $match[0];
                 }
 
                 return $bodyTarget;
             },
-            $source,
-        ) ?? $source;
+            $remapped,
+        ) ?? $remapped;
 
         $remapped = preg_replace(
             '/\[data-gjs-type=["\']wrapper["\']\]/',
@@ -102,12 +133,32 @@ final class PageSurfaceCssPublish
 
         $idsInHtml = self::idsPresentInHtml($html);
         $bodyTarget = self::bodyTarget();
+        $darkBodyTarget = self::darkBodyTarget();
         $blocks = [];
+
+        if (preg_match_all('/html\.dark\s+#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/', $source, $darkMatches, PREG_SET_ORDER) !== false) {
+            foreach ($darkMatches as $match) {
+                $id = $match[1];
+                $body = $match[2];
+
+                if (isset($idsInHtml[$id]) || ! self::declarationHasWallpaper($body)) {
+                    continue;
+                }
+
+                $blocks[] = $darkBodyTarget.' {'.self::withWallpaperDefaults($body).'}';
+            }
+        }
 
         if (preg_match_all('/#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/', $source, $matches, PREG_SET_ORDER) !== false) {
             foreach ($matches as $match) {
                 $id = $match[1];
                 $body = $match[2];
+                $offset = strpos($source, $match[0]);
+                $before = $offset === false ? '' : strtolower(substr($source, max(0, $offset - 16), 16));
+
+                if (str_contains($before, 'html.dark')) {
+                    continue;
+                }
 
                 if (isset($idsInHtml[$id]) || ! self::declarationHasWallpaper($body)) {
                     continue;
@@ -154,9 +205,19 @@ final class PageSurfaceCssPublish
         return "html, body, body.{$class}, .{$class}";
     }
 
+    public static function darkBodyTarget(): string
+    {
+        return 'html.dark body.'.self::PAGE_SURFACE_CLASS;
+    }
+
     public static function fixedLayerSelector(): string
     {
         return 'body.'.self::PAGE_SURFACE_CLASS.'::before';
+    }
+
+    public static function darkFixedLayerSelector(): string
+    {
+        return 'html.dark '.self::fixedLayerSelector();
     }
 
     /**
@@ -181,7 +242,31 @@ final class PageSurfaceCssPublish
     {
         $escaped = preg_quote($id, '/');
 
-        if (preg_match('/#'.$escaped.'\s*\{([^{}]*)\}/', $css, $match) !== 1) {
+        if (preg_match_all('/#'.$escaped.'\s*\{([^{}]*)\}/', $css, $matches, PREG_SET_ORDER) === false) {
+            return false;
+        }
+
+        foreach ($matches as $match) {
+            $offset = strpos($css, $match[0]);
+            $before = $offset === false ? '' : strtolower(substr($css, max(0, $offset - 16), 16));
+
+            if (str_contains($before, 'html.dark')) {
+                continue;
+            }
+
+            if (self::declarationHasWallpaper($match[1])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function darkIdRuleHasWallpaper(string $css, string $id): bool
+    {
+        $escaped = preg_quote($id, '/');
+
+        if (preg_match('/html\.dark\s+#'.$escaped.'\s*\{([^{}]*)\}/', $css, $match) !== 1) {
             return false;
         }
 
@@ -201,11 +286,36 @@ final class PageSurfaceCssPublish
     {
         $class = preg_quote(self::PAGE_SURFACE_CLASS, '/');
         $layerSelector = self::fixedLayerSelector();
+        $darkLayerSelector = self::darkFixedLayerSelector();
         $layerBlocks = [];
+
+        $rewritten = preg_replace_callback(
+            '/(html\.dark\s+body[^,{]*(?:,[^,{]*)*)\{([^{}]*)\}/i',
+            static function (array $match) use (&$layerBlocks, $darkLayerSelector): string {
+                if (! self::declarationHasWallpaper($match[2])) {
+                    return $match[0];
+                }
+
+                $prepared = self::withWallpaperDefaults($match[2]);
+                $layerDecls = self::wallpaperLayerDeclarations($prepared);
+                $hostDecls = self::wallpaperHostDeclarations($prepared);
+
+                if ($layerDecls !== '') {
+                    $layerBlocks[] = $darkLayerSelector.' {'.$layerDecls.'}';
+                }
+
+                return $match[1].' {'.$hostDecls.'}';
+            },
+            $css,
+        ) ?? $css;
 
         $rewritten = preg_replace_callback(
             '/(html\s*,\s*body[^,{]*(?:,[^,{]*)*|body[^,{]*(?:,[^,{]*'.$class.'[^,{]*)*)\{([^{}]*)\}/i',
             static function (array $match) use (&$layerBlocks, $layerSelector): string {
+                if (str_starts_with(strtolower(trim($match[1])), 'html.dark')) {
+                    return $match[0];
+                }
+
                 if (! self::declarationHasWallpaper($match[2])) {
                     return $match[0];
                 }
@@ -220,8 +330,8 @@ final class PageSurfaceCssPublish
 
                 return $match[1].' {'.$hostDecls.'}';
             },
-            $css,
-        ) ?? $css;
+            $rewritten,
+        ) ?? $rewritten;
 
         if ($layerBlocks === []) {
             return $rewritten;
