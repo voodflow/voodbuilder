@@ -56,7 +56,7 @@ import {
     registerBlockSettingsUi,
     refreshBlockSettingsUi,
 } from '../blocks/settings/index.js';
-import { buildPayload, stripAuthorIdRules } from './payload.js';
+import { buildPayload, readingTypographyFingerprint, stripAuthorIdRules } from './payload.js';
 import {
     registerChromeLayoutInspectorSelection,
     wireInspector,
@@ -2490,6 +2490,13 @@ function mountFrontendEditor() {
             { replaceCanvas: true },
         );
 
+        if (
+            payload.readingTypography
+            && typeof editor.__voodbuilderApplyReadingTypography === 'function'
+        ) {
+            editor.__voodbuilderApplyReadingTypography(payload.readingTypography);
+        }
+
         // The whole canvas was swapped. Stepping back across that boundary would
         // interleave the new tree with the old one, so the restored state becomes the
         // new floor of the history.
@@ -2545,6 +2552,7 @@ function mountFrontendEditor() {
         const html = String(payload?.html ?? '');
         const css = String(payload?.css ?? '');
         const js = String(payload?.js ?? '');
+        const reading = readingTypographyFingerprint(payload?.readingTypography);
         let hash = 2166136261;
 
         const feed = (value) => {
@@ -2561,6 +2569,8 @@ function mountFrontendEditor() {
         feed(css);
         feed('\0');
         feed(js);
+        feed('\0');
+        feed(reading);
 
         return (hash >>> 0).toString(16);
     };

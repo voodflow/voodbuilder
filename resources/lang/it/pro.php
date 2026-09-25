@@ -240,7 +240,7 @@ return [
         'tab_conditions' => 'Condizioni',
         'tab_reading' => 'Integrazione',
         'reading_tab_title' => 'Integrazione',
-        'reading_tab_hint' => 'Tipografia delle pagine companion (docs, tutorial, …). Tutto eredita dalle impostazioni del sito finché non lo cambi qui. L’anteprima live è in Page content.',
+        'reading_tab_hint' => 'Tipografia solo per i plugin companion (docs, tutorial, …), non per le pagine Site di Voodbuilder. Tutto eredita dalle impostazioni del sito finché non lo cambi qui. L’anteprima live è in Page content.',
         'reading_preview_sample' => 'Campione anteprima',
         'reading_heading_font' => 'Font titoli',
         'reading_body_font' => 'Font testo',

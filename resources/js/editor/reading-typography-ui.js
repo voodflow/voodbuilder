@@ -1014,9 +1014,25 @@ export function registerReadingTypographyUi(editor, options = {}) {
     const commit = ({ rebuild = false } = {}) => {
         editor.__voodbuilderReadingTypography = snapshot();
         ensureReadingFonts();
+        // Integration edits never touch Grapes `update`, so mark dirty explicitly
+        // or Save's html/css/js hash short-circuits and never hits the server.
+        editor.__voodbuilderMarkPageUnsaved?.();
         editor.trigger?.('voodbuilder:reading-typography');
         renderControls();
         syncPreview({ rebuild });
+    };
+
+    editor.__voodbuilderApplyReadingTypography = (next = {}) => {
+        const channel = state.previewChannel || previewIds[0] || '';
+
+        Object.assign(state, normalizeState({
+            ...next,
+            previewChannel: channel,
+        }));
+        editor.__voodbuilderReadingTypography = snapshot();
+        ensureReadingFonts();
+        renderControls();
+        syncPreview({ rebuild: true });
     };
 
     const setPreviewVisible = (visible) => {

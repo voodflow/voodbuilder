@@ -820,6 +820,30 @@ export function encodeJsonDataGjsAttributes(html) {
 }
 
 /**
+ * Stable string for save/autosave fingerprints.
+ * Integration typography lives outside html/css/js; omitting it made Save a no-op
+ * when only the Integration tab changed ("save too fast", values lost on reload).
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function readingTypographyFingerprint(value) {
+    if (! value || typeof value !== 'object') {
+        return '';
+    }
+
+    try {
+        return JSON.stringify({
+            font: String(value.font ?? ''),
+            headingFont: String(value.headingFont ?? ''),
+            typeScale: value.typeScale ?? null,
+        });
+    } catch {
+        return '';
+    }
+}
+
+/**
  * @param {object} editor
  * @param {{ mutate?: boolean, light?: boolean }} [options]
  *   mutate=false → read-only snapshot for onUpdate (must not wipe CssComposer / styles).

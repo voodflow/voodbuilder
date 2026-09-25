@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-09-26
+
+### Fixed
+
+- Layout editor Save no longer short-circuits when only the Integration tab changed: the save fingerprint now includes reading typography, the tab marks the page unsaved, and draft restore reapplies those settings
+- Integration tab copy clarifies companion-only scope (docs/tutorials), not Voodbuilder Site pages
+
 ## [1.11.0] - 2026-09-25
 
 ### Added

@@ -240,7 +240,7 @@ return [
         'tab_conditions' => 'Conditions',
         'tab_reading' => 'Integration',
         'reading_tab_title' => 'Integration',
-        'reading_tab_hint' => 'Typography for companion pages (docs, tutorials, …). Everything inherits the site Settings until you change it here. Live preview appears in Page content.',
+        'reading_tab_hint' => 'Typography for companion plugins only (docs, tutorials, …) — not Voodbuilder Site pages. Everything inherits the site Settings until you change it here. Live preview appears in Page content.',
         'reading_preview_sample' => 'Preview sample',
         'reading_heading_font' => 'Heading font',
         'reading_body_font' => 'Body font',

@@ -15,6 +15,7 @@
 
 import { debugSwallowed } from './debug-swallowed.js';
 import { confirmDialog } from './editor-dialog.js';
+import { readingTypographyFingerprint } from './editor/payload.js';
 
 const DB_NAME = 'voodbuilder-editor-drafts';
 const DB_VERSION = 1;
@@ -121,7 +122,8 @@ async function deleteLocalDraft(key) {
 function payloadFingerprint(payload) {
     const html = String(payload?.html ?? '');
     const css = String(payload?.css ?? '');
-    const source = `${html}\u0000${css}`;
+    const reading = readingTypographyFingerprint(payload?.readingTypography);
+    const source = `${html}\u0000${css}\u0000${reading}`;
 
     let hash = 0x811c9dc5;
 
@@ -130,7 +132,7 @@ function payloadFingerprint(payload) {
         hash = Math.imul(hash, 0x01000193);
     }
 
-    return `${html.length}:${css.length}:${(hash >>> 0).toString(36)}`;
+    return `${html.length}:${css.length}:${reading.length}:${(hash >>> 0).toString(36)}`;
 }
 
 function formatDraftAge(timestamp, labels) {
