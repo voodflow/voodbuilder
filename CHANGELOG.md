@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.2] - 2026-09-26
+
+### Changed
+
+- Integration type scale: **H5** sits after H4 (before P); removed the “Side columns” heading and neutralised H5/Link labels (companion-agnostic)
+
 ## [1.11.1] - 2026-09-26
 
 ### Fixed

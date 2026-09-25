@@ -8,12 +8,10 @@ import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { ensureFontLoaded } from './fonts/font-loader.js';
 
-const ARTICLE_ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'p'];
+const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'link'];
 
-/** Side columns: `h5` = sidebar group / "On this page" titles, `link` = sidebar + TOC links. */
+/** Companion extras with VitePress-like defaults (no site Settings equivalent). */
 const COLUMN_ELEMENTS = ['h5', 'link'];
-
-const ELEMENTS = [...ARTICLE_ELEMENTS, ...COLUMN_ELEMENTS];
 
 /** Same defaults as ChromeLayoutReadingTypography::columnDefaults(). */
 const COLUMN_DEFAULTS = {
@@ -868,11 +866,11 @@ export function registerReadingTypographyUi(editor, options = {}) {
 
         const elementLabel = (element) => {
             if (element === 'h5') {
-                return labels.readingElementH5 ?? 'H5 · column titles';
+                return labels.readingElementH5 ?? 'H5';
             }
 
             if (element === 'link') {
-                return labels.readingElementLink ?? 'Column links';
+                return labels.readingElementLink ?? 'Link';
             }
 
             return element.toUpperCase();
@@ -927,9 +925,7 @@ export function registerReadingTypographyUi(editor, options = {}) {
             return `<button type="button" class="voodbuilder-editor-style-viewport__btn${active ? ' is-active' : ''}" data-vb-reading-viewport="${device}" aria-pressed="${active ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
         }).join('');
 
-        const elementBlocks = ARTICLE_ELEMENTS.map(primaryDetails).join('')
-            + `<p class="voodbuilder-editor-reading-viewport__hint">${escapeHtml(labels.readingColumnsHeading ?? 'Side columns (sidebar and “On this page”)')}</p>`
-            + COLUMN_ELEMENTS.map(primaryDetails).join('');
+        const elementBlocks = ELEMENTS.map(primaryDetails).join('');
         const headingFontOptions = [{ value: '', label: siteFontLabel(inherited.headingLabel) }, ...fontOptions];
         const bodyFontOptions = [{ value: '', label: siteFontLabel(inherited.bodyLabel) }, ...fontOptions];
 

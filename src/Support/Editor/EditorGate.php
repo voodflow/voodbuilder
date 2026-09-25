@@ -627,7 +627,6 @@ final class EditorGate
             'readingInheritValue' => __('voodbuilder::pro.editor_ui.reading_inherit_value'),
             'readingTypeScale' => __('voodbuilder::pro.editor_ui.reading_type_scale'),
             'readingTypeScaleHint' => __('voodbuilder::pro.editor_ui.reading_type_scale_hint'),
-            'readingColumnsHeading' => __('voodbuilder::pro.editor_ui.reading_columns_heading'),
             'readingElementH5' => __('voodbuilder::pro.editor_ui.reading_element_h5'),
             'readingElementLink' => __('voodbuilder::pro.editor_ui.reading_element_link'),
             'readingLocalNavMenu' => __('voodbuilder::reading.menu'),
