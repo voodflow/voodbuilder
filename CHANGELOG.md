@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-09-25
+
+### Changed
+
+- Package health: security policy, Dependabot with update cooldown, pinned GitHub Actions, lean Composer dist (`export-ignore`)
+- Laravel Pint added (`composer format`) and applied — formatting only, no behaviour change
+
 ## [1.7.1] - 2026-09-25
 
 ### Fixed
