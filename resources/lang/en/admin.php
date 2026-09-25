@@ -16,6 +16,11 @@ return [
         'link_display_icon_only' => 'Icon only',
         'link_display_icon_text' => 'Icon + text',
         'link_display_text_only' => 'Text only',
+        'dropdown_layout_auto' => 'Auto (mega when rich or many items)',
+        'dropdown_layout_list' => 'Simple list',
+        'dropdown_layout_mega' => 'Mega menu',
+        'icon_style_outline' => 'outline',
+        'icon_style_filled' => 'filled',
     ],
 
     'menu_placements' => [
@@ -34,6 +39,8 @@ return [
 
     'fields' => [
         'menu_icon' => 'Tabler icon',
+        'menu_description' => 'Subtitle',
+        'menu_dropdown_layout' => 'Dropdown layout',
         'menu_route' => 'App route',
         'menu_route_match' => 'Active route pattern',
         'sub_theme' => 'Visual theme',
@@ -162,7 +169,9 @@ return [
         'menu_route' => 'Public GET routes registered in your app. The active state is set automatically. If the route needs parameters, fill in the fields shown below.',
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
-        'menu_icon' => 'Tabler icon name (e.g. brand-facebook). Compatible with daljo25/filament-tabler-icons.',
+        'menu_icon' => 'Search Tabler icons with live preview. Outline and filled variants appear when available (stored as name or name:filled).',
+        'menu_description' => 'Optional short subtitle under the label in dropdowns and mega menus.',
+        'menu_dropdown_layout' => 'Auto switches to a multi-column mega panel when items have icons/subtitles or there are 5+ children.',
         'menu_editor_pages_only' => 'Only Editor pages are listed. Use “Open visual editor” to edit the selected page on the site.',
         'menu_tree' => 'Prefer “+” on a top-level row to add a sub-item in place. Drag with the grip (☰): top/bottom edge reorders at the same level; only the centre of a top-level row nests (badge “Submenu here”). Nested items stay expanded. Maximum 2 levels. Sub-items can use “Move to top level” if they land under the wrong parent. Use “Dropdown group” for labels without a link.',
         'menu_tree_drag' => 'Drag to reorder (edges). Nest only on the centre of a top-level item',

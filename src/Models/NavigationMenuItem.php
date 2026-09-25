@@ -12,8 +12,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Voodflow\Voodbuilder\Casts\MenuItemTypeCast;
 use Voodflow\Voodbuilder\Contracts\MenuItemTypeHandler;
+use Voodflow\Voodbuilder\Enums\MenuDropdownLayout;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
+use Voodflow\Voodbuilder\Support\MenuTablerIcons;
 use Voodflow\Voodbuilder\Support\NavigationMenuItemTree;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 
@@ -28,7 +30,9 @@ class NavigationMenuItem extends Model
         'menu_id',
         'parent_id',
         'label',
+        'description',
         'icon',
+        'dropdown_layout',
         'type',
         'link',
         'route_parameters',
@@ -41,11 +45,60 @@ class NavigationMenuItem extends Model
     {
         return [
             'type' => MenuItemTypeCast::class,
+            'dropdown_layout' => MenuDropdownLayout::class,
             'route_parameters' => 'array',
             'open_in_new_tab' => 'boolean',
             'sort_order' => 'integer',
             'parent_id' => 'integer',
         ];
+    }
+
+    public function resolvedDescription(): ?string
+    {
+        $description = trim((string) ($this->description ?? ''));
+
+        return $description !== '' ? $description : null;
+    }
+
+    public function resolvedIcon(): ?string
+    {
+        $icon = trim((string) ($this->icon ?? ''));
+
+        if ($icon === '' || ! MenuTablerIcons::has($icon)) {
+            return null;
+        }
+
+        return $icon;
+    }
+
+    public function hasRichPresentation(): bool
+    {
+        return $this->resolvedDescription() !== null || $this->resolvedIcon() !== null;
+    }
+
+    /**
+     * Desktop dropdown layout for this parent (list vs mega grid).
+     */
+    public function resolvedDropdownLayout(): MenuDropdownLayout
+    {
+        $layout = $this->dropdown_layout;
+
+        if ($layout instanceof MenuDropdownLayout && $layout !== MenuDropdownLayout::Auto) {
+            return $layout;
+        }
+
+        $children = $this->navigationChildren();
+
+        if ($children->count() >= 5 || $children->contains(fn (self $child): bool => $child->hasRichPresentation())) {
+            return MenuDropdownLayout::Mega;
+        }
+
+        return MenuDropdownLayout::List;
+    }
+
+    public function usesMegaDropdown(): bool
+    {
+        return $this->resolvedDropdownLayout() === MenuDropdownLayout::Mega;
     }
 
     protected static function booted(): void

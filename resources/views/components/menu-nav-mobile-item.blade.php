@@ -82,6 +82,9 @@
             data-mobile-nav-close
         >
             <span>{{ __($item->label) }}</span>
+            @if ($item->resolvedDescription())
+                <span class="block text-xs font-normal normal-case tracking-normal text-vp-text-2">{{ __($item->resolvedDescription()) }}</span>
+            @endif
             @if ($item->isExternal())
                 <x-voodbuilder::external-link-icon />
             @endif

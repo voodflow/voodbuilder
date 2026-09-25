@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.3] - 2026-09-25
+
+### Fixed
+
+- Account menu off no longer hides theme / language behind a misleading user icon: guests get a preferences (sliders) trigger without login/register; enabling Account menu restores the user icon and auth links
+
+### Added
+
+- Navigation mega menus: optional item `description` (subtitle) and `dropdown_layout` (`auto` / `list` / `mega`), richer dropdown rows with optional Tabler icons, and auto mega grid when children are rich or ≥5
+- Expanded menu Tabler icon set for product chrome (docs, media, pricing, privacy, etc.)
+- Filament menu icon picker: searchable with live SVG preview, outline + filled variants (`name` / `name:filled`) from the full Tabler catalog
+
 ## [1.7.2] - 2026-09-25
 
 ### Changed

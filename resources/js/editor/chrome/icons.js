@@ -10,6 +10,7 @@ export const CHROME_TABLER_PATHS = {
     search: '<path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/>',
     bell: '<path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/>',
     user: '<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>',
+    'adjustments-horizontal': '<path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 6l8 0"/><path d="M16 6l4 0"/><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 12l2 0"/><path d="M10 12l10 0"/><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 18l11 0"/><path d="M19 18l1 0"/>',
     'menu-2': '<path d="M4 6l16 0"/><path d="M4 12l16 0"/><path d="M4 18l16 0"/>',
     x: '<path d="M18 6l-12 12"/><path d="M6 6l12 12"/>',
 };
@@ -40,7 +41,12 @@ export function chromeIconSvgForAttrs(attrs = {}) {
     }
 
     if (attrs['data-voodbuilder-profile-menu-toggle'] != null) {
-        return chromeTablerIconSvg('user');
+        const profileIcon = attrs['data-vb-profile-menu-icon'];
+        const iconName = typeof profileIcon === 'string' && Object.prototype.hasOwnProperty.call(CHROME_TABLER_PATHS, profileIcon)
+            ? profileIcon
+            : 'user';
+
+        return chromeTablerIconSvg(iconName);
     }
 
     if (attrs['data-mobile-nav-toggle'] != null) {

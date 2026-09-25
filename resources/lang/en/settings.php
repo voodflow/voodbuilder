@@ -26,7 +26,7 @@ return [
         'notification_bell' => 'Notification bell',
         'notification_bell_help' => 'Default for logged-in users when comment notifications are enabled. Override in the editor.',
         'account_link' => 'Account menu',
-        'account_link_help' => 'Default for logged-in users. Override in the editor.',
+        'account_link_help' => 'When enabled, the header uses the account icon with login, registration, and account links. When disabled, theme and language stay under a preferences icon. Override account visibility per page in the editor.',
         'theme_toggle' => 'Dark / light toggle',
         'theme_toggle_help' => 'When enabled, visitors can switch theme; when disabled, the site uses the fixed theme below.',
         'default_theme' => 'Default theme',

@@ -16,6 +16,11 @@ return [
         'link_display_icon_only' => 'Solo icona',
         'link_display_icon_text' => 'Icona + testo',
         'link_display_text_only' => 'Solo testo',
+        'dropdown_layout_auto' => 'Auto (mega se ricco o tanti elementi)',
+        'dropdown_layout_list' => 'Elenco semplice',
+        'dropdown_layout_mega' => 'Mega menu',
+        'icon_style_outline' => 'outline',
+        'icon_style_filled' => 'filled',
     ],
 
     'menu_placements' => [
@@ -34,6 +39,8 @@ return [
 
     'fields' => [
         'menu_icon' => 'Icona Tabler',
+        'menu_description' => 'Sottotitolo',
+        'menu_dropdown_layout' => 'Layout dropdown',
         'menu_route' => 'Route applicazione',
         'menu_route_match' => 'Pattern route attiva',
         'sub_theme' => 'Tema visivo',
@@ -162,7 +169,9 @@ return [
         'menu_route' => 'Route GET pubbliche registrate nell\'app. Lo stato attivo viene impostato automaticamente. Se la route richiede parametri, compila i campi mostrati sotto.',
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
-        'menu_icon' => 'Nome icona Tabler (es. brand-facebook). Compatibile con daljo25/filament-tabler-icons.',
+        'menu_icon' => 'Cerca le icone Tabler con anteprima. Varianti outline e filled quando disponibili (salvate come name o name:filled).',
+        'menu_description' => 'Sottotitolo breve opzionale sotto la label nei dropdown e mega menu.',
+        'menu_dropdown_layout' => 'Auto passa a un pannello mega multi-colonna quando le voci hanno icone/sottotitoli o ci sono 5+ figli.',
         'menu_editor_pages_only' => 'Sono elencate solo le pagine Editor. Usa “Apri editor visuale” per modificare la pagina selezionata sul sito.',
         'menu_tree' => 'Preferisci “+” su una riga di primo livello per creare una sotto-voce sul posto. Trascina con il grip (☰): bordo alto/basso riordina allo stesso livello; solo il centro di una voce di primo livello annida (badge “Sottomenu qui”). Le voci annidate restano espanse. Massimo 2 livelli. Le sotto-voci hanno “Porta a primo livello” se finiscono sotto il genitore sbagliato. Usa “Gruppo dropdown” per etichette senza link.',
         'menu_tree_drag' => 'Trascina per riordinare (bordi). Annida solo al centro di una voce di primo livello',

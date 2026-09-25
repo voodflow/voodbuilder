@@ -1,13 +1,29 @@
 @php
     use Voodflow\Vdocs\Support\DocNavigation;
+    use Voodflow\Voodbuilder\Enums\MenuDropdownLayout;
+    use Voodflow\Voodbuilder\Models\NavigationMenuItem;
+    use Voodflow\Voodbuilder\Enums\MenuItemType;
 
     $navTopics = class_exists(DocNavigation::class) && DocNavigation::shouldAutoInject()
-        ? DocNavigation::navTopics()
+        ? DocNavigation::productNavTopics()
         : collect();
 
     $sections = $navTopics->isEmpty() && class_exists(DocNavigation::class) && DocNavigation::shouldAutoInject()
         ? DocNavigation::sections()
         : collect();
+
+    $showOverview = $navTopics->count() > 1;
+    $topicItems = $navTopics->map(function ($topic): NavigationMenuItem {
+        return new NavigationMenuItem([
+            'label' => $topic->title,
+            'description' => filled($topic->description) ? (string) $topic->description : null,
+            'type' => MenuItemType::Url,
+            'link' => DocNavigation::topicUrl($topic),
+        ]);
+    });
+
+    $usesMega = $topicItems->count() >= 5
+        || $topicItems->contains(fn (NavigationMenuItem $item): bool => $item->hasRichPresentation());
 @endphp
 
 @if (($navTopics->isNotEmpty() || $sections->isNotEmpty()) && Route::has('vdocs.index'))
@@ -35,34 +51,46 @@
 
         <div
             data-voodbuilder-nav-dropdown-panel
+            data-layout="{{ $usesMega ? MenuDropdownLayout::Mega->value : MenuDropdownLayout::List->value }}"
             hidden
             role="menu"
-            class="voodbuilder-dropdown-panel absolute top-[calc(100%+0.5rem)] left-0 z-50"
+            @class([
+                'voodbuilder-dropdown-panel absolute top-[calc(100%+0.5rem)] left-0 z-50',
+                'voodbuilder-dropdown-panel--mega' => $usesMega,
+            ])
         >
             @if ($navTopics->isNotEmpty())
-                @if ($navTopics->count() > 1)
+                @if ($showOverview)
                     <a
                         href="{{ DocNavigation::indexUrl() }}"
                         role="menuitem"
                         @class([
+                            'voodbuilder-nav-menu-item',
                             'text-vp-brand-1' => request()->routeIs('vdocs.index'),
                         ])
                     >
-                        {{ __('vdocs::nav.overview') }}
+                        <span class="voodbuilder-nav-menu-item__text">
+                            <span class="voodbuilder-nav-menu-item__label">{{ __('vdocs::nav.overview') }}</span>
+                            <span class="voodbuilder-nav-menu-item__description">{{ __('vdocs::nav.overview_description') }}</span>
+                        </span>
                     </a>
 
                     <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
                 @endif
 
-                @foreach ($navTopics as $topic)
+                @foreach ($topicItems as $index => $item)
+                    @php
+                        $topic = $navTopics[$index];
+                    @endphp
                     <a
-                        href="{{ DocNavigation::topicUrl($topic) }}"
+                        href="{{ $item->resolveUrl() }}"
                         role="menuitem"
                         @class([
+                            'voodbuilder-nav-menu-item',
                             'text-vp-brand-1' => request()->route('topic') === $topic->slug,
                         ])
                     >
-                        {{ $topic->title }}
+                        <x-voodbuilder::menu-nav-item-content :item="$item" />
                     </a>
                 @endforeach
             @else
@@ -70,10 +98,13 @@
                     href="{{ DocNavigation::indexUrl() }}"
                     role="menuitem"
                     @class([
+                        'voodbuilder-nav-menu-item',
                         'text-vp-brand-1' => request()->routeIs('vdocs.index'),
                     ])
                 >
-                    {{ __('vdocs::nav.overview') }}
+                    <span class="voodbuilder-nav-menu-item__text">
+                        <span class="voodbuilder-nav-menu-item__label">{{ __('vdocs::nav.overview') }}</span>
+                    </span>
                 </a>
 
                 <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
@@ -90,10 +121,13 @@
                         href="{{ DocNavigation::sectionUrl($section) }}"
                         role="menuitem"
                         @class([
+                            'voodbuilder-nav-menu-item',
                             'text-vp-brand-1' => $isActiveSection,
                         ])
                     >
-                        {{ $section->title }}
+                        <span class="voodbuilder-nav-menu-item__text">
+                            <span class="voodbuilder-nav-menu-item__label">{{ $section->title }}</span>
+                        </span>
                     </a>
                 @endforeach
             @endif

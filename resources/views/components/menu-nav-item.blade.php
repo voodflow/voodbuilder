@@ -57,7 +57,7 @@
                             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                             data-mobile-nav-close
                         >
-                            <span>{{ __($item->label) }}</span>
+                            <x-voodbuilder::menu-nav-item-content :item="$item" />
                         </a>
                     </li>
                 @endif
@@ -93,21 +93,26 @@
 
             <div
                 data-voodbuilder-nav-dropdown-panel
+                data-layout="{{ $item->resolvedDropdownLayout()->value }}"
                 hidden
                 role="menu"
-                class="voodbuilder-dropdown-panel absolute top-[calc(100%+0.5rem)] left-0 z-50 overflow-visible"
+                @class([
+                    'voodbuilder-dropdown-panel absolute top-[calc(100%+0.5rem)] left-0 z-50 overflow-visible',
+                    'voodbuilder-dropdown-panel--mega' => $item->usesMegaDropdown(),
+                ])
             >
                 @if ($hasParentLink)
                     <a
                         href="{{ $item->resolveUrl() }}"
                         role="menuitem"
                         @class([
+                            'voodbuilder-nav-menu-item',
                             'font-semibold' => $item->isSelfActive(),
                             'text-vp-brand-1' => $item->isSelfActive(),
                         ])
                         @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                     >
-                        {{ __($item->label) }}
+                        <x-voodbuilder::menu-nav-item-content :item="$item" />
                     </a>
 
                     <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
@@ -131,7 +136,7 @@
                 @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 data-mobile-nav-close
             >
-                <span>{{ __($item->label) }}</span>
+                <x-voodbuilder::menu-nav-item-content :item="$item" />
                 @if ($item->isExternal())
                     <x-voodbuilder::external-link-icon />
                 @endif

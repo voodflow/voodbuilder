@@ -1481,6 +1481,8 @@ html[data-voodbuilder-editor-scope='page'] header[role='banner'] {
     box-shadow:
         0 10px 15px -3px rgb(0 0 0 / 0.1),
         0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+    /* Uppercase on the top-level nav must not flatten dropdown hierarchy. */
+    text-transform: none;
 }
 
 html.dark .voodbuilder-dropdown-panel,
@@ -1500,22 +1502,50 @@ html.dark [data-voodbuilder-nav-dropdown-panel] {
     overflow: hidden;
 }
 
+.voodbuilder-dropdown-panel.voodbuilder-dropdown-panel--mega,
+[data-voodbuilder-nav-dropdown-panel].voodbuilder-dropdown-panel--mega,
+[data-voodbuilder-nav-dropdown-panel][data-layout='mega'] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(13.5rem, 1fr));
+    gap: 0.25rem;
+    min-width: min(36rem, calc(100vw - 2rem));
+    max-width: min(44rem, calc(100vw - 1.5rem));
+    padding: 0.5rem !important;
+}
+
+@media (min-width: 1024px) {
+    .voodbuilder-dropdown-panel.voodbuilder-dropdown-panel--mega:has(> :nth-child(7)),
+    [data-voodbuilder-nav-dropdown-panel].voodbuilder-dropdown-panel--mega:has(> :nth-child(7)),
+    [data-voodbuilder-nav-dropdown-panel][data-layout='mega']:has(> :nth-child(7)) {
+        grid-template-columns: repeat(3, minmax(12.5rem, 1fr));
+        min-width: min(48rem, calc(100vw - 2rem));
+        max-width: min(56rem, calc(100vw - 1.5rem));
+    }
+}
+
+.voodbuilder-dropdown-panel--mega > .voodbuilder-dropdown-separator,
+[data-voodbuilder-nav-dropdown-panel][data-layout='mega'] > .voodbuilder-dropdown-separator {
+    grid-column: 1 / -1;
+}
+
 .voodbuilder-dropdown-panel :is(a, button, [role='menuitem']),
 .voodbuilder-nav-profile-menu__dropdown :is(a, button, [role='menuitem']),
 [data-voodbuilder-nav-dropdown-panel] :is(a, button, [role='menuitem']) {
     display: flex;
     width: calc(100% - 0.5rem);
-    align-items: center;
+    align-items: flex-start;
     gap: 0.625rem;
     box-sizing: border-box;
     margin-inline: 0.25rem;
-    padding: 0.4375rem 0.625rem !important;
+    padding: 0.5rem 0.625rem !important;
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-weight: 500;
     color: var(--color-vp-text-1);
     text-align: left;
     text-decoration: none;
+    text-transform: none;
+    letter-spacing: normal;
     background-color: transparent;
     border: 0 !important;
     border-radius: 0.375rem;
@@ -1523,6 +1553,60 @@ html.dark [data-voodbuilder-nav-dropdown-panel] {
     transition:
         background-color 0.12s ease,
         color 0.12s ease;
+}
+
+.voodbuilder-dropdown-panel--mega :is(a, button, [role='menuitem']),
+[data-voodbuilder-nav-dropdown-panel][data-layout='mega'] :is(a, button, [role='menuitem']) {
+    width: 100%;
+    margin-inline: 0;
+    min-height: 2.75rem;
+}
+
+.voodbuilder-nav-menu-item__icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin-top: 0.05rem;
+    border-radius: 0.375rem;
+    color: var(--color-vp-brand-1);
+    background-color: color-mix(in srgb, var(--color-vp-brand-1) 12%, transparent);
+}
+
+.voodbuilder-nav-menu-item__text {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.125rem;
+    align-items: flex-start;
+}
+
+.voodbuilder-nav-menu-item__label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    color: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.voodbuilder-nav-menu-item__description {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.15rem;
+    color: var(--color-vp-text-2);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.voodbuilder-dropdown-panel :is(a, button, [role='menuitem']):is(:hover, :focus-visible) .voodbuilder-nav-menu-item__description,
+[data-voodbuilder-nav-dropdown-panel] :is(a, button, [role='menuitem']):is(:hover, :focus-visible) .voodbuilder-nav-menu-item__description {
+    color: color-mix(in srgb, var(--color-vp-brand-1) 70%, var(--color-vp-text-2));
 }
 
 .voodbuilder-dropdown-panel :is(a, button, [role='menuitem']):is(:hover, :focus-visible),

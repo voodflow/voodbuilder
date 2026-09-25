@@ -167,6 +167,39 @@ function applyLinkProps(component) {
     });
 }
 
+/**
+ * Saved icon links live only in attributes; the type defaults (`linkType: 'none'`,
+ * `href: '#'`) must not win on reload or applyLinkProps strips the link.
+ *
+ * @param {object} component
+ */
+export function hydrateIconLinkPropsFromAttributes(component) {
+    const attrs = component.getAttributes?.() ?? {};
+    const updates = {};
+    const linkType = String(attrs['data-vb-link-type'] ?? '').trim();
+    const href = String(attrs.href ?? '').trim();
+
+    if (linkType !== '' && component.get('linkType') !== linkType) {
+        updates.linkType = linkType;
+    }
+
+    if (href !== '' && component.get('href') !== href) {
+        updates.href = href;
+    }
+
+    if (attrs.target != null && component.get('target') !== attrs.target) {
+        updates.target = String(attrs.target);
+    }
+
+    if (attrs['data-vb-link'] != null && component.get('linkRef') !== attrs['data-vb-link']) {
+        updates.linkRef = String(attrs['data-vb-link']);
+    }
+
+    if (Object.keys(updates).length > 0) {
+        component.set(updates, { silent: true });
+    }
+}
+
 function registerLinkableType(editor, typeName, defaults = {}) {
     if (editor.DomComponents.getType(typeName)) {
         return;
@@ -256,6 +289,8 @@ function registerIconType(editor) {
                 traits: linkTraitSchema(),
             },
             init() {
+                hydrateIconLinkPropsFromAttributes(this);
+
                 this.on('change:linkType change:attributes:data-vb-link-type change:href change:target', () => {
                     applyLinkProps(this);
                     const type = this.get('linkType')

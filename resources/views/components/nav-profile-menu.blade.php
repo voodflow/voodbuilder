@@ -3,16 +3,19 @@
 ])
 
 @php
-    use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\NavProfileMenu;
     use Voodflow\Voodbuilder\Support\UserAvatar;
 
-    $showThemeToggle = (bool) VoodbuilderSettings::get('show_theme_toggle', true);
-    $showAccountLink = (bool) VoodbuilderSettings::get('show_account_link', true);
-    $accountEnabled = $showAccountLink && config('voodbuilder.account.enabled', true) && Route::has('voodbuilder.account');
+    $showAccountChrome = NavProfileMenu::accountChromeEnabled();
+    $accountEnabled = NavProfileMenu::accountPageEnabled();
+    $showThemeToggle = NavProfileMenu::themeToggleEnabled();
+    $triggerIcon = NavProfileMenu::triggerIcon();
     $user = auth()->user();
-    $avatarUrl = $user ? UserAvatar::url($user) : null;
+    $avatarUrl = ($showAccountChrome && $user) ? UserAvatar::url($user) : null;
+    $showMenu = $canvasPreview || NavProfileMenu::hasContent();
 @endphp
 
+@if ($showMenu)
 <div
     class="voodbuilder-nav-profile-menu relative"
     data-voodbuilder-profile-menu
@@ -25,18 +28,22 @@
             'text-vp-text-2' => $canvasPreview,
         ])
         data-voodbuilder-profile-menu-toggle
+        data-vb-profile-menu-icon="{{ $triggerIcon }}"
         @if ($canvasPreview)
             data-gjs-type="voodbuilder-chrome-button"
             data-gjs-selectable="false"
         @endif
         aria-haspopup="menu"
         aria-expanded="false"
-        aria-label="{{ __('voodbuilder::nav.menu_aria') }}"
+        aria-label="{{ NavProfileMenu::triggerAriaLabel() }}"
     >
         @if (! $canvasPreview && $avatarUrl)
             <img src="{{ $avatarUrl }}" alt="" class="h-[26px] w-[26px] rounded-full object-cover">
-        @else
+        @elseif ($triggerIcon === 'user')
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true" data-vb-chrome-icon="user"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+        @else
+            {{-- Tabler outline: adjustments-horizontal (theme / language preferences) --}}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true" data-vb-chrome-icon="adjustments-horizontal"><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 6l8 0"/><path d="M16 6l4 0"/><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 12l2 0"/><path d="M10 12l10 0"/><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 18l11 0"/><path d="M19 18l1 0"/></svg>
         @endif
     </button>
 
@@ -51,17 +58,21 @@
                 {{ __('voodbuilder::pro.editor.blocks.site_nav_preview') }}
             </p>
             <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
-            <span role="menuitem" data-gjs-type="default" data-gjs-selectable="false">
-                {{ __('voodbuilder::account.nav') }}
-            </span>
+            @if ($showAccountChrome)
+                <span role="menuitem" data-gjs-type="default" data-gjs-selectable="false">
+                    {{ __('voodbuilder::account.nav') }}
+                </span>
+            @endif
             @if ($showThemeToggle)
                 <span role="menuitem" data-gjs-type="default" data-gjs-selectable="false">
                     Light / dark
                 </span>
             @endif
-            <span role="menuitem" data-gjs-type="default" data-gjs-selectable="false">
-                {{ __('voodbuilder::auth.login') }}
-            </span>
+            @if ($showAccountChrome)
+                <span role="menuitem" data-gjs-type="default" data-gjs-selectable="false">
+                    {{ __('voodbuilder::auth.login') }}
+                </span>
+            @endif
         @else
             @auth
                 @if ($accountEnabled)
@@ -117,7 +128,7 @@
                         {{ __('voodbuilder::auth.logout') }}
                     </button>
                 </form>
-            @else
+            @elseif ($showAccountChrome)
                 <a
                     href="{{ \Voodflow\Voodbuilder\Support\VoodbuilderUrls::login() }}"
                     role="menuitem"
@@ -136,3 +147,4 @@
         @endif
     </div>
 </div>
+@endif

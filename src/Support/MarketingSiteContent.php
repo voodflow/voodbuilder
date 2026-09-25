@@ -58,7 +58,7 @@ final class MarketingSiteContent
     /**
      * Product landings shown in nav, home grid, and footer.
      *
-     * @return list<array{slug: string, name: string, tagline: string, description: string, href: string}>
+     * @return list<array{slug: string, name: string, tagline: string, description: string, href: string, icon?: string}>
      */
     public static function productLandings(): array
     {
@@ -69,6 +69,7 @@ final class MarketingSiteContent
                 'tagline' => 'Workflow automation',
                 'description' => 'Visual flows, triggers, credentials, and model integrations — the automation core of the suite.',
                 'href' => '/products/a-voodflow',
+                'icon' => 'stack-2',
             ],
             [
                 'slug' => 'voodbuilder',
@@ -76,6 +77,7 @@ final class MarketingSiteContent
                 'tagline' => 'Visual site builder',
                 'description' => 'Marketing pages, chrome layouts, themes, and Editor blocks — ship landings without leaving Laravel.',
                 'href' => '/products/a-voodbuilder',
+                'icon' => 'layout-dashboard',
             ],
             [
                 'slug' => 'events-suite',
@@ -83,6 +85,7 @@ final class MarketingSiteContent
                 'tagline' => 'Trade fair package',
                 'description' => 'vevents, vexhibitors, vpartners, and vsponsors — one package for event and exhibition sites.',
                 'href' => '/products/a-events-suite',
+                'icon' => 'calendar-event',
             ],
             [
                 'slug' => 'vdocs',
@@ -90,6 +93,7 @@ final class MarketingSiteContent
                 'tagline' => 'Documentation',
                 'description' => 'Fixed docs channel with sections, search, and Filament authoring for product documentation.',
                 'href' => '/products/a-vdocs',
+                'icon' => 'book-2',
             ],
             [
                 'slug' => 'vtuts',
@@ -97,6 +101,7 @@ final class MarketingSiteContent
                 'tagline' => 'Tutorials',
                 'description' => 'Series, categories, and step-by-step lessons with a public tutorials channel.',
                 'href' => '/products/a-vtuts',
+                'icon' => 'school',
             ],
         ];
     }

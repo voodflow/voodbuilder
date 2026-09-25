@@ -612,8 +612,26 @@ function readLinkProps(component) {
     };
 }
 
-function hydrateLinkPropsFromAttributes(component) {
-    const { href, target, linkType, linkRef } = readLinkProps(component);
+/**
+ * Saved HTML only carries the link in attributes; model props start from the type
+ * defaults (`href: '#'`, `linkType: 'url'`, …). Attributes must win here or the next
+ * Save exports `href="#"` and drops page / menu / new-tab links.
+ */
+function readLinkAttributes(component) {
+    const attrs = component.getAttributes?.() ?? {};
+    const fromProps = readLinkProps(component);
+    const attrHref = String(attrs.href ?? '').trim();
+
+    return {
+        href: attrHref !== '' ? attrHref : fromProps.href,
+        target: String(attrs.target ?? '').trim(),
+        linkType: String(attrs['data-vb-link-type'] ?? '').trim() || fromProps.linkType,
+        linkRef: attrs['data-vb-link'] != null ? String(attrs['data-vb-link']).trim() : fromProps.linkRef,
+    };
+}
+
+export function hydrateLinkPropsFromAttributes(component) {
+    const { href, target, linkType, linkRef } = readLinkAttributes(component);
     const updates = {};
 
     if (href !== '' && component.get('href') !== href) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use Voodflow\Voodbuilder\Enums\MenuDropdownLayout;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
@@ -45,6 +46,7 @@ final class MarketingSiteMenus
             'menu_id' => $main->getKey(),
             'label' => 'Products',
             'type' => MenuItemType::Group,
+            'dropdown_layout' => MenuDropdownLayout::Mega,
             'sort_order' => 1,
         ]);
 
@@ -53,6 +55,8 @@ final class MarketingSiteMenus
                 'menu_id' => $main->getKey(),
                 'parent_id' => $productsGroup->getKey(),
                 'label' => $product['name'],
+                'description' => $product['tagline'],
+                'icon' => $product['icon'] ?? null,
                 'type' => MenuItemType::Page,
                 'link' => 'a-' . $product['slug'],
                 'sort_order' => $index,

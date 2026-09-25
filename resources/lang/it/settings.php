@@ -26,7 +26,7 @@ return [
         'notification_bell' => 'Campanella notifiche',
         'notification_bell_help' => 'Default per utenti loggati quando le notifiche commenti sono attive. Sovrascrivibile nell’editor.',
         'account_link' => 'Menu account',
-        'account_link_help' => 'Default per utenti loggati. Sovrascrivibile nell’editor.',
+        'account_link_help' => 'Se attivo, l’header usa l’icona account con login, registrazione e link account. Se disattivo, tema e lingua restano sotto un’icona preferenze. Visibilità account sovrascrivibile per pagina nell’editor.',
         'theme_toggle' => 'Switcher chiaro / scuro',
         'theme_toggle_help' => 'Se attivo, i visitatori possono cambiare tema; se disattivo, si usa il tema fisso sotto.',
         'default_theme' => 'Tema predefinito',

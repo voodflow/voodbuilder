@@ -193,16 +193,18 @@
                     @endif
                 </div>
             @else
-                <div class="voodbuilder-mobile-nav__actions">
-                    <a href="{{ VoodbuilderUrls::login() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
-                        {{ __('voodbuilder::auth.login') }}
-                    </a>
-                    @if (config('voodbuilder.auth.registration_enabled', true))
-                        <a href="{{ VoodbuilderUrls::register() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
-                            {{ __('voodbuilder::auth.register') }}
+                @if ($showAccountLink)
+                    <div class="voodbuilder-mobile-nav__actions">
+                        <a href="{{ VoodbuilderUrls::login() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
+                            {{ __('voodbuilder::auth.login') }}
                         </a>
-                    @endif
-                </div>
+                        @if (config('voodbuilder.auth.registration_enabled', true))
+                            <a href="{{ VoodbuilderUrls::register() }}" class="voodbuilder-mobile-nav__action" data-mobile-nav-close>
+                                {{ __('voodbuilder::auth.register') }}
+                            </a>
+                        @endif
+                    </div>
+                @endif
             @endauth
 
             @if (! $canvasPreview && filled($cookiePolicyUrl))

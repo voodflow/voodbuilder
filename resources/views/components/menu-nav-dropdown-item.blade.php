@@ -30,13 +30,14 @@
             role="menuitem"
             @class([
                 $linkClass,
+                'voodbuilder-nav-menu-item',
                 'justify-between',
                 'text-vp-brand-1' => $isActive,
             ])
             aria-haspopup="menu"
             aria-expanded="false"
         >
-            <span>{{ __($item->label) }}</span>
+            <x-voodbuilder::menu-nav-item-content :item="$item" :show-description="false" />
             <svg class="h-3.5 w-3.5 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
@@ -44,9 +45,13 @@
 
         <div
             data-voodbuilder-nav-dropdown-panel
+            data-layout="{{ $item->resolvedDropdownLayout()->value }}"
             hidden
             role="menu"
-            class="voodbuilder-dropdown-panel absolute top-0 left-[calc(100%-0.25rem)] z-50"
+            @class([
+                'voodbuilder-dropdown-panel absolute top-0 left-[calc(100%-0.25rem)] z-50',
+                'voodbuilder-dropdown-panel--mega' => $item->usesMegaDropdown(),
+            ])
         >
             @if ($hasParentLink)
                 <a
@@ -54,11 +59,12 @@
                     role="menuitem"
                     @class([
                         $linkClass,
+                        'voodbuilder-nav-menu-item',
                         'text-vp-brand-1' => $item->isSelfActive(),
                     ])
                     @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 >
-                    {{ __($item->label) }}
+                    <x-voodbuilder::menu-nav-item-content :item="$item" />
                 </a>
 
                 <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
@@ -75,10 +81,11 @@
         role="menuitem"
         @class([
             $linkClass,
+            'voodbuilder-nav-menu-item',
             'text-vp-brand-1' => $isActive,
         ])
         @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
     >
-        {{ __($item->label) }}
+        <x-voodbuilder::menu-nav-item-content :item="$item" />
     </a>
 @endif

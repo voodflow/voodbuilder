@@ -10,6 +10,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
@@ -20,6 +21,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rules\Unique;
+use Voodflow\Voodbuilder\Enums\MenuDropdownLayout;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
@@ -239,14 +241,31 @@ class NavigationMenuResource extends Resource
             TextInput::make('label')
                 ->required()
                 ->maxLength(255),
+            Textarea::make('description')
+                ->label(__('voodbuilder::admin.fields.menu_description'))
+                ->rows(2)
+                ->maxLength(255)
+                ->visible(! $isSocialMenu)
+                ->helperText(__('voodbuilder::admin.helpers.menu_description')),
             Select::make('icon')
                 ->label(__('voodbuilder::admin.fields.menu_icon'))
-                ->options(MenuTablerIcons::options())
                 ->searchable()
+                ->allowHtml()
                 ->native(false)
-                ->visible($isSocialMenu)
+                ->options(fn (): array => MenuTablerIcons::searchResults(''))
+                ->getSearchResultsUsing(fn (string $search): array => MenuTablerIcons::searchResults($search))
+                ->getOptionLabelUsing(fn (?string $value): ?string => filled($value) && MenuTablerIcons::has($value)
+                    ? MenuTablerIcons::optionHtml($value)
+                    : $value)
                 ->required($isSocialMenu)
                 ->helperText(__('voodbuilder::admin.helpers.menu_icon')),
+            Select::make('dropdown_layout')
+                ->label(__('voodbuilder::admin.fields.menu_dropdown_layout'))
+                ->options(MenuDropdownLayout::class)
+                ->default(MenuDropdownLayout::Auto->value)
+                ->native(false)
+                ->visible(! $isChild && ! $isSocialMenu)
+                ->helperText(__('voodbuilder::admin.helpers.menu_dropdown_layout')),
             Select::make('type')
                 ->options(static::menuItemTypeOptions($isChild))
                 ->required()
