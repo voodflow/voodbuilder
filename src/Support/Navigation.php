@@ -123,7 +123,10 @@ final class Navigation
 
         // One query for the whole tree: `with('children')` stopped at two levels and every
         // deeper item lazy-loaded its own children on a cache miss.
-        $byParent = $menu->items()->get()->groupBy(
+        /** @var \Illuminate\Database\Eloquent\Collection<int, NavigationMenuItem> $items */
+        $items = $menu->items()->get();
+
+        $byParent = $items->groupBy(
             fn (NavigationMenuItem $item): string => (string) ($item->parent_id ?? ''),
         );
 

@@ -21,6 +21,9 @@ use Voodflow\Voodbuilder\Support\SitePageResolver;
 
 /**
  * Navigation Menu Item.
+ *
+ * @property string|null $description
+ * @property MenuDropdownLayout|null $dropdown_layout
  */
 class NavigationMenuItem extends Model
 {
