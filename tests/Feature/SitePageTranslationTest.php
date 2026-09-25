@@ -22,6 +22,10 @@ class SitePageTranslationTest extends TestCase
     {
         parent::setUp();
 
+        if (! class_exists(Locales::class)) {
+            $this->markTestSkipped('Requires voodflow/vtuts (monorepo sibling).');
+        }
+
         $vtutsViews = dirname(__DIR__, 2) . '/../vtuts/resources/views';
 
         if (is_dir($vtutsViews)) {

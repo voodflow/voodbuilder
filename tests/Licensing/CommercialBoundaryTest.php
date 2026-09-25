@@ -85,12 +85,15 @@ class CommercialBoundaryTest extends TestCase
         // (package presence alone is not enough).
         $this->assertFalse(TemplateAuthoringBridge::canImportJson());
         $this->assertFalse(TemplateAuthoringBridge::canExport());
-        $this->assertFalse(TemplateAuthoringBridge::isEnabled());
 
         // In the monorepo the companion class is path-autoloaded; on a clean
-        // community install without the Composer package, pluginInstalled is false.
-        if (! class_exists(VoodbuilderTemplates::class)) {
+        // community install without the Composer package, pluginInstalled is false
+        // and basic local authoring follows the edition entitlement.
+        if (class_exists(VoodbuilderTemplates::class)) {
+            $this->assertFalse(TemplateAuthoringBridge::isEnabled());
+        } else {
             $this->assertFalse(TemplateAuthoringBridge::pluginInstalled());
+            $this->assertSame(Voodbuilder::can('templates.local'), TemplateAuthoringBridge::isEnabled());
         }
     }
 

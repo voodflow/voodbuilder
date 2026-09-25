@@ -105,6 +105,9 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
-        "format": "vendor/bin/pint"
+        "format": "vendor/bin/pint",
+        "lint": "vendor/bin/pint --test",
+        "test": "vendor/bin/phpunit --no-progress",
+        "test:js": "npm run test:js"
     }
 }
