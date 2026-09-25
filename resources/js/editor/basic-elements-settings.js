@@ -38,8 +38,6 @@ import {
 import {
     MAIL_SUBJECT_ATTR,
     ROUTE_PARAMS_ATTR,
-    buildMailtoHref,
-    linkTypeSelectOptions,
     parseMailtoHref,
     readRouteParamsFromAttrs,
     resolveAppRouteHref,
@@ -1403,199 +1401,47 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
         },
     });
 
-    const typeField = createSelectField({
-        label: labels.iconLinkType ?? 'Link',
-        name: 'iconLinkType',
-        value: linkType,
-        options: linkTypeSelectOptions(labels, { includeNone: true }),
-        onChange: (value) => {
-            linkType = value;
-            syncVisibility();
-            commit();
+    const linkFields = createLinkTargetFields({
+        labels,
+        targets,
+        names: {
+            type: 'iconLinkType',
+            href: 'iconHref',
+            page: 'iconLinkRefPage',
+            menu: 'iconLinkRefMenu',
+            mail: 'iconLinkMail',
+            subject: 'iconLinkMailSubject',
+            route: 'iconLinkRefRoute',
+            target: 'iconLinkTarget',
+            routeParamPrefix: 'iconRouteParam_',
         },
+        initial: { linkType, linkRef, href, target, mailSubject, routeParams },
+        urlValue: href === '#' ? '' : href,
+        emptyHref: '#',
+        includeNone: true,
+        typeLabel: labels.iconLinkType ?? 'Link',
+        onChange: () => commit(),
+        enhanceSelects: (root) => editor.__voodbuilderEnhanceInspectorSelects?.(root),
     });
-
-    const { field: urlField, input: urlInput } = createTextField({
-        label: labels.buttonLinkUrl ?? 'Link URL',
-        name: 'iconHref',
-        value: href === '#' ? '' : href,
-        placeholder: labels.buttonLinkUrlPlaceholder ?? 'https:// or /page',
-    });
-
-    const pageField = createSelectField({
-        label: labels.buttonLinkPage ?? 'Page',
-        name: 'iconLinkRefPage',
-        value: linkRef,
-        options: [
-            { value: '', label: '—' },
-            ...(targets.pages ?? []).map((item) => ({
-                value: String(item.id),
-                label: item.label,
-            })),
-        ],
-        onChange: (value) => {
-            linkRef = value;
-            commit();
-        },
-    });
-
-    const menuField = createSelectField({
-        label: labels.buttonLinkMenu ?? 'Menu item',
-        name: 'iconLinkRefMenu',
-        value: linkRef,
-        options: [
-            { value: '', label: '—' },
-            ...(targets.menuItems ?? []).map((item) => ({
-                value: String(item.id),
-                label: item.label,
-            })),
-        ],
-        onChange: (value) => {
-            linkRef = value;
-            commit();
-        },
-    });
-
-    const { field: mailField, input: mailInput } = createTextField({
-        label: labels.buttonLinkMail ?? 'Email address',
-        name: 'iconLinkMail',
-        value: linkType === 'mail' ? linkRef : '',
-        placeholder: labels.buttonLinkMailPlaceholder ?? 'name@example.com',
-    });
-
-    const { field: subjectField, input: subjectInput } = createTextField({
-        label: labels.buttonLinkMailSubject ?? 'Subject',
-        name: 'iconLinkMailSubject',
-        value: mailSubject,
-        placeholder: labels.buttonLinkMailSubjectPlaceholder ?? 'Optional subject',
-    });
-
-    const routeField = createSelectField({
-        label: labels.buttonLinkRoute ?? 'App route',
-        name: 'iconLinkRefRoute',
-        value: linkType === 'route' ? linkRef : '',
-        options: [
-            { value: '', label: '—' },
-            ...(targets.routes ?? []).map((item) => ({
-                value: String(item.id),
-                label: item.label,
-            })),
-        ],
-        onChange: (value) => {
-            linkRef = value;
-            routeParams = {};
-            rebuildRouteParamFields();
-            commit();
-        },
-    });
-
-    const routeParamsMount = document.createElement('div');
-    routeParamsMount.className = 'voodbuilder-editor-form-route-params';
-
-    const targetField = createSelectField({
-        label: labels.buttonLinkTarget ?? 'Open in',
-        name: 'iconLinkTarget',
-        value: target,
-        options: [
-            { value: '', label: labels.buttonLinkSameTab ?? 'Same tab' },
-            { value: '_blank', label: labels.buttonLinkNewTab ?? 'New tab' },
-        ],
-        onChange: (value) => {
-            target = value;
-            commit();
-        },
-    });
+    const { urlInput, mailInput, subjectInput } = linkFields;
 
     const strokeField = picker.field.querySelector('[name="iconStroke"]')?.closest('.voodbuilder-editor-form-field');
 
-    fields.append(
-        picker.field,
-        sizeField,
-        typeField,
-        urlField,
-        pageField,
-        menuField,
-        mailField,
-        subjectField,
-        routeField,
-        routeParamsMount,
-        targetField,
-    );
+    fields.append(picker.field, sizeField, ...linkFields.fields);
 
-    const rebuildRouteParamFields = () => {
-        routeParamsMount.replaceChildren();
-
-        if (linkType !== 'route' || ! linkRef) {
-            return;
-        }
-
-        const entry = (targets.routes ?? []).find((item) => String(item.id) === String(linkRef));
-
-        for (const paramName of entry?.requiredParams ?? []) {
-            const { field, input } = createTextField({
-                label: paramName,
-                name: `iconRouteParam_${paramName}`,
-                value: String(routeParams[paramName] ?? ''),
-                placeholder: paramName,
-            });
-
-            input.addEventListener('input', () => {
-                routeParams = { ...routeParams, [paramName]: input.value };
-                commit();
-            });
-            input.addEventListener('change', () => {
-                routeParams = { ...routeParams, [paramName]: input.value };
-                commit();
-            });
-
-            routeParamsMount.appendChild(field);
-        }
-
-        editor.__voodbuilderEnhanceInspectorSelects?.(routeParamsMount);
-    };
-
-    const syncVisibility = () => {
-        const linked = linkType !== 'none';
-        urlField.hidden = linkType !== 'url';
-        pageField.hidden = linkType !== 'page';
-        menuField.hidden = linkType !== 'menu';
-        mailField.hidden = linkType !== 'mail';
-        subjectField.hidden = linkType !== 'mail';
-        routeField.hidden = linkType !== 'route';
-        routeParamsMount.hidden = linkType !== 'route';
-        targetField.hidden = ! linked || linkType === 'mail';
-
+    const syncStrokeVisibility = () => {
         if (strokeField) {
             strokeField.hidden = iconStyle === 'filled';
         }
+    };
 
-        rebuildRouteParamFields();
+    const syncVisibility = () => {
+        linkFields.syncVisibility();
+        syncStrokeVisibility();
     };
 
     const commit = () => {
-        href = String(urlInput.value || '#').trim() || '#';
-        mailSubject = String(subjectInput.value || '').trim();
-
-        if (linkType === 'page') {
-            linkRef = String(pageField.querySelector('select')?.value || '');
-        } else if (linkType === 'menu') {
-            linkRef = String(menuField.querySelector('select')?.value || '');
-        } else if (linkType === 'mail') {
-            linkRef = String(mailInput.value || '').trim();
-            href = buildMailtoHref(linkRef, mailSubject);
-        } else if (linkType === 'route') {
-            linkRef = String(routeField.querySelector('select')?.value || '');
-        } else if (linkType === 'none' || linkType === 'url') {
-            if (linkType !== 'url') {
-                linkRef = '';
-            } else {
-                linkRef = '';
-            }
-        }
-
-        target = linkType === 'none' || linkType === 'mail'
-            ? ''
-            : String(targetField.querySelector('select')?.value || '');
+        ({ href, linkType, linkRef, target, mailSubject, routeParams } = linkFields.read());
 
         const pickerState = picker.getState?.() ?? {};
         iconName = pickerState.name ?? iconName;
@@ -1603,7 +1449,7 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
         iconStroke = pickerState.stroke ?? iconStroke;
         iconColor = pickerState.color ?? iconColor;
 
-        syncVisibility();
+        syncStrokeVisibility();
 
         // Do NOT clear __vbIconSynced here — that forced a full SVG rebuild on every
         // color/size tweak and caused canvas thrash + empty page gaps.

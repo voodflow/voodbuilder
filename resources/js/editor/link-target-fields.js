@@ -22,6 +22,8 @@ import { buildMailtoHref, linkTypeSelectOptions } from './editor-link-resolve.js
  *   urlValue?: string,
  *   urlPlaceholder?: string,
  *   emptyHref?: string,
+ *   includeNone?: boolean,
+ *   typeLabel?: string,
  *   onChange?: () => void,
  *   enhanceSelects?: (root: HTMLElement) => void,
  * }} options
@@ -34,6 +36,8 @@ export function createLinkTargetFields({
     urlValue,
     urlPlaceholder,
     emptyHref = '#',
+    includeNone = false,
+    typeLabel,
     onChange = () => {},
     enhanceSelects = () => {},
 }) {
@@ -50,10 +54,10 @@ export function createLinkTargetFields({
     ];
 
     const typeField = createSelectField({
-        label: labels.buttonLinkType ?? 'Link type',
+        label: typeLabel ?? labels.buttonLinkType ?? 'Link type',
         name: names.type,
         value: linkType,
-        options: linkTypeSelectOptions(labels),
+        options: linkTypeSelectOptions(labels, { includeNone }),
         onChange: (value) => {
             linkType = value;
             syncVisibility();
@@ -172,7 +176,7 @@ export function createLinkTargetFields({
         subjectField.hidden = linkType !== 'mail';
         routeField.hidden = linkType !== 'route';
         routeParamsMount.hidden = linkType !== 'route';
-        targetField.hidden = linkType === 'mail';
+        targetField.hidden = linkType === 'mail' || linkType === 'none';
         rebuildRouteParamFields();
     }
 
@@ -202,7 +206,7 @@ export function createLinkTargetFields({
             linkType,
             linkRef,
             href,
-            target: linkType === 'mail' ? '' : selectValue(targetField),
+            target: linkType === 'mail' || linkType === 'none' ? '' : selectValue(targetField),
             mailSubject,
             routeParams,
         };
