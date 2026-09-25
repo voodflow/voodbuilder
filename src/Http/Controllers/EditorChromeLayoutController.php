@@ -27,10 +27,8 @@ class EditorChromeLayoutController extends Controller
             'js' => ['nullable', 'string', 'max:100000'],
             'readingTypography' => ['nullable', 'array'],
             'readingTypography.font' => ['nullable', 'string', 'max:120'],
-            'readingTypography.sidebarFont' => ['nullable', 'string', 'max:120'],
-            'readingTypography.size' => ['nullable', 'string', 'max:16'],
+            'readingTypography.headingFont' => ['nullable', 'string', 'max:120'],
             'readingTypography.typeScale' => ['nullable', 'array'],
-            'readingTypography.sidebarTypeScale' => ['nullable', 'array'],
         ]);
 
         $normalized = EditorChromeLayoutEditorGate::normalizePayload([
@@ -64,10 +62,8 @@ class EditorChromeLayoutController extends Controller
             'css' => $normalized['css'],
             'readingTypography' => [
                 'font' => $reading['font'],
-                'sidebarFont' => $reading['sidebarFont'],
-                'size' => $reading['size'],
+                'headingFont' => $reading['headingFont'],
                 'typeScale' => $reading['typeScale'],
-                'sidebarTypeScale' => $reading['sidebarTypeScale'],
                 'cssVariables' => $reading['cssVariables'],
                 'stylesheetUrls' => $reading['stylesheetUrls'],
             ],

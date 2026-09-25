@@ -74,7 +74,7 @@ class VoodbuilderSettings extends Model
             'search_snippet_length' => (int) config('voodbuilder.search.snippet_length', 160),
             'typography_body_font' => AppTypography::DEFAULT_BODY_FONT,
             'typography_heading_font' => AppTypography::DEFAULT_HEADING_FONT,
-            'typography_type_scale' => AppTypography::defaultTypeScale(),
+            'typography_scale_preset' => AppTypography::DEFAULT_SCALE_PRESET,
         ];
     }
 
@@ -131,11 +131,12 @@ class VoodbuilderSettings extends Model
         $typography = AppTypography::normalizeSavePayload([
             'typography_body_font' => $data['typography_body_font'] ?? null,
             'typography_heading_font' => $data['typography_heading_font'] ?? null,
-            'typography_type_scale' => $data['typography_type_scale'] ?? null,
+            'typography_scale_preset' => $data['typography_scale_preset'] ?? null,
         ]);
         $data['typography_body_font'] = $typography['typography_body_font'];
         $data['typography_heading_font'] = $typography['typography_heading_font'];
-        $data['typography_type_scale'] = $typography['typography_type_scale'];
+        $data['typography_scale_preset'] = $typography['typography_scale_preset'];
+        unset($data['typography_type_scale']);
 
         return $data;
     }

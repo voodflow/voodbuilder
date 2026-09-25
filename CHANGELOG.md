@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-09-25
+
+### Added
+
+- Settings → Site typography: **Type scale** preset (Compact / Standard / Large / Editorial), each a responsive H1–H4 + text scale (Mobile / Tablet ≥ 48rem / Desktop ≥ 64rem) with weights and line heights; the choice shows its px steps. Per-element tuning stays in the layout Integration tab
+- Layout Integration tab: Mobile / Tablet / Desktop strip (synced with the canvas device) for per-viewport sizes; **Heading font** applied to companion headings via `--vp-font-family-doc-heading`
+
+### Changed
+
+- Layout Integration typography is now an override of site Settings: **Heading font** and **Body font** default to “From site settings”, every type-scale value can inherit, and Settings changes reach docs/tutorials without re-saving the layout
+- One Integration configuration for every companion plugin: the separate sidebar type scale and the Secondary font were removed; “Body base size” merged into the P size
+- Sidebar group titles and the “On this page” title are uppercase `<h5>` (0.75rem, 700, VitePress-style) in the body font, with `<a>` children at 0.875rem
+- `--vp-app-*-size` / `--vp-doc-*-size` are emitted as responsive `<style>` rules instead of inline `<html>` styles
+
+### Fixed
+
+- Layout editor: dropping a Site nav or footer no longer inserts it twice (the footer render endpoint nested a second block root; near the canvas top the page-editor top-drop fallback inserted a copy on top of the layout zone insert)
+- Saving a layout no longer turns an empty reading font into `inter`, which detached companion pages from the site fonts (migration resets those layouts to inherit)
+
+### Upgrade
+
+- Run `php artisan migrate` (adds `reading_heading_font`, drops the legacy reading font size / sidebar columns, resets `inter` reading fonts to inherit)
+- Rebuild host assets (`npm run build`) and clear the settings cache (`php artisan cache:clear`): the old `typography_type_scale` setting is dropped and the site uses the **Standard** preset until another is chosen
+
 ## [1.9.0] - 2026-09-25
 
 ### Changed

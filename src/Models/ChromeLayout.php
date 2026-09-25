@@ -10,6 +10,10 @@ use Voodflow\Voodbuilder\Support\ChromeLayoutContentWidth;
 
 /**
  * Chrome Layout.
+ *
+ * @property string|null $reading_font
+ * @property string|null $reading_heading_font
+ * @property array<string, array<string, string|null>>|null $reading_type_scale
  */
 class ChromeLayout extends Model
 {
@@ -30,10 +34,8 @@ class ChromeLayout extends Model
         'content_max_width',
         'chrome_width',
         'reading_font',
-        'reading_font_size',
-        'reading_sidebar_font',
+        'reading_heading_font',
         'reading_type_scale',
-        'reading_sidebar_type_scale',
     ];
 
     /**
@@ -46,7 +48,6 @@ class ChromeLayout extends Model
             'is_default' => 'boolean',
             'channel_ids' => 'array',
             'reading_type_scale' => 'array',
-            'reading_sidebar_type_scale' => 'array',
         ];
     }
 

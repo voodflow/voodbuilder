@@ -10,35 +10,57 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 
 class ChromeLayoutReadingTypographyTest extends TestCase
 {
-    public function test_resolve_defaults_inherit_app_typography(): void
+    public function test_resolve_defaults_inherit_site_typography(): void
     {
         $resolved = ChromeLayoutReadingTypography::resolve(null);
 
-        $this->assertSame('lato', $resolved['font']);
-        $this->assertSame('lato', $resolved['sidebarFont']);
-        $this->assertSame(ChromeLayoutReadingTypography::DEFAULT_SIZE, $resolved['size']);
-        $this->assertSame('var(--text-base)', $resolved['cssSize']);
-        $this->assertStringContainsString('Lato', $resolved['stack']);
-        $this->assertIsArray($resolved['stylesheetUrls']);
-        $this->assertSame(ChromeLayoutReadingTypography::defaultTypeScale(), $resolved['typeScale']);
-        $this->assertSame('var(--text-3xl)', $resolved['cssVariables']['--vp-doc-h1-size']);
-        $this->assertArrayHasKey('--vp-font-family-sidebar', $resolved['cssVariables']);
+        $this->assertSame('', $resolved['font']);
+        $this->assertSame('', $resolved['headingFont']);
+        $this->assertSame('lato', $resolved['inherited']['bodyFont']);
+        $this->assertSame('montserrat', $resolved['inherited']['headingFont']);
+        $this->assertSame([], $resolved['stylesheetUrls']);
+        $this->assertSame('var(--vp-font-family-body, var(--font-sans))', $resolved['cssVariables']['--vp-font-family-doc']);
+        $this->assertSame('var(--vp-font-family-heading, var(--font-heading))', $resolved['cssVariables']['--vp-font-family-doc-heading']);
+        $this->assertSame('var(--vp-font-family-doc)', $resolved['cssVariables']['--vp-font-family-sidebar']);
+        $this->assertSame('var(--vp-app-h1-weight)', $resolved['cssVariables']['--vp-doc-h1-weight']);
+        $this->assertSame('var(--vp-app-h1-size)', $resolved['sizeVariables']['base']['--vp-doc-h1-size']);
+        $this->assertSame([], $resolved['sizeVariables']['md']);
+        $this->assertSame([], $resolved['sizeVariables']['lg']);
     }
 
-    public function test_resolve_normalizes_unknown_size_and_font(): void
+    public function test_size_variables_are_mobile_first_overrides_of_site_sizes(): void
     {
         $layout = new ChromeLayout([
-            'reading_font' => 'not-a-real-font',
-            'reading_font_size' => 'huge',
-            'reading_sidebar_font' => 'also-fake',
+            'reading_type_scale' => [
+                'h1' => ['size' => '2xl', 'sizeLg' => '5xl'],
+                'h2' => ['sizeMd' => '3xl'],
+            ],
         ]);
 
         $resolved = ChromeLayoutReadingTypography::resolve($layout);
 
-        $this->assertSame(ChromeLayoutReadingTypography::DEFAULT_FONT, $resolved['font']);
-        $this->assertSame(ChromeLayoutReadingTypography::DEFAULT_FONT, $resolved['sidebarFont']);
-        $this->assertSame(ChromeLayoutReadingTypography::DEFAULT_SIZE, $resolved['size']);
-        $this->assertSame('var(--text-base)', $resolved['cssSize']);
+        $this->assertSame('var(--text-2xl)', $resolved['sizeVariables']['base']['--vp-doc-h1-size']);
+        $this->assertArrayNotHasKey('--vp-doc-h1-size', $resolved['sizeVariables']['md']);
+        $this->assertSame('var(--text-5xl)', $resolved['sizeVariables']['lg']['--vp-doc-h1-size']);
+        $this->assertSame('var(--vp-app-h2-size)', $resolved['sizeVariables']['base']['--vp-doc-h2-size']);
+        $this->assertSame('var(--text-3xl)', $resolved['sizeVariables']['md']['--vp-doc-h2-size']);
+        $this->assertStringContainsString('@media (min-width: 64rem)', $resolved['css']);
+        $this->assertStringNotContainsString('data-voodbuilder-editor-device', $resolved['css']);
+        $this->assertStringContainsString("html[data-voodbuilder-editor-device='desktop']", $resolved['editorCss']);
+        $this->assertArrayNotHasKey('--vp-doc-h1-size', $resolved['cssVariables']);
+    }
+
+    public function test_unknown_fonts_fall_back_to_site_fonts(): void
+    {
+        $layout = new ChromeLayout([
+            'reading_font' => 'not-a-real-font',
+            'reading_heading_font' => 'also-fake',
+        ]);
+
+        $resolved = ChromeLayoutReadingTypography::resolve($layout);
+
+        $this->assertSame('', $resolved['font']);
+        $this->assertSame('', $resolved['headingFont']);
     }
 
     public function test_legacy_rem_and_body_tokens_map_to_tailwind(): void
@@ -53,26 +75,39 @@ class ChromeLayoutReadingTypographyTest extends TestCase
         $this->assertSame('var(--text-sm)', ChromeLayoutReadingTypography::cssSizeFor('text-sm'));
     }
 
-    public function test_normalize_save_payload_stores_tailwind_tokens(): void
+    public function test_normalize_save_payload_keeps_inheritance_empty(): void
+    {
+        $payload = ChromeLayoutReadingTypography::normalizeSavePayload([
+            'font' => '',
+            'headingFont' => '',
+            'typeScale' => [
+                'h1' => ['size' => '', 'sizeMd' => '', 'sizeLg' => '', 'weight' => '', 'leading' => ''],
+            ],
+        ]);
+
+        $this->assertNull($payload['reading_font']);
+        $this->assertNull($payload['reading_heading_font']);
+        $this->assertNull($payload['reading_type_scale']);
+    }
+
+    public function test_normalize_save_payload_stores_tailwind_token_overrides(): void
     {
         $payload = ChromeLayoutReadingTypography::normalizeSavePayload([
             'font' => 'inter',
-            'sidebarFont' => 'inter',
-            'size' => '1.125rem',
             'typeScale' => [
-                'h1' => ['size' => '2.5rem', 'weight' => '700', 'leading' => '1.25'],
-                'p' => ['size' => '1.125rem', 'weight' => '400', 'leading' => '1.75'],
+                'h1' => ['size' => '2.5rem', 'sizeLg' => 'text-6xl', 'weight' => '700'],
+                'p' => ['sizeMd' => '1.125rem'],
             ],
         ]);
 
         $this->assertSame('inter', $payload['reading_font']);
-        $this->assertSame('inter', $payload['reading_sidebar_font']);
-        $this->assertSame('lg', $payload['reading_font_size']);
         $this->assertSame('4xl', $payload['reading_type_scale']['h1']['size']);
+        $this->assertNull($payload['reading_type_scale']['h1']['sizeMd']);
+        $this->assertSame('6xl', $payload['reading_type_scale']['h1']['sizeLg']);
         $this->assertSame('700', $payload['reading_type_scale']['h1']['weight']);
-        $this->assertSame('lg', $payload['reading_type_scale']['p']['size']);
-        $this->assertSame('xl', $payload['reading_type_scale']['h3']['size']);
-        $this->assertSame('sm', $payload['reading_sidebar_type_scale']['p']['size']);
+        $this->assertNull($payload['reading_type_scale']['h1']['leading']);
+        $this->assertSame('lg', $payload['reading_type_scale']['p']['sizeMd']);
+        $this->assertNull($payload['reading_type_scale']['h3']['size']);
     }
 
     public function test_size_options_are_tailwind_labels(): void

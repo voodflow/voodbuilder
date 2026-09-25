@@ -101,14 +101,13 @@
     data-voodbuilder-sub-theme="{{ $voodbuilderSubTheme }}"
     data-voodbuilder-page-width="{{ $pageContentWidth['mode'] }}"
     data-voodbuilder-chrome-width="{{ $chromeWidth }}"
-    data-vp-reading-size="{{ $readingTypography['size'] }}"
     data-vp-app-body-font="{{ $appTypography['bodyFont'] }}"
     data-vp-app-heading-font="{{ $appTypography['headingFont'] }}"
-    @if ($readingTypography['font'] !== \Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography::DEFAULT_FONT)
+    @if ($readingTypography['font'] !== '')
         data-vp-reading-font="{{ $readingTypography['font'] }}"
     @endif
-    @if ($readingTypography['sidebarFont'] !== \Voodflow\Voodbuilder\Support\ChromeLayoutReadingTypography::DEFAULT_FONT)
-        data-vp-reading-sidebar-font="{{ $readingTypography['sidebarFont'] }}"
+    @if ($readingTypography['headingFont'] !== '')
+        data-vp-reading-heading-font="{{ $readingTypography['headingFont'] }}"
     @endif
     @if (filled($voodbuilderContentChannel))
         data-voodbuilder-content-channel="{{ $voodbuilderContentChannel }}"
@@ -144,6 +143,7 @@
         <style>.voodbuilder-editor-frontend__notice{margin:1rem;padding:1rem;border:1px solid #f59e0b;border-radius:.5rem;background:#fffbeb;color:#92400e;font-size:.875rem}</style>
     @endif
     <style id="voodbuilder-app-typography">{!! $appTypography['canvasCss'] !!}</style>
+    <style id="voodbuilder-reading-typography">{!! $readingTypography['css'] !!}</style>
     @if ($suppressHostChrome)
         <style id="voodbuilder-editor-host-chrome-critical">{!! EditorHostChrome::criticalHideCss() !!}</style>
     @endif

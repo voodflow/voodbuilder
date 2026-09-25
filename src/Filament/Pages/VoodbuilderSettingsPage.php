@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Filament\Pages;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -235,6 +236,21 @@ class VoodbuilderSettingsPage extends Page
                                             ->options(fn (): array => AppTypography::fontOptions())
                                             ->searchable()
                                             ->default(AppTypography::DEFAULT_BODY_FONT)
+                                            ->required(),
+                                        Radio::make('typography_scale_preset')
+                                            ->label(__('voodbuilder::settings.typography.scale_preset'))
+                                            ->helperText(__('voodbuilder::settings.typography.scale_preset_help'))
+                                            ->options(fn (): array => collect(array_keys(AppTypography::scalePresets()))
+                                                ->mapWithKeys(fn (string $preset): array => [$preset => __("voodbuilder::settings.typography.presets.{$preset}")])
+                                                ->all())
+                                            ->descriptions(fn (): array => collect(array_keys(AppTypography::scalePresets()))
+                                                ->mapWithKeys(fn (string $preset): array => [$preset => AppTypography::scalePresetSummary(
+                                                    $preset,
+                                                    __('voodbuilder::settings.typography.summary_text'),
+                                                )])
+                                                ->all())
+                                            ->default(AppTypography::DEFAULT_SCALE_PRESET)
+                                            ->columns(2)
                                             ->required(),
                                     ]),
                             ]),

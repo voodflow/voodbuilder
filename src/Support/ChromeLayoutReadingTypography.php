@@ -12,20 +12,29 @@ use Voodflow\Voodbuilder\Voodbuilder;
 /**
  * Reading typography for companion doc/tutorial surfaces (chrome layout).
  *
- * Edited in the Layout visual builder Reading tab — not Filament admin.
+ * Edited in the Layout visual builder Integration tab — not Filament admin.
+ * Every font / type-scale value is an optional override of AppTypography
+ * (site Settings): null or '' inherits, so Settings changes propagate to
+ * companion pages without re-saving the layout.
+ *
  * Size tokens match Tailwind font-size labels (xs…9xl) and resolve to
  * theme vars (`var(--text-sm)`), same scale as the Style Typography panel.
+ * `size` / `sizeMd` / `sizeLg` follow the Style panel viewports
+ * (Mobile = base, Tablet = md, Desktop = lg), mobile-first.
  */
 final class ChromeLayoutReadingTypography
 {
     /** Default body size — Tailwind `text-base` (1rem). */
     public const DEFAULT_SIZE = 'base';
 
-    /** Default Inter Variable (bundled in theme.css / fonts.css). */
+    /** Inter Variable (bundled in theme.css / fonts.css). */
     public const DEFAULT_FONT = 'inter';
 
     /** @var list<string> */
     public const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'p'];
+
+    /** @var list<string> */
+    public const SCALE_PROPS = ['size', 'sizeMd', 'sizeLg', 'weight', 'leading'];
 
     /** @var list<string> */
     public const TAILWIND_SIZE_TOKENS = [
@@ -33,33 +42,15 @@ final class ChromeLayoutReadingTypography
     ];
 
     /**
-     * @return array<string, array{size: string, weight: string, leading: string}>
+     * Article scale overrides — all null: inherit the site type scale.
+     *
+     * @return array<string, array{size: ?string, sizeMd: ?string, sizeLg: ?string, weight: ?string, leading: ?string}>
      */
     public static function defaultTypeScale(): array
     {
-        return [
-            'h1' => ['size' => '3xl', 'weight' => '600', 'leading' => '1.25'],
-            'h2' => ['size' => '2xl', 'weight' => '600', 'leading' => '1.375'],
-            'h3' => ['size' => 'xl', 'weight' => '600', 'leading' => '1.375'],
-            'h4' => ['size' => 'lg', 'weight' => '600', 'leading' => '1.375'],
-            'p' => ['size' => 'base', 'weight' => '400', 'leading' => '1.625'],
-        ];
-    }
+        $row = array_fill_keys(self::SCALE_PROPS, null);
 
-    /**
-     * Defaults tuned for companion sidebars / TOC (smaller than article scale).
-     *
-     * @return array<string, array{size: string, weight: string, leading: string}>
-     */
-    public static function defaultSidebarTypeScale(): array
-    {
-        return [
-            'h1' => ['size' => 'base', 'weight' => '600', 'leading' => '1.375'],
-            'h2' => ['size' => 'sm', 'weight' => '600', 'leading' => '1.375'],
-            'h3' => ['size' => 'xs', 'weight' => '500', 'leading' => '1.5'],
-            'h4' => ['size' => 'xs', 'weight' => '500', 'leading' => '1.5'],
-            'p' => ['size' => 'sm', 'weight' => '400', 'leading' => '1.5'],
-        ];
+        return array_fill_keys(self::ELEMENTS, $row);
     }
 
     /**
@@ -122,29 +113,6 @@ final class ChromeLayoutReadingTypography
         return $options;
     }
 
-    /**
-     * @return array<string, string> font id => family label
-     */
-    public static function fontOptions(): array
-    {
-        $catalog = Voodbuilder::fonts();
-        $catalog->bootCore();
-
-        $options = [
-            self::DEFAULT_FONT => 'Inter Variable (default)',
-        ];
-
-        foreach ($catalog->all() as $font) {
-            if ($font->id === self::DEFAULT_FONT || str_starts_with($font->id, 'inter')) {
-                continue;
-            }
-
-            $options[$font->id] = $font->family;
-        }
-
-        return $options;
-    }
-
     public static function normalizeSize(?string $size): string
     {
         $size = trim((string) $size);
@@ -188,58 +156,57 @@ final class ChromeLayoutReadingTypography
         return self::DEFAULT_SIZE;
     }
 
+    /**
+     * Optional size override: blank → null (inherit).
+     */
+    public static function normalizeOptionalSize(mixed $size): ?string
+    {
+        if (! is_string($size) && ! is_numeric($size)) {
+            return null;
+        }
+
+        $size = trim((string) $size);
+
+        return $size === '' ? null : self::normalizeSize($size);
+    }
+
+    /**
+     * Font override: '' inherits the site font; unknown ids inherit too.
+     */
     public static function normalizeFont(?string $fontId): string
     {
         $fontId = trim((string) $fontId);
 
         if ($fontId === '' || $fontId === self::DEFAULT_FONT) {
-            return self::DEFAULT_FONT;
+            return $fontId;
         }
 
         $catalog = Voodbuilder::fonts();
         $catalog->bootCore();
 
-        return $catalog->get($fontId) !== null
-            ? $fontId
-            : self::DEFAULT_FONT;
+        return $catalog->get($fontId) !== null ? $fontId : '';
     }
 
     /**
-     * @return array<string, array{size: string, weight: string, leading: string}>
+     * @return array<string, array{size: ?string, sizeMd: ?string, sizeLg: ?string, weight: ?string, leading: ?string}>
      */
     public static function normalizeTypeScale(mixed $scale): array
     {
-        return self::normalizeTypeScaleAgainst($scale, self::defaultTypeScale());
-    }
+        $normalized = self::defaultTypeScale();
 
-    /**
-     * @return array<string, array{size: string, weight: string, leading: string}>
-     */
-    public static function normalizeSidebarTypeScale(mixed $scale): array
-    {
-        return self::normalizeTypeScaleAgainst($scale, self::defaultSidebarTypeScale());
-    }
-
-    /**
-     * @param  array<string, array{size: string, weight: string, leading: string}>  $defaults
-     * @return array<string, array{size: string, weight: string, leading: string}>
-     */
-    private static function normalizeTypeScaleAgainst(mixed $scale, array $defaults): array
-    {
         if (! is_array($scale)) {
-            return $defaults;
+            return $normalized;
         }
-
-        $normalized = [];
 
         foreach (self::ELEMENTS as $element) {
             $row = is_array($scale[$element] ?? null) ? $scale[$element] : [];
-            $sizeRaw = $row['size'] ?? $defaults[$element]['size'];
 
             $normalized[$element] = [
-                'size' => self::normalizeSize(is_string($sizeRaw) || is_numeric($sizeRaw) ? (string) $sizeRaw : null),
-                'weight' => self::sanitizeCssToken($row['weight'] ?? null, $defaults[$element]['weight']),
-                'leading' => self::sanitizeCssToken($row['leading'] ?? null, $defaults[$element]['leading']),
+                'size' => self::normalizeOptionalSize($row['size'] ?? null),
+                'sizeMd' => self::normalizeOptionalSize($row['sizeMd'] ?? null),
+                'sizeLg' => self::normalizeOptionalSize($row['sizeLg'] ?? null),
+                'weight' => self::sanitizeOptionalCssToken($row['weight'] ?? null),
+                'leading' => self::sanitizeOptionalCssToken($row['leading'] ?? null),
             ];
         }
 
@@ -249,117 +216,135 @@ final class ChromeLayoutReadingTypography
     /**
      * @return array{
      *     font: string,
-     *     sidebarFont: string,
-     *     size: string,
-     *     stack: string,
-     *     sidebarStack: string,
-     *     cssSize: string,
-     *     sidebarCssSize: string,
-     *     typeScale: array<string, array{size: string, weight: string, leading: string}>,
-     *     sidebarTypeScale: array<string, array{size: string, weight: string, leading: string}>,
+     *     headingFont: string,
+     *     typeScale: array<string, array{size: ?string, sizeMd: ?string, sizeLg: ?string, weight: ?string, leading: ?string}>,
+     *     inherited: array{
+     *         bodyFont: string,
+     *         headingFont: string,
+     *         bodyLabel: string,
+     *         headingLabel: string,
+     *         typeScale: array<string, array{size: string, sizeMd: ?string, sizeLg: ?string, weight: string, leading: string}>
+     *     },
      *     stylesheetUrls: list<string>,
-     *     cssVariables: array<string, string>
+     *     cssVariables: array<string, string>,
+     *     sizeVariables: array<string, array<string, string>>,
+     *     css: string,
+     *     editorCss: string
      * }
      */
     public static function resolve(?ChromeLayout $layout): array
     {
         $appTypography = AppTypography::resolve();
-        $storedBodyFont = trim((string) ($layout?->reading_font ?? ''));
-        $storedSidebarFont = trim((string) ($layout?->reading_sidebar_font ?? ''));
-
-        // Empty layout reading font inherits application body typography.
-        $fontId = $storedBodyFont === ''
-            ? $appTypography['bodyFont']
-            : self::normalizeFont($storedBodyFont);
-        $sidebarFontId = $storedSidebarFont === ''
-            ? $fontId
-            : self::normalizeFont($storedSidebarFont);
-        $size = self::normalizeSize($layout?->reading_font_size);
+        $bodyFont = self::normalizeFont($layout?->reading_font);
+        $headingFont = self::normalizeFont($layout?->reading_heading_font);
         $typeScale = self::normalizeTypeScale($layout?->reading_type_scale);
-        $sidebarTypeScale = self::normalizeSidebarTypeScale($layout?->reading_sidebar_type_scale);
-        $stack = $storedBodyFont === ''
-            ? $appTypography['bodyStack']
-            : self::stackFor($fontId);
-        $sidebarStack = $storedSidebarFont === ''
-            ? $stack
-            : self::stackFor($sidebarFontId);
-        $cssSize = self::cssSizeFor($size);
-        $sidebarCssSize = self::cssSizeFor($sidebarTypeScale['p']['size']);
-
-        $fontIds = [];
-
-        if ($storedBodyFont === '') {
-            $fontIds[] = $appTypography['bodyFont'];
-        } elseif ($fontId !== self::DEFAULT_FONT) {
-            $fontIds[] = $fontId;
-        }
-
-        if ($storedSidebarFont === '') {
-            if ($storedBodyFont !== '') {
-                $fontIds[] = $fontId;
-            }
-        } elseif ($sidebarFontId !== self::DEFAULT_FONT) {
-            $fontIds[] = $sidebarFontId;
-        }
-
-        $fontIds = array_values(array_unique(array_filter(
-            $fontIds,
-            static fn (string $id): bool => $id !== self::DEFAULT_FONT,
-        )));
 
         $cssVariables = [
-            '--vp-font-family-doc' => $stack,
-            '--vp-font-family-sidebar' => $sidebarStack,
-            '--vp-font-size-doc' => $cssSize,
-            '--vp-font-size-sidebar' => $sidebarCssSize,
+            '--vp-font-family-doc' => $bodyFont === ''
+                ? 'var(--vp-font-family-body, var(--font-sans))'
+                : self::stackFor($bodyFont),
+            '--vp-font-family-doc-heading' => $headingFont === ''
+                ? 'var(--vp-font-family-heading, var(--font-heading))'
+                : self::stackFor($headingFont),
+            // Sidebar / TOC use fixed UI sizes and only follow the reading body font.
+            '--vp-font-family-sidebar' => 'var(--vp-font-family-doc)',
+            '--vp-font-size-doc' => 'var(--vp-doc-p-size)',
         ];
 
-        foreach ($typeScale as $element => $props) {
-            $cssVariables["--vp-doc-{$element}-size"] = self::cssSizeFor($props['size']);
-            $cssVariables["--vp-doc-{$element}-weight"] = $props['weight'];
-            $cssVariables["--vp-doc-{$element}-leading"] = $props['leading'];
+        foreach ($typeScale as $element => $row) {
+            $cssVariables["--vp-doc-{$element}-weight"] = $row['weight'] ?? "var(--vp-app-{$element}-weight)";
+            $cssVariables["--vp-doc-{$element}-leading"] = $row['leading'] ?? "var(--vp-app-{$element}-leading)";
         }
 
-        foreach ($sidebarTypeScale as $element => $props) {
-            $cssVariables["--vp-sidebar-{$element}-size"] = self::cssSizeFor($props['size']);
-            $cssVariables["--vp-sidebar-{$element}-weight"] = $props['weight'];
-            $cssVariables["--vp-sidebar-{$element}-leading"] = $props['leading'];
-        }
+        $sizeVariables = self::sizeVariables($typeScale);
+        $fontIds = array_values(array_unique(array_filter(
+            [$bodyFont, $headingFont],
+            static fn (string $id): bool => $id !== '' && $id !== self::DEFAULT_FONT,
+        )));
 
         return [
-            'font' => $fontId,
-            'sidebarFont' => $sidebarFontId,
-            'size' => $size,
-            'stack' => $stack,
-            'sidebarStack' => $sidebarStack,
-            'cssSize' => $cssSize,
-            'sidebarCssSize' => $sidebarCssSize,
+            'font' => $bodyFont,
+            'headingFont' => $headingFont,
             'typeScale' => $typeScale,
-            'sidebarTypeScale' => $sidebarTypeScale,
+            'inherited' => [
+                'bodyFont' => $appTypography['bodyFont'],
+                'headingFont' => $appTypography['headingFont'],
+                'bodyLabel' => $appTypography['bodyLabel'],
+                'headingLabel' => $appTypography['headingLabel'],
+                'typeScale' => $appTypography['typeScale'],
+            ],
             'stylesheetUrls' => FontStylesheets::urlsFor($fontIds),
             'cssVariables' => $cssVariables,
+            'sizeVariables' => $sizeVariables,
+            'css' => TypographyBreakpoints::css($sizeVariables),
+            'editorCss' => TypographyBreakpoints::css($sizeVariables, editorCanvas: true),
         ];
+    }
+
+    /**
+     * `--vp-doc-{el}-size` per viewport. Without an override at or below a
+     * viewport the value points at the (itself responsive) site size var.
+     *
+     * @param  array<string, array{size: ?string, sizeMd: ?string, sizeLg: ?string, weight: ?string, leading: ?string}>  $typeScale
+     * @return array<string, array<string, string>>
+     */
+    public static function sizeVariables(array $typeScale): array
+    {
+        $variables = ['base' => [], 'md' => [], 'lg' => []];
+
+        foreach ($typeScale as $element => $row) {
+            $previous = null;
+
+            foreach (TypographyBreakpoints::KEYS as $breakpoint) {
+                $token = TypographyBreakpoints::cascadedSize($row, $breakpoint);
+                $value = $token === null ? "var(--vp-app-{$element}-size)" : self::cssSizeFor($token);
+
+                if ($value !== $previous) {
+                    $variables[$breakpoint]["--vp-doc-{$element}-size"] = $value;
+                }
+
+                $previous = $value;
+            }
+        }
+
+        return $variables;
     }
 
     /**
      * @param  array<string, mixed>  $input
      * @return array{
-     *     reading_font: string,
-     *     reading_font_size: string,
-     *     reading_sidebar_font: string,
-     *     reading_type_scale: array<string, array{size: string, weight: string, leading: string}>,
-     *     reading_sidebar_type_scale: array<string, array{size: string, weight: string, leading: string}>
+     *     reading_font: ?string,
+     *     reading_heading_font: ?string,
+     *     reading_type_scale: array<string, array{size: ?string, sizeMd: ?string, sizeLg: ?string, weight: ?string, leading: ?string}>|null
      * }
      */
     public static function normalizeSavePayload(array $input): array
     {
+        $font = self::normalizeFont(isset($input['font']) ? (string) $input['font'] : null);
+        $headingFont = self::normalizeFont(isset($input['headingFont']) ? (string) $input['headingFont'] : null);
+        $typeScale = self::normalizeTypeScale($input['typeScale'] ?? null);
+
         return [
-            'reading_font' => self::normalizeFont(isset($input['font']) ? (string) $input['font'] : null),
-            'reading_font_size' => self::normalizeSize(isset($input['size']) ? (string) $input['size'] : null),
-            'reading_sidebar_font' => self::normalizeFont(isset($input['sidebarFont']) ? (string) $input['sidebarFont'] : null),
-            'reading_type_scale' => self::normalizeTypeScale($input['typeScale'] ?? null),
-            'reading_sidebar_type_scale' => self::normalizeSidebarTypeScale($input['sidebarTypeScale'] ?? null),
+            'reading_font' => $font !== '' ? $font : null,
+            'reading_heading_font' => $headingFont !== '' ? $headingFont : null,
+            'reading_type_scale' => self::hasOverrides($typeScale) ? $typeScale : null,
         ];
+    }
+
+    /**
+     * @param  array<string, array<string, ?string>>  $typeScale
+     */
+    public static function hasOverrides(array $typeScale): bool
+    {
+        foreach ($typeScale as $row) {
+            foreach ($row as $value) {
+                if ($value !== null) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public static function stackFor(string $fontId): string
@@ -388,7 +373,7 @@ final class ChromeLayoutReadingTypography
     }
 
     /**
-     * @return array<string, string>
+     * @param  array<string, string>  $cssVariables
      */
     public static function cssVariablesStyle(array $cssVariables): string
     {
@@ -401,12 +386,12 @@ final class ChromeLayoutReadingTypography
         return implode('; ', $parts);
     }
 
-    private static function sanitizeCssToken(mixed $value, string $fallback): string
+    private static function sanitizeOptionalCssToken(mixed $value): ?string
     {
-        $token = trim((string) $value);
+        $token = trim((string) (is_scalar($value) ? $value : ''));
 
         if ($token === '' || ! preg_match('/^[A-Za-z0-9.\-%]+$/', $token)) {
-            return $fallback;
+            return null;
         }
 
         return $token;

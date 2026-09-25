@@ -805,12 +805,16 @@
 
     /* Page title outside markdown (vdocs / vtuts headers) — VitePress h1 @ ≥48rem */
     .vp-doc-title {
-        font-family: var(--vp-font-family-doc, var(--font-sans));
+        font-family: var(--vp-font-family-doc-heading, var(--vp-font-family-doc, var(--font-sans)));
         font-size: var(--vp-doc-h1-size, 2rem);
         font-weight: var(--vp-doc-h1-weight, 600);
         line-height: var(--vp-doc-h1-leading, 1.25);
         @apply m-0 tracking-tight text-vp-text-1;
         letter-spacing: -0.02em;
+    }
+
+    .vp-doc :is(h1, h2, h3, h4, h5, h6) {
+        font-family: var(--vp-font-family-doc-heading, var(--vp-font-family-doc, var(--font-sans)));
     }
 
     .vp-doc h1 {
@@ -865,47 +869,39 @@
         line-height: var(--vp-doc-p-leading, 1.75);
     }
 
-    /* Companion reading sidebars (vdocs / vtuts / third-party) */
+    /* Companion reading sidebars (vdocs / vtuts / third-party) — fixed VitePress-style UI
+       type: not part of the Integration scale, only the reading body font carries over. */
     .voodbuilder-doc-sidebar-scroll,
     .voodbuilder-doc-sidebar-scroll nav,
     [data-voodbuilder-reading-sidebar] {
         font-family: var(--vp-font-family-sidebar, var(--vp-font-family-doc, var(--font-sans)));
-        font-size: var(--vp-font-size-sidebar, var(--vp-sidebar-p-size, 0.875rem));
+        font-size: 0.875rem;
     }
 
-    [data-voodbuilder-reading-sidebar] h1,
     [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-title {
-        font-size: var(--vp-sidebar-h1-size, 1rem);
-        font-weight: var(--vp-sidebar-h1-weight, 600);
-        line-height: var(--vp-sidebar-h1-leading, 1.333);
+        margin: 0;
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.375;
     }
 
-    [data-voodbuilder-reading-sidebar] h2,
-    [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-group {
-        font-size: var(--vp-sidebar-h2-size, 0.875rem);
-        font-weight: var(--vp-sidebar-h2-weight, 600);
-        line-height: var(--vp-sidebar-h2-leading, 1.4);
+    .vp-reading-sidebar-group,
+    .vp-outline__title {
+        margin: 0 0 0.5rem;
+        font-family: inherit;
+        font-size: 0.75rem;
+        font-weight: 700;
+        line-height: 1.5;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-vp-text-1);
     }
 
-    [data-voodbuilder-reading-sidebar] h3 {
-        font-size: var(--vp-sidebar-h3-size, 0.8125rem);
-        font-weight: var(--vp-sidebar-h3-weight, 500);
-        line-height: var(--vp-sidebar-h3-leading, 1.4);
-    }
-
-    [data-voodbuilder-reading-sidebar] h4 {
-        font-size: var(--vp-sidebar-h4-size, 0.8125rem);
-        font-weight: var(--vp-sidebar-h4-weight, 500);
-        line-height: var(--vp-sidebar-h4-leading, 1.333);
-    }
-
-    [data-voodbuilder-reading-sidebar] p,
-    [data-voodbuilder-reading-sidebar] li,
     [data-voodbuilder-reading-sidebar] a.vp-reading-sidebar-link,
     [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-link {
-        font-size: var(--vp-sidebar-p-size, 0.875rem);
-        font-weight: var(--vp-sidebar-p-weight, 400);
-        line-height: var(--vp-sidebar-p-leading, 1.5);
+        font-size: 0.875rem;
+        line-height: 1.5;
     }
 
     .vp-doc a {
@@ -1089,18 +1085,7 @@
         background-color: transparent !important;
     }
 
-    /* TOC / outline — secondary reading scale (chrome layout Reading tab) */
-    .vp-outline__title {
-        margin-bottom: 0.25rem;
-        font-family: inherit;
-        font-size: var(--vp-sidebar-h2-size, 0.875rem);
-        font-weight: var(--vp-sidebar-h2-weight, 600);
-        line-height: var(--vp-sidebar-h2-leading, 1.4);
-        letter-spacing: normal;
-        text-transform: none;
-        color: var(--color-vp-text-1);
-    }
-
+    /* TOC / outline — title shares .vp-reading-sidebar-group (uppercase h5) */
     .vp-outline__rail {
         display: flex;
         flex-direction: column;
@@ -1115,9 +1100,9 @@
         padding: 0.25rem 0 0.25rem 0.75rem;
         border-left: 2px solid transparent;
         font-family: inherit;
-        font-size: var(--vp-sidebar-p-size, 0.875rem);
-        font-weight: var(--vp-sidebar-p-weight, 400);
-        line-height: var(--vp-sidebar-p-leading, 1.5);
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.5;
         color: var(--color-vp-text-2);
         cursor: pointer;
         transition: color 0.2s, border-color 0.2s;

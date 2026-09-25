@@ -4,7 +4,7 @@
 
 import { debugSwallowed } from './debug-swallowed.js';
 import { findPageContentSlotInEditor, isPageContentSlotComponent } from './chrome-content-slot-utils.js';
-import { findDropZoneAtPointer, findLayoutDropZoneForPointer, insertBlockIntoLayoutZone } from './chrome/layout/drag.js';
+import { findLayoutDropZoneForPointer } from './chrome/layout/drag.js';
 import { hydrateCtasAfterHtmlInsert } from './editor-button-link.js';
 import { schedulePageCssAfterInsert } from './page-tailwind-autobuild.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
@@ -397,26 +397,10 @@ function insertBlockAtTop(editor, block) {
         }
     }
 
+    // Layout editor has no drop spacers: editor-chrome-layout's block:drag:stop owns the
+    // fallback insert, and inserting here too dropped nav blocks twice near the canvas top.
     if (editor.__voodbuilderChromeLayoutMode) {
-        const zone = findDropZoneAtPointer(editor);
-
-        if (zone) {
-            const added = zone.append(content);
-            const component = Array.isArray(added) ? added[0] : added;
-
-            if (component) {
-                markTopDropHandled(editor);
-                editor.select?.(component);
-                window.setTimeout(() => {
-                    schedulePageCssAfterInsert(editor);
-                    hydrateCtasAfterHtmlInsert(editor, component);
-                }, 160);
-            }
-
-            return component ?? null;
-        }
-
-        return insertBlockIntoLayoutZone(editor, block);
+        return null;
     }
 
     const first = wrapper.components?.().at?.(0);

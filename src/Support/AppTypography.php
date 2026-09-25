@@ -29,18 +29,93 @@ final class AppTypography
         'xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', '8xl', '9xl',
     ];
 
+    /** @var array<string, int> Tailwind v4 default font sizes */
+    public const TAILWIND_SIZE_PX = [
+        'xs' => 12, 'sm' => 14, 'base' => 16, 'lg' => 18, 'xl' => 20, '2xl' => 24, '3xl' => 30,
+        '4xl' => 36, '5xl' => 48, '6xl' => 60, '7xl' => 72, '8xl' => 96, '9xl' => 128,
+    ];
+
+    public const DEFAULT_SCALE_PRESET = 'standard';
+
     /**
-     * @return array<string, array{size: string, weight: string, leading: string}>
+     * Site type scales. `size` is the mobile base; `sizeMd` / `sizeLg` override it
+     * from tablet / desktop up (null = keep the smaller viewport). One preset drives
+     * the whole site; per-element tuning happens in the editor.
+     *
+     * @return array<string, array<string, array{size: string, sizeMd: ?string, sizeLg: ?string, weight: string, leading: string}>>
+     */
+    public static function scalePresets(): array
+    {
+        return [
+            'compact' => [
+                'h1' => ['size' => '2xl', 'sizeMd' => '3xl', 'sizeLg' => null, 'weight' => '700', 'leading' => '1.25'],
+                'h2' => ['size' => 'xl', 'sizeMd' => '2xl', 'sizeLg' => null, 'weight' => '700', 'leading' => '1.3'],
+                'h3' => ['size' => 'lg', 'sizeMd' => 'xl', 'sizeLg' => null, 'weight' => '600', 'leading' => '1.35'],
+                'h4' => ['size' => 'base', 'sizeMd' => 'lg', 'sizeLg' => null, 'weight' => '600', 'leading' => '1.4'],
+                'p' => ['size' => 'sm', 'sizeMd' => 'base', 'sizeLg' => null, 'weight' => '400', 'leading' => '1.6'],
+            ],
+            'standard' => [
+                'h1' => ['size' => '3xl', 'sizeMd' => null, 'sizeLg' => '4xl', 'weight' => '700', 'leading' => '1.2'],
+                'h2' => ['size' => '2xl', 'sizeMd' => null, 'sizeLg' => '3xl', 'weight' => '700', 'leading' => '1.3'],
+                'h3' => ['size' => 'xl', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '600', 'leading' => '1.35'],
+                'h4' => ['size' => 'lg', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '600', 'leading' => '1.4'],
+                'p' => ['size' => 'base', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '400', 'leading' => '1.625'],
+            ],
+            'large' => [
+                'h1' => ['size' => '4xl', 'sizeMd' => null, 'sizeLg' => '5xl', 'weight' => '700', 'leading' => '1.15'],
+                'h2' => ['size' => '3xl', 'sizeMd' => null, 'sizeLg' => '4xl', 'weight' => '700', 'leading' => '1.25'],
+                'h3' => ['size' => 'xl', 'sizeMd' => null, 'sizeLg' => '2xl', 'weight' => '600', 'leading' => '1.35'],
+                'h4' => ['size' => 'lg', 'sizeMd' => null, 'sizeLg' => 'xl', 'weight' => '600', 'leading' => '1.4'],
+                'p' => ['size' => 'base', 'sizeMd' => null, 'sizeLg' => 'lg', 'weight' => '400', 'leading' => '1.7'],
+            ],
+            'editorial' => [
+                'h1' => ['size' => '4xl', 'sizeMd' => '5xl', 'sizeLg' => '6xl', 'weight' => '600', 'leading' => '1.1'],
+                'h2' => ['size' => '3xl', 'sizeMd' => null, 'sizeLg' => '4xl', 'weight' => '600', 'leading' => '1.2'],
+                'h3' => ['size' => '2xl', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '600', 'leading' => '1.3'],
+                'h4' => ['size' => 'xl', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '600', 'leading' => '1.4'],
+                'p' => ['size' => 'lg', 'sizeMd' => null, 'sizeLg' => 'xl', 'weight' => '400', 'leading' => '1.75'],
+            ],
+        ];
+    }
+
+    public static function normalizeScalePreset(mixed $preset): string
+    {
+        $preset = is_string($preset) ? trim($preset) : '';
+
+        return array_key_exists($preset, self::scalePresets()) ? $preset : self::DEFAULT_SCALE_PRESET;
+    }
+
+    /**
+     * @return array<string, array{size: string, sizeMd: ?string, sizeLg: ?string, weight: string, leading: string}>
      */
     public static function defaultTypeScale(): array
     {
-        return [
-            'h1' => ['size' => '3xl', 'weight' => '700', 'leading' => '1.25'],
-            'h2' => ['size' => '2xl', 'weight' => '700', 'leading' => '1.3'],
-            'h3' => ['size' => 'xl', 'weight' => '600', 'leading' => '1.35'],
-            'h4' => ['size' => 'lg', 'weight' => '600', 'leading' => '1.4'],
-            'p' => ['size' => 'base', 'weight' => '400', 'leading' => '1.625'],
-        ];
+        return self::scalePresets()[self::DEFAULT_SCALE_PRESET];
+    }
+
+    /**
+     * Preset → one-line summary in px, e.g. "H1 30 → 36px · H2 24 → 30px · Text 16px".
+     */
+    public static function scalePresetSummary(string $preset, string $textLabel = 'Text'): string
+    {
+        $scale = self::scalePresets()[self::normalizeScalePreset($preset)];
+        $parts = [];
+
+        foreach (['h1' => 'H1', 'h2' => 'H2', 'p' => $textLabel] as $element => $label) {
+            $pixels = [];
+
+            foreach (TypographyBreakpoints::KEYS as $breakpoint) {
+                $px = self::TAILWIND_SIZE_PX[TypographyBreakpoints::cascadedSize($scale[$element], $breakpoint) ?? 'base'];
+
+                if ($pixels === [] || end($pixels) !== $px) {
+                    $pixels[] = $px;
+                }
+            }
+
+            $parts[] = $label . ' ' . implode(' → ', $pixels) . 'px';
+        }
+
+        return implode(' · ', $parts);
     }
 
     /**
@@ -92,41 +167,11 @@ final class AppTypography
     }
 
     /**
-     * @return array<string, array{size: string, weight: string, leading: string}>
-     */
-    public static function normalizeTypeScale(mixed $scale): array
-    {
-        $defaults = self::defaultTypeScale();
-
-        if (! is_array($scale)) {
-            return $defaults;
-        }
-
-        $normalized = [];
-
-        foreach (self::ELEMENTS as $element) {
-            $row = is_array($scale[$element] ?? null) ? $scale[$element] : [];
-            $sizeRaw = $row['size'] ?? $defaults[$element]['size'];
-
-            $normalized[$element] = [
-                'size' => self::normalizeSize(
-                    is_string($sizeRaw) || is_numeric($sizeRaw) ? (string) $sizeRaw : null,
-                    $defaults[$element]['size'],
-                ),
-                'weight' => self::sanitizeCssToken($row['weight'] ?? null, $defaults[$element]['weight']),
-                'leading' => self::sanitizeCssToken($row['leading'] ?? null, $defaults[$element]['leading']),
-            ];
-        }
-
-        return $normalized;
-    }
-
-    /**
      * @param  array<string, mixed>  $input
      * @return array{
      *     typography_body_font: string,
      *     typography_heading_font: string,
-     *     typography_type_scale: array<string, array{size: string, weight: string, leading: string}>
+     *     typography_scale_preset: string
      * }
      */
     public static function normalizeSavePayload(array $input): array
@@ -140,7 +185,7 @@ final class AppTypography
                 isset($input['typography_heading_font']) ? (string) $input['typography_heading_font'] : null,
                 self::DEFAULT_HEADING_FONT,
             ),
-            'typography_type_scale' => self::normalizeTypeScale($input['typography_type_scale'] ?? null),
+            'typography_scale_preset' => self::normalizeScalePreset($input['typography_scale_preset'] ?? null),
         ];
     }
 
@@ -150,10 +195,14 @@ final class AppTypography
      *     headingFont: string,
      *     bodyStack: string,
      *     headingStack: string,
-     *     typeScale: array<string, array{size: string, weight: string, leading: string}>,
+     *     bodyLabel: string,
+     *     headingLabel: string,
+     *     typeScale: array<string, array{size: string, sizeMd: ?string, sizeLg: ?string, weight: string, leading: string}>,
      *     stylesheetUrls: list<string>,
      *     cssVariables: array<string, string>,
-     *     canvasCss: string
+     *     sizeVariables: array<string, array<string, string>>,
+     *     canvasCss: string,
+     *     editorCanvasCss: string
      * }
      */
     public static function resolve(?array $settings = null): array
@@ -167,7 +216,8 @@ final class AppTypography
             isset($data['typography_heading_font']) ? (string) $data['typography_heading_font'] : null,
             self::DEFAULT_HEADING_FONT,
         );
-        $typeScale = self::normalizeTypeScale($data['typography_type_scale'] ?? null);
+        $scalePreset = self::normalizeScalePreset($data['typography_scale_preset'] ?? null);
+        $typeScale = self::scalePresets()[$scalePreset];
         $bodyStack = self::stackFor($bodyFontId, self::DEFAULT_BODY_FONT);
         $headingStack = self::stackFor($headingFontId, self::DEFAULT_HEADING_FONT);
 
@@ -179,21 +229,66 @@ final class AppTypography
         ];
 
         foreach ($typeScale as $element => $props) {
-            $cssVariables["--vp-app-{$element}-size"] = self::cssSizeFor($props['size']);
             $cssVariables["--vp-app-{$element}-weight"] = $props['weight'];
             $cssVariables["--vp-app-{$element}-leading"] = $props['leading'];
         }
+
+        $sizeVariables = self::sizeVariables($typeScale);
 
         return [
             'bodyFont' => $bodyFontId,
             'headingFont' => $headingFontId,
             'bodyStack' => $bodyStack,
             'headingStack' => $headingStack,
+            'bodyLabel' => self::familyLabel($bodyFontId),
+            'headingLabel' => self::familyLabel($headingFontId),
             'typeScale' => $typeScale,
             'stylesheetUrls' => FontStylesheets::urlsFor(array_values(array_unique([$bodyFontId, $headingFontId]))),
             'cssVariables' => $cssVariables,
-            'canvasCss' => self::canvasCss($cssVariables, $bodyStack, $headingStack, $typeScale),
+            'sizeVariables' => $sizeVariables,
+            'canvasCss' => self::canvasCss($cssVariables, $bodyStack, $headingStack, $typeScale)
+                . "\n" . TypographyBreakpoints::css($sizeVariables),
+            'editorCanvasCss' => self::canvasCss($cssVariables, $bodyStack, $headingStack, $typeScale)
+                . "\n" . TypographyBreakpoints::css($sizeVariables, editorCanvas: true),
         ];
+    }
+
+    /**
+     * `--vp-app-{el}-size` per viewport. Kept out of `cssVariables` because those
+     * are also written inline on <html>, where @media could never override them.
+     *
+     * @param  array<string, array{size: string, sizeMd: ?string, sizeLg: ?string, weight: string, leading: string}>  $typeScale
+     * @return array<string, array<string, string>>
+     */
+    public static function sizeVariables(array $typeScale): array
+    {
+        $variables = ['base' => [], 'md' => [], 'lg' => []];
+
+        foreach ($typeScale as $element => $row) {
+            $previous = null;
+
+            foreach (TypographyBreakpoints::KEYS as $breakpoint) {
+                $value = self::cssSizeFor(TypographyBreakpoints::cascadedSize($row, $breakpoint) ?? $row['size']);
+
+                if ($value !== $previous) {
+                    $variables[$breakpoint]["--vp-app-{$element}-size"] = $value;
+                }
+
+                $previous = $value;
+            }
+        }
+
+        return $variables;
+    }
+
+    public static function familyLabel(string $fontId): string
+    {
+        $catalog = Voodbuilder::fonts();
+        $catalog->bootCore();
+
+        $font = $catalog->get($fontId);
+
+        return $font instanceof FontDefinition ? $font->family : $fontId;
     }
 
     public static function stackFor(string $fontId, string $fallbackId): string
@@ -231,7 +326,7 @@ final class AppTypography
      * Author/editor element styles (utilities, #id rules) win.
      *
      * @param  array<string, string>  $cssVariables
-     * @param  array<string, array{size: string, weight: string, leading: string}>  $typeScale
+     * @param  array<string, array{size: string, sizeMd: ?string, sizeLg: ?string, weight: string, leading: string}>  $typeScale
      */
     public static function canvasCss(
         array $cssVariables,
@@ -296,16 +391,5 @@ body {
     font-family: var(--vp-font-family-body, {$bodyStack});
 }
 CSS;
-    }
-
-    private static function sanitizeCssToken(mixed $value, string $fallback): string
-    {
-        $token = trim((string) $value);
-
-        if ($token === '' || ! preg_match('/^[A-Za-z0-9.\-%]+$/', $token)) {
-            return $fallback;
-        }
-
-        return $token;
     }
 }

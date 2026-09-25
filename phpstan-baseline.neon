@@ -1135,54 +1135,6 @@ parameters:
 			path: src/Support/ChromeLayoutManagedContent.php
 
 		-
-			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_font\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ChromeLayoutReadingTypography.php
-
-		-
-			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_font_size\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ChromeLayoutReadingTypography.php
-
-		-
-			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_sidebar_font\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ChromeLayoutReadingTypography.php
-
-		-
-			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_sidebar_type_scale\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ChromeLayoutReadingTypography.php
-
-		-
-			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_type_scale\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ChromeLayoutReadingTypography.php
-
-		-
-			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type string\.$#'
-			identifier: return.phpDocType
-			count: 1
-			path: src/Support/ChromeLayoutReadingTypography.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>reading_font" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/Support/ChromeLayoutReadingTypography.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>reading_sidebar_font" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/Support/ChromeLayoutReadingTypography.php
-
-		-
 			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
 			identifier: instanceof.alwaysTrue
 			count: 1

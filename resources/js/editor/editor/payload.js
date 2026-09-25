@@ -991,10 +991,8 @@ export function buildPayload(editor, options = {}) {
         if (editor.__voodbuilderChromeLayoutMode && editor.__voodbuilderReadingTypography) {
             payload.readingTypography = {
                 font: editor.__voodbuilderReadingTypography.font,
-                sidebarFont: editor.__voodbuilderReadingTypography.sidebarFont,
-                size: editor.__voodbuilderReadingTypography.size,
+                headingFont: editor.__voodbuilderReadingTypography.headingFont,
                 typeScale: editor.__voodbuilderReadingTypography.typeScale,
-                sidebarTypeScale: editor.__voodbuilderReadingTypography.sidebarTypeScale,
             };
         }
 

@@ -40,6 +40,15 @@ return [
         'heading_font_help' => 'Applicato agli heading se l’editor non ne imposta uno diverso. Default: Montserrat.',
         'body_font' => 'Font testo',
         'body_font_help' => 'Applicato a body e testo generico se l’editor non ne imposta uno diverso. Default: Lato.',
+        'scale_preset' => 'Scala tipografica',
+        'scale_preset_help' => 'Una sola scelta imposta titoli e testo per ogni viewport (mobile → tablet → desktop). La regolazione per singolo elemento si fa nell’editor layout, tab Integration.',
+        'summary_text' => 'Testo',
+        'presets' => [
+            'compact' => 'Compatta',
+            'standard' => 'Standard',
+            'large' => 'Ampia',
+            'editorial' => 'Editoriale',
+        ],
     ],
 
     'tabs' => [

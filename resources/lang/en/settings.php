@@ -40,6 +40,15 @@ return [
         'heading_font_help' => 'Applied to headings unless the editor sets a different font. Default: Montserrat.',
         'body_font' => 'Body font',
         'body_font_help' => 'Applied to body and generic text unless the editor sets a different font. Default: Lato.',
+        'scale_preset' => 'Type scale',
+        'scale_preset_help' => 'One choice sets headings and text for every viewport (mobile → tablet → desktop). Fine-tune per element in the layout editor, Integration tab.',
+        'summary_text' => 'Text',
+        'presets' => [
+            'compact' => 'Compact',
+            'standard' => 'Standard',
+            'large' => 'Large',
+            'editorial' => 'Editorial',
+        ],
     ],
 
     'tabs' => [

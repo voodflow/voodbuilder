@@ -45,21 +45,17 @@ const LEADING_OPTIONS = [
     { value: '2', label: 'loose' },
 ];
 
-const DEFAULT_TYPE_SCALE = {
-    h1: { size: '3xl', weight: '600', leading: '1.25' },
-    h2: { size: '2xl', weight: '600', leading: '1.375' },
-    h3: { size: 'xl', weight: '600', leading: '1.375' },
-    h4: { size: 'lg', weight: '600', leading: '1.375' },
-    p: { size: 'base', weight: '400', leading: '1.625' },
-};
+/**
+ * Mobile-first viewports — same mapping as the Style panel strip.
+ * `sizeProp` is the type-scale row key holding that viewport's override.
+ */
+const VIEWPORTS = [
+    { device: 'mobilePortrait', sizeProp: 'size' },
+    { device: 'tablet', sizeProp: 'sizeMd' },
+    { device: 'desktop', sizeProp: 'sizeLg' },
+];
 
-const DEFAULT_SIDEBAR_TYPE_SCALE = {
-    h1: { size: 'base', weight: '600', leading: '1.375' },
-    h2: { size: 'sm', weight: '600', leading: '1.375' },
-    h3: { size: 'xs', weight: '500', leading: '1.5' },
-    h4: { size: 'xs', weight: '500', leading: '1.5' },
-    p: { size: 'sm', weight: '400', leading: '1.5' },
-};
+const SCALE_PROPS = ['size', 'sizeMd', 'sizeLg', 'weight', 'leading'];
 
 const INTER_STACK = "'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif";
 const DEFAULT_BODY_SIZE = 'base';
@@ -179,63 +175,157 @@ function previewUsesSecondaryFont(preview) {
     return Boolean(preview.eyebrow);
 }
 
-function normalizeTypeScale(rawScale, defaults) {
-    const typeScale = { ...defaults };
+/** @returns {string|null} */
+function optionalValue(raw, { size = false } = {}) {
+    const value = String(raw ?? '').trim();
 
-    if (rawScale && typeof rawScale === 'object') {
-        for (const element of ELEMENTS) {
-            const row = rawScale[element] ?? {};
-            typeScale[element] = {
-                size: normalizeSizeToken(row.size ?? typeScale[element].size),
-                weight: String(row.weight ?? typeScale[element].weight),
-                leading: String(row.leading ?? typeScale[element].leading),
-            };
-        }
-    } else {
-        for (const element of ELEMENTS) {
-            typeScale[element] = {
-                ...typeScale[element],
-                size: normalizeSizeToken(typeScale[element].size),
-            };
+    if (value === '') {
+        return null;
+    }
+
+    return size ? normalizeSizeToken(value) : value;
+}
+
+/**
+ * Layout overrides: every prop null = inherit site Settings.
+ */
+function normalizeOverrideTypeScale(rawScale) {
+    const source = rawScale && typeof rawScale === 'object' ? rawScale : {};
+    const typeScale = {};
+
+    for (const element of ELEMENTS) {
+        const row = source[element] ?? {};
+        typeScale[element] = {};
+
+        for (const prop of SCALE_PROPS) {
+            typeScale[element][prop] = optionalValue(row[prop], { size: prop.startsWith('size') });
         }
     }
 
     return typeScale;
 }
 
+function emptyOverrideTypeScale() {
+    return normalizeOverrideTypeScale(null);
+}
+
 function normalizeState(raw = {}) {
     return {
-        font: String(raw.font ?? 'inter'),
-        sidebarFont: String(raw.sidebarFont ?? raw.font ?? 'inter'),
-        size: normalizeSizeToken(raw.size ?? DEFAULT_BODY_SIZE),
-        typeScale: normalizeTypeScale(raw.typeScale, DEFAULT_TYPE_SCALE),
-        sidebarTypeScale: normalizeTypeScale(raw.sidebarTypeScale, DEFAULT_SIDEBAR_TYPE_SCALE),
+        font: String(raw.font ?? ''),
+        headingFont: String(raw.headingFont ?? ''),
+        typeScale: normalizeOverrideTypeScale(raw.typeScale),
         previewChannel: String(raw.previewChannel ?? ''),
     };
 }
 
-function buildCssVariables(state, fontOptions) {
-    const stack = fontStackFor(state.font, fontOptions);
-    const sidebarStack = fontStackFor(state.sidebarFont, fontOptions);
+/**
+ * Site Settings typography the layout inherits from (labels + type scale).
+ */
+function normalizeInherited(raw) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const sourceScale = source.typeScale && typeof source.typeScale === 'object' ? source.typeScale : {};
+    const typeScale = {};
+
+    for (const element of ELEMENTS) {
+        const row = sourceScale[element] ?? {};
+        typeScale[element] = {
+            size: optionalValue(row.size, { size: true }) ?? DEFAULT_BODY_SIZE,
+            sizeMd: optionalValue(row.sizeMd, { size: true }),
+            sizeLg: optionalValue(row.sizeLg, { size: true }),
+            weight: optionalValue(row.weight) ?? '400',
+            leading: optionalValue(row.leading) ?? '1.5',
+        };
+    }
+
+    return {
+        bodyLabel: String(source.bodyLabel ?? source.bodyFont ?? ''),
+        headingLabel: String(source.headingLabel ?? source.headingFont ?? ''),
+        typeScale,
+    };
+}
+
+function formatLabel(template, replacements) {
+    return Object.entries(replacements).reduce(
+        (text, [key, value]) => text.replace(`{${key}}`, String(value ?? '')),
+        String(template),
+    );
+}
+
+function optionLabel(options, value) {
+    return options.find((opt) => opt.value === value)?.label ?? String(value ?? '');
+}
+
+/**
+ * First non-null size at or below the viewport (mobile-first cascade).
+ *
+ * @param {Record<string, string|null>|undefined} row
+ * @param {number} viewportIndex
+ * @returns {string|null}
+ */
+function cascadedSize(row, viewportIndex) {
+    for (let i = viewportIndex; i >= 0; i -= 1) {
+        const value = row?.[VIEWPORTS[i].sizeProp];
+
+        if (typeof value === 'string' && value !== '') {
+            return value;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * @param {string|null|undefined} deviceId
+ * @returns {number}
+ */
+function viewportIndexForDevice(deviceId) {
+    const id = String(deviceId ?? '').trim();
+
+    if (id === 'mobilePortrait' || id === 'mobile') {
+        return 0;
+    }
+
+    if (id === 'tablet') {
+        return 1;
+    }
+
+    return 2;
+}
+
+function currentDeviceId(editor) {
+    try {
+        return String(editor?.Devices?.getSelected?.()?.get?.('id') ?? editor?.getDevice?.() ?? 'desktop');
+    } catch {
+        return 'desktop';
+    }
+}
+
+/**
+ * Canvas preview vars for one viewport. Inherited props point at the site
+ * `--vp-app-*` vars so Settings stay the single source of truth.
+ *
+ * @param {ReturnType<typeof normalizeState>} state
+ * @param {Array<{value: string, stack: string}>} fontOptions
+ * @param {number} viewportIndex
+ */
+function buildCssVariables(state, fontOptions, viewportIndex) {
     const vars = {
-        '--vp-font-family-doc': stack,
-        '--vp-font-family-sidebar': sidebarStack,
-        '--vp-font-size-doc': cssSizeFor(state.size),
-        '--vp-font-size-sidebar': cssSizeFor(state.sidebarTypeScale.p.size),
+        '--vp-font-family-doc': state.font === ''
+            ? 'var(--vp-font-family-body, var(--font-sans))'
+            : fontStackFor(state.font, fontOptions),
+        '--vp-font-family-doc-heading': state.headingFont === ''
+            ? 'var(--vp-font-family-heading, var(--font-heading))'
+            : fontStackFor(state.headingFont, fontOptions),
+        '--vp-font-family-sidebar': 'var(--vp-font-family-doc)',
+        '--vp-font-size-doc': 'var(--vp-doc-p-size)',
     };
 
     for (const element of ELEMENTS) {
         const row = state.typeScale[element];
-        vars[`--vp-doc-${element}-size`] = cssSizeFor(row.size);
-        vars[`--vp-doc-${element}-weight`] = row.weight;
-        vars[`--vp-doc-${element}-leading`] = row.leading;
-    }
-
-    for (const element of ELEMENTS) {
-        const row = state.sidebarTypeScale[element];
-        vars[`--vp-sidebar-${element}-size`] = cssSizeFor(row.size);
-        vars[`--vp-sidebar-${element}-weight`] = row.weight;
-        vars[`--vp-sidebar-${element}-leading`] = row.leading;
+        const size = cascadedSize(row, viewportIndex);
+        vars[`--vp-doc-${element}-size`] = size === null ? `var(--vp-app-${element}-size)` : cssSizeFor(size);
+        vars[`--vp-doc-${element}-weight`] = row.weight ?? `var(--vp-app-${element}-weight)`;
+        vars[`--vp-doc-${element}-leading`] = row.leading ?? `var(--vp-app-${element}-leading)`;
     }
 
     return vars;
@@ -308,12 +398,12 @@ function defaultSidebarHtml(preview, labels) {
         <div class="voodbuilder-editor-reading__nav">
             <p class="voodbuilder-editor-reading__sidebar-title">${escapeHtml(preview.eyebrow || preview.label || 'Nav')}</p>
             <div class="voodbuilder-editor-reading__nav-group">
-                <div class="voodbuilder-editor-reading__nav-group-title">${escapeHtml(labels.readingNavGroup ?? 'Getting Started')}</div>
+                <h5 class="voodbuilder-editor-reading__nav-group-title">${escapeHtml(labels.readingNavGroup ?? 'Getting Started')}</h5>
                 <a class="voodbuilder-editor-reading__nav-link is-active" href="#">${escapeHtml(labels.readingNavActive ?? 'Current page')}</a>
                 <a class="voodbuilder-editor-reading__nav-link" href="#">${escapeHtml(labels.readingNavItem ?? 'Section')}</a>
             </div>
             <div class="voodbuilder-editor-reading__nav-group">
-                <div class="voodbuilder-editor-reading__nav-group-title">${escapeHtml(labels.readingNavGroupAlt ?? 'More')}</div>
+                <h5 class="voodbuilder-editor-reading__nav-group-title">${escapeHtml(labels.readingNavGroupAlt ?? 'More')}</h5>
                 <a class="voodbuilder-editor-reading__nav-link" href="#">${escapeHtml(labels.readingNavItem ?? 'Section')}</a>
             </div>
         </div>
@@ -356,7 +446,7 @@ function defaultAsideHtml(preview, labels) {
 
     return `
         <nav class="vp-outline" aria-label="${escapeHtml(labels.readingTocTitle ?? 'On this page')}">
-            <div class="vp-outline__title">${escapeHtml(labels.readingTocTitle ?? 'On this page')}</div>
+            <h5 class="vp-outline__title">${escapeHtml(labels.readingTocTitle ?? 'On this page')}</h5>
             <div class="vp-outline__rail">${links}</div>
         </nav>
     `;
@@ -536,6 +626,7 @@ export function registerReadingTypographyUi(editor, options = {}) {
 
     const labels = options.labels ?? {};
     const fontOptions = buildFontOptions(options.fonts);
+    const inherited = normalizeInherited(options.readingTypography?.inherited, fontOptions);
 
     let state = normalizeState({
         ...(options.readingTypography ?? {}),
@@ -550,16 +641,18 @@ export function registerReadingTypographyUi(editor, options = {}) {
     /** @type {HTMLElement|null} */
     let previewHost = null;
     let paintTimer = 0;
-    /** User-opened type-scale panels (`primary.h1`, `secondary.p`, …). Start all closed. */
+    /** User-opened type-scale panels (`primary.h1`, …). Start all closed. */
     const openScalePanels = new Set();
 
-    editor.__voodbuilderReadingTypography = {
+    const snapshot = () => ({
         font: state.font,
-        sidebarFont: state.sidebarFont,
-        size: state.size,
+        headingFont: state.headingFont,
         typeScale: state.typeScale,
-        sidebarTypeScale: state.sidebarTypeScale,
-    };
+    });
+    const activeViewportIndex = () => viewportIndexForDevice(currentDeviceId(editor));
+    const cssVariables = () => buildCssVariables(state, fontOptions, activeViewportIndex());
+
+    editor.__voodbuilderReadingTypography = snapshot();
 
     const clearPreviewHosts = (root) => {
         const scope = root
@@ -605,7 +698,7 @@ export function registerReadingTypographyUi(editor, options = {}) {
     };
 
     const applyPreviewVars = () => {
-        const vars = buildCssVariables(state, fontOptions);
+        const vars = cssVariables();
         const frame = previewHost?.querySelector?.('.voodbuilder-editor-reading__preview-frame');
 
         if (frame instanceof HTMLElement) {
@@ -636,7 +729,7 @@ export function registerReadingTypographyUi(editor, options = {}) {
         const preview = previews[state.previewChannel] ?? previews[previewIds[0]];
         const showSecondary = previewUsesSecondaryFont(preview);
         const showAside = previewUsesAside(preview);
-        const vars = buildCssVariables(state, fontOptions);
+        const vars = cssVariables();
 
         doc.querySelectorAll(`[${PREVIEW_ATTR}]`).forEach((node) => {
             if (node !== previewHost) {
@@ -691,45 +784,68 @@ export function registerReadingTypographyUi(editor, options = {}) {
     };
 
     const renderControls = () => {
-        const preview = previews[state.previewChannel] ?? previews[previewIds[0]];
-        const showSecondary = previewUsesSecondaryFont(preview);
         const channelOptions = previewIds.map((id) => ({
             value: id,
             label: previews[id].label ?? id,
         }));
 
-        const scaleDetails = (scope, element, row) => {
-            const panelKey = `${scope}.${element}`;
+        const viewportIndex = activeViewportIndex();
+        const sizeProp = VIEWPORTS[viewportIndex].sizeProp;
+        const inheritLabel = (value) => formatLabel(labels.readingInheritValue ?? 'Inherit ({value})', { value });
+        const siteFontLabel = (font) => formatLabel(labels.readingInheritSiteFont ?? 'From site settings ({font})', { font });
+
+        const primaryDetails = (element) => {
+            const panelKey = `primary.${element}`;
             const openAttr = openScalePanels.has(panelKey) ? ' open' : '';
-            const prefix = scope === 'secondary' ? 'sidebarScale' : 'scale';
+            const row = state.typeScale[element];
+            const siteRow = inherited.typeScale[element];
+            const inheritedSize = (viewportIndex > 0 ? cascadedSize(row, viewportIndex - 1) : null)
+                ?? cascadedSize(siteRow, viewportIndex);
+            const effectiveSize = cascadedSize(row, viewportIndex) ?? cascadedSize(siteRow, viewportIndex);
+            const effectiveWeight = row.weight ?? siteRow.weight;
+            const overridden = SCALE_PROPS.some((prop) => row[prop] !== null);
 
             return `
-                <details class="voodbuilder-editor-reading-element" data-vb-reading-scale="${escapeHtml(panelKey)}"${openAttr}>
-                    <summary>${escapeHtml(element.toUpperCase())}</summary>
+                <details class="voodbuilder-editor-reading-element${overridden ? ' is-overridden' : ''}" data-vb-reading-scale="${escapeHtml(panelKey)}"${openAttr}>
+                    <summary>
+                        <span>${escapeHtml(element.toUpperCase())}</span>
+                        <span class="voodbuilder-editor-reading-element__meta">${escapeHtml(`${effectiveSize ?? ''} · ${optionLabel(WEIGHT_OPTIONS, effectiveWeight)}`)}</span>
+                    </summary>
                     <div class="voodbuilder-editor-reading-element__grid">
-                        ${fieldRow(labels.readingSize ?? 'Size', selectHtml(`${prefix}.${element}.size`, FONT_SIZE_TOKEN_OPTIONS, row.size))}
-                        ${fieldRow(labels.readingWeight ?? 'Weight', selectHtml(`${prefix}.${element}.weight`, WEIGHT_OPTIONS, row.weight))}
-                        ${fieldRow(labels.readingLineHeight ?? 'Line height', selectHtml(`${prefix}.${element}.leading`, LEADING_OPTIONS, row.leading))}
+                        ${fieldRow(labels.readingSize ?? 'Size', selectHtml(
+                            `scale.${element}.${sizeProp}`,
+                            [{ value: '', label: inheritLabel(inheritedSize ?? '') }, ...FONT_SIZE_TOKEN_OPTIONS],
+                            row[sizeProp] ?? '',
+                        ))}
+                        ${fieldRow(labels.readingWeight ?? 'Weight', selectHtml(
+                            `scale.${element}.weight`,
+                            [{ value: '', label: inheritLabel(optionLabel(WEIGHT_OPTIONS, siteRow.weight)) }, ...WEIGHT_OPTIONS],
+                            row.weight ?? '',
+                        ))}
+                        ${fieldRow(labels.readingLineHeight ?? 'Line height', selectHtml(
+                            `scale.${element}.leading`,
+                            [{ value: '', label: inheritLabel(optionLabel(LEADING_OPTIONS, siteRow.leading)) }, ...LEADING_OPTIONS],
+                            row.leading ?? '',
+                        ))}
                     </div>
                 </details>
             `;
         };
 
-        const elementBlocks = ELEMENTS.map((element) => scaleDetails('primary', element, state.typeScale[element])).join('');
-        const secondaryScaleBlocks = ELEMENTS.map((element) => scaleDetails('secondary', element, state.sidebarTypeScale[element])).join('');
+        const viewportButtons = VIEWPORTS.map(({ device }, index) => {
+            const label = device === 'tablet'
+                ? (labels.deviceTablet ?? 'Tablet')
+                : device === 'desktop'
+                    ? (labels.deviceDesktop ?? 'Desktop')
+                    : (labels.deviceMobile ?? 'Mobile');
+            const active = index === viewportIndex;
 
-        const secondaryFields = showSecondary
-            ? `
-                ${fieldRow(
-                    labels.readingSecondaryFont ?? 'Secondary font',
-                    selectHtml('sidebarFont', fontOptions, state.sidebarFont),
-                )}
-                <div class="voodbuilder-editor-reading-scale">
-                    <p class="voodbuilder-editor-reading-scale__title">${escapeHtml(labels.readingSecondaryTypeScale ?? 'Secondary type scale')}</p>
-                    ${secondaryScaleBlocks}
-                </div>
-            `
-            : '';
+            return `<button type="button" class="voodbuilder-editor-style-viewport__btn${active ? ' is-active' : ''}" data-vb-reading-viewport="${device}" aria-pressed="${active ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
+        }).join('');
+
+        const elementBlocks = ELEMENTS.map(primaryDetails).join('');
+        const headingFontOptions = [{ value: '', label: siteFontLabel(inherited.headingLabel) }, ...fontOptions];
+        const bodyFontOptions = [{ value: '', label: siteFontLabel(inherited.bodyLabel) }, ...fontOptions];
 
         mount.innerHTML = `
             <div class="voodbuilder-editor-reading">
@@ -750,13 +866,18 @@ export function registerReadingTypographyUi(editor, options = {}) {
                 </div>
                 <div class="voodbuilder-editor-reading__controls">
                     ${fieldRow(labels.readingPreviewSample ?? 'Preview sample', selectHtml('previewChannel', channelOptions, state.previewChannel))}
-                    ${fieldRow(labels.readingPrimaryFont ?? 'Primary font', selectHtml('font', fontOptions, state.font))}
-                    ${fieldRow(labels.readingBaseSize ?? 'Body base size', selectHtml('size', FONT_SIZE_TOKEN_OPTIONS, state.size))}
+                    ${fieldRow(labels.readingHeadingFont ?? 'Heading font', selectHtml('headingFont', headingFontOptions, state.headingFont))}
+                    ${fieldRow(labels.readingBodyFont ?? 'Body font', selectHtml('font', bodyFontOptions, state.font))}
                     <div class="voodbuilder-editor-reading-scale">
-                        <p class="voodbuilder-editor-reading-scale__title">${escapeHtml(labels.readingTypeScale ?? 'Primary type scale')}</p>
+                        <p class="voodbuilder-editor-reading-scale__title">${escapeHtml(labels.readingTypeScale ?? 'Type scale')}</p>
+                        <div class="voodbuilder-editor-style-viewport voodbuilder-editor-reading-viewport">
+                            <div class="voodbuilder-editor-style-viewport__group" role="group" aria-label="${escapeHtml(labels.classStyleViewportAria ?? 'Viewport')}">
+                                ${viewportButtons}
+                            </div>
+                            <p class="voodbuilder-editor-reading-viewport__hint">${escapeHtml(labels.readingTypeScaleHint ?? 'Size per viewport: Mobile is the base, Tablet and Desktop override it only when set.')}</p>
+                        </div>
                         ${elementBlocks}
                     </div>
-                    ${secondaryFields}
                 </div>
             </div>
         `;
@@ -765,11 +886,9 @@ export function registerReadingTypographyUi(editor, options = {}) {
     const resetToDefaults = () => {
         const channel = state.previewChannel || previewIds[0] || '';
         Object.assign(state, normalizeState({
-            font: 'inter',
-            sidebarFont: 'inter',
-            size: DEFAULT_BODY_SIZE,
-            typeScale: DEFAULT_TYPE_SCALE,
-            sidebarTypeScale: DEFAULT_SIDEBAR_TYPE_SCALE,
+            font: '',
+            headingFont: '',
+            typeScale: emptyOverrideTypeScale(),
             previewChannel: channel,
         }));
         openScalePanels.clear();
@@ -794,18 +913,12 @@ export function registerReadingTypographyUi(editor, options = {}) {
     };
 
     const render = () => {
-        const preview = previews[state.previewChannel] ?? previews[previewIds[0]];
-
-        if (! previewUsesSecondaryFont(preview)) {
-            state.sidebarFont = state.font;
-        }
-
         renderControls();
         syncPreview({ rebuild: true });
     };
 
     const ensureReadingFonts = () => {
-        const ids = [state.font, state.sidebarFont].filter((id) => id && id !== 'inter');
+        const ids = [state.font, state.headingFont].filter((id) => id && id !== 'inter');
 
         ids.forEach((id) => {
             void ensureFontLoaded(editor, id, { reassert: false });
@@ -813,13 +926,7 @@ export function registerReadingTypographyUi(editor, options = {}) {
     };
 
     const commit = ({ rebuild = false } = {}) => {
-        editor.__voodbuilderReadingTypography = {
-            font: state.font,
-            sidebarFont: state.sidebarFont,
-            size: state.size,
-            typeScale: state.typeScale,
-            sidebarTypeScale: state.sidebarTypeScale,
-        };
+        editor.__voodbuilderReadingTypography = snapshot();
         ensureReadingFonts();
         editor.trigger?.('voodbuilder:reading-typography');
         renderControls();
@@ -861,6 +968,15 @@ export function registerReadingTypographyUi(editor, options = {}) {
         if (target.closest('[data-vb-reading-reset]')) {
             event.preventDefault();
             resetToDefaults();
+
+            return;
+        }
+
+        const viewportButton = target.closest('[data-vb-reading-viewport]');
+
+        if (viewportButton) {
+            event.preventDefault();
+            editor.setDevice?.(viewportButton.getAttribute('data-vb-reading-viewport') || 'desktop');
         }
     });
 
@@ -883,25 +999,20 @@ export function registerReadingTypographyUi(editor, options = {}) {
             return;
         }
 
-        if (key === 'font' || key === 'sidebarFont' || key === 'size') {
-            state[key] = key === 'size' ? normalizeSizeToken(target.value) : target.value;
-
-            if (key === 'font' && ! previewUsesSecondaryFont(previews[state.previewChannel])) {
-                state.sidebarFont = state.font;
-            }
-
-            commit({ rebuild: key === 'font' || key === 'sidebarFont' });
+        if (key === 'font' || key === 'headingFont') {
+            state[key] = target.value;
+            commit({ rebuild: true });
 
             return;
         }
 
         if (key.startsWith('scale.')) {
             const [, element, prop] = key.split('.');
-            if (ELEMENTS.includes(element) && prop) {
+            if (ELEMENTS.includes(element) && SCALE_PROPS.includes(prop)) {
                 openScalePanels.add(`primary.${element}`);
                 state.typeScale[element] = {
                     ...state.typeScale[element],
-                    [prop]: prop === 'size' ? normalizeSizeToken(target.value) : target.value,
+                    [prop]: optionalValue(target.value, { size: prop.startsWith('size') }),
                 };
                 commit({ rebuild: false });
             }
@@ -909,17 +1020,6 @@ export function registerReadingTypographyUi(editor, options = {}) {
             return;
         }
 
-        if (key.startsWith('sidebarScale.')) {
-            const [, element, prop] = key.split('.');
-            if (ELEMENTS.includes(element) && prop) {
-                openScalePanels.add(`secondary.${element}`);
-                state.sidebarTypeScale[element] = {
-                    ...state.sidebarTypeScale[element],
-                    [prop]: prop === 'size' ? normalizeSizeToken(target.value) : target.value,
-                };
-                commit({ rebuild: false });
-            }
-        }
     });
 
     const previousActivate = editor.__voodbuilderActivateInspectorTab;
@@ -937,9 +1037,22 @@ export function registerReadingTypographyUi(editor, options = {}) {
     });
 
     editor.on('canvas:frame:load', () => {
-        applyReadingVarsToCanvas(editor, buildCssVariables(state, fontOptions));
+        applyReadingVarsToCanvas(editor, cssVariables());
         schedulePaint();
     });
+
+    // Sizes are per viewport: re-point the size selects and canvas vars at the new device.
+    const onDeviceChange = () => {
+        renderControls();
+        applyReadingVarsToCanvas(editor, cssVariables());
+
+        if (previewVisible) {
+            applyPreviewVars();
+        }
+    };
+
+    editor.on('device:select', onDeviceChange);
+    editor.on('change:device', onDeviceChange);
 
     editor.on('voodbuilder:reading-preview:detach', detachCanvasPreview);
     editor.on('voodbuilder:reading-preview:attach', () => {

@@ -122,7 +122,9 @@ HTML;
         $attrs = $matches[2];
 
         if (str_contains($attrs, 'data-voodbuilder-block')) {
-            return null;
+            // Footer shells already stamp their own root: wrapping again nests a second
+            // copy of the block that the editor mounts as a duplicate footer.
+            return str_contains($attrs, 'data-voodbuilder-block="' . $blockId . '"') ? $trimmed : null;
         }
 
         if (preg_match('/\bclass=(["\'])(.*?)\1/is', $attrs, $classMatch)) {

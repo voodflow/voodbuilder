@@ -47,7 +47,7 @@ class EditorChromeLayoutSaveTest extends TestCase
         );
     }
 
-    public function test_admin_can_save_chrome_layout_content(): void
+    private function actingAsPanelAdmin(): void
     {
         $user = new class extends User implements FilamentUser
         {
@@ -64,14 +64,19 @@ class EditorChromeLayoutSaveTest extends TestCase
             'email' => 'chrome-admin@example.com',
         ])->save();
 
+        $this->actingAs($user);
+    }
+
+    public function test_admin_can_save_chrome_layout_content(): void
+    {
+        $this->actingAsPanelAdmin();
+
         $layout = ChromeLayout::query()->create([
             'name' => 'Main chrome',
             'slug' => 'main-chrome',
             'html' => '<header>Old</header>',
             'enabled' => true,
         ]);
-
-        $this->actingAs($user);
 
         $response = $this->putJson(route('voodbuilder.editor.chrome-layouts.content.update', $layout), [
             'html' => '<header data-voodbuilder-chrome="nav">Nav</header><main data-voodbuilder-content-slot="main"></main>',
@@ -85,6 +90,34 @@ class EditorChromeLayoutSaveTest extends TestCase
 
         $this->assertStringContainsString('data-voodbuilder-chrome="nav"', (string) $layout->html);
         $this->assertStringContainsString('data-voodbuilder-content-slot="main"', (string) $layout->html);
+    }
+
+    public function test_saving_reading_typography_without_choices_keeps_site_inheritance(): void
+    {
+        $this->actingAsPanelAdmin();
+
+        $layout = ChromeLayout::query()->create([
+            'name' => 'Docs chrome',
+            'slug' => 'docs-chrome',
+            'html' => '<main data-voodbuilder-content-slot="main"></main>',
+            'enabled' => true,
+        ]);
+
+        $this->putJson(route('voodbuilder.editor.chrome-layouts.content.update', $layout), [
+            'html' => '<main data-voodbuilder-content-slot="main"></main>',
+            'readingTypography' => [
+                'font' => '',
+                'headingFont' => '',
+                'typeScale' => ['h1' => ['size' => '', 'sizeLg' => '5xl']],
+            ],
+        ])->assertOk()->assertJsonPath('readingTypography.font', '');
+
+        $layout->refresh();
+
+        $this->assertNull($layout->reading_font);
+        $this->assertNull($layout->reading_heading_font);
+        $this->assertNull($layout->reading_type_scale['h1']['size']);
+        $this->assertSame('5xl', $layout->reading_type_scale['h1']['sizeLg']);
     }
 
     public function test_guest_cannot_save_chrome_layout_content(): void

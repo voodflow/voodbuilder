@@ -107,7 +107,7 @@ final class EditorChromeLayoutEditorGate
                 ...$readingTypography['stylesheetUrls'],
             ]))),
             'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)
-                . "\n" . $appTypography['canvasCss']
+                . "\n" . $appTypography['editorCanvasCss']
                 . self::readingTypographyCanvasCss($readingTypography),
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
@@ -118,14 +118,9 @@ final class EditorChromeLayoutEditorGate
             ]))),
             'readingTypography' => [
                 'font' => $readingTypography['font'],
-                'sidebarFont' => $readingTypography['sidebarFont'],
-                'size' => $readingTypography['size'],
-                'stack' => $readingTypography['stack'],
-                'sidebarStack' => $readingTypography['sidebarStack'],
-                'cssSize' => $readingTypography['cssSize'],
-                'sidebarCssSize' => $readingTypography['sidebarCssSize'],
+                'headingFont' => $readingTypography['headingFont'],
                 'typeScale' => $readingTypography['typeScale'],
-                'sidebarTypeScale' => $readingTypography['sidebarTypeScale'],
+                'inherited' => $readingTypography['inherited'],
                 'stylesheetUrls' => $readingTypography['stylesheetUrls'],
                 'cssVariables' => $readingTypography['cssVariables'],
             ],
@@ -147,14 +142,12 @@ final class EditorChromeLayoutEditorGate
     }
 
     /**
-     * @param  array{stack: string, cssSize: string, cssVariables?: array<string, string>}  $readingTypography
+     * @param  array{cssVariables: array<string, string>, editorCss: string}  $readingTypography
      */
     private static function readingTypographyCanvasCss(array $readingTypography): string
     {
-        $variables = $readingTypography['cssVariables'] ?? [
-            '--vp-font-family-doc' => $readingTypography['stack'],
-            '--vp-font-size-doc' => $readingTypography['cssSize'],
-        ];
+        $variables = $readingTypography['cssVariables'];
+        $responsiveSizes = $readingTypography['editorCss'];
 
         $decls = [];
 
@@ -170,9 +163,16 @@ final class EditorChromeLayoutEditorGate
             {$block}
         }
 
+        {$responsiveSizes}
+
         .vp-doc {
             font-family: var(--vp-font-family-doc, var(--font-sans));
             font-size: var(--vp-font-size-doc, 17px);
+        }
+
+        .vp-doc-title,
+        .vp-doc :is(h1, h2, h3, h4, h5, h6) {
+            font-family: var(--vp-font-family-doc-heading, var(--vp-font-family-doc, var(--font-sans)));
         }
 
         .vp-doc h1 { font-size: var(--vp-doc-h1-size, 2rem); font-weight: var(--vp-doc-h1-weight, 600); line-height: var(--vp-doc-h1-leading, 1.25); }
@@ -186,21 +186,13 @@ final class EditorChromeLayoutEditorGate
         .voodbuilder-doc-sidebar-scroll,
         [data-voodbuilder-reading-sidebar] {
             font-family: var(--vp-font-family-sidebar, var(--vp-font-family-doc, var(--font-sans)));
-            font-size: var(--vp-font-size-sidebar, var(--vp-sidebar-p-size, 0.875rem));
+            font-size: 0.875rem;
         }
 
-        [data-voodbuilder-reading-sidebar] h1,
-        [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-title { font-size: var(--vp-sidebar-h1-size, 1rem); font-weight: var(--vp-sidebar-h1-weight, 600); line-height: var(--vp-sidebar-h1-leading, 1.333); }
-        [data-voodbuilder-reading-sidebar] h2,
-        [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-group { font-size: var(--vp-sidebar-h2-size, 0.875rem); font-weight: var(--vp-sidebar-h2-weight, 600); line-height: var(--vp-sidebar-h2-leading, 1.4); }
-        [data-voodbuilder-reading-sidebar] h3 { font-size: var(--vp-sidebar-h3-size, 0.8125rem); font-weight: var(--vp-sidebar-h3-weight, 500); line-height: var(--vp-sidebar-h3-leading, 1.4); }
-        [data-voodbuilder-reading-sidebar] h4 { font-size: var(--vp-sidebar-h4-size, 0.8125rem); font-weight: var(--vp-sidebar-h4-weight, 500); line-height: var(--vp-sidebar-h4-leading, 1.333); }
-        [data-voodbuilder-reading-sidebar] p,
-        [data-voodbuilder-reading-sidebar] li,
-        [data-voodbuilder-reading-sidebar] a.vp-reading-sidebar-link,
-        [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-link { font-size: var(--vp-sidebar-p-size, 0.875rem); font-weight: var(--vp-sidebar-p-weight, 400); line-height: var(--vp-sidebar-p-leading, 1.5); }
-        .vp-outline__title { font-size: var(--vp-sidebar-h2-size, 0.875rem); font-weight: var(--vp-sidebar-h2-weight, 600); line-height: var(--vp-sidebar-h2-leading, 1.4); }
-        .vp-outline__link { font-size: var(--vp-sidebar-p-size, 0.875rem); font-weight: var(--vp-sidebar-p-weight, 400); line-height: var(--vp-sidebar-p-leading, 1.5); }
+        .vp-reading-sidebar-group,
+        .vp-outline__title { margin: 0 0 0.5rem; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1.5; letter-spacing: 0.08em; text-transform: uppercase; }
+        .vp-reading-sidebar-link,
+        .vp-outline__link { font-size: 0.875rem; line-height: 1.5; }
 CSS;
     }
 

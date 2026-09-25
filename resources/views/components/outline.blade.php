@@ -2,9 +2,9 @@
 
 @if(count($items) > 0)
     <nav class="vp-outline" aria-labelledby="voodbuilder-outline-title">
-        <div id="voodbuilder-outline-title" class="vp-outline__title">
+        <h5 id="voodbuilder-outline-title" class="vp-outline__title">
             {{ $title ?? __('On this page') }}
-        </div>
+        </h5>
         <div class="vp-outline__rail">
             @foreach($items as $item)
                 <a

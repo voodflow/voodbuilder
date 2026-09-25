@@ -32,6 +32,18 @@ class EditorRichContentBlockAdapterTest extends TestCase
         $this->assertStringContainsString('<div>Body</div>', $html);
     }
 
+    public function test_keeps_already_stamped_root_without_nesting_a_second_block(): void
+    {
+        $html = EditorRichContentBlockAdapter::wrap(
+            'site_footer_columns_simple',
+            ['columns' => 4],
+            '<footer data-voodbuilder-block="site_footer_columns_simple" data-voodbuilder-config="{}" class="voodbuilder-editor-dynamic"><div>Body</div></footer>',
+        );
+
+        $this->assertSame(1, substr_count($html, 'data-voodbuilder-block='));
+        $this->assertStringStartsWith('<footer', $html);
+    }
+
     public function test_builds_definition_from_rich_content_block(): void
     {
         $definition = EditorRichContentBlockAdapter::toDefinition(
