@@ -55,9 +55,10 @@ class ChromeLayoutReadingTypographyTest extends TestCase
         $defaults = ChromeLayoutReadingTypography::resolve(null);
 
         $this->assertArrayNotHasKey('--vp-doc-h5-weight', $defaults['cssVariables']);
-        $this->assertArrayNotHasKey('--vp-doc-link-size', $defaults['sizeVariables']['base']);
+        $this->assertSame('var(--vp-doc-p-size)', $defaults['sizeVariables']['base']['--vp-doc-link-size']);
+        $this->assertSame('var(--vp-doc-p-weight)', $defaults['cssVariables']['--vp-doc-link-weight']);
         $this->assertSame('xs', $defaults['inherited']['typeScale']['h5']['size']);
-        $this->assertSame('sm', $defaults['inherited']['typeScale']['link']['size']);
+        $this->assertArrayNotHasKey('link', $defaults['typeScale']);
 
         $resolved = ChromeLayoutReadingTypography::resolve(new ChromeLayout([
             'reading_type_scale' => [
@@ -68,8 +69,21 @@ class ChromeLayoutReadingTypographyTest extends TestCase
 
         $this->assertSame('var(--text-sm)', $resolved['sizeVariables']['base']['--vp-doc-h5-size']);
         $this->assertSame('600', $resolved['cssVariables']['--vp-doc-h5-weight']);
-        $this->assertArrayNotHasKey('--vp-doc-link-size', $resolved['sizeVariables']['base']);
-        $this->assertSame('var(--text-base)', $resolved['sizeVariables']['md']['--vp-doc-link-size']);
+        $this->assertSame('var(--vp-doc-p-size)', $resolved['sizeVariables']['base']['--vp-doc-link-size']);
+        $this->assertArrayNotHasKey('--vp-doc-link-size', $resolved['sizeVariables']['md']);
+    }
+
+    public function test_element_rules_css_beats_app_typography_on_doc_titles(): void
+    {
+        $resolved = ChromeLayoutReadingTypography::resolve(new ChromeLayout([
+            'reading_type_scale' => [
+                'h1' => ['sizeLg' => 'xs'],
+            ],
+        ]));
+
+        $this->assertStringContainsString('.vp-doc-title', $resolved['css']);
+        $this->assertStringContainsString('--vp-doc-h1-size: var(--text-xs)', $resolved['css']);
+        $this->assertStringContainsString('font-size: var(--vp-doc-h1-size', $resolved['css']);
     }
 
     public function test_unknown_fonts_fall_back_to_site_fonts(): void

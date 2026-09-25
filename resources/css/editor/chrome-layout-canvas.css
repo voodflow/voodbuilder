@@ -425,9 +425,9 @@ button[data-voodbuilder-cta='true']:empty::before {
     margin-left: -0.65rem;
     border-left: 2px solid transparent;
     border-radius: 0.25rem;
-    font-size: var(--vp-doc-link-size, 0.875rem);
-    font-weight: var(--vp-doc-link-weight, 500);
-    line-height: var(--vp-doc-link-leading, 1.5);
+    font-size: var(--vp-doc-p-size, 0.875rem);
+    font-weight: var(--vp-doc-p-weight, 400);
+    line-height: var(--vp-doc-p-leading, 1.5);
     color: var(--color-vp-text-2, #64748b);
     text-decoration: none;
 }
@@ -508,9 +508,9 @@ button[data-voodbuilder-cta='true']:empty::before {
     color: var(--color-vp-text-2, #64748b);
     text-decoration: none;
     font-family: inherit;
-    font-size: var(--vp-doc-link-size, 0.875rem);
-    font-weight: var(--vp-doc-link-weight, 400);
-    line-height: var(--vp-doc-link-leading, 1.5);
+    font-size: var(--vp-doc-p-size, 0.875rem);
+    font-weight: var(--vp-doc-p-weight, 400);
+    line-height: var(--vp-doc-p-leading, 1.5);
 }
 
 .voodbuilder-editor-reading__aside .vp-outline__link--level-3 {
@@ -722,7 +722,7 @@ html[data-voodbuilder-editor-device='mobilePortrait'] .voodbuilder-editor-readin
 }
 
 .voodbuilder-editor-reading__pager-title {
-    font-size: var(--vp-doc-link-size, 0.875rem);
+    font-size: var(--vp-doc-p-size, 0.875rem);
     font-weight: 500;
     line-height: 1.5;
     color: var(--color-vp-brand-1, #6366f1);

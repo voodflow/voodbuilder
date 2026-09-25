@@ -869,8 +869,8 @@
         line-height: var(--vp-doc-p-leading, 1.75);
     }
 
-    /* Companion reading columns (vdocs / vtuts / third-party): group titles and the
-       "On this page" title are the Integration `h5` (heading font), links the `link` row. */
+    /* Companion reading columns: group titles use Integration `h5` (heading font);
+       sidebar / TOC links follow the `p` (body) scale. */
     .voodbuilder-doc-sidebar-scroll,
     .voodbuilder-doc-sidebar-scroll nav,
     [data-voodbuilder-reading-sidebar] {
@@ -900,9 +900,9 @@
 
     [data-voodbuilder-reading-sidebar] a.vp-reading-sidebar-link,
     [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-link {
-        font-size: var(--vp-doc-link-size, 0.875rem);
-        font-weight: var(--vp-doc-link-weight, 500);
-        line-height: var(--vp-doc-link-leading, 1.5);
+        font-size: var(--vp-doc-p-size, 0.875rem);
+        font-weight: var(--vp-doc-p-weight, 400);
+        line-height: var(--vp-doc-p-leading, 1.5);
     }
 
     [data-voodbuilder-reading-sidebar] .vp-reading-sidebar-link[aria-current='page'] {
@@ -997,7 +997,7 @@
         padding-bottom: 0.75rem;
         border-bottom: 1px solid var(--color-vp-divider);
         color: var(--color-vp-brand-1);
-        font-size: var(--vp-doc-link-size, 0.875rem);
+        font-size: var(--vp-doc-p-size, 0.875rem);
         font-weight: 500;
     }
 
@@ -1114,7 +1114,7 @@
     }
 
     .vp-pager__title {
-        font-size: var(--vp-doc-link-size, 0.875rem);
+        font-size: var(--vp-doc-p-size, 0.875rem);
         font-weight: 500;
         line-height: 1.5;
         color: var(--color-vp-brand-1);

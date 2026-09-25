@@ -8,15 +8,14 @@ import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { ensureFontLoaded } from './fonts/font-loader.js';
 
-const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'link'];
+const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'h5', 'p'];
 
 /** Companion extras with VitePress-like defaults (no site Settings equivalent). */
-const COLUMN_ELEMENTS = ['h5', 'link'];
+const COLUMN_ELEMENTS = ['h5'];
 
 /** Same defaults as ChromeLayoutReadingTypography::columnDefaults(). */
 const COLUMN_DEFAULTS = {
     h5: { size: 'xs', sizeMd: null, sizeLg: null, weight: '700', leading: '1.5' },
-    link: { size: 'sm', sizeMd: null, sizeLg: null, weight: '500', leading: '1.5' },
 };
 
 /** Same labels as Style → Typography font-size (style-tailwind-class-groups). */
@@ -867,10 +866,6 @@ export function registerReadingTypographyUi(editor, options = {}) {
         const elementLabel = (element) => {
             if (element === 'h5') {
                 return labels.readingElementH5 ?? 'H5';
-            }
-
-            if (element === 'link') {
-                return labels.readingElementLink ?? 'Link';
             }
 
             return element.toUpperCase();

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.3] - 2026-09-26
+
+### Fixed
+
+- Integration typography now wins on docs/tutorials: unlayered `.vp-doc-title` / `.vp-doc h*` rules beat AppTypography’s `:where(h1)` (which previously kept site H1 sizes even when the layout set `xs`)
+- Layout editor: footer blocks are placed by block id, not document order, so a footer no longer lands in the Header zone after reload
+
+### Changed
+
+- Integration type scale: removed the separate **Link** row — sidebar / TOC links follow **P**; H5 stays after H4
+
 ## [1.11.2] - 2026-09-26
 
 ### Changed

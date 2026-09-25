@@ -31,15 +31,16 @@ final class ChromeLayoutReadingTypography
     public const DEFAULT_FONT = 'inter';
 
     /**
-     * Article elements (inherit the site scale) plus the side-column elements:
-     * `h5` = sidebar group / "On this page" titles, `link` = sidebar + TOC links.
+     * Article elements (inherit the site scale) plus `h5` for companion group /
+     * outline titles. Sidebar and TOC links follow the `p` (body) scale — there is
+     * no separate Integration row for links.
      *
      * @var list<string>
      */
-    public const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'link'];
+    public const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'h5', 'p'];
 
     /** @var list<string> */
-    public const COLUMN_ELEMENTS = ['h5', 'link'];
+    public const COLUMN_ELEMENTS = ['h5'];
 
     /** @var list<string> */
     public const SCALE_PROPS = ['size', 'sizeMd', 'sizeLg', 'weight', 'leading'];
@@ -62,7 +63,7 @@ final class ChromeLayoutReadingTypography
     }
 
     /**
-     * VitePress-like defaults for side-column elements (no site Settings equivalent).
+     * VitePress-like defaults for `h5` (no site Settings equivalent).
      *
      * @return array<string, array{size: string, sizeMd: ?string, sizeLg: ?string, weight: string, leading: string}>
      */
@@ -70,7 +71,6 @@ final class ChromeLayoutReadingTypography
     {
         return [
             'h5' => ['size' => 'xs', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '700', 'leading' => '1.5'],
-            'link' => ['size' => 'sm', 'sizeMd' => null, 'sizeLg' => null, 'weight' => '500', 'leading' => '1.5'],
         ];
     }
 
@@ -284,6 +284,10 @@ final class ChromeLayoutReadingTypography
             // Sidebar / TOC links use the body font; their titles (h5) the heading font.
             '--vp-font-family-sidebar' => 'var(--vp-font-family-doc)',
             '--vp-font-size-doc' => 'var(--vp-doc-p-size)',
+            // Links follow P — keep aliases so companion CSS that still reads
+            // --vp-doc-link-* stays in sync without a separate Integration row.
+            '--vp-doc-link-weight' => 'var(--vp-doc-p-weight)',
+            '--vp-doc-link-leading' => 'var(--vp-doc-p-leading)',
         ];
 
         foreach ($typeScale as $element => $row) {
@@ -297,6 +301,7 @@ final class ChromeLayoutReadingTypography
         }
 
         $sizeVariables = self::sizeVariables($typeScale);
+        $sizeVariables['base']['--vp-doc-link-size'] = 'var(--vp-doc-p-size)';
         $fontIds = array_values(array_unique(array_filter(
             [$bodyFont, $headingFont],
             static fn (string $id): bool => $id !== '' && $id !== self::DEFAULT_FONT,
@@ -316,9 +321,60 @@ final class ChromeLayoutReadingTypography
             'stylesheetUrls' => FontStylesheets::urlsFor($fontIds),
             'cssVariables' => $cssVariables,
             'sizeVariables' => $sizeVariables,
-            'css' => TypographyBreakpoints::css($sizeVariables),
-            'editorCss' => TypographyBreakpoints::css($sizeVariables, editorCanvas: true),
+            'css' => TypographyBreakpoints::css($sizeVariables) . "\n" . self::elementRulesCss(),
+            'editorCss' => TypographyBreakpoints::css($sizeVariables, editorCanvas: true) . "\n" . self::elementRulesCss(),
         ];
+    }
+
+    /**
+     * Unlayered element rules so Integration sizes beat AppTypography's `:where(h1)`
+     * (also unlayered). Theme.css puts the same selectors in `@layer components`,
+     * which loses to unlayered app rules and made layout H1 overrides invisible
+     * on docs/tutorials.
+     */
+    public static function elementRulesCss(): string
+    {
+        return <<<'CSS'
+.vp-doc-title,
+.vp-doc h1 {
+    font-size: var(--vp-doc-h1-size, 2rem);
+    font-weight: var(--vp-doc-h1-weight, 600);
+    line-height: var(--vp-doc-h1-leading, 1.25);
+}
+.vp-doc h2 {
+    font-size: var(--vp-doc-h2-size, 1.5rem);
+    font-weight: var(--vp-doc-h2-weight, 600);
+    line-height: var(--vp-doc-h2-leading, 1.333);
+}
+.vp-doc h3 {
+    font-size: var(--vp-doc-h3-size, 1.25rem);
+    font-weight: var(--vp-doc-h3-weight, 600);
+    line-height: var(--vp-doc-h3-leading, 1.4);
+}
+.vp-doc h4 {
+    font-size: var(--vp-doc-h4-size, 1.125rem);
+    font-weight: var(--vp-doc-h4-weight, 600);
+    line-height: var(--vp-doc-h4-leading, 1.333);
+}
+.vp-doc p,
+.vp-doc li {
+    font-size: var(--vp-doc-p-size, 1em);
+    font-weight: var(--vp-doc-p-weight, 400);
+    line-height: var(--vp-doc-p-leading, 1.75);
+}
+.vp-reading-sidebar-group,
+.vp-outline__title {
+    font-size: var(--vp-doc-h5-size, 0.75rem);
+    font-weight: var(--vp-doc-h5-weight, 700);
+    line-height: var(--vp-doc-h5-leading, 1.5);
+}
+.vp-reading-sidebar-link,
+.vp-outline__link {
+    font-size: var(--vp-doc-p-size, 0.875rem);
+    font-weight: var(--vp-doc-p-weight, 400);
+    line-height: var(--vp-doc-p-leading, 1.5);
+}
+CSS;
     }
 
     /**

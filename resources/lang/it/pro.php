@@ -249,7 +249,6 @@ return [
         'reading_type_scale' => 'Scala tipografica',
         'reading_type_scale_hint' => 'Dimensione per viewport: Mobile è la base, Tablet e Desktop la sovrascrivono solo se impostati.',
         'reading_element_h5' => 'H5',
-        'reading_element_link' => 'Link',
         'reading_size' => 'Dimensione',
         'reading_weight' => 'Peso',
         'reading_line_height' => 'Interlinea',

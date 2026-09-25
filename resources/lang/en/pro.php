@@ -249,7 +249,6 @@ return [
         'reading_type_scale' => 'Type scale',
         'reading_type_scale_hint' => 'Size per viewport: Mobile is the base, Tablet and Desktop override it only when set.',
         'reading_element_h5' => 'H5',
-        'reading_element_link' => 'Link',
         'reading_size' => 'Size',
         'reading_weight' => 'Weight',
         'reading_line_height' => 'Line height',

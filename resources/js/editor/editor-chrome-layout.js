@@ -398,6 +398,22 @@ function relocateOrphanTopLevelBlocks(wrapper, navZone, progressZone, slot, foot
             return;
         }
 
+        const blockId = readBlockId(child);
+
+        // Prefer block identity over document order: saved HTML strips zone wrappers, so a
+        // footer that landed above the content slot would otherwise be sucked into Header.
+        if (isFooterBlock(blockId) && isValidMoveTarget(footerZone)) {
+            safeMoveToEnd(child, footerZone);
+
+            return;
+        }
+
+        if ((isNavBlock(blockId) || blockId.startsWith('site_nav_')) && isValidMoveTarget(navZone)) {
+            safeMoveToEnd(child, navZone);
+
+            return;
+        }
+
         if (
             isValidMoveTarget(navZone)
             && slotIndex >= 0
@@ -413,6 +429,30 @@ function relocateOrphanTopLevelBlocks(wrapper, navZone, progressZone, slot, foot
             safeMoveToEnd(child, footerZone);
         }
     });
+}
+
+/**
+ * Repair nav/footer blocks that ended up in the wrong drop zone (reload / legacy HTML).
+ */
+function relocateMisplacedChromeBlocks(navZone, footerZone) {
+    const moveMatching = (fromZone, toZone, matches) => {
+        if (! fromZone?.components || ! isValidMoveTarget(toZone)) {
+            return;
+        }
+
+        [...(fromZone.components().models ?? fromZone.components())].forEach((child) => {
+            if (! isValidGrapesComponent(child) || ! canMoveGrapesComponent(child)) {
+                return;
+            }
+
+            if (matches(readBlockId(child))) {
+                safeMoveToEnd(child, toZone);
+            }
+        });
+    };
+
+    moveMatching(navZone, footerZone, (blockId) => isFooterBlock(blockId));
+    moveMatching(footerZone, navZone, (blockId) => isNavBlock(blockId) || blockId.startsWith('site_nav_'));
 }
 
 function migrateReadingProgressIntoProgressZone(navZone, progressZone, footerZone) {
@@ -479,7 +519,10 @@ function normalizeProgressZone(progressZone, navZone, footerZone) {
         }
 
         if (! isReadingProgressLayoutComponent(child)) {
-            const fallback = isValidMoveTarget(navZone) ? navZone : footerZone;
+            const preferFooter = isFooterBlock(readBlockId(child));
+            const fallback = preferFooter && isValidMoveTarget(footerZone)
+                ? footerZone
+                : (isValidMoveTarget(navZone) ? navZone : footerZone);
 
             if (isValidMoveTarget(fallback) && canMoveGrapesComponent(child)) {
                 safeMoveToEnd(child, fallback);
@@ -563,6 +606,7 @@ function ensureChromeLayoutStructure(editor, placeholders) {
     normalizeZoneChildren(navZone);
     normalizeProgressZone(progressZone, navZone, footerZone);
     normalizeZoneChildren(footerZone);
+    relocateMisplacedChromeBlocks(navZone, footerZone);
 
     unlockDropZoneChildren(editor, navZone);
     unlockDropZoneChildren(editor, progressZone);
