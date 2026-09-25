@@ -280,10 +280,9 @@ HTML;
     }
     public function test_preserves_author_hidden_layer_cards_after_dynamic_remount(): void
     {
-        $serverRegistry = new EditorServerBlockRegistry;
-        $serverRegistry->register('Voodbuilder', StubLayeredDynamicBlock::class);
+        $registry = new EditorDynamicBlockRegistry;
+        $registry->register('Test', StubLayeredDynamicBlock::class);
 
-        $config = [];
         $wrapped = <<<HTML
 <section data-voodbuilder-block="stub_layered" data-voodbuilder-config="{}" class="voodbuilder-editor-dynamic">
   <div data-voodbuilder-layer-name="Keep" class="card">Keep</div>
@@ -291,7 +290,7 @@ HTML;
 </section>
 HTML;
 
-        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $serverRegistry);
+        $renderer = new EditorDynamicBlockRenderer($registry, new EditorServerBlockRegistry);
         $html = $renderer->render($wrapped, null);
 
         $this->assertStringContainsString('Keep', $html);

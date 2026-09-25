@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-09-25
+
+### Fixed
+
+- Pasted Tailwind icons whose root is the SVG itself keep `currentColor`: SVG paint cleanup/bake runs before the layout shell hoists the SVG's `text-*` classes onto the wrapper section (no more baked black fill)
+
 ## [1.7.0] - 2026-09-25
 
 First stable release line; rolls up 0.1.167 – 0.1.169 (dual light/dark page wallpaper, theme-aware Style panel, Code block layout).

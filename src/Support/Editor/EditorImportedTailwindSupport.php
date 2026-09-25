@@ -43,10 +43,13 @@ final class EditorImportedTailwindSupport
         $html = self::inlineBackgroundImageClasses($html);
         $html = self::simplifyCustomElements($html);
         $html = self::stripNonStandardAttributes($html);
+        // SVG paint must be resolved while icons still carry their own text-* classes;
+        // the layout shell may hoist a root SVG's classes onto the wrapper section.
+        $html = self::bakeSvgPaintInHtml(self::stripSpuriousSvgBakedPaint($html));
         $html = self::markPastedComponentRoot($html);
         $html = self::ensureEditorLayoutShell($html);
 
-        return self::ensureDarkVariantScope(self::bakeSvgPaintInHtml(self::stripSpuriousSvgBakedPaint($html)));
+        return self::ensureDarkVariantScope($html);
     }
 
     public static function stripSpuriousSvgBakedPaint(string $html): string
