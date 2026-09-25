@@ -1,0 +1,2953 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Contracts\\MenuItemTypeHandler\:\:formSchema\(\) has invalid return type Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Contracts/MenuItemTypeHandler.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Actions/CloneChromeLayoutAction.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Actions/CloneChromeLayoutAction.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Actions/CloneNavigationMenuAction.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Actions/CloneNavigationMenuAction.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Filament/Actions/CreateNavigationMenuTranslationAction.php
+
+		-
+			message: '#^Call to static method options\(\) on an unknown class Voodflow\\Vtuts\\Support\\Locales\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Filament/Actions/CreateNavigationMenuTranslationAction.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Filament/Actions/CreateSitePageTranslationAction.php
+
+		-
+			message: '#^Call to static method options\(\) on an unknown class Voodflow\\Vtuts\\Support\\Locales\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Filament/Actions/CreateSitePageTranslationAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Actions/DeleteNavigationMenuTranslationsAction.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Actions/DeleteNavigationMenuTranslationsAction.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(Voodflow\\Voodbuilder\\Models\\NavigationMenu\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/Actions/DeleteNavigationMenuTranslationsAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Actions/DeleteSitePageTranslationsAction.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Actions/DeleteSitePageTranslationsAction.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(Voodflow\\Voodbuilder\\Models\\SitePage\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/Actions/DeleteSitePageTranslationsAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:translationLocaleCodes\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Filament/Columns/TranslationLocaleColumn.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$seo\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Filament/Components/SitePageSeoFields.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:seo\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Filament/Components/SitePageSeoFields.php
+
+		-
+			message: '#^Parameter \$organizer of anonymous function has invalid type Voodflow\\Vevents\\Models\\Organizer\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Filament/Forms/LandingFooterForm.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Forms/ResolvableLinkForm.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Forms/ResolvableLinkForm.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Forms/ResolvableLinkForm.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Forms/ResolvableLinkForm.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Forms/ResolvableLinkForm.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Livewire/AdminDatabaseNotifications.php
+
+		-
+			message: '#^Class Relaticle\\Comments\\Notifications\\CommentRepliedNotification not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Filament/Livewire/AdminDatabaseNotifications.php
+
+		-
+			message: '#^Class Relaticle\\Comments\\Notifications\\UserMentionedNotification not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Filament/Livewire/AdminDatabaseNotifications.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Filament/Livewire/ThemeMapBridge.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/Livewire/ThemeMapBridge.php
+
+		-
+			message: '#^Offset ''source_id'' on array\{version\: int, type\: string, source_id\: string, light\: array\<string, string\|null\>, dark\: array\<string, string\|null\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Filament/Livewire/ThemesWorkspace.php
+
+		-
+			message: '#^Offset ''theme_id'' on array\{area_id\: string, area_label\: string, theme_id\: string, theme_label\: string, source\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Filament/Livewire/ThemesWorkspace.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/Livewire/ThemesWorkspace.php
+
+		-
+			message: '#^Parameter \#1 \$view of static method Filament\\Schemas\\Components\\View\:\:make\(\) expects view\-string, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/Pages/ThemeStudioPage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Filament/Resources/NavigationMenuResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$translation_group_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Filament/Resources/NavigationMenuResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Filament\\Resources\\NavigationMenuResource\:\:menuItemFields\(\) has invalid return type Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Filament\\Resources\\NavigationMenuResource\:\:menuItemFormSchema\(\) has invalid return type Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource.php
+
+		-
+			message: '#^Call to function method_exists\(\) with Filament\\Actions\\Action and ''record'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource/Pages/EditNavigationMenu.php
+
+		-
+			message: '#^Cannot access property \$name on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource/Pages/EditNavigationMenu.php
+
+		-
+			message: '#^Parameter \#1 \$menu of static method Voodflow\\Voodbuilder\\Support\\NavigationMenuPreview\:\:renderContent\(\) expects Voodflow\\Voodbuilder\\Models\\NavigationMenu, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource/Pages/EditNavigationMenu.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource/Pages/EditNavigationMenu.php
+
+		-
+			message: '#^Parameter \#1 \$view of static method Filament\\Schemas\\Components\\View\:\:make\(\) expects view\-string, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/Resources/NavigationMenuResource/Pages/EditNavigationMenu.php
+
+		-
+			message: '#^Unsafe access to private property Voodflow\\Voodbuilder\\Filament\\Resources\\NavigationMenuResource\\Pages\\EditNavigationMenu\:\:\$menuTreeAssetsRegistered through static\:\:\.$#'
+			identifier: staticClassAccess.privateProperty
+			count: 2
+			path: src/Filament/Resources/NavigationMenuResource/Pages/EditNavigationMenu.php
+
+		-
+			message: '#^Unsafe access to private property Voodflow\\Voodbuilder\\Filament\\Resources\\NavigationMenuResource\\Pages\\EditNavigationMenu\:\:\$previewAssetsRegistered through static\:\:\.$#'
+			identifier: staticClassAccess.privateProperty
+			count: 2
+			path: src/Filament/Resources/NavigationMenuResource/Pages/EditNavigationMenu.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$dynamic_channel\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 5
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$layout\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$sub_theme\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$translation_group_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>dynamic_channel" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>published" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Filament/Resources/SitePageResource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Filament/Resources/SitePageResource/Pages/CreateSitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/SitePageResource/Pages/CreateSitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Filament/Resources/SitePageResource/Pages/EditSitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Filament/Resources/SitePageResource/Pages/EditSitePage.php
+
+		-
+			message: '#^Cannot call method getUrl\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Filament/Resources/SitePageResource/Pages/EditSitePage.php
+
+		-
+			message: '#^Cannot call method usesEditorBuilder\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Filament/Resources/SitePageResource/Pages/EditSitePage.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/CustomBlocks/FeaturesGridBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/CustomBlocks/HeroBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/CustomBlocks/PackagePromosBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/CustomBlocks/PartnerBannerBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/CustomBlocks/ProductPromoBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingBannerCtaBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingContactCtaBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingFaqBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingFeatureGridBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingHeroBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingLogoRowBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingSocialShareBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingSplitBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingStatsBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingStepsBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingTextSectionBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Filament/RichContent/Landing/LandingVideoBlock.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/Controllers/AccountController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/Controllers/ChromeLayoutEditorController.php
+
+		-
+			message: '#^Call to function is_array\(\) with null will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Http/Controllers/EditorBindingsPreviewController.php
+
+		-
+			message: '#^Offset ''filters'' on array\{key\: mixed, sort\?\: mixed, dir\?\: mixed, limit\?\: int, offset\?\: int\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Http/Controllers/EditorBindingsPreviewController.php
+
+		-
+			message: '#^Offset ''type'' on array\{id\: string, label\: string, type\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Http/Controllers/EditorBindingsPreviewController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorChromeLayoutController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorFormController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Http/Controllers/EditorPageController.php
+
+		-
+			message: '#^Offset ''fonts'' on array\{html\: string, css\: string, js\: string, project\: mixed, fonts\: list\<string\>, css_class_fingerprint\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Http/Controllers/EditorPageController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Http/Controllers/EditorPageRevisionsController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$builder_payload\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorPageRevisionsController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePageRevision\:\:\$builder_payload\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Http/Controllers/EditorPageRevisionsController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePageRevision\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Http/Controllers/EditorPageRevisionsController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePageRevision\:\:\$kind\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorPageRevisionsController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePageRevision\:\:\$site_page_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorPageRevisionsController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Voodflow\\Voodbuilder\\Models\\SitePageRevision\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: src/Http/Controllers/EditorPageRevisionsController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorPageTemplatesController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorPageTemplatesController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorPageTemplatesController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/EditorPageTemplatesController.php
+
+		-
+			message: '#^Offset ''js'' on array\{html\: string, css\: string, js\: string, project\: mixed, fonts\: list\<string\>, css_class_fingerprint\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: src/Http/Controllers/EditorPageTemplatesController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Http/Controllers/EditorPageTemplatesController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Variable \$fallbackTitle on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/Controllers/NavigationMenuPreviewController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/Controllers/SearchController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/SitePageController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/SitePageController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/SitePageController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$section\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/SitePageController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Http/Controllers/SitePageController.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$password_protected\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/SitePageUnlockController.php
+
+		-
+			message: '#^Access to constant SESSION_LOCALE_KEY on an unknown class Voodflow\\Vtuts\\Support\\LocaleSwitcher\.$#'
+			identifier: class.notFound
+			count: 3
+			path: src/Http/Middleware/ApplyVoodbuilderSiteConfig.php
+
+		-
+			message: '#^Call to static method default\(\) on an unknown class Voodflow\\Vtuts\\Support\\Locales\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Middleware/ApplyVoodbuilderSiteConfig.php
+
+		-
+			message: '#^Call to static method isValid\(\) on an unknown class Voodflow\\Vtuts\\Support\\Locales\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Http/Middleware/ApplyVoodbuilderSiteConfig.php
+
+		-
+			message: '#^Offset ''active'' on array\{edition\: string, active\: bool, capabilities\: list\<string\>, identifier\?\: string\|null, expires_at\?\: string\|null, message\?\: string\|null, catalog_credentials\?\: array\<string, string\>\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Licensing/AnyStack/AnyStackEntitlementProvider.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: src/Licensing/AnyStack/AnyStackEntitlementProvider.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: src/Licensing/ComposerAnystackCredentialsReader.php
+
+		-
+			message: '#^Anonymous function never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 3
+			path: src/Licensing/EditorPackageInventory.php
+
+		-
+			message: '#^Parameter \#1 \$class of static method Voodflow\\Voodbuilder\\Licensing\\EditorPackageInventory\:\:companionEnabled\(\) expects class\-string, string given\.$#'
+			identifier: argument.type
+			count: 3
+			path: src/Licensing/EditorPackageInventory.php
+
+		-
+			message: '#^Offset ''key'' on array\{key\: string, fingerprint\: string\|null\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Licensing/LicenceKeyResolver.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: src/Licensing/LicenceKeyResolver.php
+
+		-
+			message: '#^Parameter \#1 \$class of static method Voodflow\\Voodbuilder\\Licensing\\LicenseDashboardPayload\:\:safeClassExists\(\) expects class\-string, string given\.$#'
+			identifier: argument.type
+			count: 6
+			path: src/Licensing/LicenseDashboardPayload.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/AccountSettings.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/AccountSettings.php
+
+		-
+			message: '#^Call to method update\(\) on an unknown class Laravel\\Fortify\\Contracts\\UpdatesUserPasswords\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/AccountSettings.php
+
+		-
+			message: '#^Call to method update\(\) on an unknown class Laravel\\Fortify\\Contracts\\UpdatesUserProfileInformation\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/AccountSettings.php
+
+		-
+			message: '#^Class Laravel\\Fortify\\Contracts\\UpdatesUserPasswords not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/AccountSettings.php
+
+		-
+			message: '#^Class Laravel\\Fortify\\Contracts\\UpdatesUserProfileInformation not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/AccountSettings.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Livewire/AccountSettings.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$read_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/SiteNotificationBell.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Livewire/SiteNotificationBell.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$is_default\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Models/ChromeLayout.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ModelIntegration\:\:\$fields\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/ModelIntegration.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ModelIntegration\:\:\$model_alias\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/ModelIntegration.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ModelIntegration\:\:\$model_class\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Models/ModelIntegration.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\{essential\: array, relations\?\: array, reverse_relations\?\: array\} and array\{\} will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Models/ModelIntegration.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 7
+			path: src/Models/NavigationMenu.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/NavigationMenu.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$translation_group_id\.$#'
+			identifier: property.notFound
+			count: 5
+			path: src/Models/NavigationMenu.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\), static\(Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\)\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$dropdown_layout\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$link\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$menu_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$open_in_new_tab\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$route_match\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 6
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$section\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$section_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/NavigationMenuItem.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$html\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/PageTemplate.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$author\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$canonical_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$robots\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$dynamic_routes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$excerpt\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$hide_site_footer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$hide_site_nav\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$layout\.$#'
+			identifier: property.notFound
+			count: 5
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 9
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$password_protected\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$published_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$section\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$section_home\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$translation_group_id\.$#'
+			identifier: property.notFound
+			count: 6
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$visibility\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Models\\SitePage\:\:sectionArticles\(\) should return Illuminate\\Database\\Eloquent\\Collection\<int, Voodflow\\Voodbuilder\\Models\\SitePage\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, static\(Voodflow\\Voodbuilder\\Models\\SitePage\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Non\-static access to static property Illuminate\\Database\\Eloquent\\Model\:\:\$builder\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 1
+			path: src/Models/SitePage.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Models\\SitePageRevision\:\:creator\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<Illuminate\\Foundation\\Auth\\User, \$this\(Voodflow\\Voodbuilder\\Models\\SitePageRevision\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<Illuminate\\Database\\Eloquent\\Model, \$this\(Voodflow\\Voodbuilder\\Models\\SitePageRevision\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/SitePageRevision.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\VoodbuilderSettings\:\:\$data\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/VoodbuilderSettings.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Modules\\Conditions\\ConditionsModule\:\:conditionDefinitions\(\) should return list\<array\{id\: string, label\: string, meta\?\: array\<string, mixed\>\}\> but returns list\<array\{key\: string, label\: string, compares\: list\<string\>, value\: array\{type\: string, choices\?\: list\<array\{value\: string, label\: string\}\>\}\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Modules/Conditions/ConditionsModule.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Modules\\ModuleRegistry\:\:contributors\(\) should return Illuminate\\Support\\Collection\<int, object\> but returns Illuminate\\Support\\Collection\<int, Voodflow\\Voodbuilder\\Contracts\\VoodBuilderModule\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Modules/ModuleRegistry.php
+
+		-
+			message: '#^Instanceof between Filament\\Panel and Filament\\Panel will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/AdminAccess.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$content_max_width\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ChromeLayoutContentWidth.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: src/Support/ChromeLayoutHtmlSanitizer.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$chrome_layout_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ChromeLayoutManagedContent.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/ChromeLayoutManagedContent.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_font\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ChromeLayoutReadingTypography.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_font_size\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ChromeLayoutReadingTypography.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_sidebar_font\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ChromeLayoutReadingTypography.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_sidebar_type_scale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ChromeLayoutReadingTypography.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$reading_type_scale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ChromeLayoutReadingTypography.php
+
+		-
+			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type string\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: src/Support/ChromeLayoutReadingTypography.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>reading_font" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Support/ChromeLayoutReadingTypography.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>reading_sidebar_font" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Support/ChromeLayoutReadingTypography.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/ChromeLayoutRenderer.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>childNodes" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Support/ChromeLayoutRenderer.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$is_default\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/ChromeLayoutResolver.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\ChromeLayoutResolver\:\:resolveLayoutIdForChannel\(\) never returns string so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Support/ChromeLayoutResolver.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\ChromeLayoutResolver\:\:resolveLayoutIdForChannel\(\) should return string\|null but returns int\.$#'
+			identifier: return.type
+			count: 2
+			path: src/Support/ChromeLayoutResolver.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\ChromeLayoutResolver\:\:resolveLayoutIdForChannel\(\) should return string\|null but returns int\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Support/ChromeLayoutResolver.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$sub_theme\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ChromeLayoutSubThemeResolver.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Support/ComposerPackageVersion.php
+
+		-
+			message: '#^Call to function is_array\(\) with list\<string\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/ConfigureSubThemesForVoodbuilder.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/ConfigureSubThemesForVoodbuilder.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 2
+			path: src/Support/ConfigureSubThemesForVoodbuilder.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-list\<non\-falsy\-string\> and array\{\} will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Support/ConfigureSubThemesForVoodbuilder.php
+
+		-
+			message: '#^Call to function is_array\(\) with list\<Filament\\Forms\\Components\\Component\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/ConfiguredMenuItemType.php
+
+		-
+			message: '#^Instanceof between Illuminate\\Support\\Collection\<int, Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\> and Illuminate\\Support\\Collection will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/ConfiguredMenuItemType.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\ConfiguredMenuItemType\:\:formSchema\(\) has invalid return type Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/ConfiguredMenuItemType.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<Filament\\Forms\\Components\\Component\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: src/Support/ConfiguredMenuItemType.php
+
+		-
+			message: '#^Parameter \$formSchema of method Voodflow\\Voodbuilder\\Support\\ConfiguredMenuItemType\:\:__construct\(\) has invalid type Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/ConfiguredMenuItemType.php
+
+		-
+			message: '#^Property Voodflow\\Voodbuilder\\Support\\ConfiguredMenuItemType\:\:\$formSchema has unknown class Filament\\Forms\\Components\\Component as its type\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/ConfiguredMenuItemType.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 1
+			path: src/Support/ContentChannelRegistry.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\ContentChannelRegistry\:\:search\(\) should return array\<string, Illuminate\\Support\\Collection\<int, array\{title\: string, url\: string, excerpt\?\: string\|null\}\>\> but returns array\<string, Illuminate\\Support\\Collection\<int, array\{title\: string, url\: string, meta\?\: string\|null, excerpt\?\: string\|null, excerpt_html\?\: string\|null, body\?\: string\|null, preferred_excerpt\?\: string\|null, score\?\: int\}\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Support/ContentChannelRegistry.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: src/Support/ContentChannelRegistry.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/ContentChannelThemes.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$dynamic_channel\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/DynamicPages/DynamicPageBindingCatalog.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_dynamic\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/DynamicPages/DynamicPageBindingCatalog.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$dynamic_channel\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/DynamicPages/DynamicPagePreviewEntityResolver.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_dynamic\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/DynamicPages/DynamicPagePreviewEntityResolver.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/DynamicPages/DynamicPagePreviewMatcher.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/DynamicPages/DynamicPagePreviewMatcher.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>title" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Support/DynamicPages/DynamicPagePreviewMatcher.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/DynamicPages/DynamicPageResolver.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/DynamicPages/DynamicPageResolver.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/DynamicPages/DynamicPageResolver.php
+
+		-
+			message: '#^Trait Voodflow\\Voodbuilder\\Support\\DynamicPages\\RendersDynamicSitePage is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Support/DynamicPages/RendersDynamicSitePage.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/Editor/AbstractSiteNavVariantBlock.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ModelIntegration\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/Bindings/AbstractModelIntegrationBindingSource.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\{alias\?\: string\|null, fields\: array, expand\?\: list\<string\>, expand_fields\?\: array\<string, list\<string\>\>\} will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/Bindings/AbstractModelIntegrationBindingSource.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/Bindings/AbstractModelIntegrationBindingSource.php
+
+		-
+			message: '#^Offset ''fields'' on array\{alias\?\: string\|null, fields\: array, expand\?\: list\<string\>, expand_fields\?\: array\<string, list\<string\>\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/Bindings/AbstractModelIntegrationBindingSource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$dynamic_channel\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Support/Editor/Bindings/BindingContext.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_dynamic\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/Editor/Bindings/BindingContext.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/Bindings/BindingContext.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>locale" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Support/Editor/Bindings/BindingContext.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/Bindings/EditorBindingRenderer.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/Bindings/EditorBindingStorageNormalizer.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ModelIntegration\:\:\$model_class\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/Editor/Bindings/ModelIntegrationAuthBindingSource.php
+
+		-
+			message: '#^Parameter \#1 \$source of method Voodflow\\Voodbuilder\\Support\\Editor\\Bindings\\BindingRegistry\:\:register\(\) expects Voodflow\\Voodbuilder\\Contracts\\EditorBindingSource, Voodflow\\Voodbuilder\\Support\\Editor\\Bindings\\ModelIntegrationItemBindingSource given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/Editor/Bindings/ModelIntegrationBindingRegistrar.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ModelIntegration\:\:\$model_class\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/Bindings/ModelIntegrationLatestBindingSource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ModelIntegration\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/Bindings/ModelIntegrationLatestBindingSource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:publiclyListed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Support/Editor/Bindings/ModelIntegrationLatestBindingSource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:published\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Support/Editor/Bindings/ModelIntegrationLatestBindingSource.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ModelIntegration\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/Bindings/ModelIntegrationRegistry.php
+
+		-
+			message: '#^Call to function method_exists\(\) with Illuminate\\Foundation\\Auth\\User and ''can'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/ComponentAuthoringBridge.php
+
+		-
+			message: '#^Call to static method isEnabled\(\) on an unknown class Voodflow\\Voodbuilder\\Modules\\Components\\ComponentsModule\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/ComponentAuthoringBridge.php
+
+		-
+			message: '#^Call to method css\(\) on an unknown class Voodflow\\Voodbuilder\\Support\\Editor\\EditorGlobalClassRenderer\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Call to method cssForHtml\(\) on an unknown class Voodflow\\Voodbuilder\\Support\\Editor\\EditorComponentCssRenderer\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Call to method render\(\) on an unknown class Voodflow\\Voodbuilder\\Support\\Editor\\EditorComponentRenderer\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Call to method syncFromPageHtml\(\) on an unknown class Voodflow\\Voodbuilder\\Support\\Editor\\EditorComponentCssLibrarySync\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Call to static method isEnabled\(\) on an unknown class Voodflow\\Voodbuilder\\Modules\\Components\\ComponentsModule\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Class Voodflow\\Voodbuilder\\Modules\\Components\\ComponentsModule not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Class Voodflow\\Voodbuilder\\Support\\Editor\\EditorComponentCssLibrarySync not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Class Voodflow\\Voodbuilder\\Support\\Editor\\EditorComponentCssRenderer not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Class Voodflow\\Voodbuilder\\Support\\Editor\\EditorComponentRenderer not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Class Voodflow\\Voodbuilder\\Support\\Editor\\EditorGlobalClassRenderer not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/Editor/ComponentRuntimeBridge.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/Conditions/EditorConditionsAttributeNormalizer.php
+
+		-
+			message: '#^Offset ''sets'' on array\{match\: string, sets\: list\<array\<string, mixed\>\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/Conditions/EditorConditionsAttributeNormalizer.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/Conditions/EditorElementConditionEvaluator.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 1
+			path: src/Support/Editor/Conditions/EditorElementConditionEvaluator.php
+
+		-
+			message: '#^Offset ''match'' on array\{sets\?\: list\<array\{conditions\?\: list\<array\{key\?\: string, compare\?\: string, value\?\: mixed\}\>\}\>\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/Conditions/EditorElementConditionEvaluator.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''any'' and ''all'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Support/Editor/Conditions/EditorElementConditionEvaluator.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/Conditions/EditorElementConditionRenderer.php
+
+		-
+			message: '#^Call to method catalog\(\) on an unknown class Voodflow\\Voodbuilder\\Support\\Editor\\Bindings\\RepeatListRegistry\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/DynamicDataCollectionsBridge.php
+
+		-
+			message: '#^Call to method render\(\) on an unknown class Voodflow\\Voodbuilder\\Support\\Editor\\Bindings\\EditorRepeatRenderer\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/DynamicDataCollectionsBridge.php
+
+		-
+			message: '#^Call to static method isEnabled\(\) on an unknown class Voodflow\\Voodbuilder\\Modules\\DynamicData\\DynamicDataModule\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/DynamicDataCollectionsBridge.php
+
+		-
+			message: '#^Class Voodflow\\Voodbuilder\\Modules\\DynamicData\\DynamicDataModule not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/DynamicDataCollectionsBridge.php
+
+		-
+			message: '#^Class Voodflow\\Voodbuilder\\Support\\Editor\\Bindings\\EditorRepeatRenderer not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/Editor/DynamicDataCollectionsBridge.php
+
+		-
+			message: '#^Class Voodflow\\Voodbuilder\\Support\\Editor\\Bindings\\RepeatListRegistry not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/Editor/DynamicDataCollectionsBridge.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: src/Support/Editor/EditorAssets.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorBackgroundPublishNormalizer.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorBlockConfigRegistry.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<array\<string, mixed\>\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: src/Support/Editor/EditorBlockRegistry.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorChromeLayoutEditorGate.php
+
+		-
+			message: '#^Offset ''js'' on array\{html\: string, css\: string, js\: string, project\: mixed, fonts\: list\<string\>, css_class_fingerprint\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorChromeLayoutEditorGate.php
+
+		-
+			message: '#^Offset 1 on array\{non\-falsy\-string, string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorCodeBlockNormalizer.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\Editor\\EditorComponentCategoryNormalizer\:\:normalize\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Support/Editor/EditorComponentCategoryNormalizer.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockAttributeNormalizer.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Call to static method injectEventIdIntoEditorHtml\(\) on an unknown class Voodflow\\Vevents\\Support\\EventRichContentContext\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 8
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Instanceof between DOMNode and DOMNode will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''data_vb_bg_color…'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string, data_vb_bg_color_opacity\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''data_vb_style_bg_src'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string, data_vb_bg_color_opacity\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''data_vb_style_bg_src'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''data_vb_style_bg…'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string, data_vb_bg_color_opacity\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''data_vb_style_bg…'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''id'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string, data_vb_bg_color_opacity\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''id'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''style'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string, data_vb_bg_color_opacity\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Offset ''style'' on array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Parameter \#2 \$chrome of method Voodflow\\Voodbuilder\\Support\\Editor\\EditorDynamicBlockRenderer\:\:restoreAuthorRootChrome\(\) expects array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string, data_vb_bg_color_opacity\: string\}, array\{id\: string, style\: string, data_vb_style_bg_opacity\: string, data_vb_style_bg_src\: string\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\{root\: string, containers\: list\<string\>\} and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: src/Support/Editor/EditorDynamicBlockRenderer.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorGate.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_dynamic\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorGate.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/EditorGate.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\Editor\\EditorGate\:\:initialPayload\(\) should return array\{html\: string, css\: string, js\: string, project\: mixed\} but returns array\{html\: string, css\: string, project\: mixed, pageManager\: null\}\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Support/Editor/EditorGate.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\Editor\\EditorGate\:\:initialPayload\(\) should return array\{html\: string, css\: string, js\: string, project\: mixed\} but returns array\{html\: string, css\: string, project\: null, pageManager\: array\{pages\: list\<array\{id\: string, component\: string, styles\: string\}\>\}\|null\}\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Support/Editor/EditorGate.php
+
+		-
+			message: '#^PHPDoc tag @var for property Voodflow\\Voodbuilder\\Support\\Editor\\EditorGate\:\:\$authorizer with type \(callable\)\|null is not subtype of native type Closure\|null\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Support/Editor/EditorGate.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between Voodflow\\Voodbuilder\\Models\\ChromeLayout and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorGate.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-array\<mixed\> and array\{\} will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorGate.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/EditorHtmlSanitizer.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorHtmlSanitizer.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 5
+			path: src/Support/Editor/EditorHtmlSanitizer.php
+
+		-
+			message: '#^Offset 1 on array\{non\-empty\-string, string, non\-empty\-string, string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorHtmlSanitizer.php
+
+		-
+			message: '#^Offset 2 on array\{non\-empty\-string, string, non\-empty\-string, string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorHtmlSanitizer.php
+
+		-
+			message: '#^Offset 3 on array\{non\-empty\-string, string, non\-empty\-string, string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorHtmlSanitizer.php
+
+		-
+			message: '#^Property DOMElement\:\:\$attributes \(DOMNamedNodeMap\<DOMAttr\>\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: src/Support/Editor/EditorHtmlSanitizer.php
+
+		-
+			message: '#^Instanceof between DOMAttr and DOMAttr will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorHtmlSecuritySanitizer.php
+
+		-
+			message: '#^Offset ''2xl''\|''lg''\|''md''\|''sm''\|''xl'' on array\{sm\: 640, md\: 768, lg\: 1024, xl\: 1280, ''2xl''\: 1536\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorImportedTailwindCssBuilder.php
+
+		-
+			message: '#^Offset 1 on array\{non\-empty\-string, ''''\|''2xl''\|''lg''\|''md''\|''sm''\|''xl'', ''''\|''focus''\|''focus\-visible''\|''hover'', non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorImportedTailwindCssBuilder.php
+
+		-
+			message: '#^Offset 2 on array\{non\-empty\-string, ''''\|''2xl''\|''lg''\|''md''\|''sm''\|''xl'', ''''\|''focus''\|''focus\-visible''\|''hover'', non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/EditorImportedTailwindCssBuilder.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between 640\|768\|1024\|1280\|1536 and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Support/Editor/EditorImportedTailwindCssBuilder.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 11
+			path: src/Support/Editor/EditorImportedTailwindSupport.php
+
+		-
+			message: '#^Comparison operation "\>\=" between int\<1, max\> and 1 is always true\.$#'
+			identifier: greaterOrEqual.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorLibraryLayoutNormalizer.php
+
+		-
+			message: '#^PHPDoc tag @var for constant Voodflow\\Voodbuilder\\Support\\Editor\\EditorLibraryLayoutNormalizer\:\:LAYOUT_PRESET_COLS with type array\<string, string\> is not subtype of value array\{1\: ''grid\-cols\-1'', 2\: ''grid\-cols\-2'', 3\: ''grid\-cols\-3'', 4\: ''grid\-cols\-4'', 6\: ''grid\-cols\-6'', ''1\-2''\: ''grid\-cols\-\[minmax\(0…'', ''2\-1''\: ''grid\-cols\-\[minmax\(0…'', ''1\-3''\: ''grid\-cols\-\[minmax\(0…'', \.\.\.\}\.$#'
+			identifier: classConstant.phpDocType
+			count: 1
+			path: src/Support/Editor/EditorLibraryLayoutNormalizer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Support/Editor/EditorLinkTargets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorPageTemplateBundle.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorPageTemplateBundle.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$html\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorPageTemplateBundle.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\PageTemplate\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorPageTemplateBundle.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<array\{name\: string, category\: string\|null, description\: string\|null, bundle_url\: string\|null, preview_url\: null, price_label\: string\|null, installable_inline\: bool\}\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: src/Support/Editor/EditorPageTemplateRemoteImporter.php
+
+		-
+			message: '#^Unknown parameter \$previous in call to static method Illuminate\\Validation\\ValidationException\:\:withMessages\(\)\.$#'
+			identifier: argument.unknown
+			count: 2
+			path: src/Support/Editor/EditorPageTemplateRemoteImporter.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: src/Support/Editor/EditorPastedComponentNormalizer.php
+
+		-
+			message: '#^Variable \$pageCss on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 2
+			path: src/Support/Editor/EditorRenderer.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$dynamic_channel\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorRichContentBlockAdapter.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_dynamic\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editor/EditorRichContentBlockAdapter.php
+
+		-
+			message: '#^Call to function method_exists\(\) with class\-string\<Filament\\Forms\\Components\\RichEditor\\RichContentCustomBlock\> and ''toPreviewHtml'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/EditorRichContentBlockAdapter.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 8
+			path: src/Support/Editor/EditorSlotHydrator.php
+
+		-
+			message: '#^Instanceof between DOMNode and DOMNode will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorSlotHydrator.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 3
+			path: src/Support/Editor/EditorSlotHydrator.php
+
+		-
+			message: '#^Instanceof between DOMAttr and DOMAttr will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/Editor/EditorSmartButtonAnnotator.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Editor/PageCssArtifactStore.php
+
+		-
+			message: '#^PHPDoc tag @var for constant Voodflow\\Voodbuilder\\Support\\Editor\\SectionBlocksCatalogBuilder\:\:VARIANT_NUMBERS with type array\<int, string\> is incompatible with value array\{A\: ''1'', B\: ''2'', C\: ''3'', D\: ''4'', E\: ''5'', F\: ''6'', G\: ''7'', H\: ''8''\}\.$#'
+			identifier: classConstant.phpDocType
+			count: 1
+			path: src/Support/Editor/SectionBlocksCatalogBuilder.php
+
+		-
+			message: '#^Offset ''max'' on array\{root\: ''\.//\*\[@data\-vb\-items…'', item\: ''\./div\[@data\-vb\-item\]'', min\: 1, max\: 8\}\|array\{root\: ''\.//\*\[@data\-vb\-items…'', item\: ''\./div\[@data\-vb\-item\]'', min\: 2, max\: 5\|6\}\|array\{root\: ''\.//\*\[contains\(…'', item\: ''\./div\[contains\(…'', min\: 2, max\: 8\}\|array\{root\: ''\.//\*\[contains\(…'', item\: ''\./div\[contains\(…'', min\: 2, max\: 9\}\|array\{root\: ''\.//\*\[contains\(…''\|''\.//\*\[contains…'', item\: ''\./div\[contains\(…'', min\: 2, max\: 4\|6\|8\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/SectionItemCountAnnotator.php
+
+		-
+			message: '#^Offset ''min'' on array\{root\: ''\.//\*\[@data\-vb\-items…'', item\: ''\./div\[@data\-vb\-item\]'', min\: 1, max\: 8\}\|array\{root\: ''\.//\*\[@data\-vb\-items…'', item\: ''\./div\[@data\-vb\-item\]'', min\: 2, max\: 5\|6\}\|array\{root\: ''\.//\*\[contains\(…'', item\: ''\./div\[contains\(…'', min\: 2, max\: 8\}\|array\{root\: ''\.//\*\[contains\(…'', item\: ''\./div\[contains\(…'', min\: 2, max\: 9\}\|array\{root\: ''\.//\*\[contains\(…''\|''\.//\*\[contains…'', item\: ''\./div\[contains\(…'', min\: 2, max\: 4\|6\|8\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Editor/SectionItemCountAnnotator.php
+
+		-
+			message: '#^Parameter \#1 \$class of static method Voodflow\\Voodbuilder\\Support\\Editor\\TemplateAuthoringBridge\:\:safeClassExists\(\) expects class\-string, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Support/Editor/TemplateAuthoringBridge.php
+
+		-
+			message: '#^Constant Voodflow\\Voodbuilder\\Support\\Editor\\VoodbuilderThemeTokenMigrator\:\:BRAND_COLORS is unused\.$#'
+			identifier: classConstant.unused
+			count: 1
+			path: src/Support/Editor/VoodbuilderThemeTokenMigrator.php
+
+		-
+			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: src/Support/Editor/VoodbuilderThemeTokenMigrator.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\Editor\\VoodbuilderThemeTokenMigrator\:\:migrateBrandToken\(\) never returns string so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Support/Editor/VoodbuilderThemeTokenMigrator.php
+
+		-
+			message: '#^Static method Voodflow\\Voodbuilder\\Support\\Editor\\VoodbuilderThemeTokenMigrator\:\:hasBackgroundClass\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Support/Editor/VoodbuilderThemeTokenMigrator.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/Fonts/FontCatalog.php
+
+		-
+			message: '#^Call to function is_array\(\) with string will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-falsy\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Offset 1 on array\{string, non\-empty\-string, non\-empty\-string, non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Offset 2 on array\{string, non\-empty\-string, non\-empty\-string, non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Offset 3 on array\{string, non\-empty\-string, non\-empty\-string, non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<non\-falsy\-string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: src/Support/Fonts/FontStylesheets.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/LandingFooterSupport.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$open_in_new_tab\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/LandingFooterSupport.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/LandingFooterSupport.php
+
+		-
+			message: '#^Instanceof between Voodflow\\Voodbuilder\\Models\\NavigationMenuItem and Voodflow\\Voodbuilder\\Models\\NavigationMenuItem will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: src/Support/LandingFooterSupport.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/LandingMenuColumnsSupport.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/LandingMenuColumnsSupport.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$open_in_new_tab\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/LandingMenuColumnsSupport.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/LandingMenuColumnsSupport.php
+
+		-
+			message: '#^Instanceof between Voodflow\\Voodbuilder\\Models\\NavigationMenuItem and Voodflow\\Voodbuilder\\Models\\NavigationMenuItem will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: src/Support/LandingMenuColumnsSupport.php
+
+		-
+			message: '#^Call to method visible\(\) on an unknown class Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/MenuItemTypeRegistry.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\MenuItemTypeRegistry\:\:formComponents\(\) has invalid return type Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/MenuItemTypeRegistry.php
+
+		-
+			message: '#^Offset ''label'' on array\{label\: \(Closure\(\)\: string\)\|string, allows_root\?\: bool, allows_child\?\: bool, form\?\: \(Closure\(\)\: list\<Filament\\Forms\\Components\\Component\>\)\|list\<Filament\\Forms\\Components\\Component\>, resolve_url\?\: Closure\(Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\)\: string, resolve_children\?\: Closure\(Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\)\: Illuminate\\Support\\Collection, is_active\?\: Closure\(Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\)\: bool, has_resolvable_link\?\: Closure\(Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\)\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/MenuItemTypeRegistry.php
+
+		-
+			message: '#^Parameter \$definition of method Voodflow\\Voodbuilder\\Support\\MenuItemTypeRegistry\:\:register\(\) has invalid type Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/MenuItemTypeRegistry.php
+
+		-
+			message: '#^Argument of an invalid type Illuminate\\Routing\\RouteCollectionInterface supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: src/Support/MenuRouteCatalog.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/MenuRouteParameterField.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between list\{0\: ''home'', 1\: ''layout\-dashboard'', 2\: ''stack\-2'', 3\: ''apps''\|''book\-2'', 4\: ''book\-2''\|''school'', 5\: ''news''\|''school'', 6\: ''news''\|''photo'', 7\: ''cookie''\|''photo'', \.\.\.\} and array\{\} will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Support/MenuTablerIcons.php
+
+		-
+			message: '#^Call to method Illuminate\\Contracts\\View\\Factory\:\:exists\(\) with ''vtuts\:\:components…'' will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: src/Support/NavProfileMenu.php
+
+		-
+			message: '#^Class Voodflow\\Vtuts\\VtutsServiceProvider not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/NavProfileMenu.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$link_display\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$icon\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$open_in_new_tab\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$route_match\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$route_parameters\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$sort_order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuItemTree.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 9
+			path: src/Support/NavigationMenuItemTree.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 9
+			path: src/Support/NavigationMenuItemTree.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Support/NavigationMenuItemTree.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuItemTree.php
+
+		-
+			message: '#^Parameter \#1 \$components of method Filament\\Schemas\\Schema\:\:components\(\) expects array\<Illuminate\\Contracts\\Support\\Htmlable\|string\>\|Closure\|Illuminate\\Contracts\\Support\\Htmlable\|string, array\<int, Filament\\Forms\\Components\\Component\> given\.$#'
+			identifier: argument.type
+			count: 3
+			path: src/Support/NavigationMenuItemTree.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuPlacements.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuPreview.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/NavigationMenuPreview.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 5
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$translation_group_id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$link\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$menu_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$route_match\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$route_parameters\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Call to static method codes\(\) on an unknown class Voodflow\\Vtuts\\Support\\Locales\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Call to static method options\(\) on an unknown class Voodflow\\Vtuts\\Support\\Locales\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/NavigationMenuTranslation.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: src/Support/ProfileMenuLinkRegistry.php
+
+		-
+			message: '#^Offset ''label'' on array\{label\: string, url\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/ProfileMenuLinkRegistry.php
+
+		-
+			message: '#^Offset ''url'' on array\{label\: string, url\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/ProfileMenuLinkRegistry.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\{label\: string, html\: string, eyebrow\?\: string\|null, secondaryFont\?\: bool, hasSidebar\?\: bool, hasAside\?\: bool, sidebarHtml\?\: string\|null, asideHtml\?\: string\|null\} will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/ReadingPreviewRegistry.php
+
+		-
+			message: '#^Offset ''html'' on array\{label\: string, html\: string, eyebrow\?\: string\|null, secondaryFont\?\: bool, hasSidebar\?\: bool, hasAside\?\: bool, sidebarHtml\?\: string\|null, asideHtml\?\: string\|null\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Support/ReadingPreviewRegistry.php
+
+		-
+			message: '#^Offset ''label'' on array\{label\: string, html\: string, eyebrow\?\: string\|null, secondaryFont\?\: bool, hasSidebar\?\: bool, hasAside\?\: bool, sidebarHtml\?\: string\|null, asideHtml\?\: string\|null\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Support/ReadingPreviewRegistry.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: src/Support/ReadingPreviewRegistry.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\ReverseRelationRegistry\:\:find\(\) never returns array so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Support/ReverseRelationRegistry.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/RichContentBlockPreview.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenu\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SiteFooterColumnPlacements.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\SiteFooterColumnPlacements\:\:columnOptionLabels\(\) should return array\<string, string\> but returns array\<int, string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Support/SiteFooterColumnPlacements.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$data\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Support/SiteNotificationPresenter.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Notifications\\DatabaseNotification\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/SiteNotificationPresenter.php
+
+		-
+			message: '#^Access to property \$title on an unknown class Voodflow\\Vtuts\\Models\\Vtut\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/SiteNotificationPresenter.php
+
+		-
+			message: '#^Call to function method_exists\(\) with Illuminate\\Database\\Eloquent\\Model and ''getAttribute'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/SiteNotificationPresenter.php
+
+		-
+			message: '#^Class Relaticle\\Comments\\Notifications\\CommentRepliedNotification not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/SiteNotificationPresenter.php
+
+		-
+			message: '#^Class Relaticle\\Comments\\Notifications\\UserMentionedNotification not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/SiteNotificationPresenter.php
+
+		-
+			message: '#^Class Voodflow\\Vtuts\\Models\\Vtut not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Support/SiteNotificationPresenter.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$password_protected\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Support/SitePageAccess.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$translation_group_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageAccess.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePageCredential\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/SitePageAccess.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePageCredential\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageAccess.php
+
+		-
+			message: '#^Instanceof between Voodflow\\Voodbuilder\\Models\\SitePageCredential and Voodflow\\Voodbuilder\\Models\\SitePageCredential will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Support/SitePageAccess.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/SitePageForm.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageHome.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 5
+			path: src/Support/SitePageHome.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageHome.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$translation_group_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageHome.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Support/SitePageMenuPath.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$link\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Support/SitePageMenuPath.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/SitePageMenuPath.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageMenuPath.php
+
+		-
+			message: '#^Call to function filled\(\) with mixed will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Support/SitePageMenuPath.php
+
+		-
+			message: '#^Parameter \#1 \$parent of static method Voodflow\\Voodbuilder\\Support\\SitePageMenuPath\:\:parentSegment\(\) expects Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/SitePageMenuPath.php
+
+		-
+			message: '#^Parameter \#1 \$parent of static method Voodflow\\Voodbuilder\\Support\\SitePageMenuPath\:\:parentSegment\(\) expects Voodflow\\Voodbuilder\\Models\\NavigationMenuItem\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/SitePageMenuPath.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageResolver.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/SitePageTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePageTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$translation_group_id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Support/SitePageTranslation.php
+
+		-
+			message: '#^Call to static method codes\(\) on an unknown class Voodflow\\Vtuts\\Support\\Locales\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/SitePageTranslation.php
+
+		-
+			message: '#^Call to static method options\(\) on an unknown class Voodflow\\Vtuts\\Support\\Locales\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/SitePageTranslation.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$excerpt\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/SitePagesContentChannel.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$section\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/SitePagesContentChannel.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/SitePagesContentChannel.php
+
+		-
+			message: '#^Method Voodflow\\Voodbuilder\\Support\\SitePagesContentChannel\:\:search\(\) should return Illuminate\\Support\\Collection\<int, array\{title\: string, url\: string, meta\?\: string\|null, excerpt\?\: string\|null, excerpt_html\?\: string\|null, body\?\: string\|null, preferred_excerpt\?\: string\|null, score\?\: int\}\> but returns Illuminate\\Support\\Collection\<int, array\{title\: mixed, url\: string, meta\: string\|null, excerpt\: string\|null, excerpt_html\: string\|null, body\: string\|null, preferred_excerpt\: string\|null, score\: int\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Support/SitePagesContentChannel.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Voodflow\\Voodbuilder\\Models\\SitePage\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: src/Support/SitePagesContentChannel.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/SocialShareSupport.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/SubThemeImporter.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Support/SubThemeLocator.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/SubThemeRegistry.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, string\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/SubThemeRegistry.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\{\} will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/SubThemeRegistry.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/SubThemeRegistry.php
+
+		-
+			message: '#^Offset ''chrome'' on array\{label\: string, description\?\: string, type\?\: Voodflow\\Voodbuilder\\Enums\\SubThemeType, capabilities\?\: list\<Voodflow\\Voodbuilder\\Enums\\SubThemeCapability\>, layouts\?\: array\<string, string\>, css\?\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/SubThemeRegistry.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: src/Support/SubThemeRegistry.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: src/Support/SubThemeRegistry.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\ChromeLayout\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/ThemeMapPayload.php
+
+		-
+			message: '#^Call to an undefined static method Voodflow\\Voodbuilder\\Support\\ThemePalette\:\:canonicalColorForShortHex\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Support/ThemePalette.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, string\|null\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: src/Support/ThemePalette.php
+
+		-
+			message: '#^Offset ''custom'' on array\{custom\: bool, light\: array\<string, string\|null\>, dark\: array\<string, string\|null\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Support/ThemePalette.php
+
+		-
+			message: '#^Offset ''dark''\|''light'' on array\{custom\: bool, light\: array\<string, string\|null\>, dark\: array\<string, string\|null\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: src/Support/ThemePalette.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and null will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: src/Support/ThemePalette.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-list\<string\> and array\{\} will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Support/ThemePalette.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/ThemePresenter.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Support/ThemePresenter.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:forceDeleteQuietly\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Support/TranslationGroupDeletion.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getQualifiedDeletedAtColumn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Support/TranslationGroupQuery.php
+
+		-
+			message: '#^Call to an undefined static method Illuminate\\Database\\Eloquent\\Model\:\:withTrashed\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Support/TranslationGroupQuery.php
+
+		-
+			message: '#^Variable \$dark on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Support/VoodbuilderSeo.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$dynamic_channel\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/VoodbuilderUrls.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_dynamic\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/VoodbuilderUrls.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/VoodbuilderUrls.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/VoodbuilderUrls.php
+
+		-
+			message: '#^Access to an undefined property Voodflow\\Voodbuilder\\Models\\SitePage\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Support/VoodbuilderUrls.php
+
+		-
+			message: '#^Call to static method appendLocaleQuery\(\) on an unknown class Voodflow\\Vtuts\\Support\\LocaleSwitcher\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Support/VoodbuilderUrls.php
+
+		-
+			message: '#^Parameter \$definition of method Voodflow\\Voodbuilder\\Voodbuilder\:\:menuItemType\(\) has invalid type Filament\\Forms\\Components\\Component\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Voodbuilder.php

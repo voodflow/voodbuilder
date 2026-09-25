@@ -129,7 +129,10 @@ class CompanionSecurityAndSoftGateTest extends TestCase
 
     public function test_dynamic_data_module_activates_only_when_companion_present(): void
     {
-        $this->assertTrue(class_exists(VoodbuilderDynamicData::class));
+        if (! class_exists(VoodbuilderDynamicData::class)) {
+            $this->markTestSkipped('Requires voodflow/voodbuilder-dynamic-data (monorepo sibling).');
+        }
+
         $this->assertTrue(
             VoodbuilderDynamicData::isActivated(),
         );
@@ -137,7 +140,10 @@ class CompanionSecurityAndSoftGateTest extends TestCase
 
     public function test_templates_and_components_and_popups_activate_in_testbench(): void
     {
-        $this->assertTrue(class_exists(VoodbuilderTemplates::class));
+        if (! class_exists(VoodbuilderTemplates::class) || ! class_exists(VoodbuilderComponents::class) || ! class_exists(Vpopups::class)) {
+            $this->markTestSkipped('Requires templates, components and vpopups (monorepo siblings).');
+        }
+
         $this->assertTrue(VoodbuilderTemplates::isActivated());
         $this->assertTrue(class_exists(VoodbuilderComponents::class));
         $this->assertTrue(VoodbuilderComponents::isActivated());

@@ -7,6 +7,8 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use Illuminate\Support\Facades\Cache;
+use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 
 /**
  * Editor Pasted Component Normalizer.
@@ -261,9 +263,19 @@ final class EditorPastedComponentNormalizer
             );
         }
 
-        return self::compileAndMergePublishedPageCss(
-            $pageHtml,
-            self::manualPageCssFromStoredCss($storedCss),
+        $manualCss = self::manualPageCssFromStoredCss($storedCss);
+
+        // The public render never persists this result, so a page whose stored sheet lacks
+        // one utility would spawn the Node JIT on every visit. Keyed by content: any edit,
+        // stored-sheet change or package upgrade misses the cache.
+        $cacheKey = 'voodbuilder:published-page-css:' . sha1(
+            VoodbuilderPackageVersion::current() . "\0" . $pageHtml . "\0" . (string) $manualCss,
+        );
+
+        return Cache::remember(
+            $cacheKey,
+            now()->addDay(),
+            static fn (): string => self::compileAndMergePublishedPageCss($pageHtml, $manualCss),
         );
     }
 

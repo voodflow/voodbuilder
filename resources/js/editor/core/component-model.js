@@ -2,6 +2,8 @@
  * Safe helpers for Editor component model operations (move / index).
  */
 
+import { debugSwallowed } from '../debug-swallowed.js';
+
 export function isValidGrapesComponent(component) {
     return Boolean(
         component
@@ -80,8 +82,9 @@ function detachInvalidChild(collection, child, index) {
             collection.remove(child);
 
             return;
-        } catch {
+        } catch (error) {
             // Fall back to direct model compaction below.
+            debugSwallowed(error);
         }
     }
 
@@ -181,8 +184,9 @@ function clearStaleLayerViews(component) {
     if (component.viewLayer) {
         try {
             component.viewLayer.__clearItems?.();
-        } catch {
+        } catch (error) {
             // ignore
+            debugSwallowed(error);
         }
 
         delete component.viewLayer;

@@ -6,6 +6,7 @@
  * survive `purgeOrphanPageContentNodes` (runs on block:drag:stop in chrome-shell).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { COMPONENT_ATTR, COMPONENT_TYPE } from './component-instance-type.js';
 
 const TOP_DROP_SPACER_ATTR = 'data-voodbuilder-top-drop-spacer';
@@ -219,8 +220,9 @@ export function purgeOrphanPageContentNodes(slot) {
     removable.forEach((component) => {
         try {
             component.remove();
-        } catch {
+        } catch (error) {
             // Already detached.
+            debugSwallowed(error);
         }
     });
 }

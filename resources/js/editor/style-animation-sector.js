@@ -5,6 +5,7 @@
  * @see https://github.com/new-data-services/tailwindcss-animated
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { replayEditorCanvasAnimations } from './vb-runtime.js';
 import {
     componentClassList,
@@ -327,8 +328,9 @@ function scheduleEditorAnimationReplay(editor, delayMs = 80, component = null) {
             }
 
             replayEditorCanvasAnimations({ root });
-        } catch {
+        } catch (error) {
             // Optional in editor.
+            debugSwallowed(error);
         }
     }, delayMs);
 }
@@ -695,8 +697,9 @@ function buildAnimationSector(editor, labels = {}) {
 
             try {
                 selected.view?.updateClasses?.();
-            } catch {
+            } catch (error) {
                 // View may be unavailable during bulk updates.
+                debugSwallowed(error);
             }
 
             // Replay only the edited node — never the whole canvas document.

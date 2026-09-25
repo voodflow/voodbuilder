@@ -6,6 +6,7 @@
  * Not available for: SVG / placeholder sources, or images with dynamic bindings.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { editorApiHeaders, resolveApiErrorMessage, resolveCsrfToken } from './editor-api.js';
 import { isBackgroundImageHeroId } from './media-hero.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
@@ -334,8 +335,9 @@ async function resolveUploadErrorMessage(response, labels = {}) {
         if (typeof payload?.message === 'string' && payload.message.trim() !== '') {
             return payload.message;
         }
-    } catch {
+    } catch (error) {
         // fall through
+        debugSwallowed(error);
     }
 
     return resolveApiErrorMessage(
@@ -727,8 +729,9 @@ function applyEditedSrc(editor, component, url, meta = {}) {
 
     try {
         editor.Assets?.add?.({ src: url });
-    } catch {
+    } catch (error) {
         // AssetManager may be disabled in some editor modes.
+        debugSwallowed(error);
     }
 }
 
@@ -750,8 +753,9 @@ function closeImageEditorModal() {
     if (activeEditor) {
         try {
             activeEditor.destroy();
-        } catch {
+        } catch (error) {
             // ignore teardown races
+            debugSwallowed(error);
         }
 
         activeEditor = null;

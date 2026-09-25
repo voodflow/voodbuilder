@@ -2,6 +2,7 @@
  * Pin frequently used blocks to a dedicated "Pinned" category.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { isComponentBlockElement, isComponentBlockId, resolveBlockFromElement } from './component-block-utils.js';
 import { lucideIcon } from './editor-icons.js';
 import { resolveCategoryOrder } from './section-block-meta.js';
@@ -53,8 +54,9 @@ function loadPinnedIds(scope = 'global') {
 function savePinnedIds(scope, ids) {
     try {
         window.localStorage.setItem(storageKey(scope), JSON.stringify([...new Set(ids.map(String))]));
-    } catch {
+    } catch (error) {
         // Ignore quota / private mode errors.
+        debugSwallowed(error);
     }
 }
 

@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Voodflow\Voodbuilder\Licensing\CatalogCredentialResolver;
 use Voodflow\Voodbuilder\Support\SafeRemoteUrl;
 
@@ -26,6 +27,7 @@ final class EditorPageTemplateRemoteImporter
 
         try {
             $request = Http::timeout(15)
+                ->withOptions(SafeRemoteUrl::httpOptions($normalizedUrl))
                 ->withHeaders(['Accept' => 'application/json']);
 
             $token = self::catalogToken();
@@ -40,6 +42,10 @@ final class EditorPageTemplateRemoteImporter
         } catch (ConnectionException $exception) {
             throw ValidationException::withMessages([
                 'url' => __('voodbuilder::pro.page_templates.import_url_unreachable'),
+            ], previous: $exception);
+        } catch (RuntimeException $exception) {
+            throw ValidationException::withMessages([
+                'url' => __('voodbuilder::pro.page_templates.import_url_blocked'),
             ], previous: $exception);
         }
 

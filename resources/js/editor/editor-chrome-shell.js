@@ -3,6 +3,7 @@
  * Layout chrome is read-only; only the content slot is editable.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { isFooterBlock, isNavBlock } from './chrome/ids.js';
 import { lockChromePreview } from './chrome/blocks/preview.js';
 import { normalizeSiteNavChromeButtons } from './plugins/voodbuilder-editor.js';
@@ -476,8 +477,9 @@ function ensureChromeShellPart(editor, wrapper, part, innerHtml, subTheme = '') 
     if (! html && component) {
         try {
             component.remove();
-        } catch {
+        } catch (error) {
             // Already detached.
+            debugSwallowed(error);
         }
 
         return null;
@@ -623,8 +625,9 @@ function purgeLayoutDropZonesFromTree(root) {
 
         try {
             zone.remove();
-        } catch {
+        } catch (error) {
             // Drop zone may already be detached during shell refresh.
+            debugSwallowed(error);
         }
     }
 }
@@ -724,8 +727,9 @@ function applyChromeShellLocks(editor, options = {}) {
 
         try {
             child.remove();
-        } catch {
+        } catch (error) {
             // Stale chrome block may already be detached.
+            debugSwallowed(error);
         }
     });
 
@@ -884,8 +888,9 @@ export function purgeLeakedChromeCtaButtons(editor) {
     leaked.forEach((component) => {
         try {
             component.remove();
-        } catch {
+        } catch (error) {
             // Already detached.
+            debugSwallowed(error);
         }
     });
 
@@ -1134,8 +1139,9 @@ export function registerChromeShellEditor(editor, options = {}) {
             if (isEditorHostBleedComponent(component)) {
                 try {
                     component.remove();
-                } catch {
+                } catch (error) {
                     // Already detached.
+                    debugSwallowed(error);
                 }
 
                 return;

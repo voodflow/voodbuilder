@@ -2,7 +2,9 @@
  * Animated Editor elements — CTA, counter, stats, logo scroll.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
+import { hydratePropsFromAttributes } from './component-attr-hydrate.js';
 import { resolveBlockLabel } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
 import { widthClassesForItemCount, widthClassesForColumns, gridClassesForColumns, applyItemsRootColumnVar } from './section-item-count.js';
@@ -860,6 +862,30 @@ function prepareLogoScrollDynamicTemplate(track, size) {
     }
 }
 
+export const ANIMATED_CTA_PROPS = ['data-vb-anim', 'data-vb-anim-duration', 'data-vb-anim-delay'];
+
+export const COUNTER_PROPS = [
+    'data-vb-count-from',
+    'data-vb-count-to',
+    'data-vb-count-duration',
+    'data-vb-count-delay',
+    'data-vb-count-trigger',
+    'data-vb-count-easing',
+    'data-vb-count-decimals',
+    'data-vb-count-prefix',
+    'data-vb-count-suffix',
+    'data-vb-count-source',
+];
+
+export const LOGO_SCROLL_PROPS = [
+    'data-vb-logo-count',
+    'data-vb-logo-direction',
+    'data-vb-logo-speed',
+    'data-vb-logo-pause-hover',
+    'data-vb-logo-source',
+    'data-vb-logo-size',
+];
+
 function syncAnimatedCta(component) {
     const anim = component.get('data-vb-anim') ?? 'fade-up';
     const duration = component.get('data-vb-anim-duration') ?? 700;
@@ -911,6 +937,7 @@ function registerAnimatedCtaType(editor) {
                 'data-vb-anim-delay': 0,
             },
             init() {
+                hydratePropsFromAttributes(this, ANIMATED_CTA_PROPS);
                 this.on(
                     'change:data-vb-anim change:data-vb-anim-duration change:data-vb-anim-delay',
                     () => syncAnimatedCta(this),
@@ -988,6 +1015,7 @@ function registerAnimatedCounterType(editor) {
                 'data-vb-count-source': 'static',
             },
             init() {
+                hydratePropsFromAttributes(this, COUNTER_PROPS);
                 this.on(
                     'change:data-vb-count-from change:data-vb-count-to change:data-vb-count-duration change:data-vb-count-delay change:data-vb-count-trigger change:data-vb-count-easing change:data-vb-count-decimals change:data-vb-count-prefix change:data-vb-count-suffix change:data-vb-count-source',
                     () => syncCounterAttributes(this),
@@ -1163,6 +1191,13 @@ function registerLogoScrollType(editor) {
                 'data-vb-logo-size': 'lg',
             },
             init() {
+                const legacyAttrs = this.getAttributes?.() ?? {};
+
+                if (legacyAttrs['data-vb-logo-count'] == null && legacyAttrs['data-vb-item-count'] != null) {
+                    this.addAttributes({ 'data-vb-logo-count': String(legacyAttrs['data-vb-item-count']) });
+                }
+
+                hydratePropsFromAttributes(this, LOGO_SCROLL_PROPS);
                 this.on(
                     'change:data-vb-logo-count change:data-vb-logo-direction change:data-vb-logo-speed change:data-vb-logo-pause-hover change:data-vb-logo-source change:data-vb-logo-size',
                     () => syncLogoScroll(this),
@@ -1636,8 +1671,9 @@ export function configureAnimatedCanvas(editor) {
             }
 
             initLogoScroll({ root: frameDoc });
-        } catch {
+        } catch (error) {
             // Optional in editor.
+            debugSwallowed(error);
         }
     };
 
@@ -1656,8 +1692,9 @@ export function configureAnimatedCanvas(editor) {
             replayEditorCanvasAnimations({ root: frameDoc });
             initLogoScroll({ root: frameDoc });
             lastCounterPlayAt = Date.now();
-        } catch {
+        } catch (error) {
             // Optional in editor.
+            debugSwallowed(error);
         }
     };
 

@@ -3,6 +3,8 @@
  * Boot splash: brand mark + name + version + edition (animated VoodBuilder logo).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 const BUILD_SCOPES = new Map();
 let markIdSeq = 0;
 /** Failsafe when begin/end pairs desync after aborted compiles or observer storms. */
@@ -491,8 +493,9 @@ export function finishEditorBoot(editor) {
 
     try {
         editor.trigger?.('voodbuilder:boot-finished');
-    } catch {
+    } catch (error) {
         // Optional UI hooks (Style sectors, page surface) after splash unlock.
+        debugSwallowed(error);
     }
 }
 

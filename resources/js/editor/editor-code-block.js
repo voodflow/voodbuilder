@@ -2,6 +2,7 @@
  * Voodbuilder code block — same vp-code-block shell as vdocs / vtuts.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import {
     resolveBlockLabel,
     resolveBlockWireframe,
@@ -114,8 +115,9 @@ function guessLanguage(code) {
             JSON.parse(trimmed);
 
             return 'json';
-        } catch {
+        } catch (error) {
             // Not valid JSON — fall through.
+            debugSwallowed(error);
         }
     }
 

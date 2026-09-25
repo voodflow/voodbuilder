@@ -2,6 +2,7 @@
  * Block drag UX: compact label chip, top/bottom drop spacers, scroll room for page-level drops.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { findPageContentSlotInEditor, isPageContentSlotComponent } from './chrome-content-slot-utils.js';
 import { findDropZoneAtPointer, findLayoutDropZoneForPointer, insertBlockIntoLayoutZone } from './chrome/layout/drag.js';
 import { hydrateCtasAfterHtmlInsert } from './editor-button-link.js';
@@ -960,8 +961,9 @@ function isRealCanvasPointerDrag(editor) {
         if (body?.classList?.contains('gjs-is__grabbing')) {
             return true;
         }
-    } catch {
+    } catch (error) {
         // Canvas body may not exist yet.
+        debugSwallowed(error);
     }
 
     return Boolean(document.querySelector('.gjs-is__grabbing'));
@@ -978,16 +980,18 @@ function collectGrapesAutoScrollers(editor) {
         if (frameView?.autoScroller) {
             scrollers.push(frameView.autoScroller);
         }
-    } catch {
+    } catch (error) {
         // Frame not ready.
+        debugSwallowed(error);
     }
 
     try {
         if (editor.Canvas?.autoScroller) {
             scrollers.push(editor.Canvas.autoScroller);
         }
-    } catch {
+    } catch (error) {
         // Canvas module not ready.
+        debugSwallowed(error);
     }
 
     return scrollers;
@@ -1065,15 +1069,17 @@ export function stopEditorIdleMotionLoops(editor) {
 
     try {
         editor.Canvas?.stopAutoscroll?.();
-    } catch {
+    } catch (error) {
         // Canvas/frame may not be ready yet.
+        debugSwallowed(error);
     }
 
     collectGrapesAutoScrollers(editor).forEach((scroller) => {
         try {
             scroller.stop?.();
-        } catch {
+        } catch (error) {
             // Ignore.
+            debugSwallowed(error);
         }
     });
 
@@ -1083,8 +1089,9 @@ export function stopEditorIdleMotionLoops(editor) {
             ?? editor.Canvas?.getCanvasView?.()?.frame;
 
         frameView?.stopAutoscroll?.();
-    } catch {
+    } catch (error) {
         // Ignore missing frame helpers across Editor versions.
+        debugSwallowed(error);
     }
 }
 
@@ -1666,8 +1673,9 @@ export function registerCanvasBlockDrag(editor) {
                     scroller.stop();
                 }
             });
-        } catch {
+        } catch (error) {
             // Ignore.
+            debugSwallowed(error);
         }
     }, 750);
 

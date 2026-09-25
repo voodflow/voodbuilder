@@ -13,9 +13,19 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Navigation;
 use Voodflow\Voodbuilder\Support\NavigationMenuTranslation;
 use Voodflow\Voodbuilder\Tests\TestCase;
+use Voodflow\Vtuts\Support\Locales;
 
 class NavigationMenuTranslationTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (! class_exists(Locales::class)) {
+            $this->markTestSkipped('Requires voodflow/vtuts (monorepo sibling).');
+        }
+    }
+
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);

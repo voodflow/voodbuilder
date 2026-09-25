@@ -3,6 +3,7 @@
 /storage/tailblocks-extract.bundle.mjs
 /vendor/
 /node_modules/
+/build/
 composer.lock
 .phpunit.result.cache
 .DS_Store

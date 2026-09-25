@@ -1,3 +1,4 @@
+import { debugSwallowed } from './debug-swallowed.js';
 import { isStyleEditingDark } from './style-tailwind-breakpoints.js';
 import { STYLE_BG_SRC_ATTR, STYLE_BG_SRC_DARK_ATTR } from './style-background-image.js';
 
@@ -157,13 +158,15 @@ export function purgeBrokenPageSurfaceDarkCssRules(editor, id) {
                 try {
                     rule.collection?.remove?.(rule);
                     removed += 1;
-                } catch {
+                } catch (error) {
                     // Optional.
+                    debugSwallowed(error);
                 }
             }
         }
-    } catch {
+    } catch (error) {
         // CssComposer may be unavailable.
+        debugSwallowed(error);
     }
 
     return removed;
@@ -428,14 +431,16 @@ export function selectPageSurface(editor) {
     if (editor.__voodbuilderChromeShellMode) {
         try {
             editor.select?.();
-        } catch {
+        } catch (error) {
             // Ignore clear-selection failures.
+            debugSwallowed(error);
         }
         editor.__voodbuilderForcePageSurfaceStyle = true;
         try {
             editor.trigger?.(PAGE_SURFACE_FOCUS_EVENT);
-        } catch {
+        } catch (error) {
             // Optional sync hook for the Style panel.
+            debugSwallowed(error);
         }
 
         return wrapper;
@@ -443,8 +448,9 @@ export function selectPageSurface(editor) {
 
     try {
         editor.select?.(wrapper, { scroll: false });
-    } catch {
+    } catch (error) {
         // Grapes may reject selection mid-destroy.
+        debugSwallowed(error);
     }
 
     if (isPageSurfaceComponent(editor.getSelected?.(), editor)) {
@@ -452,16 +458,18 @@ export function selectPageSurface(editor) {
     } else {
         try {
             editor.select?.();
-        } catch {
+        } catch (error) {
             // Clear selection so resolveStyleTarget falls back to wrapper.
+            debugSwallowed(error);
         }
         editor.__voodbuilderForcePageSurfaceStyle = true;
     }
 
     try {
         editor.trigger?.(PAGE_SURFACE_FOCUS_EVENT);
-    } catch {
+    } catch (error) {
         // Optional sync hook for the Style panel.
+        debugSwallowed(error);
     }
 
     return wrapper;
@@ -1094,8 +1102,9 @@ export function syncPageSurfaceCanvasWallpaperPreview(editor, styles = null) {
             hostEl.style.removeProperty?.('background-repeat');
             hostEl.style.removeProperty?.('background-attachment');
         }
-    } catch {
+    } catch (error) {
         // Frame may be unavailable.
+        debugSwallowed(error);
     }
 
     if (css === '') {
@@ -1204,8 +1213,9 @@ export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
             }
 
             hydrated = true;
-        } catch {
+        } catch (error) {
             // CssComposer may be unavailable.
+            debugSwallowed(error);
         }
     }
 
@@ -1252,8 +1262,9 @@ export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
             }
 
             hydrated = true;
-        } catch {
+        } catch (error) {
             // Optional dark rule.
+            debugSwallowed(error);
         }
     }
 
@@ -1272,8 +1283,9 @@ export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
                 hydrated = true;
             }
         }
-    } catch {
+    } catch (error) {
         // Optional.
+        debugSwallowed(error);
     }
 
     syncPageSurfaceCanvasWallpaperPreview(editor);

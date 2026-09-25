@@ -2,6 +2,7 @@
  * Editor video behaviour — no autoplay in canvas, poster facade when autoplay is off.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import {
     buildVideoFacadeMarkup,
     createVideoFacadeElement,
@@ -239,8 +240,9 @@ export function applyLocalVideoPoster(view) {
 
             try {
                 el.load();
-            } catch {
+            } catch (error) {
                 // ignore
+                debugSwallowed(error);
             }
         }
     } else {
@@ -392,8 +394,9 @@ export function parseFacadeElementAsVideo(element) {
             provider = 'yt';
             videoId = url.pathname.split('/').filter(Boolean).pop() ?? '';
         }
-    } catch {
+    } catch (error) {
         // keep defaults
+        debugSwallowed(error);
     }
 
     /** @type {Record<string, string>} */

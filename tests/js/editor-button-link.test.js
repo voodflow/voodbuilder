@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hydrateLinkPropsFromAttributes } from '../../resources/js/editor/editor-button-link.js';
+import { hydrateLinkPropsFromAttributes, resolveCtaSerializedHref } from '../../resources/js/editor/editor-button-link.js';
 import { hydrateIconLinkPropsFromAttributes } from '../../resources/js/editor/editor-utility-blocks.js';
 
 function fakeCta(props, attrs) {
@@ -61,5 +61,12 @@ describe('editor-button-link hydrate', () => {
         expect(icon.state.linkType).toBe('url');
         expect(icon.state.href).toBe('https://github.com/voodflow');
         expect(icon.state.target).toBe('_blank');
+    });
+
+    it('never serializes the # prop default over a saved href', () => {
+        expect(resolveCtaSerializedHref('/pricing', '#')).toBe('/pricing');
+        expect(resolveCtaSerializedHref('#', 'https://example.com')).toBe('https://example.com');
+        expect(resolveCtaSerializedHref('', '')).toBe('#');
+        expect(resolveCtaSerializedHref('#', '#')).toBe('#');
     });
 });

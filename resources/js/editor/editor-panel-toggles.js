@@ -2,6 +2,7 @@
  * Collapsible left/right editor panels with persisted visibility.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { lucideIcon } from './editor-icons.js';
 
 const STORAGE_LEFT = 'voodbuilder:gjs:panel-left-visible';
@@ -18,8 +19,9 @@ function readPanelVisibility(key, fallback = true) {
         if (value === '1' || value === 'true') {
             return true;
         }
-    } catch {
+    } catch (error) {
         // Ignore storage errors (private mode, etc.).
+        debugSwallowed(error);
     }
 
     return fallback;
@@ -28,8 +30,9 @@ function readPanelVisibility(key, fallback = true) {
 function writePanelVisibility(key, visible) {
     try {
         window.localStorage.setItem(key, visible ? '1' : '0');
-    } catch {
+    } catch (error) {
         // Ignore storage errors.
+        debugSwallowed(error);
     }
 }
 

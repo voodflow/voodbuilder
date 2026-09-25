@@ -3,6 +3,7 @@
  * and common layout containers (flex/grid) so nesting is possible.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 import { isInnerDropLayoutContainer } from './inner-drop-slots.js';
 
@@ -41,8 +42,9 @@ export function isCtaLikeComponent(component) {
         if (safeFindComponents(component, '[data-voodbuilder-cta="true"], [data-voodbuilder-cta-label]').length > 0) {
             return true;
         }
-    } catch {
+    } catch (error) {
         // ignore
+        debugSwallowed(error);
     }
 
     return false;

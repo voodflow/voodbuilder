@@ -13,6 +13,7 @@
  * `builder_payload`, so nothing an author has not saved can reach the live site.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { confirmDialog } from './editor-dialog.js';
 
 const DB_NAME = 'voodbuilder-editor-drafts';
@@ -104,8 +105,9 @@ async function deleteLocalDraft(key) {
 
     try {
         store.delete(key);
-    } catch {
+    } catch (error) {
         // Nothing to clean up.
+        debugSwallowed(error);
     }
 }
 

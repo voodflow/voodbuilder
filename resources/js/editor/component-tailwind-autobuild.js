@@ -3,6 +3,7 @@
  * Triggered by library drops / class changes — Style Manager inline styles do not need compile-css.
  * Uses the same compile-css API as code import (Tailwind v4 via compile-component-tailwind.mjs).
  */
+import { debugSwallowed } from './debug-swallowed.js';
 import { placeCanvasLiveStyle } from './canvas-live-style.js';
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild } from './editor-build-status.js';
@@ -306,8 +307,9 @@ export function registerComponentTailwindAutobuild(editor, options = {}) {
             lastCss = css;
             editor.__voodbuilderComponentCssClassFingerprint = classFingerprint;
             injectLiveComponentCss(editor, css);
-        } catch {
+        } catch (error) {
             // Ignore transient network errors; next edit will retry.
+            debugSwallowed(error);
         } finally {
             window.clearTimeout(fetchTimeout);
             endEditorBuild(editor, BUILD_SCOPE);

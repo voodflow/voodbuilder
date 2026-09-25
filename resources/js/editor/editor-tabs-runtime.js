@@ -2,6 +2,8 @@
  * Runtime tab switching — used in the Editor canvas and as a public-page fallback.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 function findTabsRoot(tablist) {
     let node = tablist.parentElement;
 
@@ -127,8 +129,9 @@ export function initTabsRoot(root) {
                 if (window.history && ! window._isEditor) {
                     window.history.pushState(null, '', `#${id}`);
                 }
-            } catch {
+            } catch (error) {
                 // Ignore history API failures.
+                debugSwallowed(error);
             }
         }
     });

@@ -3,6 +3,7 @@
  * (rounded-lg, bg-gray-100). Forward decoration styles to that inner element.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import {
     guardEditorLayersRender,
     hasInvalidLayerChildren,
@@ -2969,8 +2970,9 @@ export function hydrateSvgPaintFromAttributes(editor) {
             bakeSvgPaintOnComponent(editor, component);
             clearPaintCssComposerRules(editor, component);
             restoreSvgPaintInspectorStyle(component);
-        } catch {
+        } catch (error) {
             // Canvas nodes may not be mounted yet during boot.
+            debugSwallowed(error);
         }
     });
 }
@@ -3581,8 +3583,9 @@ export function registerVisualStyleInspector(editor) {
                 : { inline: true };
 
             target.addStyle?.({ [propertyName]: inlineValue }, styleOpts);
-        } catch {
+        } catch (error) {
             // ignore
+            debugSwallowed(error);
         }
 
         const targetId = target.getId?.();

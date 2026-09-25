@@ -21,6 +21,7 @@ final class EditorCssSanitizer
             return $css;
         }
 
+        $css = self::neutralizeStyleBreakout($css);
         $css = self::stripRedundantTailwindPropertyLayers($css);
         $css = self::kebabCaseCamelCssProperties($css);
 
@@ -48,6 +49,19 @@ final class EditorCssSanitizer
         ) ?? $css;
 
         return self::collapseDuplicateResets($sanitized);
+    }
+
+    /**
+     * Author CSS is printed inside `<style>`: a literal `</style` would close it and let the
+     * rest of the sheet parse as HTML. `\3C` is the CSS escape for `<`, valid in strings too.
+     */
+    public static function neutralizeStyleBreakout(string $css): string
+    {
+        if (stripos($css, '</style') === false && stripos($css, '<!--') === false) {
+            return $css;
+        }
+
+        return (string) preg_replace(['~<(/style)~i', '~<!--~'], ['\\3C $1', '\\3C !--'], $css);
     }
 
     /**

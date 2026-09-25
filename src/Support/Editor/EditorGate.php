@@ -1289,7 +1289,7 @@ final class EditorGate
 
         return [
             'html' => $html,
-            'css' => (string) ($payload['css'] ?? ''),
+            'css' => EditorCssSanitizer::neutralizeStyleBreakout((string) ($payload['css'] ?? '')),
             'js' => EditorJsSanitizer::sanitize(AuthorScriptPolicy::keepOrDiscard($payload['js'] ?? null)),
         ];
     }

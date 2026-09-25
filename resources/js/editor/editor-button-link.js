@@ -9,6 +9,7 @@
  * (survives data-gjs strip), and a single textnode child for HTML export.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { isInsideChromeShellPartComponent } from './chrome-content-slot-utils.js';
 import { resolveEditorLinkHref as resolveSharedLinkHref } from './editor-link-resolve.js';
 
@@ -567,7 +568,14 @@ function resolveLinkHref(editor, linkType, linkRef, href) {
 
 function syncLinkableButtonTraits(component, editor, { forceSelect = false } = {}) {
     // Silent trait schema refresh — never remount TraitManager unless selecting.
-    component.set('traits', linkTraitsFor(editor, component), { silent: true });
+    // A raw array under `traits` crashes TraitManager ("e.get is not a function") on select.
+    const traits = linkTraitsFor(editor, component);
+
+    if (typeof component.__loadTraits === 'function') {
+        component.__loadTraits(traits, { silent: true });
+    } else {
+        component.set('traits', traits, { silent: true });
+    }
 
     if (! forceSelect || editor?.getSelected?.() !== component) {
         return;
@@ -628,6 +636,24 @@ function readLinkAttributes(component) {
         linkType: String(attrs['data-vb-link-type'] ?? '').trim() || fromProps.linkType,
         linkRef: attrs['data-vb-link'] != null ? String(attrs['data-vb-link']).trim() : fromProps.linkRef,
     };
+}
+
+/**
+ * Every edit path writes the `href` attribute; the `href: '#'` prop default must not beat it.
+ *
+ * @param {unknown} attrHref
+ * @param {unknown} propHref
+ * @returns {string}
+ */
+export function resolveCtaSerializedHref(attrHref, propHref) {
+    const fromAttr = String(attrHref ?? '').trim();
+    const fromProp = String(propHref ?? '').trim();
+
+    if (fromAttr !== '' && fromAttr !== '#') {
+        return fromAttr;
+    }
+
+    return fromProp || fromAttr || '#';
 }
 
 export function hydrateLinkPropsFromAttributes(component) {
@@ -1116,15 +1142,15 @@ function registerLinkableButtonType(editor) {
                     : { ...(this.getAttributes?.() ?? {}) };
 
                 const label = extractButtonLabel(this);
-                const linkType = String(this.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url');
-                const linkRef = String(this.get('linkRef') ?? attrs['data-vb-link'] ?? '');
+                const linkType = String(attrs['data-vb-link-type'] || this.get('linkType') || 'url');
+                const linkRef = String(attrs['data-vb-link'] ?? this.get('linkRef') ?? '');
 
                 attrs['data-voodbuilder-cta'] = 'true';
                 attrs[CTA_LABEL_ATTR] = label;
                 attrs.role = attrs.role || 'button';
                 attrs['data-vb-link-type'] = linkType;
                 attrs['data-vb-link'] = linkType === 'url' ? null : (linkRef || null);
-                attrs.href = this.get('href') || attrs.href || '#';
+                attrs.href = resolveCtaSerializedHref(attrs.href, this.get('href'));
 
                 return attrs;
             },
@@ -1508,8 +1534,9 @@ export function hydrateCtasAfterHtmlInsert(editor, root = null) {
             } else {
                 ensureCtaButtonsForExport(editor);
             }
-        } catch {
+        } catch (error) {
             // ignore
+            debugSwallowed(error);
         }
     };
 

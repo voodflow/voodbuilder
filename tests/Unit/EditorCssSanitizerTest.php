@@ -66,4 +66,15 @@ CSS;
         $this->assertStringNotContainsString('@layer properties', $out);
         $this->assertStringNotContainsString('@property --tw-shadow', $out);
     }
+
+    public function test_neutralizes_style_element_breakout(): void
+    {
+        $css = '.a{color:red}</STYLE><script>alert(1)</script><!-- .b{}';
+
+        $out = EditorCssSanitizer::sanitize($css);
+
+        $this->assertStringNotContainsStringIgnoringCase('</style', $out);
+        $this->assertStringNotContainsString('<!--', $out);
+        $this->assertStringContainsString('.a{color:red}', $out);
+    }
 }

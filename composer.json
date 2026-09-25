@@ -1,7 +1,7 @@
 {
     "name": "voodflow/voodbuilder",
     "description": "VoodBuilder \u2014 Filament page builder and public site shell for Laravel.",
-    "version": "1.7.3",
+    "version": "1.8.0",
     "type": "library",
     "license": "proprietary",
     "keywords": [
@@ -75,7 +75,8 @@
         "orchestra/testbench": "^10.0|^11.0",
         "phpunit/phpunit": "^11.0",
         "spatie/laravel-markdown": "^2.7",
-        "laravel/pint": "^1.24"
+        "laravel/pint": "^1.24",
+        "larastan/larastan": "^3.0"
     },
     "extra": {
         "laravel": {
@@ -105,6 +106,10 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
-        "format": "vendor/bin/pint"
+        "format": "vendor/bin/pint",
+        "lint": "vendor/bin/pint --test",
+        "analyse": "vendor/bin/phpstan analyse --memory-limit=2G",
+        "test": "vendor/bin/phpunit --no-progress",
+        "test:js": "npm run test:js"
     }
 }

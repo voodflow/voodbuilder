@@ -3,6 +3,8 @@
  * Live-switches canvas + host shell tokens without reloading (keeps unsaved edits).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 const STORAGE_KEY = 'voodbuilder.popup-editor.preview-theme';
 const QUERY_KEY = 'preview_theme';
 const HOST_PALETTE_STYLE_ID = 'voodbuilder-popup-editor-host-theme-palette';
@@ -26,8 +28,9 @@ function readStoredAreaId() {
 function storeAreaId(areaId) {
     try {
         sessionStorage.setItem(STORAGE_KEY, areaId);
-    } catch {
+    } catch (error) {
         // Ignore private mode / quota errors.
+        debugSwallowed(error);
     }
 }
 
@@ -42,8 +45,9 @@ function syncUrl(areaId) {
         }
 
         window.history.replaceState({}, '', url);
-    } catch {
+    } catch (error) {
         // Ignore.
+        debugSwallowed(error);
     }
 }
 

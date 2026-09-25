@@ -90,7 +90,18 @@ final class GlobalTextTags
      */
     public static function replaceInHtml(string $html, array $overrides = []): string
     {
-        return self::replace($html, $overrides);
+        if ($html === '' || ! str_contains($html, '{')) {
+            return $html;
+        }
+
+        $replacements = [];
+
+        foreach (self::values($overrides) as $key => $value) {
+            // Settings values are admin text, not markup; logged_username is escaped at the source.
+            $replacements['{' . $key . '}'] = $key === 'logged_username' ? $value : self::escapeText($value);
+        }
+
+        return strtr($html, $replacements);
     }
 
     /**

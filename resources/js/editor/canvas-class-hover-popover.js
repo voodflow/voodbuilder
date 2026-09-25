@@ -2,6 +2,7 @@
  * Shuffle-style hover popover: tag + class chips for the hovered canvas element.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { componentClassString } from './clipboard.js';
 import { resolveComponentFromElement } from './component-context-menu.js';
 import { isEditorBooting } from './editor-lifecycle.js';
@@ -106,8 +107,9 @@ export function readClassHoverPopoverPreference() {
 export function saveClassHoverPopoverPreference(visible) {
     try {
         localStorage.setItem(CLASS_HOVER_POPOVER_STORAGE_KEY, visible ? '1' : '0');
-    } catch {
+    } catch (error) {
         // Ignore storage errors.
+        debugSwallowed(error);
     }
 }
 

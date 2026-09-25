@@ -2,6 +2,7 @@
  * Inspector UI for registered block settings descriptors.
  */
 
+import { debugSwallowed } from '../../debug-swallowed.js';
 import {
     ATTR,
 } from '../../core/attrs.js';
@@ -316,8 +317,9 @@ function componentHasContentTraits(component) {
         if (Array.isArray(traits.models)) {
             return traits.models.length > 0;
         }
-    } catch {
+    } catch (error) {
         // Ignore incomplete Editor models.
+        debugSwallowed(error);
     }
 
     return false;
@@ -1106,8 +1108,9 @@ export function registerSettingsUi(editor, mount) {
 
             try {
                 editor.select?.(null);
-            } catch {
+            } catch (error) {
                 // Grapes may already have cleared selection.
+                debugSwallowed(error);
             }
 
             scheduleRender();

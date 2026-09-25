@@ -29,8 +29,9 @@ class EditorBindingRendererTest extends TestCase
 
         $this->assertStringContainsString('>Hello world<', $rendered);
         $this->assertStringContainsString('href="https://example.test/tutorial"', $rendered);
-        $this->assertStringContainsString('window.location.href=', $rendered);
-        $this->assertStringContainsString('https://example.test/tutorial', $rendered);
+        $this->assertStringNotContainsString('onclick', $rendered);
+        $this->assertStringNotContainsString('<button', $rendered);
+        $this->assertMatchesRegularExpression('~<a(?=[^>]*role="button")(?=[^>]*href="https://example.test/tutorial")[^>]*>Go</a>~', $rendered);
     }
 
     public function test_replaces_inline_rich_text_span_bindings(): void

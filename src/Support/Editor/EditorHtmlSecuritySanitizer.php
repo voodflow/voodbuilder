@@ -46,6 +46,15 @@ final class EditorHtmlSecuritySanitizer
     private const SAFE_SCHEMES = ['http', 'https', 'mailto', 'tel', 'sms', 'callto', 'webcal'];
 
     /**
+     * Elements that render a `data:image/*` URL as an image. Anywhere else (iframe, frame…)
+     * a `data:image/svg+xml` URL is loaded as a document and its scripts run.
+     */
+    private const DATA_IMAGE_ELEMENTS = ['img', 'source', 'video', 'input', 'image'];
+
+    /** SVG animation elements, dropped when they target a URL attribute (`to="javascript:…"`). */
+    private const SVG_ANIMATION_ELEMENTS = ['animate', 'set'];
+
+    /**
      * @param  bool  $allowAuthorScripts  keep `<script>` written by an author who holds the
      *                                    `pages.custom-js` capability; event handlers and unsafe
      *                                    URL schemes are removed either way
@@ -59,8 +68,9 @@ final class EditorHtmlSecuritySanitizer
         $document = self::loadDocument($html);
         $body = $document->getElementsByTagName('body')->item(0);
 
+        // Fail closed: markup the parser cannot place in a body must not reach `{!! !!}` raw.
         if (! $body instanceof DOMElement) {
-            return $html;
+            return htmlspecialchars(strip_tags($html), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         }
 
         self::walk($body, $allowAuthorScripts);
@@ -78,7 +88,7 @@ final class EditorHtmlSecuritySanitizer
 
             $name = strtolower($child->nodeName);
 
-            if (self::shouldDrop($name, $allowAuthorScripts)) {
+            if (self::shouldDrop($name, $allowAuthorScripts) || self::isUrlRewritingAnimation($child, $name)) {
                 $child->parentNode?->removeChild($child);
 
                 continue;
@@ -96,6 +106,17 @@ final class EditorHtmlSecuritySanitizer
         }
 
         return in_array($name, self::DROPPED_ELEMENTS, true);
+    }
+
+    private static function isUrlRewritingAnimation(DOMElement $element, string $name): bool
+    {
+        if (! in_array($name, self::SVG_ANIMATION_ELEMENTS, true)) {
+            return false;
+        }
+
+        $target = strtolower(trim($element->getAttribute('attributename')));
+
+        return in_array($target, self::URL_ATTRIBUTES, true);
     }
 
     private static function sanitizeAttributes(DOMElement $element): void
@@ -140,7 +161,7 @@ final class EditorHtmlSecuritySanitizer
 
     private static function sanitizeUrlAttribute(DOMElement $element, DOMAttr $attribute, string $name): void
     {
-        if (self::isSafeUrl($attribute->value, $name)) {
+        if (self::isSafeUrl($attribute->value, $name, strtolower($element->nodeName))) {
             return;
         }
 
@@ -173,7 +194,7 @@ final class EditorHtmlSecuritySanitizer
                 continue;
             }
 
-            if (! self::isSafeUrl($matches[1], 'src')) {
+            if (! self::isSafeUrl($matches[1], 'src', strtolower($element->nodeName))) {
                 continue;
             }
 
@@ -189,7 +210,7 @@ final class EditorHtmlSecuritySanitizer
         $element->setAttribute($attribute->name, implode(', ', $safe));
     }
 
-    private static function isSafeUrl(string $value, string $attribute): bool
+    private static function isSafeUrl(string $value, string $attribute, string $element): bool
     {
         // DOM parsing already decoded entities, so `&#106;avascript:` arrives as `javascript:`.
         // Strip whitespace and control characters that browsers ignore inside a scheme.
@@ -209,6 +230,7 @@ final class EditorHtmlSecuritySanitizer
         // the same risk as rendering one.
         if (str_starts_with($normalized, 'data:')) {
             return $attribute !== 'href'
+                && in_array($element, self::DATA_IMAGE_ELEMENTS, true)
                 && preg_match('~^data:image/(?:png|jpe?g|gif|webp|avif|svg\+xml)[;,]~', $normalized) === 1;
         }
 

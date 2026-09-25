@@ -6,6 +6,7 @@
  * the theme default (Inter Variable / system-ui).
  */
 
+import { debugSwallowed } from '../debug-swallowed.js';
 import { findFontByStack, getFontById, getFontCatalog, getFontProviderLoader } from './catalog.js';
 import { fontsourceLoaders } from './fontsource-loaders.js';
 
@@ -186,8 +187,9 @@ export function reassertComponentFontFamily(editor, component, font, options = {
     if (quiet) {
         try {
             target.view?.updateStyle?.();
-        } catch {
+        } catch (error) {
             // Optional.
+            debugSwallowed(error);
         }
 
         return;
@@ -365,14 +367,16 @@ export function collectEditorFontHints(editor, css = '') {
     if (typeof wrapper?.onAll === 'function') {
         try {
             wrapper.onAll(visit);
-        } catch {
+        } catch (error) {
             // Tree may be mid-replace during boot.
+            debugSwallowed(error);
         }
     } else if (typeof wrapper?.find === 'function') {
         try {
             wrapper.find('*').forEach(visit);
-        } catch {
+        } catch (error) {
             // ignore
+            debugSwallowed(error);
         }
     }
 

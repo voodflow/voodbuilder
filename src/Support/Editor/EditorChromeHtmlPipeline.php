@@ -38,6 +38,9 @@ final class EditorChromeHtmlPipeline
 
         $html = app(EditorDynamicBlockRenderer::class)->render($html, null, $canvasPreview);
 
-        return GlobalTextTags::replaceInHtml($html);
+        $html = GlobalTextTags::replaceInHtml($html);
+
+        // Chrome renders on every page via `{!! !!}`: same last gate as EditorRenderer.
+        return EditorHtmlSecuritySanitizer::sanitize($html);
     }
 }

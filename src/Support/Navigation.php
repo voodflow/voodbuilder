@@ -121,7 +121,20 @@ final class Navigation
             return collect();
         }
 
-        return $menu->rootItems()->with('children')->get();
+        // One query for the whole tree: `with('children')` stopped at two levels and every
+        // deeper item lazy-loaded its own children on a cache miss.
+        /** @var \Illuminate\Database\Eloquent\Collection<int, NavigationMenuItem> $items */
+        $items = $menu->items()->get();
+
+        $byParent = $items->groupBy(
+            fn (NavigationMenuItem $item): string => (string) ($item->parent_id ?? ''),
+        );
+
+        foreach ($byParent->flatten(1) as $item) {
+            $item->setRelation('children', ($byParent->get((string) $item->getKey()) ?? collect())->values());
+        }
+
+        return ($byParent->get('') ?? collect())->values();
     }
 
     protected static function menuExistsForSlug(string $menuSlug): bool
@@ -134,10 +147,10 @@ final class Navigation
         if (NavigationMenuResolver::localizationEnabled()) {
             $locale ??= SitePageResolver::preferredLocale();
 
-            return "voodbuilder.menu.{$menuSlug}.{$locale}";
+            return "voodbuilder.menu.v2.{$menuSlug}.{$locale}";
         }
 
-        return "voodbuilder.menu.{$menuSlug}";
+        return "voodbuilder.menu.v2.{$menuSlug}";
     }
 
     /**
@@ -157,7 +170,9 @@ final class Navigation
     {
         return [
             'label' => $item->label,
+            'description' => $item->description,
             'icon' => $item->icon,
+            'dropdown_layout' => $item->dropdown_layout?->value,
             'type' => $item->typeKey(),
             'link' => $item->link,
             'route_parameters' => $item->route_parameters,

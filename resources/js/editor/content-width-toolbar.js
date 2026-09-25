@@ -6,6 +6,7 @@
  * Toolbar shows on section (1st level) and its content wrapper (2nd level).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { isFooterBlock, isNavBlock, isHeaderBlock } from './chrome/ids.js';
 import { tablerIcon } from './editor-icons.js';
 import { isLayoutContainer, isLayoutSection } from './layout-blocks.js';
@@ -140,8 +141,9 @@ export function isFullWidthPageContext(editor) {
         if (pageWidth === 'full' || chromeWidth === 'full') {
             return true;
         }
-    } catch {
+    } catch (error) {
         // Canvas not ready yet.
+        debugSwallowed(error);
     }
 
     // Page/layout editors default to allowing the cycle (Full ↔ Normal).
@@ -1058,8 +1060,9 @@ export function cycleSelectedContentWidth(editor, labels = {}) {
     // incomplete JIT sheet cannot keep overriding section-utilities md:/xl: widths.
     try {
         applyPageLiveCss(editor, editor.__voodbuilderPageLiveCss ?? '');
-    } catch {
+    } catch (error) {
         // Optional when autobuild is not registered.
+        debugSwallowed(error);
     }
 
     const toast = contentWidthModeLabel(next, labels, editor);
