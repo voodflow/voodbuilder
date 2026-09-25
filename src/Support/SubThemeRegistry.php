@@ -43,7 +43,7 @@ final class SubThemeRegistry
      */
     public static function packageSubThemeDefinitions(): array
     {
-        $path = VoodbuilderPaths::packagePath().'/config/voodbuilder.php';
+        $path = VoodbuilderPaths::packagePath() . '/config/voodbuilder.php';
 
         if (! is_file($path)) {
             return [];

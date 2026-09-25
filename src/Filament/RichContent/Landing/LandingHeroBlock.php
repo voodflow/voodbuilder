@@ -57,7 +57,7 @@ class LandingHeroBlock extends RichContentCustomBlock
         $heading = $config['heading'] ?? null;
 
         return filled($heading)
-            ? __('voodbuilder::landing.blocks.hero').': '.$heading
+            ? __('voodbuilder::landing.blocks.hero') . ': ' . $heading
             : static::getLabel();
     }
 

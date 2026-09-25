@@ -66,7 +66,7 @@ final class EditorLinkTargetsTest extends TestCase
     {
         $menu = NavigationMenu::query()->create([
             'name' => 'Main navigation',
-            'slug' => 'main-nested-'.uniqid(),
+            'slug' => 'main-nested-' . uniqid(),
         ]);
 
         $products = NavigationMenuItem::query()->create([
@@ -112,7 +112,7 @@ final class EditorLinkTargetsTest extends TestCase
 
         $menu = NavigationMenu::query()->create([
             'name' => 'Main navigation',
-            'slug' => 'main-docs-'.uniqid(),
+            'slug' => 'main-docs-' . uniqid(),
         ]);
 
         $docs = NavigationMenuItem::query()->create([
@@ -124,7 +124,7 @@ final class EditorLinkTargetsTest extends TestCase
 
         $items = EditorLinkTargets::menuItems();
         $dyn = collect($items)->first(
-            fn (array $row): bool => str_starts_with((string) $row['id'], 'dyn:'.$docs->id.':'),
+            fn (array $row): bool => str_starts_with((string) $row['id'], 'dyn:' . $docs->id . ':'),
         );
 
         $this->assertNotNull($dyn);

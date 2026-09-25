@@ -38,7 +38,7 @@ final class SubThemeImporter
             return $storage->path($uploaded);
         }
 
-        $legacyPath = storage_path('app/'.$uploaded);
+        $legacyPath = storage_path('app/' . $uploaded);
 
         return is_file($legacyPath) ? $legacyPath : null;
     }
@@ -64,18 +64,18 @@ final class SubThemeImporter
         $suffixes = ['-copy'];
 
         for ($index = 2; $index <= 99; $index++) {
-            $suffixes[] = '-'.$index;
+            $suffixes[] = '-' . $index;
         }
 
         foreach ($suffixes as $suffix) {
-            $candidate = $baseId.$suffix;
+            $candidate = $baseId . $suffix;
 
             if (! self::themeExists($candidate)) {
                 return $candidate;
             }
         }
 
-        return $baseId.'-'.Str::lower(Str::random(6));
+        return $baseId . '-' . Str::lower(Str::random(6));
     }
 
     public static function import(
@@ -90,7 +90,7 @@ final class SubThemeImporter
             return new SubThemeImportResult(false, $targetId ?? '', "Archive not found: {$archivePath}");
         }
 
-        $temporaryDirectory = storage_path('app/voodbuilder-theme-imports/'.uniqid('import-', true));
+        $temporaryDirectory = storage_path('app/voodbuilder-theme-imports/' . uniqid('import-', true));
 
         try {
             self::extractArchive($archivePath, $temporaryDirectory);
@@ -175,7 +175,7 @@ final class SubThemeImporter
      */
     protected static function readManifest(string $directory): array
     {
-        $manifestPath = $directory.'/'.SubThemeExporter::MANIFEST_FILE;
+        $manifestPath = $directory . '/' . SubThemeExporter::MANIFEST_FILE;
 
         if (! is_file($manifestPath)) {
             throw new \InvalidArgumentException('Archive is missing manifest.json.');
@@ -223,27 +223,27 @@ final class SubThemeImporter
         File::ensureDirectoryExists($themeRoot);
         File::ensureDirectoryExists($viewsRoot);
 
-        if (! is_file($sourceDirectory.'/theme.css')) {
+        if (! is_file($sourceDirectory . '/theme.css')) {
             throw new \InvalidArgumentException('Archive is missing theme.css.');
         }
 
-        File::copy($sourceDirectory.'/theme.css', $cssTarget);
+        File::copy($sourceDirectory . '/theme.css', $cssTarget);
 
-        $assetsDirectory = $sourceDirectory.'/assets';
+        $assetsDirectory = $sourceDirectory . '/assets';
 
         if (is_dir($assetsDirectory)) {
             foreach (File::allFiles($assetsDirectory) as $file) {
-                $target = $themeRoot.'/'.$file->getRelativePathname();
+                $target = $themeRoot . '/' . $file->getRelativePathname();
                 File::ensureDirectoryExists(dirname($target));
                 File::copy($file->getPathname(), $target);
             }
         }
 
-        $viewsDirectory = $sourceDirectory.'/views';
+        $viewsDirectory = $sourceDirectory . '/views';
 
         if (is_dir($viewsDirectory)) {
             foreach (File::allFiles($viewsDirectory) as $file) {
-                $target = $viewsRoot.'/'.$file->getRelativePathname();
+                $target = $viewsRoot . '/' . $file->getRelativePathname();
                 File::ensureDirectoryExists(dirname($target));
                 File::copy($file->getPathname(), $target);
             }
@@ -286,7 +286,7 @@ final class SubThemeImporter
                 : str($id)->headline()->toString());
 
         if ($renamedFrom !== null && $renamedFrom !== $id && $labelOverride === null) {
-            $label .= ' ('.__('voodbuilder::settings.theme_copy_suffix').')';
+            $label .= ' (' . __('voodbuilder::settings.theme_copy_suffix') . ')';
         }
 
         $normalized = [
@@ -299,7 +299,7 @@ final class SubThemeImporter
         ];
 
         foreach (['home', 'landing', 'page', 'article', 'section_index'] as $layout) {
-            if (is_file(ThemeConvention::appViewsPath($id)."/layouts/{$layout}.blade.php")) {
+            if (is_file(ThemeConvention::appViewsPath($id) . "/layouts/{$layout}.blade.php")) {
                 $normalized['layouts'][$layout] = ThemeConvention::appLayoutView($id, $layout);
             }
         }

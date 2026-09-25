@@ -43,7 +43,7 @@ class DeleteNavigationMenuTranslationsAction
                     ->label(__('voodbuilder::admin.fields.translations_to_delete'))
                     ->options(fn (): array => TranslationGroupDeletion::selectableOptions(
                         $record,
-                        fn (NavigationMenu $member): string => $member->name.' ('.TranslationGroupDeletion::localeLabel($member).')',
+                        fn (NavigationMenu $member): string => $member->name . ' (' . TranslationGroupDeletion::localeLabel($member) . ')',
                     ))
                     ->required()
                     ->columns(1),

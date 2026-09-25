@@ -97,12 +97,12 @@ final class VoodbuilderThemeTokenMigrator
                     $classes = self::migrateClassList($classMatch[2], $respectContentWidth);
                     $newAttrs = preg_replace(
                         '/\bclass=(["\'])(.*?)\1/s',
-                        'class='.$quote.$classes.$quote,
+                        'class=' . $quote . $classes . $quote,
                         $attrs,
                         1,
                     );
 
-                    return '<'.$tag.$newAttrs.'>';
+                    return '<' . $tag . $newAttrs . '>';
                 },
                 $html,
             ) ?? $html;
@@ -112,7 +112,7 @@ final class VoodbuilderThemeTokenMigrator
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 
@@ -276,7 +276,7 @@ final class VoodbuilderThemeTokenMigrator
                     return $matches[0];
                 }
 
-                return 'var(--color-'.$matches[1].'-'.$matches[2].', '.$fallback.')';
+                return 'var(--color-' . $matches[1] . '-' . $matches[2] . ', ' . $fallback . ')';
             },
             $css,
         ) ?? $css;
@@ -647,13 +647,13 @@ final class VoodbuilderThemeTokenMigrator
                 } else {
                     $attrs = preg_replace(
                         '/\bstyle=(["\'])(.*?)\1/i',
-                        'style='.$styleMatch[1].$newStyle.$styleMatch[1],
+                        'style=' . $styleMatch[1] . $newStyle . $styleMatch[1],
                         $attrs,
                         1,
                     ) ?? $attrs;
                 }
 
-                return '<'.$matches[1].$attrs.'>';
+                return '<' . $matches[1] . $attrs . '>';
             },
             $html,
         ) ?? $html;
@@ -786,7 +786,7 @@ final class VoodbuilderThemeTokenMigrator
                     continue;
                 }
 
-                $tokens[$colorIndex] = $tokens[$colorIndex].'/'.$opacity;
+                $tokens[$colorIndex] = $tokens[$colorIndex] . '/' . $opacity;
                 unset($tokens[$index]);
 
                 break;
@@ -828,7 +828,7 @@ final class VoodbuilderThemeTokenMigrator
 
         foreach ($lgWidths as $lgWidth) {
             $fraction = substr($lgWidth, strlen('lg:w-'));
-            $mdWidth = 'md:w-'.$fraction;
+            $mdWidth = 'md:w-' . $fraction;
 
             if (! in_array($mdWidth, $tokens, true)) {
                 $additions[] = $mdWidth;
@@ -850,7 +850,7 @@ final class VoodbuilderThemeTokenMigrator
     {
         return array_map(static function (string $token): string {
             if (str_starts_with($token, 'voodbuilder-gjs-')) {
-                return 'voodbuilder-editor-'.substr($token, strlen('voodbuilder-gjs-'));
+                return 'voodbuilder-editor-' . substr($token, strlen('voodbuilder-gjs-'));
             }
 
             return $token;
@@ -954,7 +954,7 @@ final class VoodbuilderThemeTokenMigrator
             '/<section\b([^>]*\bdata-voodbuilder-section-block=(["\'])[^"\']+\2[^>]*)>(\s*)<div\b([^>]*)\bclass=(["\'])(.*?)\5([^>]*)>/i',
             static function (array $matches): string {
                 $tokens = preg_split('/\s+/', trim($matches[6]), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-                $attrs = $matches[4].$matches[7];
+                $attrs = $matches[4] . $matches[7];
 
                 if (
                     in_array('voodbuilder-hero-media', $tokens, true)
@@ -970,7 +970,7 @@ final class VoodbuilderThemeTokenMigrator
                 $tokens = self::syncContainerTailwindUtilities(array_merge(['voodbuilder-editor-container'], $tokens));
                 $classes = implode(' ', $tokens);
 
-                return '<section'.$matches[1].'>'.$matches[3].'<div'.$matches[4].'class='.$matches[5].$classes.$matches[5].$matches[7].'>';
+                return '<section' . $matches[1] . '>' . $matches[3] . '<div' . $matches[4] . 'class=' . $matches[5] . $classes . $matches[5] . $matches[7] . '>';
             },
             $html,
         ) ?? $html;
@@ -995,7 +995,7 @@ final class VoodbuilderThemeTokenMigrator
      */
     private static function dedupeBrandBackgroundSlot(array $tokens, string $prefix): array
     {
-        $pattern = '/^'.preg_quote($prefix, '/').'bg-vp-brand-\d+/';
+        $pattern = '/^' . preg_quote($prefix, '/') . 'bg-vp-brand-\d+/';
 
         $matches = array_values(array_filter(
             $tokens,
@@ -1079,7 +1079,7 @@ final class VoodbuilderThemeTokenMigrator
     {
         foreach (self::VARIANT_PREFIXES as $prefix) {
             if (str_starts_with($token, $prefix)) {
-                return $prefix.self::migrateToken(substr($token, strlen($prefix)));
+                return $prefix . self::migrateToken(substr($token, strlen($prefix)));
             }
         }
 
@@ -1113,7 +1113,7 @@ final class VoodbuilderThemeTokenMigrator
                     $classes = self::ensureSectionClasses($classMatch[2]);
                     $attrs = preg_replace(
                         '/\bclass=(["\'])(.*?)\1/',
-                        'class='.$classMatch[1].$classes.$classMatch[1],
+                        'class=' . $classMatch[1] . $classes . $classMatch[1],
                         $attrs,
                         1,
                     ) ?? $attrs;
@@ -1121,7 +1121,7 @@ final class VoodbuilderThemeTokenMigrator
                     $attrs .= ' class="voodbuilder-editor-section bg-vp-bg"';
                 }
 
-                return '<section'.$attrs.'>';
+                return '<section' . $attrs . '>';
             },
             $html,
         ) ?? $html;
@@ -1157,7 +1157,7 @@ final class VoodbuilderThemeTokenMigrator
         return preg_replace_callback(
             '/\bstyle=(["\'])(.*?)\1/i',
             static function (array $matches): string {
-                return 'style='.$matches[1].self::migrateStyleDeclaration($matches[2]).$matches[1];
+                return 'style=' . $matches[1] . self::migrateStyleDeclaration($matches[2]) . $matches[1];
             },
             $html,
         ) ?? $html;
@@ -1494,7 +1494,7 @@ final class VoodbuilderThemeTokenMigrator
                     return $matches[0];
                 }
 
-                return 'background-color: '.$replacement;
+                return 'background-color: ' . $replacement;
             },
             $value,
         ) ?? $value;
@@ -1528,7 +1528,7 @@ final class VoodbuilderThemeTokenMigrator
         if (preg_match('/^#([0-9a-f]{3})$/', $hex, $matches) === 1) {
             $chars = str_split($matches[1]);
 
-            return '#'.$chars[0].$chars[0].$chars[1].$chars[1].$chars[2].$chars[2];
+            return '#' . $chars[0] . $chars[0] . $chars[1] . $chars[1] . $chars[2] . $chars[2];
         }
 
         if (preg_match('/^#([0-9a-f]{6})$/', $hex) === 1) {

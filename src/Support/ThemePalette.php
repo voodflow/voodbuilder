@@ -280,7 +280,7 @@ CSS;
             }
         }
 
-        return $scoped.implode("\n", $semanticRules).self::CANVAS_HEADER_BACKGROUND_CSS.self::CANVAS_FOOTER_BACKGROUND_CSS.self::chromeShellAdminOverrideCss($subThemeId);
+        return $scoped . implode("\n", $semanticRules) . self::CANVAS_HEADER_BACKGROUND_CSS . self::CANVAS_FOOTER_BACKGROUND_CSS . self::chromeShellAdminOverrideCss($subThemeId);
     }
 
     public static function chromeShellAdminOverrideCss(string $subThemeId): string
@@ -361,7 +361,7 @@ CSS;
             '--color-vp-text-3',
         ];
 
-        $pattern = '/(?:'.implode('|', array_map(static fn (string $token): string => preg_quote($token, '/'), $tokens)).')\s*:\s*[^;}{]+;?/i';
+        $pattern = '/(?:' . implode('|', array_map(static fn (string $token): string => preg_quote($token, '/'), $tokens)) . ')\s*:\s*[^;}{]+;?/i';
         $stripped = preg_replace($pattern, '', $css);
         $stripped = is_string($stripped) ? $stripped : $css;
 
@@ -551,7 +551,7 @@ CSS;
 
         if ($color[0] !== '#') {
             if (preg_match('/^([0-9a-f]{3}|[0-9a-f]{6})$/', $color) === 1) {
-                $color = '#'.$color;
+                $color = '#' . $color;
             }
         }
 
@@ -566,7 +566,7 @@ CSS;
             // pairs start with the shorthand nibbles (e.g. '#35b' -> '#3451b2').
             try {
                 $packagePath = VoodbuilderPaths::packagePath();
-                $cssFiles = glob($packagePath.'/resources/css/*.css') ?: [];
+                $cssFiles = glob($packagePath . '/resources/css/*.css') ?: [];
 
                 foreach ($cssFiles as $file) {
                     $contents = @file_get_contents($file);
@@ -582,7 +582,8 @@ CSS;
                                 && $hex[2] === $short[1]
                                 && $hex[4] === $short[2]
                             ) {
-                                $color = '#'.strtolower($hex);
+                                $color = '#' . strtolower($hex);
+
                                 break 2;
                             }
                         }
@@ -598,8 +599,8 @@ CSS;
                 if ($canonical !== null) {
                     $color = $canonical;
                 } else {
-                    $color = '#'.implode('', array_map(
-                        static fn (string $char): string => $char.$char,
+                    $color = '#' . implode('', array_map(
+                        static fn (string $char): string => $char . $char,
                         str_split($short),
                     ));
                 }
@@ -781,7 +782,7 @@ CSS;
             $declarations[] = "{$property}:{$value}!important";
         }
 
-        return "{$selector}{".implode(';', $declarations).'}';
+        return "{$selector}{" . implode(';', $declarations) . '}';
     }
 
     /**
@@ -808,19 +809,19 @@ CSS;
         // palette scales (indigo/violet/…) onto --color-vp-brand-*: authors use
         // text-violet-400 / text-sky-400 as literal decorative colors; theme-aware
         // UI must use vp-brand-* utilities explicitly.
-        return $selector.'{'
-            .'--vp-c-brand-1:var(--color-vp-brand-1);'
-            .'--vp-c-brand-2:var(--color-vp-brand-2);'
-            .'--vp-c-brand-3:var(--color-vp-brand-3);'
-            .'--vp-c-brand-soft:color-mix(in srgb,var(--color-vp-brand-1) 14%,transparent);'
-            .'--vp-c-bg:var(--color-vp-bg);'
-            .'--vp-c-bg-alt:var(--color-vp-bg-alt);'
-            .'--vp-c-bg-soft:var(--color-vp-bg-alt);'
-            .'--vp-c-bg-elv:var(--color-vp-bg-elv);'
-            .'--vp-c-text-1:var(--color-vp-text-1);'
-            .'--vp-c-text-2:var(--color-vp-text-2);'
-            .'--vp-c-text-3:var(--color-vp-text-3)'
-            .'}';
+        return $selector . '{'
+            . '--vp-c-brand-1:var(--color-vp-brand-1);'
+            . '--vp-c-brand-2:var(--color-vp-brand-2);'
+            . '--vp-c-brand-3:var(--color-vp-brand-3);'
+            . '--vp-c-brand-soft:color-mix(in srgb,var(--color-vp-brand-1) 14%,transparent);'
+            . '--vp-c-bg:var(--color-vp-bg);'
+            . '--vp-c-bg-alt:var(--color-vp-bg-alt);'
+            . '--vp-c-bg-soft:var(--color-vp-bg-alt);'
+            . '--vp-c-bg-elv:var(--color-vp-bg-elv);'
+            . '--vp-c-text-1:var(--color-vp-text-1);'
+            . '--vp-c-text-2:var(--color-vp-text-2);'
+            . '--vp-c-text-3:var(--color-vp-text-3)'
+            . '}';
     }
 
     /**
@@ -936,7 +937,7 @@ CSS;
 
             if (preg_match_all('/--([\w-]+)\s*:\s*([^;]+);/', $matches[1], $declarations, PREG_SET_ORDER) !== false) {
                 foreach ($declarations as $declaration) {
-                    $variables['--'.$declaration[1]] = trim($declaration[2]);
+                    $variables['--' . $declaration[1]] = trim($declaration[2]);
                 }
             }
 
@@ -963,7 +964,7 @@ CSS;
             $declarations[] = "{$property}:{$value}!important";
         }
 
-        return "{$selector}{".implode(';', $declarations).'}';
+        return "{$selector}{" . implode(';', $declarations) . '}';
     }
 
     /**
@@ -1067,10 +1068,10 @@ CSS;
             return $runtime;
         }
 
-        $pattern = '/(?:'.implode('|', array_map(
+        $pattern = '/(?:' . implode('|', array_map(
             static fn (string $token): string => preg_quote($token, '/'),
             $tokens,
-        )).')\s*:\s*[^;}{]+;?/i';
+        )) . ')\s*:\s*[^;}{]+;?/i';
 
         $stripped = preg_replace($pattern, '', $runtime);
 
@@ -1165,7 +1166,7 @@ CSS;
         // "html.dark[data-voodbuilder-sub-theme='id']" orders.
         $css = preg_replace(
             '/html\s*\.dark\s*\[data-voodbuilder-sub-theme=(["\"]).+?\1\]/',
-            'html.dark[data-voodbuilder-sub-theme='.$subThemeId.']',
+            'html.dark[data-voodbuilder-sub-theme=' . $subThemeId . ']',
             $css,
         );
 

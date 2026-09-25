@@ -22,7 +22,7 @@ final class EditorCompileCssController extends Controller
         $maxHtml = (int) config('voodbuilder.editor.payload.max_html_bytes', 500_000);
 
         $validated = $request->validate([
-            'html' => ['required', 'string', 'max:'.$maxHtml],
+            'html' => ['required', 'string', 'max:' . $maxHtml],
             'scope' => ['nullable', 'string', 'in:page,component'],
         ]);
 

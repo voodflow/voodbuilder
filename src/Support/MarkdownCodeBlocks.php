@@ -51,7 +51,7 @@ final class MarkdownCodeBlocks
         }
 
         $escaped = e($code);
-        $body = '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e($language).'">'.$escaped.'</code></pre>';
+        $body = '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-' . e($language) . '">' . $escaped . '</code></pre>';
 
         return self::shell($language, $body, 'raw');
     }
@@ -125,7 +125,7 @@ final class MarkdownCodeBlocks
             '/<pre(?:\s[^>]*)?><code class="language-([\w+#.-]+)">([\s\S]*?)<\/code><\/pre>/',
             fn (array $matches): string => self::shell(
                 self::normalizeLanguage($matches[1]),
-                '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e(self::normalizeLanguage($matches[1])).'">'.$matches[2].'</code></pre>',
+                '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-' . e(self::normalizeLanguage($matches[1])) . '">' . $matches[2] . '</code></pre>',
                 'raw',
             ),
             $html,
@@ -192,7 +192,7 @@ final class MarkdownCodeBlocks
 
         $content = $mode === 'raw'
             ? $body
-            : '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-'.e($language).'">'.$body.'</code></pre>';
+            : '<pre class="m-0 whitespace-pre-wrap break-words bg-transparent p-0 font-mono text-[13px] leading-[1.35]"><code class="language-' . e($language) . '">' . $body . '</code></pre>';
 
         return <<<HTML
 <div class="vp-code-block self-start" data-code-block data-line-numbers>

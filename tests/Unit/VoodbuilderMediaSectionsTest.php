@@ -15,7 +15,7 @@ class VoodbuilderMediaSectionsTest extends TestCase
         foreach (VoodbuilderMediaSections::blockDefinitions() as $definition) {
             $html = $definition['content'];
 
-            $this->assertStringContainsString('data-voodbuilder-section-block="'.$definition['id'].'"', $html);
+            $this->assertStringContainsString('data-voodbuilder-section-block="' . $definition['id'] . '"', $html);
             $this->assertMatchesRegularExpression('/vp-/', $html);
             $this->assertStringNotContainsString('GrapesJS', $html);
             $this->assertStringNotContainsString('grapesjs', strtolower($html));

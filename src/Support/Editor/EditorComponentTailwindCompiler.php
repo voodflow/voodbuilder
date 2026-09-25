@@ -81,7 +81,7 @@ final class EditorComponentTailwindCompiler
 
     public static function scriptPath(): string
     {
-        return dirname(__DIR__, 3).'/scripts/compile-component-tailwind.mjs';
+        return dirname(__DIR__, 3) . '/scripts/compile-component-tailwind.mjs';
     }
 
     protected static ?string $resolvedNodeBinary = null;
@@ -125,7 +125,7 @@ final class EditorComponentTailwindCompiler
         ])));
 
         foreach ($candidates as $candidate) {
-            if (is_dir($candidate.DIRECTORY_SEPARATOR.'node_modules'.DIRECTORY_SEPARATOR.'tailwindcss')) {
+            if (is_dir($candidate . DIRECTORY_SEPARATOR . 'node_modules' . DIRECTORY_SEPARATOR . 'tailwindcss')) {
                 return $candidate;
             }
         }

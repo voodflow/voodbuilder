@@ -89,7 +89,7 @@ class LandingContactCtaBlock extends RichContentCustomBlock
         if (($config['display_style'] ?? 'email') === 'email') {
             $email = $config['contact_email'] ?? null;
 
-            return filled($email) ? 'mailto:'.(string) $email : null;
+            return filled($email) ? 'mailto:' . (string) $email : null;
         }
 
         return ResolvableLinkSupport::resolve($config, 'button', 'button_url');

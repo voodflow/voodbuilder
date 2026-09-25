@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Support\Editor\EditorChromeLayoutEditorGate;
 use Voodflow\Voodbuilder\Support\Editor\EditorCommunityBlockCatalog;
@@ -42,8 +43,8 @@ class EditorChromeLayoutEditorGateTest extends TestCase
 
     public function test_layout_editor_config_wires_vmedia_browser_when_routes_exist(): void
     {
-        if (! \Illuminate\Support\Facades\Route::has('vmedia.media.index')
-            || ! \Illuminate\Support\Facades\Route::has('vmedia.media.galleries')) {
+        if (! Route::has('vmedia.media.index')
+            || ! Route::has('vmedia.media.galleries')) {
             $this->markTestSkipped('vmedia media routes are not registered in this testbench boot.');
         }
 

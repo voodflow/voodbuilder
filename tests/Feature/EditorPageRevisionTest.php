@@ -15,6 +15,7 @@ use Voodflow\Voodbuilder\Enums\SitePageRevisionKind;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\SitePageRevision;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
+use Voodflow\Voodbuilder\Support\Editor\PageCssArtifactStore;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -342,7 +343,7 @@ class EditorPageRevisionTest extends TestCase
 
         $this->assertStringContainsString(
             '--color-vp-bg',
-            \Voodflow\Voodbuilder\Support\Editor\PageCssArtifactStore::resolveCss($page->builder_payload ?? []),
+            PageCssArtifactStore::resolveCss($page->builder_payload ?? []),
         );
     }
 

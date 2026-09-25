@@ -11,6 +11,7 @@ use Filament\Panel;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Storage;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
+use Voodflow\Voodbuilder\Http\Controllers\EditorPageController;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Support\Editor\PageCssArtifactStore;
@@ -100,8 +101,8 @@ class EditorPageSaveTest extends TestCase
         $this->assertStringContainsString('var(--color-vp-bg)', $storedCss);
         $this->assertSame('', $page->builder_payload['js']);
         $this->assertStringContainsString('.bg-vp-bg', (string) $response->json('css'));
-        $this->assertArrayHasKey(\Voodflow\Voodbuilder\Http\Controllers\EditorPageController::SAVE_INPUT_HASH_KEY, $page->builder_payload);
-        $this->assertArrayHasKey(\Voodflow\Voodbuilder\Http\Controllers\EditorPageController::CSS_CLASS_FINGERPRINT_KEY, $page->builder_payload);
+        $this->assertArrayHasKey(EditorPageController::SAVE_INPUT_HASH_KEY, $page->builder_payload);
+        $this->assertArrayHasKey(EditorPageController::CSS_CLASS_FINGERPRINT_KEY, $page->builder_payload);
 
         $again = $this->putJson(route('voodbuilder.editor.pages.update', $page), [
             'html' => '<section>Updated</section>',

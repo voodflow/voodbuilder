@@ -35,8 +35,8 @@ class SubThemeExporterImporterTest extends TestCase
 
     protected function tearDown(): void
     {
-        File::deleteDirectory(resource_path('voodbuilder/themes/'.$this->themeId));
-        File::deleteDirectory(resource_path('views/voodbuilder/themes/'.$this->themeId));
+        File::deleteDirectory(resource_path('voodbuilder/themes/' . $this->themeId));
+        File::deleteDirectory(resource_path('views/voodbuilder/themes/' . $this->themeId));
 
         parent::tearDown();
     }
@@ -56,7 +56,7 @@ class SubThemeExporterImporterTest extends TestCase
 
     public function test_it_renames_theme_on_import_when_id_already_exists(): void
     {
-        $exportPath = storage_path('app/voodbuilder-theme-exports/'.$this->themeId.'-rename-test.zip');
+        $exportPath = storage_path('app/voodbuilder-theme-exports/' . $this->themeId . '-rename-test.zip');
         SubThemeExporter::export($this->themeId, $exportPath);
 
         $result = SubThemeImporter::import(
@@ -66,11 +66,11 @@ class SubThemeExporterImporterTest extends TestCase
 
         $this->assertTrue($result->success);
         $this->assertSame($this->themeId, $result->renamedFrom);
-        $this->assertSame($this->themeId.'-copy', $result->id);
+        $this->assertSame($this->themeId . '-copy', $result->id);
         $this->assertFileExists(ThemeConvention::appCssPath($result->id));
 
-        File::deleteDirectory(resource_path('voodbuilder/themes/'.$result->id));
-        File::deleteDirectory(resource_path('views/voodbuilder/themes/'.$result->id));
+        File::deleteDirectory(resource_path('voodbuilder/themes/' . $result->id));
+        File::deleteDirectory(resource_path('views/voodbuilder/themes/' . $result->id));
         File::delete($exportPath);
     }
 
@@ -96,7 +96,7 @@ class SubThemeExporterImporterTest extends TestCase
 
     public function test_it_exports_and_imports_a_theme_archive(): void
     {
-        $exportPath = storage_path('app/voodbuilder-theme-exports/'.$this->themeId.'-test.zip');
+        $exportPath = storage_path('app/voodbuilder-theme-exports/' . $this->themeId . '-test.zip');
         SubThemeExporter::export($this->themeId, $exportPath);
 
         $this->assertFileExists($exportPath);
@@ -111,18 +111,18 @@ class SubThemeExporterImporterTest extends TestCase
 
         $this->assertTrue($result->success);
         $this->assertFileExists(ThemeConvention::appCssPath($importId));
-        $this->assertFileExists(ThemeConvention::appViewsPath($importId).'/layouts/page.blade.php');
+        $this->assertFileExists(ThemeConvention::appViewsPath($importId) . '/layouts/page.blade.php');
         $this->assertNotNull(SubThemeLocator::resolve($importId));
 
-        File::deleteDirectory(resource_path('voodbuilder/themes/'.$importId));
-        File::deleteDirectory(resource_path('views/voodbuilder/themes/'.$importId));
+        File::deleteDirectory(resource_path('voodbuilder/themes/' . $importId));
+        File::deleteDirectory(resource_path('views/voodbuilder/themes/' . $importId));
         File::delete($exportPath);
     }
 
     protected function seedThemeFiles(): void
     {
         $cssPath = ThemeConvention::appCssPath($this->themeId);
-        $viewsPath = ThemeConvention::appViewsPath($this->themeId).'/layouts/page.blade.php';
+        $viewsPath = ThemeConvention::appViewsPath($this->themeId) . '/layouts/page.blade.php';
 
         File::ensureDirectoryExists(dirname($cssPath));
         File::ensureDirectoryExists(dirname($viewsPath));

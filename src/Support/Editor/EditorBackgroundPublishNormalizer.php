@@ -30,7 +30,7 @@ final class EditorBackgroundPublishNormalizer
         $previous = libxml_use_internal_errors(true);
 
         try {
-            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-bg-dedupe-root">'.$html.'</div>';
+            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-bg-dedupe-root">' . $html . '</div>';
             $loaded = $document->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         } finally {
             libxml_clear_errors();
@@ -72,6 +72,7 @@ final class EditorBackgroundPublishNormalizer
             foreach (array_keys($inlineUrls) as $url) {
                 if (isset($cssUrls[$url])) {
                     $redundant = true;
+
                     break;
                 }
             }
@@ -169,6 +170,6 @@ final class EditorBackgroundPublishNormalizer
 
         $next = trim($next, " \t\n\r\0\x0B;");
 
-        return $next === '' ? '' : $next.';';
+        return $next === '' ? '' : $next . ';';
     }
 }

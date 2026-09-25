@@ -60,10 +60,10 @@ final class EditorHtmlSecuritySanitizerTest extends TestCase
     public function test_preserves_builder_and_companion_data_attributes(): void
     {
         $html = '<section data-voodbuilder-block="hero" data-voodbuilder-config="{&quot;a&quot;:1}" '
-            .'class="flex items-center" data-vforms-visibility="auth" data-vb-bg-opacity="50" '
-            .'data-gjs-type="voodbuilder-section" data-acme-thirdparty="keep-me">'
-            .'<h1 data-voodbuilder-bind="demo.latest.title">Title</h1>'
-            .'</section>';
+            . 'class="flex items-center" data-vforms-visibility="auth" data-vb-bg-opacity="50" '
+            . 'data-gjs-type="voodbuilder-section" data-acme-thirdparty="keep-me">'
+            . '<h1 data-voodbuilder-bind="demo.latest.title">Title</h1>'
+            . '</section>';
 
         $sanitized = EditorHtmlSecuritySanitizer::sanitize($html);
 
@@ -94,8 +94,8 @@ final class EditorHtmlSecuritySanitizerTest extends TestCase
     public function test_preserves_safe_srcset_and_strips_javascript_candidates(): void
     {
         $html = '<img src="/storage/hero-lg.webp" '
-            .'srcset="/storage/hero-sm.webp 512w, /storage/hero-lg.webp 2048w, javascript:alert(1) 1x" '
-            .'sizes="100vw" alt="Hero">';
+            . 'srcset="/storage/hero-sm.webp 512w, /storage/hero-lg.webp 2048w, javascript:alert(1) 1x" '
+            . 'sizes="100vw" alt="Hero">';
 
         $sanitized = EditorHtmlSecuritySanitizer::sanitize($html);
 
@@ -108,12 +108,12 @@ final class EditorHtmlSecuritySanitizerTest extends TestCase
     public function test_preserves_legitimate_links_and_media(): void
     {
         $html = '<a href="/pages/about">About</a>'
-            .'<a href="https://example.com">External</a>'
-            .'<a href="mailto:hi@example.com">Mail</a>'
-            .'<a href="tel:+390123">Call</a>'
-            .'<a href="#section">Anchor</a>'
-            .'<img src="/storage/hero.jpg" alt="Hero" loading="lazy">'
-            .'<iframe src="https://www.youtube.com/embed/x" allowfullscreen></iframe>';
+            . '<a href="https://example.com">External</a>'
+            . '<a href="mailto:hi@example.com">Mail</a>'
+            . '<a href="tel:+390123">Call</a>'
+            . '<a href="#section">Anchor</a>'
+            . '<img src="/storage/hero.jpg" alt="Hero" loading="lazy">'
+            . '<iframe src="https://www.youtube.com/embed/x" allowfullscreen></iframe>';
 
         $sanitized = EditorHtmlSecuritySanitizer::sanitize($html);
 

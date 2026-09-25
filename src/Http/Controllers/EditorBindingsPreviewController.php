@@ -32,7 +32,7 @@ class EditorBindingsPreviewController extends Controller
 
         foreach ($registry->catalog() as $source) {
             foreach ($source['fields'] as $field) {
-                $key = $source['id'].'.'.$field['id'];
+                $key = $source['id'] . '.' . $field['id'];
                 $value = $registry->resolve($key, $context);
 
                 if ($value !== null && $value !== '') {
@@ -44,7 +44,7 @@ class EditorBindingsPreviewController extends Controller
 
             if ($bindingSource !== null && method_exists($bindingSource, 'legacyFieldIds')) {
                 foreach ($bindingSource->legacyFieldIds() as $legacyFieldId) {
-                    $key = $source['id'].'.'.$legacyFieldId;
+                    $key = $source['id'] . '.' . $legacyFieldId;
                     $value = $registry->resolve($key, $context);
 
                     if ($value !== null && $value !== '') {
@@ -122,7 +122,7 @@ class EditorBindingsPreviewController extends Controller
                 $context = BindingContext::forEditorPreview($sitePage, $request)->withRepeatItem($record);
 
                 foreach ($itemSource->fields() as $field) {
-                    $value = $registry->resolve($itemSourceId.'.'.$field->id, $context);
+                    $value = $registry->resolve($itemSourceId . '.' . $field->id, $context);
 
                     if ($value !== null && $value !== '') {
                         $row[$field->id] = $this->normalizePreviewValue((string) $value, $field->type);
@@ -231,7 +231,7 @@ class EditorBindingsPreviewController extends Controller
         int $offset = 0,
         array $filters = [],
     ): string {
-        $base = $repeatKey.'|'.$sort.'|'.$dir.'|'.$offset;
+        $base = $repeatKey . '|' . $sort . '|' . $dir . '|' . $offset;
         $normalized = self::normalizeFilters($filters);
 
         if ($normalized === []) {
@@ -241,10 +241,10 @@ class EditorBindingsPreviewController extends Controller
         $parts = [];
 
         foreach ($normalized as $key => $value) {
-            $parts[] = $key.':'.$value;
+            $parts[] = $key . ':' . $value;
         }
 
-        return $base.'|'.implode(',', $parts);
+        return $base . '|' . implode(',', $parts);
     }
 
     protected function normalizePreviewValue(string $value, string $fieldType): string

@@ -418,7 +418,7 @@ class VoodbuilderSettings extends Model
             return $value;
         }
 
-        return asset('storage/'.$value);
+        return asset('storage/' . $value);
     }
 
     public static function clearCache(): void

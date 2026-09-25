@@ -53,12 +53,12 @@ final class ArticleChannel
 
     public static function shellClassPrefix(): string
     {
-        return 'voodbuilder-'.self::presentationFamily();
+        return 'voodbuilder-' . self::presentationFamily();
     }
 
     public static function bodyClass(): string
     {
-        return 'voodbuilder-sub-theme-'.self::presentationFamily().' voodbuilder-has-reading-progress';
+        return 'voodbuilder-sub-theme-' . self::presentationFamily() . ' voodbuilder-has-reading-progress';
     }
 
     public static function layoutView(string $layoutKey): string
@@ -73,7 +73,7 @@ final class ArticleChannel
 
         $fallback = $registry->layout('blog', $layoutKey);
 
-        return $fallback ?? 'voodbuilder::themes.blog.layouts.'.$layoutKey;
+        return $fallback ?? 'voodbuilder::themes.blog.layouts.' . $layoutKey;
     }
 
     public static function contentYieldName(string $layoutKey): string

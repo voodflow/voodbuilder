@@ -271,7 +271,7 @@ HTML;
         $hydrated = EditorSlotHydrator::hydrateHtml($saved, false, []);
 
         $this->assertStringContainsString('Synthesizers &amp; Music Tech Fair', $hydrated);
-        $this->assertStringContainsString('© '.date('Y').' Soundmit', $hydrated);
+        $this->assertStringContainsString('© ' . date('Y') . ' Soundmit', $hydrated);
         $this->assertStringNotContainsString('A Visual CMS for Laravel', $hydrated);
         $this->assertStringNotContainsString('© 2020 Old', $hydrated);
     }
@@ -540,12 +540,12 @@ HTML;
     public function copyright_resolves_global_current_year_tag(): void
     {
         $this->assertSame(
-            '© '.date('Y').' VoodBuilder',
+            '© ' . date('Y') . ' VoodBuilder',
             SiteFooterConfig::resolveCopyright('© {current_year} VoodBuilder'),
         );
 
         $this->assertSame(
-            '© '.date('Y').' Acme',
+            '© ' . date('Y') . ' Acme',
             SiteFooterConfig::resolveCopyright(null, 'Acme'),
         );
 
@@ -555,7 +555,7 @@ HTML;
         ], []);
 
         $this->assertMatchesRegularExpression(
-            '/data-voodbuilder-footer-copyright[^>]*>© '.preg_quote(date('Y'), '/').' VoodBuilder</',
+            '/data-voodbuilder-footer-copyright[^>]*>© ' . preg_quote(date('Y'), '/') . ' VoodBuilder</',
             $html,
         );
         $this->assertStringContainsString('"copyright":"© {current_year} {brand_name}"', $html);

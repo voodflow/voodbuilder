@@ -258,8 +258,8 @@ class VoodbuilderSeeder extends Seeder
 
         foreach ([1, 2, 3, 4] as $index) {
             $column = NavigationMenu::query()->updateOrCreate(
-                ['slug' => 'footer_col_'.$index],
-                ['name' => 'Footer column '.$index],
+                ['slug' => 'footer_col_' . $index],
+                ['name' => 'Footer column ' . $index],
             );
             $column->items()->delete();
         }
@@ -324,8 +324,8 @@ class VoodbuilderSeeder extends Seeder
 
         foreach ($columns as $index => $items) {
             $menu = NavigationMenu::query()->updateOrCreate(
-                ['slug' => 'footer_col_'.$index],
-                ['name' => 'Footer column '.$index],
+                ['slug' => 'footer_col_' . $index],
+                ['name' => 'Footer column ' . $index],
             );
 
             $menu->items()->delete();

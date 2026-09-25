@@ -363,7 +363,7 @@ class ThemesWorkspace extends Component
         $this->persistColors();
     }
 
-    public function updatedHeaderBgOpacity(int|string|null $value): void
+    public function updatedHeaderBgOpacity(int | string | null $value): void
     {
         if (! $this->canEditColors || ! $this->showColorModal || $this->colorKey !== 'header_bg') {
             return;
@@ -748,7 +748,7 @@ class ThemesWorkspace extends Component
 
         try {
             $json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
-            $this->js('void navigator.clipboard.writeText('.json_encode($json).').catch(() => {})');
+            $this->js('void navigator.clipboard.writeText(' . json_encode($json) . ').catch(() => {})');
         } catch (\JsonException) {
             // Livewire state still holds the scheme for paste.
         }
@@ -811,7 +811,7 @@ class ThemesWorkspace extends Component
     {
         $this->cloneSourceId = $sourceId;
         $this->cloneTargetId = SubThemeCloner::suggestCloneId($sourceId);
-        $this->cloneLabel = app(SubThemeRegistry::class)->label($sourceId).' copy';
+        $this->cloneLabel = app(SubThemeRegistry::class)->label($sourceId) . ' copy';
         $this->showCloneModal = true;
     }
 

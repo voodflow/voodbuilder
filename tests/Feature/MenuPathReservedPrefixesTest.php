@@ -68,11 +68,11 @@ class MenuPathReservedPrefixesTest extends TestCase
             }
 
             $this->assertFalse(
-                $nested->matches(Request::create('/'.$prefix.'/sample-slug', 'GET')),
+                $nested->matches(Request::create('/' . $prefix . '/sample-slug', 'GET')),
                 "Nested site-page route must not match /{$prefix}/{slug}",
             );
             $this->assertFalse(
-                $flat->matches(Request::create('/'.$prefix, 'GET')),
+                $flat->matches(Request::create('/' . $prefix, 'GET')),
                 "Flat site-page route must not match /{$prefix}",
             );
         }

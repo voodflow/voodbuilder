@@ -178,7 +178,7 @@ final class ChromeLayoutReadingTypography
         // Bare px → nearest rem token via common conversions.
         if (preg_match('/^(\d*\.?\d+)px$/i', $lower, $matches) === 1) {
             $rem = ((float) $matches[1]) / 16;
-            $asRem = rtrim(rtrim(sprintf('%.4f', $rem), '0'), '.').'rem';
+            $asRem = rtrim(rtrim(sprintf('%.4f', $rem), '0'), '.') . 'rem';
 
             if (array_key_exists($asRem, $remMap)) {
                 return $remMap[$asRem];
@@ -384,7 +384,7 @@ final class ChromeLayoutReadingTypography
     {
         $token = self::normalizeSize($size);
 
-        return 'var(--text-'.$token.')';
+        return 'var(--text-' . $token . ')';
     }
 
     /**
@@ -395,7 +395,7 @@ final class ChromeLayoutReadingTypography
         $parts = [];
 
         foreach ($cssVariables as $name => $value) {
-            $parts[] = $name.': '.$value;
+            $parts[] = $name . ': ' . $value;
         }
 
         return implode('; ', $parts);

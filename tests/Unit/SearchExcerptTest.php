@@ -37,7 +37,7 @@ MD;
     #[Test]
     public function it_centers_snippet_around_the_match(): void
     {
-        $plain = str_repeat('a ', 40).'unique-token '.str_repeat('b ', 40);
+        $plain = str_repeat('a ', 40) . 'unique-token ' . str_repeat('b ', 40);
         $snippet = SearchExcerpt::aroundMatch($plain, 'unique-token', 80);
 
         $this->assertNotNull($snippet);
@@ -71,7 +71,7 @@ MD;
         $presented = SearchExcerpt::present(
             'canvas',
             ['Short intro about the canvas API.'],
-            str_repeat('noise ', 50).'canvas appears later '.str_repeat('x ', 50),
+            str_repeat('noise ', 50) . 'canvas appears later ' . str_repeat('x ', 50),
             100,
         );
 

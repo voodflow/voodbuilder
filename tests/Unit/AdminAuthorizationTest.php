@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Voodflow\Voodbuilder\Support\AdminAuthorization;
 use Voodflow\Voodbuilder\Tests\TestCase;
@@ -16,7 +17,7 @@ final class AdminAuthorizationTest extends TestCase
 
         // Shield-only detection (Spatie alone must not hide resources).
         $this->assertSame(
-            class_exists(\BezhanSalleh\FilamentShield\FilamentShieldPlugin::class),
+            class_exists(FilamentShieldPlugin::class),
             AdminAuthorization::usesPermissionAuthorizer(),
         );
     }

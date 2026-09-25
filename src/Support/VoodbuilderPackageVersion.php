@@ -11,7 +11,7 @@ final class VoodbuilderPackageVersion
 {
     public static function current(): string
     {
-        $composerPath = dirname(__DIR__, 2).'/composer.json';
+        $composerPath = dirname(__DIR__, 2) . '/composer.json';
 
         if (! is_file($composerPath)) {
             return '0.0.0';

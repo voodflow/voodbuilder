@@ -93,7 +93,7 @@ final class ContentChannelThemes
             return $defaults;
         }
 
-        $path = VoodbuilderPaths::packagePath().'/config/voodbuilder.php';
+        $path = VoodbuilderPaths::packagePath() . '/config/voodbuilder.php';
 
         if (! is_file($path)) {
             $defaults = [];

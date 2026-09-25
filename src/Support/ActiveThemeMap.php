@@ -134,37 +134,37 @@ final class ActiveThemeMap
             ->map(function (array $row): string {
                 $swatch = e(ThemePresenter::previewColor($row['theme_id']));
                 $customBadge = ThemePalette::themeHasCustomColors($row['theme_id'])
-                    ? '<span class="voodbuilder-area-map__badge">'.e(__('voodbuilder::settings.theme_custom_colors_badge')).'</span>'
+                    ? '<span class="voodbuilder-area-map__badge">' . e(__('voodbuilder::settings.theme_custom_colors_badge')) . '</span>'
                     : '';
 
                 return '<li class="voodbuilder-area-map__item">'
-                    .'<span class="voodbuilder-area-map__area">'.e($row['area_label']).'</span>'
-                    .'<span class="voodbuilder-area-map__theme">'
-                        .'<span class="voodbuilder-area-map__swatch" style="background:'.$swatch.'"></span>'
-                        .'<span class="voodbuilder-area-map__theme-label">'.e($row['theme_label']).'</span>'
-                        .$customBadge
-                    .'</span>'
-                    .'<span class="voodbuilder-area-map__source">'.e(self::sourceLabel($row['source'])).'</span>'
-                    .'</li>';
+                    . '<span class="voodbuilder-area-map__area">' . e($row['area_label']) . '</span>'
+                    . '<span class="voodbuilder-area-map__theme">'
+                        . '<span class="voodbuilder-area-map__swatch" style="background:' . $swatch . '"></span>'
+                        . '<span class="voodbuilder-area-map__theme-label">' . e($row['theme_label']) . '</span>'
+                        . $customBadge
+                    . '</span>'
+                    . '<span class="voodbuilder-area-map__source">' . e(self::sourceLabel($row['source'])) . '</span>'
+                    . '</li>';
             })
             ->implode('');
 
         $html = '<style>'
-            .'.voodbuilder-area-map{list-style:none;margin:0 0 1rem;padding:0;display:flex;flex-direction:column;gap:.5rem}'
-            .'.voodbuilder-area-map__item{display:grid;grid-template-columns:minmax(6rem,1fr) minmax(8rem,1.4fr) auto;gap:.75rem;align-items:center;padding:.5rem .75rem;border-radius:.5rem;background:rgb(248 250 252);border:1px solid rgb(226 232 240)}'
-            .'.dark .voodbuilder-area-map__item{background:rgb(30 41 59 / .5);border-color:rgb(51 65 85)}'
-            .'.voodbuilder-area-map__area{font-size:.8125rem;font-weight:600;color:rgb(51 65 85)}'
-            .'.dark .voodbuilder-area-map__area{color:rgb(203 213 225)}'
-            .'.voodbuilder-area-map__theme{display:inline-flex;align-items:center;gap:.5rem;min-width:0}'
-            .'.voodbuilder-area-map__swatch{width:1rem;height:1rem;border-radius:9999px;flex-shrink:0;border:1px solid rgb(0 0 0 / .08)}'
-            .'.voodbuilder-area-map__theme-label{font-size:.8125rem;font-weight:500;color:rgb(15 23 42);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
-            .'.dark .voodbuilder-area-map__theme-label{color:rgb(248 250 252)}'
-            .'.voodbuilder-area-map__badge{font-size:.6875rem;font-weight:500;color:rgb(100 116 139);white-space:nowrap}'
-            .'.voodbuilder-area-map__source{font-size:.6875rem;color:rgb(100 116 139);text-align:end;white-space:nowrap}'
-            .'.dark .voodbuilder-area-map__source{color:rgb(148 163 184)}'
-            .'@media(max-width:640px){.voodbuilder-area-map__item{grid-template-columns:1fr;gap:.25rem}.voodbuilder-area-map__source{text-align:start}}'
-            .'</style>'
-            .'<ul class="voodbuilder-area-map">'.$items.'</ul>';
+            . '.voodbuilder-area-map{list-style:none;margin:0 0 1rem;padding:0;display:flex;flex-direction:column;gap:.5rem}'
+            . '.voodbuilder-area-map__item{display:grid;grid-template-columns:minmax(6rem,1fr) minmax(8rem,1.4fr) auto;gap:.75rem;align-items:center;padding:.5rem .75rem;border-radius:.5rem;background:rgb(248 250 252);border:1px solid rgb(226 232 240)}'
+            . '.dark .voodbuilder-area-map__item{background:rgb(30 41 59 / .5);border-color:rgb(51 65 85)}'
+            . '.voodbuilder-area-map__area{font-size:.8125rem;font-weight:600;color:rgb(51 65 85)}'
+            . '.dark .voodbuilder-area-map__area{color:rgb(203 213 225)}'
+            . '.voodbuilder-area-map__theme{display:inline-flex;align-items:center;gap:.5rem;min-width:0}'
+            . '.voodbuilder-area-map__swatch{width:1rem;height:1rem;border-radius:9999px;flex-shrink:0;border:1px solid rgb(0 0 0 / .08)}'
+            . '.voodbuilder-area-map__theme-label{font-size:.8125rem;font-weight:500;color:rgb(15 23 42);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+            . '.dark .voodbuilder-area-map__theme-label{color:rgb(248 250 252)}'
+            . '.voodbuilder-area-map__badge{font-size:.6875rem;font-weight:500;color:rgb(100 116 139);white-space:nowrap}'
+            . '.voodbuilder-area-map__source{font-size:.6875rem;color:rgb(100 116 139);text-align:end;white-space:nowrap}'
+            . '.dark .voodbuilder-area-map__source{color:rgb(148 163 184)}'
+            . '@media(max-width:640px){.voodbuilder-area-map__item{grid-template-columns:1fr;gap:.25rem}.voodbuilder-area-map__source{text-align:start}}'
+            . '</style>'
+            . '<ul class="voodbuilder-area-map">' . $items . '</ul>';
 
         return new HtmlString($html);
     }

@@ -71,6 +71,6 @@ final class CachedEntitlementProvider implements EntitlementProvider
 
     private function cacheKey(string $suffix): string
     {
-        return 'voodbuilder.entitlements.'.$suffix;
+        return 'voodbuilder.entitlements.' . $suffix;
     }
 }

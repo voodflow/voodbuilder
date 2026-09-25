@@ -19,7 +19,7 @@ final class ThemeAssetCompiler
 
         $workingDirectory ??= base_path();
 
-        if (! is_file($workingDirectory.'/package.json')) {
+        if (! is_file($workingDirectory . '/package.json')) {
             return false;
         }
 

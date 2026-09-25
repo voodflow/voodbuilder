@@ -91,7 +91,7 @@ final class PageSurfaceCssPublish
 
         $promoted = self::promoteWallpaperToFixedLayer($remapped);
 
-        return $promoted.self::transparentShellOverlay($promoted !== '' ? $promoted : $remapped);
+        return $promoted . self::transparentShellOverlay($promoted !== '' ? $promoted : $remapped);
     }
 
     /**
@@ -105,13 +105,13 @@ final class PageSurfaceCssPublish
         }
 
         return "\n"
-            ."body.voodbuilder-page-surface .voodbuilder-site-shell,\n"
-            ."body.voodbuilder-page-surface .voodbuilder-site-content,\n"
-            ."body.voodbuilder-page-surface .voodbuilder-home-shell,\n"
-            ."body.voodbuilder-page-surface .voodbuilder-landing-shell,\n"
-            ."body.voodbuilder-page-surface .voodbuilder-events-shell {\n"
-            ."  background-color: transparent !important;\n"
-            ."}\n";
+            . "body.voodbuilder-page-surface .voodbuilder-site-shell,\n"
+            . "body.voodbuilder-page-surface .voodbuilder-site-content,\n"
+            . "body.voodbuilder-page-surface .voodbuilder-home-shell,\n"
+            . "body.voodbuilder-page-surface .voodbuilder-landing-shell,\n"
+            . "body.voodbuilder-page-surface .voodbuilder-events-shell {\n"
+            . "  background-color: transparent !important;\n"
+            . "}\n";
     }
 
     private static function cssHasWallpaper(string $css): bool
@@ -145,7 +145,7 @@ final class PageSurfaceCssPublish
                     continue;
                 }
 
-                $blocks[] = $darkBodyTarget.' {'.self::withWallpaperDefaults($body).'}';
+                $blocks[] = $darkBodyTarget . ' {' . self::withWallpaperDefaults($body) . '}';
             }
         }
 
@@ -164,7 +164,7 @@ final class PageSurfaceCssPublish
                     continue;
                 }
 
-                $blocks[] = $bodyTarget.' {'.self::withWallpaperDefaults($body).'}';
+                $blocks[] = $bodyTarget . ' {' . self::withWallpaperDefaults($body) . '}';
             }
         }
 
@@ -176,7 +176,7 @@ final class PageSurfaceCssPublish
                     continue;
                 }
 
-                $blocks[] = $bodyTarget.' {'.self::withWallpaperDefaults($body).'}';
+                $blocks[] = $bodyTarget . ' {' . self::withWallpaperDefaults($body) . '}';
             }
         }
 
@@ -187,7 +187,7 @@ final class PageSurfaceCssPublish
             if (self::cssHasWallpaper($source)) {
                 $promoted = self::promoteWallpaperToFixedLayer($source);
 
-                return trim($promoted.self::transparentShellOverlay($promoted !== '' ? $promoted : $source));
+                return trim($promoted . self::transparentShellOverlay($promoted !== '' ? $promoted : $source));
             }
 
             return '';
@@ -195,7 +195,7 @@ final class PageSurfaceCssPublish
 
         $promoted = self::promoteWallpaperToFixedLayer($overlay);
 
-        return trim($promoted.self::transparentShellOverlay($promoted));
+        return trim($promoted . self::transparentShellOverlay($promoted));
     }
 
     public static function bodyTarget(): string
@@ -207,17 +207,17 @@ final class PageSurfaceCssPublish
 
     public static function darkBodyTarget(): string
     {
-        return 'html.dark body.'.self::PAGE_SURFACE_CLASS;
+        return 'html.dark body.' . self::PAGE_SURFACE_CLASS;
     }
 
     public static function fixedLayerSelector(): string
     {
-        return 'body.'.self::PAGE_SURFACE_CLASS.'::before';
+        return 'body.' . self::PAGE_SURFACE_CLASS . '::before';
     }
 
     public static function darkFixedLayerSelector(): string
     {
-        return 'html.dark '.self::fixedLayerSelector();
+        return 'html.dark ' . self::fixedLayerSelector();
     }
 
     /**
@@ -242,7 +242,7 @@ final class PageSurfaceCssPublish
     {
         $escaped = preg_quote($id, '/');
 
-        if (preg_match_all('/#'.$escaped.'\s*\{([^{}]*)\}/', $css, $matches, PREG_SET_ORDER) === false) {
+        if (preg_match_all('/#' . $escaped . '\s*\{([^{}]*)\}/', $css, $matches, PREG_SET_ORDER) === false) {
             return false;
         }
 
@@ -266,7 +266,7 @@ final class PageSurfaceCssPublish
     {
         $escaped = preg_quote($id, '/');
 
-        if (preg_match('/html\.dark\s+#'.$escaped.'\s*\{([^{}]*)\}/', $css, $match) !== 1) {
+        if (preg_match('/html\.dark\s+#' . $escaped . '\s*\{([^{}]*)\}/', $css, $match) !== 1) {
             return false;
         }
 
@@ -301,16 +301,16 @@ final class PageSurfaceCssPublish
                 $hostDecls = self::wallpaperHostDeclarations($prepared);
 
                 if ($layerDecls !== '') {
-                    $layerBlocks[] = $darkLayerSelector.' {'.$layerDecls.'}';
+                    $layerBlocks[] = $darkLayerSelector . ' {' . $layerDecls . '}';
                 }
 
-                return $match[1].' {'.$hostDecls.'}';
+                return $match[1] . ' {' . $hostDecls . '}';
             },
             $css,
         ) ?? $css;
 
         $rewritten = preg_replace_callback(
-            '/(html\s*,\s*body[^,{]*(?:,[^,{]*)*|body[^,{]*(?:,[^,{]*'.$class.'[^,{]*)*)\{([^{}]*)\}/i',
+            '/(html\s*,\s*body[^,{]*(?:,[^,{]*)*|body[^,{]*(?:,[^,{]*' . $class . '[^,{]*)*)\{([^{}]*)\}/i',
             static function (array $match) use (&$layerBlocks, $layerSelector): string {
                 if (str_starts_with(strtolower(trim($match[1])), 'html.dark')) {
                     return $match[0];
@@ -325,10 +325,10 @@ final class PageSurfaceCssPublish
                 $hostDecls = self::wallpaperHostDeclarations($prepared);
 
                 if ($layerDecls !== '') {
-                    $layerBlocks[] = $layerSelector.' {'.$layerDecls.'}';
+                    $layerBlocks[] = $layerSelector . ' {' . $layerDecls . '}';
                 }
 
-                return $match[1].' {'.$hostDecls.'}';
+                return $match[1] . ' {' . $hostDecls . '}';
             },
             $rewritten,
         ) ?? $rewritten;
@@ -337,7 +337,7 @@ final class PageSurfaceCssPublish
             return $rewritten;
         }
 
-        return trim($rewritten."\n".implode("\n", array_unique($layerBlocks)));
+        return trim($rewritten . "\n" . implode("\n", array_unique($layerBlocks)));
     }
 
     private static function withWallpaperDefaults(string $declarations): string
@@ -373,8 +373,8 @@ final class PageSurfaceCssPublish
         ];
 
         foreach (['background-image', 'background-size', 'background-position', 'background-repeat'] as $property) {
-            if (preg_match('/'.preg_quote($property, '/').'\s*:\s*([^;]+)/i', $declarations, $match) === 1) {
-                $parts[] = $property.':'.trim($match[1]);
+            if (preg_match('/' . preg_quote($property, '/') . '\s*:\s*([^;]+)/i', $declarations, $match) === 1) {
+                $parts[] = $property . ':' . trim($match[1]);
             }
         }
 
@@ -394,6 +394,6 @@ final class PageSurfaceCssPublish
         // Clear any inherited/image paint on the host so only ::before shows the photo.
         $clear = 'background-image: none';
 
-        return $host === '' ? $clear : $host.'; '.$clear;
+        return $host === '' ? $clear : $host . '; ' . $clear;
     }
 }

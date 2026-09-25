@@ -248,7 +248,7 @@ class NavigationMenuItemTest extends TestCase
     public function test_menu_tree_resolve_drop_position_widens_nest_band(): void
     {
         $js = file_get_contents(
-            dirname(__DIR__, 2).'/resources/js/filament-menu-tree-view.js',
+            dirname(__DIR__, 2) . '/resources/js/filament-menu-tree-view.js',
         );
 
         $this->assertNotFalse($js);

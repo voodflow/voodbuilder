@@ -22,12 +22,12 @@ final class FilamentMenuTreeAssets
 
     public static function cssSourcePath(): string
     {
-        return VoodbuilderPaths::packagePath().'/resources/css/filament-menu-tree.css';
+        return VoodbuilderPaths::packagePath() . '/resources/css/filament-menu-tree.css';
     }
 
     public static function jsSourcePath(): string
     {
-        return VoodbuilderPaths::packagePath().'/resources/js/filament-menu-tree-view.js';
+        return VoodbuilderPaths::packagePath() . '/resources/js/filament-menu-tree-view.js';
     }
 
     public static function register(): void
@@ -55,12 +55,12 @@ final class FilamentMenuTreeAssets
 
     public static function cssPublicPath(): string
     {
-        return public_path('css/'.self::PACKAGE.'/'.self::STYLE_ID.'.css');
+        return public_path('css/' . self::PACKAGE . '/' . self::STYLE_ID . '.css');
     }
 
     public static function jsPublicPath(): string
     {
-        return public_path('js/'.self::PACKAGE.'/components/'.self::SCRIPT_ID.'.js');
+        return public_path('js/' . self::PACKAGE . '/components/' . self::SCRIPT_ID . '.js');
     }
 
     public static function ensurePublishedCss(): void
@@ -102,8 +102,8 @@ final class FilamentMenuTreeAssets
         self::ensurePublishedCss();
         self::ensurePublishedJs();
 
-        return '<link rel="stylesheet" href="'.e(
+        return '<link rel="stylesheet" href="' . e(
             FilamentAsset::getStyleHref(self::STYLE_ID, self::PACKAGE),
-        ).'" />';
+        ) . '" />';
     }
 }

@@ -11,7 +11,7 @@ final class EditorBlockThumbnail
 {
     public static function wrap(string $innerSvg): string
     {
-        return '<div class="voodbuilder-editor-block-thumb" aria-hidden="true">'.$innerSvg.'</div>';
+        return '<div class="voodbuilder-editor-block-thumb" aria-hidden="true">' . $innerSvg . '</div>';
     }
 
     public static function forBlockId(string $blockId): string

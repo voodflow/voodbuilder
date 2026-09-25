@@ -17,12 +17,12 @@ abstract class AbstractSiteFooterVariantBlock implements EditorConfigurableBlock
 
     public static function getId(): string
     {
-        return 'site_footer_'.static::variant();
+        return 'site_footer_' . static::variant();
     }
 
     public static function getLabel(): string
     {
-        return __('voodbuilder::pro.editor.blocks.site_footer_'.static::variant());
+        return __('voodbuilder::pro.editor.blocks.site_footer_' . static::variant());
     }
 
     public static function defaultConfig(): array
@@ -60,7 +60,7 @@ abstract class AbstractSiteFooterVariantBlock implements EditorConfigurableBlock
             $config,
         ));
 
-        $inner = view('voodbuilder::editor.blocks.footers.'.static::variant(), [
+        $inner = view('voodbuilder::editor.blocks.footers.' . static::variant(), [
             'config' => $merged,
             'preview' => $preview,
         ])->render();

@@ -30,7 +30,7 @@ final class RemotePackageVersionClient
         }
 
         $hours = max(1, (int) config('voodbuilder.portal.version_cache_ttl_hours', 24));
-        $cacheKey = self::CACHE_PREFIX.$channel.'.'.str_replace('/', '.', $identifier);
+        $cacheKey = self::CACHE_PREFIX . $channel . '.' . str_replace('/', '.', $identifier);
 
         $cached = Cache::get($cacheKey);
 
@@ -52,7 +52,7 @@ final class RemotePackageVersionClient
 
     public function forget(string $channel, string $identifier): void
     {
-        Cache::forget(self::CACHE_PREFIX.strtolower(trim($channel)).'.'.str_replace('/', '.', trim($identifier)));
+        Cache::forget(self::CACHE_PREFIX . strtolower(trim($channel)) . '.' . str_replace('/', '.', trim($identifier)));
     }
 
     public function forgetAllKnown(): void
@@ -108,7 +108,7 @@ final class RemotePackageVersionClient
         }
 
         $timeout = (int) config('voodbuilder.portal.http_timeout', 10);
-        $url = 'https://repo.packagist.org/p2/'.$composerName.'.json';
+        $url = 'https://repo.packagist.org/p2/' . $composerName . '.json';
 
         try {
             $response = Http::timeout($timeout)

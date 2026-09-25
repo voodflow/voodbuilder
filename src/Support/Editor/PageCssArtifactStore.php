@@ -130,7 +130,7 @@ final class PageCssArtifactStore
         $hash = $meta['hash'] ?? '';
 
         if (is_string($hash) && $hash !== '') {
-            $url .= (str_contains($url, '?') ? '&' : '?').'v='.substr($hash, 0, 12);
+            $url .= (str_contains($url, '?') ? '&' : '?') . 'v=' . substr($hash, 0, 12);
         }
 
         return $url;
@@ -204,14 +204,14 @@ final class PageCssArtifactStore
 
     public static function liveRelativePath(int $pageId): string
     {
-        return self::directory().'/page-'.$pageId.'.css';
+        return self::directory() . '/page-' . $pageId . '.css';
     }
 
     public static function revisionRelativePath(int $pageId, string $suffix): string
     {
         $safe = preg_replace('/[^a-zA-Z0-9_-]+/', '-', $suffix) ?: 'rev';
 
-        return self::directory().'/page-'.$pageId.'-r'.$safe.'.css';
+        return self::directory() . '/page-' . $pageId . '-r' . $safe . '.css';
     }
 
     private static function directory(): string

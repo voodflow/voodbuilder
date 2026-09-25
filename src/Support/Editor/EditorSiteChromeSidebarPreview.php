@@ -47,6 +47,6 @@ final class EditorSiteChromeSidebarPreview
             $compact,
         );
 
-        return '<div class="voodbuilder-editor-block-preview-compact">'.$compact.'</div>';
+        return '<div class="voodbuilder-editor-block-preview-compact">' . $compact . '</div>';
     }
 }

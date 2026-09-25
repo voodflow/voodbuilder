@@ -90,7 +90,7 @@ abstract class AbstractModelIntegrationBindingSource implements EditorBindingSou
                 }
 
                 $fields[] = new BindingField(
-                    id: $alias.'.'.$fieldId,
+                    id: $alias . '.' . $fieldId,
                     label: $fieldLabel,
                     type: ModelIntegrationFieldTypeGuesser::guess($fieldId),
                     group: $groupLabel,
@@ -103,7 +103,7 @@ abstract class AbstractModelIntegrationBindingSource implements EditorBindingSou
                 }
 
                 $nestedGroup = __('voodbuilder::model_integrations.bindings.relation_group', [
-                    'name' => Str::headline($alias.' › '.$nestedRelation),
+                    'name' => Str::headline($alias . ' › ' . $nestedRelation),
                 ]);
 
                 foreach ($nestedFields as $nestedField) {
@@ -114,7 +114,7 @@ abstract class AbstractModelIntegrationBindingSource implements EditorBindingSou
                     }
 
                     $fields[] = new BindingField(
-                        id: $alias.'.'.$nestedRelation.'.'.$nestedFieldId,
+                        id: $alias . '.' . $nestedRelation . '.' . $nestedFieldId,
                         label: str_replace('_', ' ', ucfirst($nestedFieldId)),
                         type: ModelIntegrationFieldTypeGuesser::guess($nestedFieldId),
                         group: $nestedGroup,
@@ -143,7 +143,7 @@ abstract class AbstractModelIntegrationBindingSource implements EditorBindingSou
 
             foreach ($relation['expand'] ?? [] as $nested) {
                 if (is_string($nested) && $nested !== '') {
-                    $loads[] = $relationName.'.'.$nested;
+                    $loads[] = $relationName . '.' . $nested;
                 }
             }
         }
@@ -177,7 +177,7 @@ abstract class AbstractModelIntegrationBindingSource implements EditorBindingSou
         }
 
         if (! str_contains($fieldId, '.')) {
-            $urlAccessor = Str::camel($fieldId).'Url';
+            $urlAccessor = Str::camel($fieldId) . 'Url';
 
             if (method_exists($record, $urlAccessor)) {
                 $url = $record->{$urlAccessor}();

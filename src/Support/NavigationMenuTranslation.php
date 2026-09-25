@@ -92,7 +92,7 @@ final class NavigationMenuTranslation
         $clone = self::replicateMenu($source);
         $clone->fill([
             'slug' => $newSlug,
-            'name' => $newName ?? $source->name.' (copy)',
+            'name' => $newName ?? $source->name . ' (copy)',
             'translation_group_id' => (string) Str::uuid(),
         ]);
         $clone->save();
@@ -171,12 +171,12 @@ final class NavigationMenuTranslation
         $link = (string) $item->link;
 
         if (preg_match('/^vevents\.([^.]+)\.(.+)$/', $link, $matches) === 1) {
-            $item->link = 'vevents.'.$targetLocale.'.'.$matches[2];
+            $item->link = 'vevents.' . $targetLocale . '.' . $matches[2];
 
             if (is_string($item->route_match) && preg_match('/^vevents\.([^.]+)\./', $item->route_match) === 1) {
                 $item->route_match = preg_replace(
                     '/^vevents\.[^.]+\./',
-                    'vevents.'.$targetLocale.'.',
+                    'vevents.' . $targetLocale . '.',
                     $item->route_match,
                 );
             }

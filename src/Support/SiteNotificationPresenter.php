@@ -124,7 +124,7 @@ final class SiteNotificationPresenter
         return [
             'title' => $title,
             'body' => $context
-                ? $message.' '.__('voodbuilder::notifications.on_tutorial', ['title' => $context])
+                ? $message . ' ' . __('voodbuilder::notifications.on_tutorial', ['title' => $context])
                 : $message,
             'url' => self::commentUrl($data),
             'icon' => $icon,
@@ -153,10 +153,10 @@ final class SiteNotificationPresenter
         }
 
         if (filled($commentId)) {
-            return $baseUrl.'#comment-'.$commentId;
+            return $baseUrl . '#comment-' . $commentId;
         }
 
-        return $baseUrl.'#tutorial-comments';
+        return $baseUrl . '#tutorial-comments';
     }
 
     protected static function commentableUrl(Model $commentable): ?string

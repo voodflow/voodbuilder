@@ -43,9 +43,9 @@ final class ModelIntegrationBindingRegistrar
     {
         $alias = $integration->getAlias();
 
-        $this->bindings->forget($alias.'.latest');
-        $this->bindings->forget($alias.'.item');
-        $this->bindings->forget($alias.'.auth');
+        $this->bindings->forget($alias . '.latest');
+        $this->bindings->forget($alias . '.item');
+        $this->bindings->forget($alias . '.auth');
         $this->integrations->forget($integration);
     }
 

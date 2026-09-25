@@ -57,7 +57,7 @@ final class EditorChromeLayoutEditorGate
             'chromeLayoutId' => $layout->getKey(),
             'chromeLayoutName' => $layout->name,
             'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.chrome-layouts.content.update', $layout)
-                ?? '/voodbuilder/editor/chrome-layouts/'.$layout->getKey().'/content',
+                ?? '/voodbuilder/editor/chrome-layouts/' . $layout->getKey() . '/content',
             'csrf' => csrf_token(),
             'exitUrl' => route('voodbuilder.chrome-layouts.editor', $layout),
             'viewPageUrl' => route('voodbuilder.chrome-layouts.editor', ['chromeLayout' => $layout, 'edit' => 1]),
@@ -76,7 +76,7 @@ final class EditorChromeLayoutEditorGate
                 : null,
             'imageEditor' => (bool) config('voodbuilder.editor.image_editor', true),
             'initial' => self::initialPayload($layout),
-            'blocksUrl' => (self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '/voodbuilder/editor/blocks').'?chrome=1',
+            'blocksUrl' => (self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '/voodbuilder/editor/blocks') . '?chrome=1',
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: true),
             'bindingsUrl' => self::dynamicDataEnabled()
                 ? self::optionalEditorRoute('voodbuilder.editor.bindings')
@@ -107,8 +107,8 @@ final class EditorChromeLayoutEditorGate
                 ...$readingTypography['stylesheetUrls'],
             ]))),
             'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)
-                ."\n".$appTypography['canvasCss']
-                .self::readingTypographyCanvasCss($readingTypography),
+                . "\n" . $appTypography['canvasCss']
+                . self::readingTypographyCanvasCss($readingTypography),
             'subTheme' => $subTheme,
             'canvasPrefersDark' => VoodbuilderTheme::serverInitialDark(),
             'landingCanvas' => true,

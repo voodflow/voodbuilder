@@ -166,7 +166,7 @@ final class ChromeLayoutContentWidth
 
         // Allow rem/px/em/% or unitless numbers (treated as rem).
         if (preg_match('/^\d+(\.\d+)?$/', $value) === 1) {
-            return $value.'rem';
+            return $value . 'rem';
         }
 
         if (preg_match('/^\d+(\.\d+)?(rem|px|em|%)$/', $value) === 1) {

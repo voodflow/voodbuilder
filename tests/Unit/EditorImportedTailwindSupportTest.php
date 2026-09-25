@@ -13,7 +13,7 @@ class EditorImportedTailwindSupportTest extends TestCase
     {
         $url = 'https://images.unsplash.com/photo-1615615228002-890bb61cac6e?q=80&w=1920';
         $bgClass = "bg-[url('{$url}')]";
-        $html = '<div class="flex '.$bgClass.' bg-cover bg-center bg-no-repeat"></div>';
+        $html = '<div class="flex ' . $bgClass . ' bg-cover bg-center bg-no-repeat"></div>';
 
         $normalized = EditorImportedTailwindSupport::inlineBackgroundImageClasses($html);
 
@@ -30,7 +30,7 @@ class EditorImportedTailwindSupportTest extends TestCase
     {
         $url = 'https://images.unsplash.com/photo-1629666451094-8908989cae90';
         $bgClass = "bg-[url('{$url}')]";
-        $html = '<section class="'.$bgClass.' bg-cover"></section>';
+        $html = '<section class="' . $bgClass . ' bg-cover"></section>';
 
         $prepared = EditorImportedTailwindSupport::prepareHtml($html);
 
@@ -75,7 +75,7 @@ class EditorImportedTailwindSupportTest extends TestCase
     public function test_strip_spurious_svg_baked_paint_restores_tailwind_current_color_icons(): void
     {
         $html = '<svg class="text-vp-brand-1" fill="currentColor" style="fill: #000000;stroke: #000000;color: #000000;" viewBox="0 0 20 20">'
-            .'<path fill="#000000" d="M16.707 5.293"/></svg>';
+            . '<path fill="#000000" d="M16.707 5.293"/></svg>';
 
         $restored = EditorImportedTailwindSupport::stripSpuriousSvgBakedPaint($html);
 
@@ -87,7 +87,7 @@ class EditorImportedTailwindSupportTest extends TestCase
     public function test_prepare_html_does_not_bake_black_paint_over_tailwind_brand_icons(): void
     {
         $html = '<svg class="text-vp-brand-1" fill="currentColor" style="color: #000000;" viewBox="0 0 20 20">'
-            .'<path fill="currentColor" d="M16.707 5.293"/></svg>';
+            . '<path fill="currentColor" d="M16.707 5.293"/></svg>';
 
         $prepared = EditorImportedTailwindSupport::prepareHtml($html);
 
@@ -98,7 +98,7 @@ class EditorImportedTailwindSupportTest extends TestCase
     public function test_prepare_html_preserves_stroke_only_section_icons(): void
     {
         $html = '<span class="text-gray-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" style="fill: #000000; color: #000000; stroke: #000000;">'
-            .'<path d="M5 12h14" fill="#000000" stroke="#000000"/></svg>1.2K</span>';
+            . '<path d="M5 12h14" fill="#000000" stroke="#000000"/></svg>1.2K</span>';
 
         $prepared = EditorImportedTailwindSupport::prepareHtml($html);
 
@@ -161,7 +161,7 @@ HTML;
     public function test_bake_svg_paint_keeps_stroke_only_when_paint_is_brand_color(): void
     {
         $html = '<svg class="text-violet-400 opacity-20" fill="none" stroke="currentColor" style="color: #a78bfa">'
-            .'<circle cx="50" cy="50" r="40"/><path d="M10 10h80" stroke="currentColor"/></svg>';
+            . '<circle cx="50" cy="50" r="40"/><path d="M10 10h80" stroke="currentColor"/></svg>';
 
         $baked = EditorImportedTailwindSupport::bakeSvgPaintInHtml($html);
 
@@ -198,10 +198,10 @@ HTML;
     {
         // Grapes can drop fill="none" from the <svg> while leaving stroke + empty shapes.
         $html = '<svg stroke="currentColor" style="color: #818cf8">'
-            .'<circle cx="100" cy="100" r="75"></circle>'
-            .'<path d="M 100 25 L 165 137.5 L 35 137.5 Z"></path>'
-            .'<circle cx="100" cy="100" r="4" fill="currentColor"></circle>'
-            .'</svg>';
+            . '<circle cx="100" cy="100" r="75"></circle>'
+            . '<path d="M 100 25 L 165 137.5 L 35 137.5 Z"></path>'
+            . '<circle cx="100" cy="100" r="4" fill="currentColor"></circle>'
+            . '</svg>';
 
         $baked = EditorImportedTailwindSupport::bakeSvgPaintInHtml($html);
 

@@ -19,11 +19,11 @@ class EditorBindingStorageNormalizerTest extends TestCase
         $registry->register(new StorageFakeBindingSource);
 
         $html = '<section>'
-            .'<h1 data-voodbuilder-bind="demo.latest.title">Hello world</h1>'
-            .'<a href="https://example.test/tutorial" data-voodbuilder-bind="demo.latest.url">Read</a>'
-            .'<button data-voodbuilder-bind="demo.latest.url">Button</button>'
-            .'<img src="https://cdn.test/hero.jpg" data-voodbuilder-bind="demo.latest.image" alt="Hero"/>'
-            .'</section>';
+            . '<h1 data-voodbuilder-bind="demo.latest.title">Hello world</h1>'
+            . '<a href="https://example.test/tutorial" data-voodbuilder-bind="demo.latest.url">Read</a>'
+            . '<button data-voodbuilder-bind="demo.latest.url">Button</button>'
+            . '<img src="https://cdn.test/hero.jpg" data-voodbuilder-bind="demo.latest.image" alt="Hero"/>'
+            . '</section>';
 
         $normalized = (new EditorBindingStorageNormalizer($registry))->normalizeHtml($html);
 
@@ -56,8 +56,8 @@ class EditorBindingStorageNormalizerTest extends TestCase
         $registry->register(new StorageFakeBindingSource);
 
         $html = '<a href="https://example.test/tutorial" role="button" data-voodbuilder-cta="true"'
-            .' data-voodbuilder-bind-href="demo.latest.url"'
-            .' data-voodbuilder-cta-label="Vai al profilo">Vai al profilo</a>';
+            . ' data-voodbuilder-bind-href="demo.latest.url"'
+            . ' data-voodbuilder-cta-label="Vai al profilo">Vai al profilo</a>';
 
         $normalized = (new EditorBindingStorageNormalizer($registry))->normalizeHtml($html);
 

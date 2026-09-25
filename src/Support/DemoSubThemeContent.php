@@ -60,12 +60,12 @@ final class DemoSubThemeContent
             $prefix = "voodbuilder::demo.blog.posts.{$key}";
 
             return [
-                'title' => __($prefix.'.title'),
-                'excerpt' => __($prefix.'.excerpt'),
+                'title' => __($prefix . '.title'),
+                'excerpt' => __($prefix . '.excerpt'),
                 'content' => static::articleDocument([
-                    ['h1', __($prefix.'.title')],
-                    ['p', __($prefix.'.p1')],
-                    ['p', __($prefix.'.p2')],
+                    ['h1', __($prefix . '.title')],
+                    ['p', __($prefix . '.p1')],
+                    ['p', __($prefix . '.p2')],
                 ]),
             ];
         });
@@ -78,12 +78,12 @@ final class DemoSubThemeContent
             $prefix = "voodbuilder::demo.news.articles.{$key}";
 
             return [
-                'title' => __($prefix.'.title'),
-                'excerpt' => __($prefix.'.excerpt'),
+                'title' => __($prefix . '.title'),
+                'excerpt' => __($prefix . '.excerpt'),
                 'content' => static::articleDocument([
-                    ['h1', __($prefix.'.title')],
-                    ['p', __($prefix.'.p1')],
-                    ['p', __($prefix.'.p2')],
+                    ['h1', __($prefix . '.title')],
+                    ['p', __($prefix . '.p1')],
+                    ['p', __($prefix . '.p2')],
                 ]),
             ];
         });

@@ -56,7 +56,7 @@ final class EditorDynamicBlockRenderer
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 
@@ -220,7 +220,7 @@ final class EditorDynamicBlockRenderer
             return true;
         }
 
-        $class = ' '.trim((string) $element->getAttribute('class')).' ';
+        $class = ' ' . trim((string) $element->getAttribute('class')) . ' ';
 
         return str_contains($class, ' vb-reading-progress ');
     }
@@ -243,7 +243,7 @@ final class EditorDynamicBlockRenderer
         $class = trim((string) $node->getAttribute('class'));
 
         if ($class === '' || ! str_contains($class, 'voodbuilder-editor-dynamic')) {
-            $node->setAttribute('class', trim($class.' voodbuilder-editor-dynamic'));
+            $node->setAttribute('class', trim($class . ' voodbuilder-editor-dynamic'));
         }
 
         if ($innerHtml === '') {
@@ -497,8 +497,8 @@ final class EditorDynamicBlockRenderer
 
         $xpath = new \DOMXPath($document);
         $query = './/*[contains(concat(" ", normalize-space(@class), " "), " voodbuilder-editor-container ")'
-            .' or @data-voodbuilder-role="content"'
-            .' or contains(concat(" ", normalize-space(@class), " "), " container ")]';
+            . ' or @data-voodbuilder-role="content"'
+            . ' or contains(concat(" ", normalize-space(@class), " "), " container ")]';
 
         foreach ($xpath->query($query, $root) as $element) {
             if (! $element instanceof DOMElement) {
@@ -561,7 +561,7 @@ final class EditorDynamicBlockRenderer
 
                 if (! in_array($propertyLower, $keys, true)) {
                     if (! array_key_exists($propertyLower, $parsed) && $style === $fresh) {
-                        $parsed[$propertyLower] = $property.': '.$value;
+                        $parsed[$propertyLower] = $property . ': ' . $value;
                     }
 
                     continue;
@@ -569,9 +569,9 @@ final class EditorDynamicBlockRenderer
 
                 // Author measure wins over fresh defaults.
                 if ($style === $author) {
-                    $parsed[$propertyLower] = $property.': '.$value;
+                    $parsed[$propertyLower] = $property . ': ' . $value;
                 } elseif (! array_key_exists($propertyLower, $parsed)) {
-                    $parsed[$propertyLower] = $property.': '.$value;
+                    $parsed[$propertyLower] = $property . ': ' . $value;
                 }
             }
         }
@@ -703,11 +703,11 @@ final class EditorDynamicBlockRenderer
     protected function chromeMenuSlotAuthorKey(DOMElement $element, int $desktopNavIndex): string
     {
         if ($element->hasAttribute('data-voodbuilder-menu')) {
-            return 'menu:'.trim((string) $element->getAttribute('data-voodbuilder-menu'));
+            return 'menu:' . trim((string) $element->getAttribute('data-voodbuilder-menu'));
         }
 
         if ($element->hasAttribute('data-voodbuilder-desktop-nav')) {
-            return 'desktop-nav:'.$desktopNavIndex;
+            return 'desktop-nav:' . $desktopNavIndex;
         }
 
         return 'mobile-links';
@@ -727,7 +727,7 @@ final class EditorDynamicBlockRenderer
 
         $xpath = new \DOMXPath($document);
         $query = './/*[@data-voodbuilder-desktop-nav or @data-voodbuilder-menu'
-            .' or contains(concat(" ", normalize-space(@class), " "), " voodbuilder-mobile-nav__links ")]';
+            . ' or contains(concat(" ", normalize-space(@class), " "), " voodbuilder-mobile-nav__links ")]';
 
         foreach ($xpath->query($query, $root) as $element) {
             if ($element instanceof DOMElement) {
@@ -840,7 +840,7 @@ final class EditorDynamicBlockRenderer
             $style = trim((string) $element->getAttribute('style'));
             $style = preg_replace('/(^|;)\s*display\s*:\s*[^;]+/i', '', $style) ?? $style;
             $style = trim($style, " \t\n\r\0\x0B;");
-            $element->setAttribute('style', $style === '' ? 'display:none' : $style.';display:none');
+            $element->setAttribute('style', $style === '' ? 'display:none' : $style . ';display:none');
         }
 
         return $this->extractBodyHtml($document) ?? $html;
@@ -915,7 +915,7 @@ final class EditorDynamicBlockRenderer
                 }
 
                 // Later pass (author) overwrites earlier (fresh) for the same property.
-                $merged[$key] = $property.': '.$value;
+                $merged[$key] = $property . ': ' . $value;
             }
         }
 

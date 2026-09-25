@@ -15,7 +15,7 @@ final class SiteFooterColumnPlacements
 
     public static function columnSlug(int $index): string
     {
-        return 'footer_col_'.$index;
+        return 'footer_col_' . $index;
     }
 
     /** @return list<string> */

@@ -74,7 +74,7 @@ final class GlobalTextTags
         $replacements = [];
 
         foreach (self::values($overrides) as $key => $value) {
-            $replacements['{'.$key.'}'] = $value;
+            $replacements['{' . $key . '}'] = $value;
         }
 
         return strtr($text, $replacements);

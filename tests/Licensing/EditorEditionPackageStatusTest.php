@@ -156,7 +156,7 @@ final class EditorEditionPackageStatusTest extends TestCase
         $client->forget('packagist', 'voodflow/voodbuilder');
 
         Cache::put(
-            RemotePackageVersionClient::CACHE_PREFIX.'packagist.voodflow.voodbuilder',
+            RemotePackageVersionClient::CACHE_PREFIX . 'packagist.voodflow.voodbuilder',
             '0.1.87',
             now()->addDay(),
         );

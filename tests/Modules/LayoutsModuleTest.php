@@ -45,7 +45,7 @@ class LayoutsModuleTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/voodbuilder/chrome-layouts/'.$layout->getKey().'/editor')
+            ->get('/voodbuilder/chrome-layouts/' . $layout->getKey() . '/editor')
             ->assertNotFound();
     }
 

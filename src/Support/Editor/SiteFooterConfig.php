@@ -60,7 +60,7 @@ final class SiteFooterConfig
         self::normalizeFooterColumnFlags($normalized, $config);
         $normalized['columns'] = max(1, count(array_filter(
             [1, 2, 3, 4],
-            static fn (int $index): bool => (bool) ($normalized['show_footer_col_'.$index] ?? false),
+            static fn (int $index): bool => (bool) ($normalized['show_footer_col_' . $index] ?? false),
         )));
 
         return $normalized;
@@ -201,7 +201,7 @@ final class SiteFooterConfig
 
         $normalized = self::normalize($config);
 
-        return (bool) ($normalized['show_footer_col_'.$index] ?? true);
+        return (bool) ($normalized['show_footer_col_' . $index] ?? true);
     }
 
     /**
@@ -228,7 +228,7 @@ final class SiteFooterConfig
         $indexes = [];
 
         for ($index = 1; $index <= 4; $index++) {
-            if ($normalized['show_footer_col_'.$index] ?? false) {
+            if ($normalized['show_footer_col_' . $index] ?? false) {
                 $indexes[] = $index;
             }
         }
@@ -253,7 +253,7 @@ final class SiteFooterConfig
         $hasPerColumnFlags = false;
 
         for ($index = 1; $index <= 4; $index++) {
-            if (array_key_exists('show_footer_col_'.$index, $config)) {
+            if (array_key_exists('show_footer_col_' . $index, $config)) {
                 $hasPerColumnFlags = true;
 
                 break;
@@ -262,7 +262,7 @@ final class SiteFooterConfig
 
         if ($hasPerColumnFlags) {
             for ($index = 1; $index <= 4; $index++) {
-                $key = 'show_footer_col_'.$index;
+                $key = 'show_footer_col_' . $index;
                 $normalized[$key] = array_key_exists($key, $config)
                     ? (bool) $config[$key]
                     : (bool) ($normalized[$key] ?? true);
@@ -274,7 +274,7 @@ final class SiteFooterConfig
         $legacyCount = max(1, min(4, (int) ($config['columns'] ?? $normalized['columns'] ?? 4)));
 
         for ($index = 1; $index <= 4; $index++) {
-            $normalized['show_footer_col_'.$index] = $index <= $legacyCount;
+            $normalized['show_footer_col_' . $index] = $index <= $legacyCount;
         }
     }
 }

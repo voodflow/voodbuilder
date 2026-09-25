@@ -54,13 +54,13 @@ final class VoodbuilderSectionEditorBlocks
 
     public static function catalogPath(): string
     {
-        return VoodbuilderPaths::packagePath().'/resources/editor/section-blocks.json';
+        return VoodbuilderPaths::packagePath() . '/resources/editor/section-blocks.json';
     }
 
     public static function utilitiesCssEntry(): string
     {
         return VoodbuilderPaths::relativeToBasePath(
-            VoodbuilderPaths::packagePath().'/resources/css/editor/section-utilities.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/editor/section-utilities.css',
         );
     }
 
@@ -132,9 +132,9 @@ final class VoodbuilderSectionEditorBlocks
         $html = EditorSmartButtonAnnotator::annotate($html);
 
         if ($blockId !== '' && preg_match('/<section\b/i', $html) === 1) {
-            $attribute = ' data-voodbuilder-section-block="'.htmlspecialchars($blockId, ENT_QUOTES, 'UTF-8').'"';
+            $attribute = ' data-voodbuilder-section-block="' . htmlspecialchars($blockId, ENT_QUOTES, 'UTF-8') . '"';
 
-            $html = (string) preg_replace('/<section\b/i', '<section'.$attribute, $html, 1);
+            $html = (string) preg_replace('/<section\b/i', '<section' . $attribute, $html, 1);
         }
 
         if ($blockId !== '') {

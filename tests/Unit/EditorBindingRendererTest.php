@@ -20,10 +20,10 @@ class EditorBindingRendererTest extends TestCase
         $registry->register(new FakeLatestBindingSource);
 
         $html = '<section>'
-            .'<h1 data-voodbuilder-bind="demo.latest.title">Placeholder</h1>'
-            .'<a href="#" data-voodbuilder-bind="demo.latest.url">Read</a>'
-            .'<button type="button" data-voodbuilder-bind="demo.latest.url">Go</button>'
-            .'</section>';
+            . '<h1 data-voodbuilder-bind="demo.latest.title">Placeholder</h1>'
+            . '<a href="#" data-voodbuilder-bind="demo.latest.url">Read</a>'
+            . '<button type="button" data-voodbuilder-bind="demo.latest.url">Go</button>'
+            . '</section>';
 
         $rendered = (new EditorBindingRenderer($registry))->render($html);
 
@@ -39,8 +39,8 @@ class EditorBindingRendererTest extends TestCase
         $registry->register(new FakeLatestBindingSource);
 
         $html = '<div class="vb-rich-text" data-voodbuilder-rich-text>'
-            .'<p>By <span class="voodbuilder-editor-bound" contenteditable="false" data-voodbuilder-bind="demo.latest.title">[Latest item: Title]</span>.</p>'
-            .'</div>';
+            . '<p>By <span class="voodbuilder-editor-bound" contenteditable="false" data-voodbuilder-bind="demo.latest.title">[Latest item: Title]</span>.</p>'
+            . '</div>';
 
         $rendered = (new EditorBindingRenderer($registry))->render($html);
 
@@ -95,10 +95,10 @@ class EditorBindingRendererTest extends TestCase
         $registry->register(new FakeLatestBindingSource);
 
         $html = '<section data-voodbuilder-block="vb-bg-image" data-voodbuilder-bind="demo.latest.image" data-vb-bg-src="old.jpg">'
-            .'<div data-voodbuilder-role="media">'
-            .'<img class="voodbuilder-hero-media__img" src="old.jpg" alt=""/>'
-            .'</div>'
-            .'</section>';
+            . '<div data-voodbuilder-role="media">'
+            . '<img class="voodbuilder-hero-media__img" src="old.jpg" alt=""/>'
+            . '</div>'
+            . '</section>';
 
         $rendered = (new EditorBindingRenderer($registry))->render($html);
 
@@ -125,9 +125,9 @@ class EditorBindingRendererTest extends TestCase
         $registry->register(new FakeLatestBindingSource);
 
         $html = '<a href="#" role="button" data-voodbuilder-cta="true"'
-            .' data-voodbuilder-bind="demo.latest.title"'
-            .' data-voodbuilder-bind-href="demo.latest.url"'
-            .' data-voodbuilder-cta-label="[Latest: Title]">[Latest: Title]</a>';
+            . ' data-voodbuilder-bind="demo.latest.title"'
+            . ' data-voodbuilder-bind-href="demo.latest.url"'
+            . ' data-voodbuilder-cta-label="[Latest: Title]">[Latest: Title]</a>';
 
         $rendered = (new EditorBindingRenderer($registry))->render($html);
 
@@ -142,10 +142,10 @@ class EditorBindingRendererTest extends TestCase
         $registry->register(new FakeLatestBindingSource);
 
         $html = '<a href="#" data-voodbuilder-bind="demo.latest.url" data-voodbuilder-cta-label="FilamentPHPTesting Filament Resources">'
-            .'<img src="/thumb.jpg" alt="">'
-            .'<div><span>FilamentPHP</span><h3>Testing Filament Resources</h3></div>'
-            .'FilamentPHPTesting Filament Resources'
-            .'</a>';
+            . '<img src="/thumb.jpg" alt="">'
+            . '<div><span>FilamentPHP</span><h3>Testing Filament Resources</h3></div>'
+            . 'FilamentPHPTesting Filament Resources'
+            . '</a>';
 
         $rendered = (new EditorBindingRenderer($registry))->render($html);
 
@@ -161,14 +161,14 @@ class EditorBindingRendererTest extends TestCase
         $registry->register(new FakeLatestBindingSource);
 
         $html = '<span class="vb-animated-counter"'
-            .' data-voodbuilder-animated-counter="1"'
-            .' data-vb-count-from="0"'
-            .' data-vb-count-to="2.7"'
-            .' data-vb-count-decimals="1"'
-            .' data-vb-count-suffix="K"'
-            .' data-vb-count-label="2.7K"'
-            .' data-vb-count-source="static"'
-            .' data-voodbuilder-bind="demo.latest.read_count">2.7K</span>';
+            . ' data-voodbuilder-animated-counter="1"'
+            . ' data-vb-count-from="0"'
+            . ' data-vb-count-to="2.7"'
+            . ' data-vb-count-decimals="1"'
+            . ' data-vb-count-suffix="K"'
+            . ' data-vb-count-label="2.7K"'
+            . ' data-vb-count-source="static"'
+            . ' data-voodbuilder-bind="demo.latest.read_count">2.7K</span>';
 
         $rendered = (new EditorBindingRenderer($registry))->render($html);
 
@@ -235,7 +235,7 @@ class EditorBindingRendererTest extends TestCase
         $registry->register(new FakeLatestBindingSource);
 
         $html = '<p>Hi <span class="vb-rich-text-dynamic" data-voodbuilder-bind="demo.latest.subtitle"'
-            .' data-voodbuilder-hide-when-empty="1">[Latest item: Subtitle]</span> there</p>';
+            . ' data-voodbuilder-hide-when-empty="1">[Latest item: Subtitle]</span> there</p>';
 
         $rendered = (new EditorBindingRenderer($registry))->renderForEditor($html);
 

@@ -129,7 +129,7 @@ final class EditorComponentPageHtml
         $document = self::loadDocument($pageHtml);
         $xpath = new DOMXPath($document);
         $escapedId = self::escapeXPathLiteral($componentId);
-        $nodes = $xpath->query('//*[@data-voodbuilder-component='.$escapedId.']');
+        $nodes = $xpath->query('//*[@data-voodbuilder-component=' . $escapedId . ']');
 
         if ($nodes === false) {
             return null;
@@ -169,7 +169,7 @@ final class EditorComponentPageHtml
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 
@@ -182,15 +182,15 @@ final class EditorComponentPageHtml
     protected static function escapeXPathLiteral(string $value): string
     {
         if (! str_contains($value, '"')) {
-            return '"'.$value.'"';
+            return '"' . $value . '"';
         }
 
         if (! str_contains($value, "'")) {
-            return "'".$value."'";
+            return "'" . $value . "'";
         }
 
         $parts = explode('"', $value);
 
-        return 'concat("'.implode('", \'"\', "', $parts).'")';
+        return 'concat("' . implode('", \'"\', "', $parts) . '")';
     }
 }

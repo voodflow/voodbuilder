@@ -85,7 +85,7 @@ final class SyncThemeStylesheetImports
             return false;
         }
 
-        File::put($bundlePath, rtrim(implode("\n", $kept))."\n");
+        File::put($bundlePath, rtrim(implode("\n", $kept)) . "\n");
 
         return true;
     }
@@ -131,7 +131,7 @@ final class SyncThemeStylesheetImports
 
     private static function resolveImportAbsolute(string $bundlePath, string $importPath): ?string
     {
-        $candidate = dirname($bundlePath).'/'.str_replace('\\', '/', $importPath);
+        $candidate = dirname($bundlePath) . '/' . str_replace('\\', '/', $importPath);
         $resolved = realpath($candidate);
 
         if ($resolved === false || ! is_file($resolved)) {

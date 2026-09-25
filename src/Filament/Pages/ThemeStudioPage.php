@@ -32,7 +32,7 @@ class ThemeStudioPage extends Page
 {
     use CanUseDatabaseTransactions;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-paint-brush';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-paint-brush';
 
     protected static ?int $navigationSort = 3;
 
@@ -229,17 +229,17 @@ class ThemeStudioPage extends Page
             ->livewireSubmitHandler('save');
     }
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string | Htmlable
     {
         return __('voodbuilder::admin.navigation.theme_studio');
     }
 
-    public function getHeading(): string|Htmlable
+    public function getHeading(): string | Htmlable
     {
         return __('voodbuilder::admin.navigation.theme_studio');
     }
 
-    public function getSubheading(): string|Htmlable|null
+    public function getSubheading(): string | Htmlable | null
     {
         return __('voodbuilder::settings.theme_studio_subheading');
     }

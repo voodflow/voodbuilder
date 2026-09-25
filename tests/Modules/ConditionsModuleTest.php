@@ -30,7 +30,7 @@ class ConditionsModuleTest extends TestCase
     public function test_disabled_conditions_keep_all_blocks_visible(): void
     {
         $fixture = json_decode(
-            (string) file_get_contents(dirname(__DIR__).'/Fixtures/0.0.11/sample-page.json'),
+            (string) file_get_contents(dirname(__DIR__) . '/Fixtures/0.0.11/sample-page.json'),
             true,
             flags: JSON_THROW_ON_ERROR,
         );

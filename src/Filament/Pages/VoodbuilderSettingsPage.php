@@ -38,7 +38,7 @@ class VoodbuilderSettingsPage extends Page
 {
     use CanUseDatabaseTransactions;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
     protected static ?int $navigationSort = 5;
 
@@ -141,7 +141,7 @@ class VoodbuilderSettingsPage extends Page
                                             FileUpload::make('favicon')
                                                 ->label(__('voodbuilder::settings.favicon_light'))
                                                 ->disk($uploadDisk)
-                                                ->directory($uploadDirectory.'/favicons')
+                                                ->directory($uploadDirectory . '/favicons')
                                                 ->visibility('public')
                                                 ->acceptedFileTypes($faviconTypes)
                                                 ->maxSize(512)
@@ -151,7 +151,7 @@ class VoodbuilderSettingsPage extends Page
                                             FileUpload::make('favicon_dark')
                                                 ->label(__('voodbuilder::settings.favicon_dark'))
                                                 ->disk($uploadDisk)
-                                                ->directory($uploadDirectory.'/favicons')
+                                                ->directory($uploadDirectory . '/favicons')
                                                 ->visibility('public')
                                                 ->acceptedFileTypes($faviconTypes)
                                                 ->maxSize(512)
@@ -297,7 +297,7 @@ class VoodbuilderSettingsPage extends Page
                                         FileUpload::make('seo_default_image')
                                             ->label(__('Default social sharing image'))
                                             ->disk($uploadDisk)
-                                            ->directory($uploadDirectory.'/social')
+                                            ->directory($uploadDirectory . '/social')
                                             ->visibility('public')
                                             ->acceptedFileTypes($imageTypes)
                                             ->maxSize((int) config('voodbuilder.uploads.social_max_size', 4096))
@@ -342,7 +342,7 @@ class VoodbuilderSettingsPage extends Page
                                             FileUpload::make('geo_organization_logo')
                                                 ->label(__('Organization logo'))
                                                 ->disk($uploadDisk)
-                                                ->directory($uploadDirectory.'/organization')
+                                                ->directory($uploadDirectory . '/organization')
                                                 ->visibility('public')
                                                 ->acceptedFileTypes($imageTypes)
                                                 ->maxSize((int) config('voodbuilder.uploads.max_size', 2048)),
@@ -406,14 +406,14 @@ class VoodbuilderSettingsPage extends Page
             ->nullable()
             ->previewable(false)
             ->openable()
-            ->getUploadedFileUsing(function (FileUpload $component, string $file, string|array|null $storedFileNames): ?array {
+            ->getUploadedFileUsing(function (FileUpload $component, string $file, string | array | null $storedFileNames): ?array {
                 $uploaded = $component->getUploadedFile($file, $storedFileNames);
 
                 if ($uploaded === null || $component->getDiskName() !== 'public') {
                     return $uploaded;
                 }
 
-                $uploaded['url'] = '/storage/'.ltrim($file, '/');
+                $uploaded['url'] = '/storage/' . ltrim($file, '/');
 
                 return $uploaded;
             });
@@ -441,7 +441,7 @@ class VoodbuilderSettingsPage extends Page
             ]);
     }
 
-    public function getTitle(): string|Htmlable
+    public function getTitle(): string | Htmlable
     {
         return __('Settings');
     }

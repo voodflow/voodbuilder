@@ -33,14 +33,14 @@ class PageCssArtifactStoreTest extends TestCase
 
         $this->assertSame($css, $stored['css']);
         $this->assertNull($stored[PageCssArtifactStore::META_KEY]);
-        $this->assertFalse(Storage::disk('public')->exists('voodbuilder/page-css/page-'.$page->id.'.css'));
+        $this->assertFalse(Storage::disk('public')->exists('voodbuilder/page-css/page-' . $page->id . '.css'));
     }
 
     public function test_large_css_writes_artifact_and_keeps_author_inline(): void
     {
         $page = $this->makePage();
         $author = '#hero{color:red}';
-        $full = $author."\n".str_repeat('.u'.str_repeat('x', 20).'{display:flex}', 20);
+        $full = $author . "\n" . str_repeat('.u' . str_repeat('x', 20) . '{display:flex}', 20);
 
         $this->assertGreaterThan(100, strlen($full));
 
@@ -49,7 +49,7 @@ class PageCssArtifactStoreTest extends TestCase
         $this->assertSame($author, $stored['css']);
         $this->assertNotNull($stored[PageCssArtifactStore::META_KEY]);
         $this->assertSame(
-            'voodbuilder/page-css/page-'.$page->id.'.css',
+            'voodbuilder/page-css/page-' . $page->id . '.css',
             $stored[PageCssArtifactStore::META_KEY]['path'],
         );
         $this->assertSame($full, Storage::disk('public')->get($stored[PageCssArtifactStore::META_KEY]['path']));
@@ -87,7 +87,7 @@ class PageCssArtifactStoreTest extends TestCase
     {
         return SitePage::query()->create([
             'title' => 'Artifact page',
-            'slug' => 'artifact-'.uniqid(),
+            'slug' => 'artifact-' . uniqid(),
             'builder' => PageBuilder::Visual,
             'layout' => 'landing',
             'published' => true,

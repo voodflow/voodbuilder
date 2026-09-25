@@ -15,12 +15,12 @@ abstract class AbstractSiteNavVariantBlock implements EditorConfigurableBlock
 
     public static function getId(): string
     {
-        return 'site_nav_'.static::variant();
+        return 'site_nav_' . static::variant();
     }
 
     public static function getLabel(): string
     {
-        return __('voodbuilder::pro.editor.blocks.site_nav_'.static::variant());
+        return __('voodbuilder::pro.editor.blocks.site_nav_' . static::variant());
     }
 
     public static function defaultConfig(): array

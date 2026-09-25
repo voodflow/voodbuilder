@@ -67,7 +67,7 @@ final class MenuRouteCatalog
 
         return array_values(array_filter(
             $route->parameterNames(),
-            static fn (string $name): bool => ! preg_match('/\{'.preg_quote($name, '/').'\?\}/', $uri),
+            static fn (string $name): bool => ! preg_match('/\{' . preg_quote($name, '/') . '\?\}/', $uri),
         ));
     }
 
@@ -111,7 +111,7 @@ final class MenuRouteCatalog
         );
 
         if (is_string($withoutAction) && $withoutAction !== '' && $withoutAction !== $routeName) {
-            return $withoutAction.'.*';
+            return $withoutAction . '.*';
         }
 
         $segments = explode('.', $routeName);
@@ -119,10 +119,10 @@ final class MenuRouteCatalog
         if (count($segments) > 2) {
             array_pop($segments);
 
-            return implode('.', $segments).'.*';
+            return implode('.', $segments) . '.*';
         }
 
-        return $segments[0].'.*';
+        return $segments[0] . '.*';
     }
 
     protected static function isSelectable(string $name, Route $route): bool
@@ -175,11 +175,11 @@ final class MenuRouteCatalog
 
     protected static function formatLabel(string $name, Route $route): string
     {
-        $uri = '/'.ltrim($route->uri(), '/');
+        $uri = '/' . ltrim($route->uri(), '/');
         $requiredParameters = self::requiredParameterNames($name);
 
         if ($requiredParameters !== []) {
-            $uri .= ' ['.implode(', ', $requiredParameters).']';
+            $uri .= ' [' . implode(', ', $requiredParameters) . ']';
         }
 
         return "{$name} ({$uri})";

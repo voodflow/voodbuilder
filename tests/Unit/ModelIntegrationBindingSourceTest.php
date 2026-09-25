@@ -102,7 +102,7 @@ class FeaturedImageSeries extends Model
 
     public function featuredImageUrl(): string
     {
-        return 'https://example.test/storage/'.$this->featured_image;
+        return 'https://example.test/storage/' . $this->featured_image;
     }
 }
 

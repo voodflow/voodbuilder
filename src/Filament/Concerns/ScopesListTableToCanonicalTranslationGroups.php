@@ -13,7 +13,7 @@ use Voodflow\Voodbuilder\Support\TranslationGroupQuery;
  */
 trait ScopesListTableToCanonicalTranslationGroups
 {
-    protected function getTableQuery(): Builder|Relation|null
+    protected function getTableQuery(): Builder | Relation | null
     {
         $query = parent::getTableQuery();
 

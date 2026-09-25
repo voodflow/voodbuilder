@@ -198,17 +198,17 @@ final class ComposerAnystackCredentialsReader
         }
 
         $paths[] = base_path('auth.json');
-        $paths[] = dirname(base_path()).DIRECTORY_SEPARATOR.'auth.json';
+        $paths[] = dirname(base_path()) . DIRECTORY_SEPARATOR . 'auth.json';
 
         $composerHome = getenv('COMPOSER_HOME') ?: '';
         if (is_string($composerHome) && $composerHome !== '') {
-            $paths[] = rtrim($composerHome, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'auth.json';
+            $paths[] = rtrim($composerHome, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'auth.json';
         }
 
         $home = getenv('HOME') ?: '';
         if (is_string($home) && $home !== '') {
-            $paths[] = $home.DIRECTORY_SEPARATOR.'.composer'.DIRECTORY_SEPARATOR.'auth.json';
-            $paths[] = $home.DIRECTORY_SEPARATOR.'.config'.DIRECTORY_SEPARATOR.'composer'.DIRECTORY_SEPARATOR.'auth.json';
+            $paths[] = $home . DIRECTORY_SEPARATOR . '.composer' . DIRECTORY_SEPARATOR . 'auth.json';
+            $paths[] = $home . DIRECTORY_SEPARATOR . '.config' . DIRECTORY_SEPARATOR . 'composer' . DIRECTORY_SEPARATOR . 'auth.json';
         }
 
         return array_values(array_unique($paths));

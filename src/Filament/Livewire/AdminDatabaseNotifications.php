@@ -22,7 +22,7 @@ use Voodflow\Voodbuilder\Support\SiteNotificationPresenter;
  */
 class AdminDatabaseNotifications extends PanelDatabaseNotifications
 {
-    public function getNotificationsQuery(): Builder|Relation
+    public function getNotificationsQuery(): Builder | Relation
     {
         $user = $this->getUser();
 

@@ -62,7 +62,7 @@ final class VoodbuilderUrls
         }
 
         if (! Route::has('voodbuilder.pages.show')) {
-            return url('/pages/'.$page->slug);
+            return url('/pages/' . $page->slug);
         }
 
         return route('voodbuilder.pages.show', ['slug' => $page->slug]);

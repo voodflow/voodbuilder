@@ -147,13 +147,13 @@ final class ResolvableLinkForm
                 $label = $page->title;
 
                 if (SitePageResolver::localizationEnabled()) {
-                    $label .= ' ('.strtoupper((string) $page->locale).')';
+                    $label .= ' (' . strtoupper((string) $page->locale) . ')';
                 }
 
                 if ($page->is_home) {
-                    $label .= ' ('.__('Home').')';
+                    $label .= ' (' . __('Home') . ')';
                 } elseif (! $page->published) {
-                    $label .= ' ('.__('Draft').')';
+                    $label .= ' (' . __('Draft') . ')';
                 }
 
                 return [$page->slug => $label];

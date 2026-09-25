@@ -38,6 +38,6 @@ final class LandingBlockMedia
 
     public static function uploadDirectory(): string
     {
-        return trim((string) config('voodbuilder.uploads.directory', 'voodbuilder'), '/').'/landing';
+        return trim((string) config('voodbuilder.uploads.directory', 'voodbuilder'), '/') . '/landing';
     }
 }

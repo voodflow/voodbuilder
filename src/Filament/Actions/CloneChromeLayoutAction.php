@@ -27,12 +27,12 @@ class CloneChromeLayoutAction
             ->schema(fn (ChromeLayout $record): array => [
                 TextInput::make('name')
                     ->label(__('voodbuilder::chrome_layouts.fields.name'))
-                    ->default($record->name.' (copy)')
+                    ->default($record->name . ' (copy)')
                     ->required()
                     ->maxLength(120),
                 TextInput::make('slug')
                     ->label(__('voodbuilder::chrome_layouts.fields.slug'))
-                    ->default(Str::slug($record->slug.'-copy'))
+                    ->default(Str::slug($record->slug . '-copy'))
                     ->required()
                     ->maxLength(120)
                     ->alphaDash()

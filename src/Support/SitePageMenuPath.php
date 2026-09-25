@@ -52,7 +52,7 @@ final class SitePageMenuPath
             return $slug;
         }
 
-        return $parentSegment.'/'.$slug;
+        return $parentSegment . '/' . $slug;
     }
 
     /**
@@ -81,7 +81,7 @@ final class SitePageMenuPath
 
         $prefix = trim((string) config('voodbuilder.pages.route_prefix', 'pages'), '/');
 
-        return url(($prefix !== '' ? '/'.$prefix.'/' : '/').$path);
+        return url(($prefix !== '' ? '/' . $prefix . '/' : '/') . $path);
     }
 
     /**

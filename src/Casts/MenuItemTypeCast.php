@@ -14,7 +14,7 @@ use Voodflow\Voodbuilder\Enums\MenuItemType;
  */
 final class MenuItemTypeCast implements CastsAttributes
 {
-    public function get(Model $model, string $key, mixed $value, array $attributes): MenuItemType|string
+    public function get(Model $model, string $key, mixed $value, array $attributes): MenuItemType | string
     {
         if ($value instanceof MenuItemType) {
             return $value;

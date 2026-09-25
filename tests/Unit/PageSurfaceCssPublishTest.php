@@ -148,11 +148,11 @@ CSS;
 
         // Light layer must not be wrapped in html.dark — otherwise light mode keeps the dark photo.
         $this->assertMatchesRegularExpression(
-            '/'.preg_quote(PageSurfaceCssPublish::fixedLayerSelector(), '/').'\s*\{[^}]*url\(\/light\.jpg\)/i',
+            '/' . preg_quote(PageSurfaceCssPublish::fixedLayerSelector(), '/') . '\s*\{[^}]*url\(\/light\.jpg\)/i',
             $overlay,
         );
         $this->assertMatchesRegularExpression(
-            '/'.preg_quote(PageSurfaceCssPublish::darkFixedLayerSelector(), '/').'\s*\{[^}]*url\(\/dark\.jpg\)/i',
+            '/' . preg_quote(PageSurfaceCssPublish::darkFixedLayerSelector(), '/') . '\s*\{[^}]*url\(\/dark\.jpg\)/i',
             $overlay,
         );
     }

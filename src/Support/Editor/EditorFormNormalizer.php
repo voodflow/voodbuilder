@@ -33,18 +33,18 @@ final class EditorFormNormalizer
 
                 if (preg_match('/\bclass=(["\'])(.*?)\1/i', $attributes, $classMatch)) {
                     $quote = $classMatch[1];
-                    $classes = trim($classMatch[2].' vb-gjs-form');
+                    $classes = trim($classMatch[2] . ' vb-gjs-form');
                     $attributes = (string) preg_replace(
                         '/\bclass=(["\']).*?\1/i',
-                        'class='.$quote.$classes.$quote,
+                        'class=' . $quote . $classes . $quote,
                         $attributes,
                         1,
                     );
 
-                    return '<form'.$attributes.'>';
+                    return '<form' . $attributes . '>';
                 }
 
-                return '<form class="vb-gjs-form"'.$attributes.'>';
+                return '<form class="vb-gjs-form"' . $attributes . '>';
             },
             $html,
         );
@@ -88,7 +88,7 @@ final class EditorFormNormalizer
                     $inner = self::ensureHiddenInput($inner, '_token', (string) $token);
                 }
 
-                return '<form'.$attributes.'>'.$inner.'</form>';
+                return '<form' . $attributes . '>' . $inner . '</form>';
             },
             $html,
         );
@@ -123,34 +123,34 @@ final class EditorFormNormalizer
 
     protected static function ensureHiddenInput(string $inner, string $name, string $value): string
     {
-        if (preg_match('/<input\b[^>]*\bname=(["\'])'.preg_quote($name, '/').'\1/i', $inner) === 1) {
+        if (preg_match('/<input\b[^>]*\bname=(["\'])' . preg_quote($name, '/') . '\1/i', $inner) === 1) {
             return $inner;
         }
 
         $escapedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
-        return '<input type="hidden" name="'.$name.'" value="'.$escapedValue.'">'.$inner;
+        return '<input type="hidden" name="' . $name . '" value="' . $escapedValue . '">' . $inner;
     }
 
     protected static function setAttribute(string $attributes, string $name, string $value): string
     {
         $escapedValue = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $replacement = $name.'="'.$escapedValue.'"';
+        $replacement = $name . '="' . $escapedValue . '"';
 
-        if (preg_match('/\b'.preg_quote($name, '/').'\s*=\s*(["\']).*?\1/i', $attributes) === 1) {
+        if (preg_match('/\b' . preg_quote($name, '/') . '\s*=\s*(["\']).*?\1/i', $attributes) === 1) {
             return (string) preg_replace(
-                '/\b'.preg_quote($name, '/').'\s*=\s*(["\']).*?\1/i',
+                '/\b' . preg_quote($name, '/') . '\s*=\s*(["\']).*?\1/i',
                 $replacement,
                 $attributes,
                 1,
             );
         }
 
-        return trim($attributes).' '.$replacement;
+        return trim($attributes) . ' ' . $replacement;
     }
 
     protected static function removeAttribute(string $attributes, string $name): string
     {
-        return trim((string) preg_replace('/\s*\b'.preg_quote($name, '/').'\s*=\s*(["\']).*?\1/i', '', $attributes));
+        return trim((string) preg_replace('/\s*\b' . preg_quote($name, '/') . '\s*=\s*(["\']).*?\1/i', '', $attributes));
     }
 }

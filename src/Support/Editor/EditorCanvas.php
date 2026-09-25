@@ -93,7 +93,7 @@ final class EditorCanvas
         $query = parse_url($url, PHP_URL_QUERY);
 
         return is_string($query) && $query !== ''
-            ? $path.'?'.$query
+            ? $path . '?' . $query
             : $path;
     }
 
@@ -1129,7 +1129,7 @@ final class EditorCanvas
 
     protected static function readPackageCanvasCss(string $filename): string
     {
-        $path = dirname(__DIR__, 3).'/resources/css/editor/'.$filename;
+        $path = dirname(__DIR__, 3) . '/resources/css/editor/' . $filename;
 
         if (! is_readable($path)) {
             return '';
@@ -1144,8 +1144,8 @@ final class EditorCanvas
     protected static function readPopupShellCanvasCss(): string
     {
         $candidates = [
-            dirname(__DIR__, 4).'/vpopups/resources/css/editor/popup-shell.css',
-            dirname(__DIR__, 3).'/resources/css/editor/popup-shell.css',
+            dirname(__DIR__, 4) . '/vpopups/resources/css/editor/popup-shell.css',
+            dirname(__DIR__, 3) . '/resources/css/editor/popup-shell.css',
         ];
 
         foreach ($candidates as $path) {

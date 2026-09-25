@@ -38,7 +38,7 @@ class ConfigureFrontendForVoodbuilderTest extends TestCase
             'devDependencies' => [
                 'vite' => '^8.0.0',
             ],
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 
         $added = ConfigureNpmForVoodbuilder::apply();
 
@@ -60,7 +60,7 @@ class ConfigureFrontendForVoodbuilderTest extends TestCase
                 ['vite' => '^8.0.0'],
                 ConfigureNpmForVoodbuilder::requiredDevDependencies(),
             ),
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 
         $added = ConfigureNpmForVoodbuilder::apply();
 
@@ -83,7 +83,7 @@ class ConfigureFrontendForVoodbuilderTest extends TestCase
                 'vite' => '^8.0.0',
                 'grapesjs' => '^0.22.12',
             ],
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 
         $missing = ConfigureNpmForVoodbuilder::missingFromPackageJson();
 

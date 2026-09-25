@@ -61,8 +61,8 @@ class ThemePresetCommand extends Command
         $preset = filled($presetId)
             ? ThemePresetManager::find((string) $presetId)
             : ThemePresetManager::snapshotFromSettings(
-                'export-'.now()->format('Y-m-d-His'),
-                'Exported '.now()->toDateTimeString(),
+                'export-' . now()->format('Y-m-d-His'),
+                'Exported ' . now()->toDateTimeString(),
             );
 
         if ($preset === null) {
@@ -74,7 +74,7 @@ class ThemePresetCommand extends Command
         $output = (string) ($this->option('output') ?: base_path("{$preset->id}.json"));
 
         if (is_dir($output)) {
-            $output = rtrim($output, '/')."/{$preset->id}.json";
+            $output = rtrim($output, '/') . "/{$preset->id}.json";
         }
 
         ThemePresetManager::exportToFile($preset, $output);

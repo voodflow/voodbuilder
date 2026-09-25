@@ -205,9 +205,9 @@ final class SitePageAccess
     {
         $group = filled($page->translation_group_id)
             ? (string) $page->translation_group_id
-            : 'page-'.$page->getKey();
+            : 'page-' . $page->getKey();
 
-        return 'voodbuilder.page_unlock.'.$group;
+        return 'voodbuilder.page_unlock.' . $group;
     }
 
     public static function canAccessSubscriberContent(?Authenticatable $user): bool

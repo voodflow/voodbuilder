@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Spatie\Permission\Models\Permission;
 use Voodflow\Voodbuilder\Modules\Components\ComponentsModule;
 use Voodflow\Voodbuilder\Support\AdminAuthorization;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
@@ -108,11 +109,11 @@ final class ComponentAuthoringBridge
             return true;
         }
 
-        if (! class_exists(\Spatie\Permission\Models\Permission::class)) {
+        if (! class_exists(Permission::class)) {
             return true;
         }
 
-        $exists = \Spatie\Permission\Models\Permission::query()
+        $exists = Permission::query()
             ->where('name', $ability)
             ->exists();
 

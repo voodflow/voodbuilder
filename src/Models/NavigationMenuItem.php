@@ -300,6 +300,6 @@ class NavigationMenuItem extends Model
             return '#';
         }
 
-        return str_starts_with($email, 'mailto:') ? $email : 'mailto:'.$email;
+        return str_starts_with($email, 'mailto:') ? $email : 'mailto:' . $email;
     }
 }

@@ -35,7 +35,7 @@ final class EditorHtmlSanitizer
                 $src = html_entity_decode($matches[2], ENT_QUOTES | ENT_HTML5);
                 $src = self::encodeMalformedPercentSequences($src);
 
-                return 'src='.$quote.$src.$quote;
+                return 'src=' . $quote . $src . $quote;
             },
             $html,
         );
@@ -72,9 +72,9 @@ final class EditorHtmlSanitizer
             $quoted = preg_quote($origin, '~');
 
             // "https://host/pages/x" → "/pages/x"
-            $html = preg_replace('~'.$quoted.'(?=/)~i', '', $html) ?? $html;
+            $html = preg_replace('~' . $quoted . '(?=/)~i', '', $html) ?? $html;
             // "https://host" (bare, or followed by query/fragment) → "/"
-            $html = preg_replace('~'.$quoted.'(?=["\'?#\s>])~i', '/', $html) ?? $html;
+            $html = preg_replace('~' . $quoted . '(?=["\'?#\s>])~i', '/', $html) ?? $html;
         }
 
         return $html;
@@ -111,9 +111,9 @@ final class EditorHtmlSanitizer
         }
 
         $scheme = is_string($parts['scheme'] ?? null) ? $parts['scheme'] : 'http';
-        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
 
-        return $scheme.'://'.$host.$port;
+        return $scheme . '://' . $host . $port;
     }
 
     /**
@@ -134,11 +134,11 @@ final class EditorHtmlSanitizer
         // Only raw quotes after the opening brace are invalid HTML
         // (data-vforms-visibility="{"logic":...}). Properly escaped values use
         // {&quot;...} and must not be re-encoded into &amp;quot;.
-        if (! str_contains($html, $attribute.'="{"')) {
+        if (! str_contains($html, $attribute . '="{"')) {
             return $html;
         }
 
-        $needle = $attribute.'="';
+        $needle = $attribute . '="';
         $offset = 0;
         $length = strlen($html);
         $output = '';
@@ -177,6 +177,7 @@ final class EditorHtmlSanitizer
 
                     if ($depth === 0) {
                         $cursor++;
+
                         break;
                     }
                 }
@@ -188,11 +189,11 @@ final class EditorHtmlSanitizer
                 $cursor++;
             }
 
-            $output .= $attribute.'="'.htmlspecialchars($json, ENT_QUOTES | ENT_HTML5, 'UTF-8').'"';
+            $output .= $attribute . '="' . htmlspecialchars($json, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
             $offset = $cursor;
         }
 
-        return $output.substr($html, $offset);
+        return $output . substr($html, $offset);
     }
 
     /**
@@ -218,7 +219,7 @@ final class EditorHtmlSanitizer
         $previous = libxml_use_internal_errors(true);
 
         try {
-            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-animated-root">'.$html.'</div>';
+            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-animated-root">' . $html . '</div>';
             $loaded = $document->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         } finally {
             libxml_clear_errors();
@@ -563,7 +564,7 @@ final class EditorHtmlSanitizer
 
     private static function formatCounterLabel(float $to, int $decimals, string $prefix, string $suffix): string
     {
-        return $prefix.number_format($to, $decimals, '.', ',').$suffix;
+        return $prefix . number_format($to, $decimals, '.', ',') . $suffix;
     }
 
     private static function repairAnimatedStatsLayout(\DOMElement $section): bool
@@ -585,6 +586,7 @@ final class EditorHtmlSanitizer
         foreach (self::collectDomElements($section) as $element) {
             if ($element->hasAttribute('data-vb-items-root')) {
                 $root = $element;
+
                 break;
             }
         }
@@ -620,7 +622,7 @@ final class EditorHtmlSanitizer
         $style = trim($root->getAttribute('style'));
         $withoutColumns = trim((string) preg_replace('/(?:^|;)\s*--vb-item-columns\s*:\s*[^;]*/i', '', $style), '; ');
         $withoutTemplate = trim((string) preg_replace('/(?:^|;)\s*grid-template-columns\s*:\s*[^;]*/i', '', $withoutColumns), '; ');
-        $nextStyle = ($withoutTemplate !== '' ? $withoutTemplate.'; ' : '').'--vb-item-columns: '.$columns;
+        $nextStyle = ($withoutTemplate !== '' ? $withoutTemplate . '; ' : '') . '--vb-item-columns: ' . $columns;
 
         if ($root->getAttribute('style') !== $nextStyle) {
             $root->setAttribute('style', $nextStyle);
@@ -681,7 +683,7 @@ final class EditorHtmlSanitizer
         $previous = libxml_use_internal_errors(true);
 
         try {
-            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-logo-scroll-root">'.$html.'</div>';
+            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-logo-scroll-root">' . $html . '</div>';
             $loaded = $document->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         } finally {
             libxml_clear_errors();
@@ -744,7 +746,7 @@ final class EditorHtmlSanitizer
         $previous = libxml_use_internal_errors(true);
 
         try {
-            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-cta-root">'.$html.'</div>';
+            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-cta-root">' . $html . '</div>';
             $loaded = $document->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         } finally {
             libxml_clear_errors();
@@ -863,7 +865,7 @@ final class EditorHtmlSanitizer
         $previous = libxml_use_internal_errors(true);
         $document = new \DOMDocument('1.0', 'UTF-8');
         $loaded = $document->loadHTML(
-            '<?xml encoding="utf-8"?><body>'.$html.'</body>',
+            '<?xml encoding="utf-8"?><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
         libxml_clear_errors();
@@ -955,7 +957,7 @@ final class EditorHtmlSanitizer
         $previous = libxml_use_internal_errors(true);
         $document = new \DOMDocument('1.0', 'UTF-8');
         $loaded = $document->loadHTML(
-            '<?xml encoding="utf-8"?><div id="vb-hidden-strip-root">'.$html.'</div>',
+            '<?xml encoding="utf-8"?><div id="vb-hidden-strip-root">' . $html . '</div>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
         libxml_clear_errors();
@@ -1017,7 +1019,7 @@ final class EditorHtmlSanitizer
                 $quote = $matches[1];
                 $style = EditorCssSanitizer::kebabCaseCamelCssProperties($matches[2]);
 
-                return 'style='.$quote.$style.$quote;
+                return 'style=' . $quote . $style . $quote;
             },
             $html,
         ) ?? $html;
@@ -1090,7 +1092,7 @@ final class EditorHtmlSanitizer
         $previous = libxml_use_internal_errors(true);
 
         try {
-            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-sanitize-root">'.$preprocessed.'</div>';
+            $wrapped = '<?xml encoding="UTF-8"><div id="voodbuilder-sanitize-root">' . $preprocessed . '</div>';
             $loaded = $document->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         } finally {
             libxml_clear_errors();

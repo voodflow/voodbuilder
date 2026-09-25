@@ -42,7 +42,7 @@ final class SitePagesContentChannel implements PublicContentChannel
             return collect();
         }
 
-        $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
+        $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $term) . '%';
         $snippetLength = SearchSettings::snippetLength();
 
         return SitePage::query()

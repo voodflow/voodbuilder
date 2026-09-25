@@ -35,12 +35,12 @@ final class EditorHeroBackgroundNormalizer
                 }
 
                 return $matches[1]
-                    .$matches[2]
-                    .'<div class="voodbuilder-hero-media__embed" data-vb-embed-bg="" aria-hidden="true">'
-                    .$matches[3]
-                    .'</div>'
-                    .$matches[4]
-                    .$matches[5];
+                    . $matches[2]
+                    . '<div class="voodbuilder-hero-media__embed" data-vb-embed-bg="" aria-hidden="true">'
+                    . $matches[3]
+                    . '</div>'
+                    . $matches[4]
+                    . $matches[5];
             },
             $html,
         );
@@ -98,7 +98,7 @@ final class EditorHeroBackgroundNormalizer
 
         $tag = preg_replace(
             '/\bsrc=(["\']).*?\1/i',
-            'src='.$quote.htmlspecialchars($hardened, ENT_QUOTES | ENT_HTML5).$quote,
+            'src=' . $quote . htmlspecialchars($hardened, ENT_QUOTES | ENT_HTML5) . $quote,
             $tag,
             1,
         ) ?? $tag;
@@ -116,12 +116,12 @@ final class EditorHeroBackgroundNormalizer
 
             $tag = preg_replace(
                 '/\bclass=(["\']).*?\1/i',
-                'class='.$classMatch[1].implode(' ', $classes).$classMatch[1],
+                'class=' . $classMatch[1] . implode(' ', $classes) . $classMatch[1],
                 $tag,
                 1,
             ) ?? $tag;
         } elseif (! str_contains($tag, 'voodbuilder-hero-media__iframe')) {
-            $tag = rtrim(substr($tag, 0, -1)).' class="voodbuilder-hero-media__iframe">';
+            $tag = rtrim(substr($tag, 0, -1)) . ' class="voodbuilder-hero-media__iframe">';
         }
 
         $tag = preg_replace('/\sstyle=(["\'])(.*?)\1/i', '', $tag) ?? $tag;
@@ -130,15 +130,15 @@ final class EditorHeroBackgroundNormalizer
         if (preg_match('/\bloading=(["\'])(.*?)\1/i', $tag)) {
             $tag = preg_replace('/\bloading=(["\']).*?\1/i', 'loading=$1eager$1', $tag) ?? $tag;
         } else {
-            $tag = rtrim(substr($tag, 0, -1)).' loading="eager">';
+            $tag = rtrim(substr($tag, 0, -1)) . ' loading="eager">';
         }
 
         if (! preg_match('/\btabindex=/i', $tag)) {
-            $tag = rtrim(substr($tag, 0, -1)).' tabindex="-1">';
+            $tag = rtrim(substr($tag, 0, -1)) . ' tabindex="-1">';
         }
 
         if (! preg_match('/\binert\b/i', $tag)) {
-            $tag = rtrim(substr($tag, 0, -1)).' inert="">';
+            $tag = rtrim(substr($tag, 0, -1)) . ' inert="">';
         }
 
         return $tag;
@@ -197,12 +197,12 @@ final class EditorHeroBackgroundNormalizer
             return $src;
         }
 
-        $rebuilt = $parts['scheme'].'://'.$parts['host']
-            .(isset($parts['port']) ? ':'.$parts['port'] : '')
-            .($parts['path'] ?? '');
+        $rebuilt = $parts['scheme'] . '://' . $parts['host']
+            . (isset($parts['port']) ? ':' . $parts['port'] : '')
+            . ($parts['path'] ?? '');
 
         $qs = http_build_query($query);
 
-        return $qs !== '' ? $rebuilt.'?'.$qs : $rebuilt;
+        return $qs !== '' ? $rebuilt . '?' . $qs : $rebuilt;
     }
 }

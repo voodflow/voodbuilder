@@ -221,7 +221,7 @@ final class EditorCommunityBlockCatalog
         if (str_starts_with($blockId, 'voodbuilder-')) {
             $aliases[] = substr($blockId, strlen('voodbuilder-'));
         } else {
-            $aliases[] = 'voodbuilder-'.$blockId;
+            $aliases[] = 'voodbuilder-' . $blockId;
         }
 
         return array_values(array_unique(array_filter($aliases, static fn (string $id): bool => $id !== '')));

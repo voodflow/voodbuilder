@@ -67,16 +67,16 @@ final class ConfigureViteForVoodbuilder
         }
 
         $editorRelative = VoodbuilderPaths::relativeToBasePath(
-            VoodbuilderPaths::viteSourcePath().'/resources/js/editor',
+            VoodbuilderPaths::viteSourcePath() . '/resources/js/editor',
         );
 
         if (! str_contains($contents, "from 'node:path'") && ! str_contains($contents, 'from "node:path"')
             && ! str_contains($contents, "from 'path'") && ! str_contains($contents, 'from "path"')) {
-            $contents = "import path from 'node:path';\n".$contents;
+            $contents = "import path from 'node:path';\n" . $contents;
         }
 
         if (! str_contains($contents, 'fileURLToPath')) {
-            $contents = "import { fileURLToPath } from 'node:url';\n".$contents;
+            $contents = "import { fileURLToPath } from 'node:url';\n" . $contents;
         }
 
         if (! str_contains($contents, '__voodbuilderDirname')) {

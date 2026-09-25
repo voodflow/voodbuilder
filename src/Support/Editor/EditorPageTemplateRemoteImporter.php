@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
+use Voodflow\Voodbuilder\Licensing\CatalogCredentialResolver;
 use Voodflow\Voodbuilder\Support\SafeRemoteUrl;
 
 /**
@@ -130,7 +131,7 @@ final class EditorPageTemplateRemoteImporter
                 ]);
             }
 
-            $trimmed = rtrim(self::directoryOf($catalogUrl), '/').'/'.ltrim($trimmed, '/');
+            $trimmed = rtrim(self::directoryOf($catalogUrl), '/') . '/' . ltrim($trimmed, '/');
         }
 
         $parts = parse_url($trimmed);
@@ -152,8 +153,8 @@ final class EditorPageTemplateRemoteImporter
 
     protected static function catalogToken(): string
     {
-        if (class_exists(\Voodflow\Voodbuilder\Licensing\CatalogCredentialResolver::class)) {
-            return \Voodflow\Voodbuilder\Licensing\CatalogCredentialResolver::pageTemplatesCredential() ?? '';
+        if (class_exists(CatalogCredentialResolver::class)) {
+            return CatalogCredentialResolver::pageTemplatesCredential() ?? '';
         }
 
         return trim((string) (
@@ -170,7 +171,7 @@ final class EditorPageTemplateRemoteImporter
 
     protected static function toCatalogRelativePath(string $catalogUrl, string $absoluteUrl): ?string
     {
-        $base = rtrim(self::directoryOf($catalogUrl), '/').'/';
+        $base = rtrim(self::directoryOf($catalogUrl), '/') . '/';
 
         if (! str_starts_with($absoluteUrl, $base)) {
             return null;

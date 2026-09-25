@@ -50,7 +50,7 @@ final class TranslationGroupQuery
     /**
      * @param  class-string<Model>|Model  $model
      */
-    protected static function canonicalIdsSubquery(Model|string $model): Builder
+    protected static function canonicalIdsSubquery(Model | string $model): Builder
     {
         return self::baseSiblingQuery($model, withTrashed: true)
             ->selectRaw('MIN(id)')
@@ -61,7 +61,7 @@ final class TranslationGroupQuery
     /**
      * @param  class-string<Model>|Model  $model
      */
-    protected static function localeGroupIdsSubquery(Model|string $model, string $locale): Builder
+    protected static function localeGroupIdsSubquery(Model | string $model, string $locale): Builder
     {
         return self::baseSiblingQuery($model)
             ->select('translation_group_id')
@@ -73,7 +73,7 @@ final class TranslationGroupQuery
     /**
      * @param  class-string<Model>|Model  $model
      */
-    protected static function baseSiblingQuery(Model|string $model, bool $withTrashed = false): Builder
+    protected static function baseSiblingQuery(Model | string $model, bool $withTrashed = false): Builder
     {
         $class = $model instanceof Model ? $model::class : $model;
 
@@ -93,7 +93,7 @@ final class TranslationGroupQuery
     /**
      * @param  class-string<Model>|Model  $model
      */
-    protected static function usesSoftDeletes(Model|string $model): bool
+    protected static function usesSoftDeletes(Model | string $model): bool
     {
         $class = $model instanceof Model ? $model::class : $model;
 

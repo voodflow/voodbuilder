@@ -16,7 +16,7 @@ final readonly class BindingKey
 
     public function toAttribute(): string
     {
-        return $this->sourceId.'.'.$this->fieldId;
+        return $this->sourceId . '.' . $this->fieldId;
     }
 
     public static function tryParse(string $raw, BindingRegistry $registry): ?self
@@ -28,7 +28,7 @@ final readonly class BindingKey
         }
 
         foreach ($registry->sourceIdsByLengthDesc() as $sourceId) {
-            $prefix = $sourceId.'.';
+            $prefix = $sourceId . '.';
 
             if (! str_starts_with($raw, $prefix)) {
                 continue;

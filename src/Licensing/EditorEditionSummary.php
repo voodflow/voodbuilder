@@ -47,7 +47,7 @@ final class EditorEditionSummary
         return [
             'slug' => $slug,
             'label' => EditionCapabilityMatrix::marketingLabel($status->edition),
-            'badge' => (string) __('voodbuilder::pro.editor_ui.edition_badge_'.$slug),
+            'badge' => (string) __('voodbuilder::pro.editor_ui.edition_badge_' . $slug),
             'active' => $status->active,
             'expires_at' => $status->expiresAt,
             'message' => $status->message,

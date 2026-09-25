@@ -55,7 +55,7 @@ class PagesModuleTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->putJson('/voodbuilder/editor/pages/'.$page->getKey(), [
+            ->putJson('/voodbuilder/editor/pages/' . $page->getKey(), [
                 'html' => '<p>y</p>',
                 'css' => '',
                 'js' => '',

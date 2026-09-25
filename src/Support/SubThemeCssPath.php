@@ -20,7 +20,7 @@ final class SubThemeCssPath
         }
 
         if (str_starts_with($cssPath, 'themes/')) {
-            $absolute = VoodbuilderPaths::packagePath().'/resources/'.$cssPath;
+            $absolute = VoodbuilderPaths::packagePath() . '/resources/' . $cssPath;
 
             return is_file($absolute) ? $absolute : null;
         }

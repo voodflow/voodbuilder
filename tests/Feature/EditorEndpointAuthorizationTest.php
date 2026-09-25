@@ -73,7 +73,7 @@ final class EditorEndpointAuthorizationTest extends TestCase
      */
     public function test_media_endpoints_are_not_reachable_without_authorization(): void
     {
-        if (! \Illuminate\Support\Facades\Route::has('vmedia.media.upload')) {
+        if (! Route::has('vmedia.media.upload')) {
             $this->markTestSkipped('vmedia media routes are not registered in this test host.');
         }
 
@@ -130,13 +130,13 @@ final class EditorEndpointAuthorizationTest extends TestCase
                 continue;
             }
 
-            $ungated[] = $route->uri().' ['.($route->getName() ?? 'unnamed').']';
+            $ungated[] = $route->uri() . ' [' . ($route->getName() ?? 'unnamed') . ']';
         }
 
         $this->assertSame(
             [],
             $ungated,
-            "Editor routes reachable by any authenticated user:\n".implode("\n", $ungated),
+            "Editor routes reachable by any authenticated user:\n" . implode("\n", $ungated),
         );
     }
 

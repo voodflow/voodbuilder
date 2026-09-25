@@ -54,7 +54,7 @@ final class EditorCodeBlockNormalizer
                             $filtered[] = 'self-start';
                         }
 
-                        return 'class='.$quote.implode(' ', $filtered).$quote;
+                        return 'class=' . $quote . implode(' ', $filtered) . $quote;
                     },
                     $block,
                 );

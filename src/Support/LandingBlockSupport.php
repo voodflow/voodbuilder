@@ -93,7 +93,7 @@ final class LandingBlockSupport
 
             return [
                 'class' => 'relative overflow-hidden text-white',
-                'style' => "background-image: linear-gradient(rgba(15,23,42,{$opacity}), rgba(15,23,42,{$opacity})), url('".e($imageUrl)."'); background-size: cover; background-position: center;",
+                'style' => "background-image: linear-gradient(rgba(15,23,42,{$opacity}), rgba(15,23,42,{$opacity})), url('" . e($imageUrl) . "'); background-size: cover; background-position: center;",
                 'overlay' => false,
             ];
         }
@@ -104,7 +104,7 @@ final class LandingBlockSupport
 
             return [
                 'class' => $onDark ? 'text-white' : 'text-vp-text-1',
-                'style' => 'background-color: '.e($color).';',
+                'style' => 'background-color: ' . e($color) . ';',
                 'overlay' => false,
             ];
         }
@@ -138,8 +138,8 @@ final class LandingBlockSupport
 
         return trim(implode(' ', [
             'vp-landing-section',
-            'vp-landing-section--'.$width,
-            'vp-landing-section--padding-'.$padding,
+            'vp-landing-section--' . $width,
+            'vp-landing-section--padding-' . $padding,
         ]));
     }
 
@@ -227,8 +227,8 @@ final class LandingBlockSupport
         }
 
         if (strlen($matches[1]) === 3) {
-            $color = '#'.implode('', array_map(
-                fn (string $char): string => $char.$char,
+            $color = '#' . implode('', array_map(
+                fn (string $char): string => $char . $char,
                 str_split($matches[1]),
             ));
         }

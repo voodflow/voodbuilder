@@ -54,7 +54,7 @@ final class MarketingSiteMenus
                 'parent_id' => $productsGroup->getKey(),
                 'label' => $product['name'],
                 'type' => MenuItemType::Page,
-                'link' => 'a-'.$product['slug'],
+                'link' => 'a-' . $product['slug'],
                 'sort_order' => $index,
             ]);
         }
@@ -151,8 +151,8 @@ final class MarketingSiteMenus
     protected static function seedFooterColumn(int $index, array $items): void
     {
         $menu = NavigationMenu::query()->updateOrCreate(
-            ['slug' => 'footer_col_'.$index, 'locale' => self::LOCALE],
-            ['name' => 'Footer column '.$index],
+            ['slug' => 'footer_col_' . $index, 'locale' => self::LOCALE],
+            ['name' => 'Footer column ' . $index],
         );
 
         NavigationMenuItem::query()->where('menu_id', $menu->getKey())->delete();
@@ -175,7 +175,7 @@ final class MarketingSiteMenus
             $links[] = [
                 'label' => $product['name'],
                 'type' => MenuItemType::Page,
-                'link' => 'a-'.$product['slug'],
+                'link' => 'a-' . $product['slug'],
                 'sort_order' => $index,
             ];
         }

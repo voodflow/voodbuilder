@@ -33,7 +33,7 @@ final class MenuItemTypeRegistry
      *     has_resolvable_link?: Closure(NavigationMenuItem): bool,
      * }|MenuItemTypeHandler  $definition
      */
-    public function register(string $key, array|MenuItemTypeHandler $definition): self
+    public function register(string $key, array | MenuItemTypeHandler $definition): self
     {
         if ($definition instanceof MenuItemTypeHandler) {
             $this->types[$definition->key()] = $definition;

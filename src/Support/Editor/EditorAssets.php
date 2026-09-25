@@ -210,16 +210,16 @@ final class EditorAssets
         $missing = ConfigureNpmForVoodbuilder::missingFromPackageJson();
 
         if ($missing !== []) {
-            return 'Missing npm packages: '.implode(', ', $missing).'. '
-                .'Run `php artisan voodbuilder:install` '
-                .'(or `php artisan voodbuilder:sync-npm-deps --install`, then `npm run build`).';
+            return 'Missing npm packages: ' . implode(', ', $missing) . '. '
+                . 'Run `php artisan voodbuilder:install` '
+                . '(or `php artisan voodbuilder:sync-npm-deps --install`, then `npm run build`).';
         }
 
         $script = self::editorScriptEntry();
         $style = self::editorStyleEntry();
 
         return "Add `{$script}` and `{$style}` to vite.config.js input, then run `npm install --legacy-peer-deps && npm run build`. "
-            .'Or run `php artisan voodbuilder:install`.';
+            . 'Or run `php artisan voodbuilder:install`.';
     }
 
     /**

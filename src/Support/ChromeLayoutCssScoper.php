@@ -59,7 +59,7 @@ final class ChromeLayoutCssScoper
         $selectors = trim(substr($rule, 0, $brace));
         $body = ltrim(substr($rule, $brace));
 
-        return self::scopeSelectorList($selectors).' '.$body;
+        return self::scopeSelectorList($selectors) . ' ' . $body;
     }
 
     private static function scopeNestedAtRule(string $rule): string
@@ -74,7 +74,7 @@ final class ChromeLayoutCssScoper
         $inner = substr($rule, $brace + 1, -1);
         $scopedInner = self::scope($inner);
 
-        return $header.($scopedInner !== '' ? "\n".$scopedInner."\n" : '').'}';
+        return $header . ($scopedInner !== '' ? "\n" . $scopedInner . "\n" : '') . '}';
     }
 
     private static function scopeSelectorList(string $selectors): string
@@ -96,7 +96,7 @@ final class ChromeLayoutCssScoper
                 return $selector;
             }
 
-            return self::SCOPE.' '.$selector;
+            return self::SCOPE . ' ' . $selector;
         }, $parts);
 
         return implode(', ', array_filter($scoped, static fn (string $selector): bool => $selector !== ''));

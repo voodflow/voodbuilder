@@ -51,7 +51,7 @@ final class VoodbuilderLanding01Sections
     public static function pageHtml(): string
     {
         return self::articles()
-            .self::cta();
+            . self::cta();
     }
 
     public static function articles(): string
@@ -130,11 +130,11 @@ HTML;
     private static function avatarDataUri(): string
     {
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">'
-            .'<rect width="96" height="96" rx="48" fill="#cbd5e1"/>'
-            .'<circle cx="48" cy="38" r="16" fill="#94a3b8"/>'
-            .'<path d="M16 82c4-18 20-28 32-28s28 10 32 28" fill="#94a3b8"/>'
-            .'</svg>';
+            . '<rect width="96" height="96" rx="48" fill="#cbd5e1"/>'
+            . '<circle cx="48" cy="38" r="16" fill="#94a3b8"/>'
+            . '<path d="M16 82c4-18 20-28 32-28s28 10 32 28" fill="#94a3b8"/>'
+            . '</svg>';
 
-        return 'data:image/svg+xml,'.rawurlencode($svg);
+        return 'data:image/svg+xml,' . rawurlencode($svg);
     }
 }

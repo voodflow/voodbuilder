@@ -83,7 +83,7 @@ class EditorDynamicBlockRendererTest extends TestCase
         $html = $renderer->render($wrapped, null, canvasPreview: true);
 
         $this->assertStringContainsString(
-            'data-voodbuilder-block="'.SiteFooterColumnsSimpleBlock::getId().'"',
+            'data-voodbuilder-block="' . SiteFooterColumnsSimpleBlock::getId() . '"',
             $html,
         );
         $this->assertStringContainsString('data-voodbuilder-config', $html);
@@ -257,7 +257,7 @@ HTML;
     {
         $document = new \DOMDocument('1.0', 'UTF-8');
         $previous = libxml_use_internal_errors(true);
-        $document->loadHTML('<?xml encoding="UTF-8"><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $document->loadHTML('<?xml encoding="UTF-8"><body>' . $html . '</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
@@ -272,18 +272,20 @@ HTML;
 
             if (in_array($class, $classes, true)) {
                 $found = true;
+
                 break;
             }
         }
 
         $this->assertTrue($found, "Expected [{$attribute}] to include class {$class}");
     }
+
     public function test_preserves_author_hidden_layer_cards_after_dynamic_remount(): void
     {
         $registry = new EditorDynamicBlockRegistry;
         $registry->register('Test', StubLayeredDynamicBlock::class);
 
-        $wrapped = <<<HTML
+        $wrapped = <<<'HTML'
 <section data-voodbuilder-block="stub_layered" data-voodbuilder-config="{}" class="voodbuilder-editor-dynamic">
   <div data-voodbuilder-layer-name="Keep" class="card">Keep</div>
   <div data-voodbuilder-layer-name="Hidden" data-vb-layer-hidden="1" style="display:none" class="card">Hidden</div>

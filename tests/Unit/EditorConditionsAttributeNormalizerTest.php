@@ -18,7 +18,7 @@ class EditorConditionsAttributeNormalizerTest extends TestCase
             ],
         ]);
 
-        $broken = '<div data-voodbuilder-conditions="'.$encoded.'" key="locale" compare="==" value="it" class="hero">Secret</div>';
+        $broken = '<div data-voodbuilder-conditions="' . $encoded . '" key="locale" compare="==" value="it" class="hero">Secret</div>';
 
         $normalized = EditorConditionsAttributeNormalizer::normalize($broken);
 
@@ -44,7 +44,7 @@ class EditorConditionsAttributeNormalizerTest extends TestCase
         ];
 
         $encoded = EditorConditionsAttributeNormalizer::encodeDefinition($definition);
-        $html = '<section data-voodbuilder-conditions="'.$encoded.'">Content</section>';
+        $html = '<section data-voodbuilder-conditions="' . $encoded . '">Content</section>';
 
         $normalized = EditorConditionsAttributeNormalizer::normalize($html);
 

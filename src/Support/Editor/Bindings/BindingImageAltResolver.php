@@ -37,7 +37,7 @@ final class BindingImageAltResolver
         }
 
         foreach (self::ALT_FIELD_CANDIDATES as $candidateFieldId) {
-            $candidateKey = $parsed->sourceId.'.'.$candidateFieldId;
+            $candidateKey = $parsed->sourceId . '.' . $candidateFieldId;
 
             if (! $this->registry->hasField($parsed->sourceId, $candidateFieldId)) {
                 continue;

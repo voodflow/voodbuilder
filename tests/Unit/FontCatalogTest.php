@@ -45,8 +45,8 @@ class FontCatalogTest extends TestCase
     {
         $ids = Voodbuilder::fonts()->detectUsedIds(
             ".hero { font-family: 'Inter Variable', ui-sans-serif, system-ui, sans-serif; }"
-            ."\n"
-            .".code { font-family: 'JetBrains Mono', ui-monospace, monospace; }",
+            . "\n"
+            . ".code { font-family: 'JetBrains Mono', ui-monospace, monospace; }",
         );
 
         $this->assertContains('inter', $ids);
@@ -158,15 +158,15 @@ CSS;
             mkdir($dir, 0777, true);
         }
 
-        $cssName = 'voodbuilder-font-test-'.uniqid('', true).'.css';
-        $cssPath = $dir.'/'.$cssName;
+        $cssName = 'voodbuilder-font-test-' . uniqid('', true) . '.css';
+        $cssPath = $dir . '/' . $cssName;
         file_put_contents(
             $cssPath,
             '@font-face{font-family:Test;font-display:block;src:url(/build/assets/test-font.woff2)format("woff2"),url(/build/assets/test-font.woff)format("woff")}',
         );
 
         try {
-            $urls = FontStylesheets::woff2UrlsFromStylesheet('/build/assets/'.$cssName);
+            $urls = FontStylesheets::woff2UrlsFromStylesheet('/build/assets/' . $cssName);
 
             $this->assertSame(['/build/assets/test-font.woff2'], $urls);
         } finally {

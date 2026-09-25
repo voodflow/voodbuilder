@@ -12,7 +12,7 @@ final class LicenceKeyResolverTest extends TestCase
 {
     private ?string $tempAuthPath = null;
 
-    private string|false|null $previousComposerAuth = null;
+    private string | false | null $previousComposerAuth = null;
 
     protected function setUp(): void
     {
@@ -39,7 +39,7 @@ final class LicenceKeyResolverTest extends TestCase
             putenv('COMPOSER_AUTH');
             unset($_ENV['COMPOSER_AUTH'], $_SERVER['COMPOSER_AUTH']);
         } else {
-            putenv('COMPOSER_AUTH='.$this->previousComposerAuth);
+            putenv('COMPOSER_AUTH=' . $this->previousComposerAuth);
             $_ENV['COMPOSER_AUTH'] = $this->previousComposerAuth;
             $_SERVER['COMPOSER_AUTH'] = $this->previousComposerAuth;
         }

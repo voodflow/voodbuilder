@@ -58,11 +58,11 @@ final class SocialShareSupport
         $encodedTitle = rawurlencode($title);
 
         return match ($network) {
-            'facebook' => 'https://www.facebook.com/sharer/sharer.php?u='.$encodedUrl,
-            'x' => 'https://twitter.com/intent/tweet?url='.$encodedUrl.'&text='.$encodedTitle,
-            'linkedin' => 'https://www.linkedin.com/sharing/share-offsite/?url='.$encodedUrl,
-            'whatsapp' => 'https://wa.me/?text='.$encodedTitle.'%20'.$encodedUrl,
-            'email' => 'mailto:?subject='.$encodedTitle.'&body='.$encodedUrl,
+            'facebook' => 'https://www.facebook.com/sharer/sharer.php?u=' . $encodedUrl,
+            'x' => 'https://twitter.com/intent/tweet?url=' . $encodedUrl . '&text=' . $encodedTitle,
+            'linkedin' => 'https://www.linkedin.com/sharing/share-offsite/?url=' . $encodedUrl,
+            'whatsapp' => 'https://wa.me/?text=' . $encodedTitle . '%20' . $encodedUrl,
+            'email' => 'mailto:?subject=' . $encodedTitle . '&body=' . $encodedUrl,
             'copy_link' => null,
             default => null,
         };

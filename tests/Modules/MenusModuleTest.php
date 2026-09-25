@@ -44,7 +44,7 @@ class MenusModuleTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/voodbuilder/admin/navigation-menus/'.$menu->getKey().'/preview')
+            ->get('/voodbuilder/admin/navigation-menus/' . $menu->getKey() . '/preview')
             ->assertNotFound();
     }
 

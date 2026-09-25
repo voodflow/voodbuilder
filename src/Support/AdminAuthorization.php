@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Illuminate\Contracts\Auth\Authenticatable;
 
 /**
@@ -55,6 +56,6 @@ final class AdminAuthorization
 
     public static function usesPermissionAuthorizer(): bool
     {
-        return class_exists(\BezhanSalleh\FilamentShield\FilamentShieldPlugin::class);
+        return class_exists(FilamentShieldPlugin::class);
     }
 }

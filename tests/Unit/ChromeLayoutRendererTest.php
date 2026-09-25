@@ -52,7 +52,7 @@ HTML;
             'name' => 'Duped shell',
             'slug' => 'duped-shell',
             'html' => '<header>Nav</header><div data-voodbuilder-content-slot="main"></div>',
-            'css' => $rule."\n".$rule."\n".$rule,
+            'css' => $rule . "\n" . $rule . "\n" . $rule,
             'js' => '',
             'enabled' => true,
         ]);
@@ -77,6 +77,6 @@ HTML;
 
         $this->assertStringContainsString('[data-voodbuilder-chrome-shell] .w-full { width: 100%; }', $rendered['css']);
         $this->assertStringContainsString('[data-voodbuilder-chrome-shell] .lg\\:w-1\\/2 { width: 50%; }', $rendered['css']);
-        $this->assertStringNotContainsString("\n.w-full {", "\n".$rendered['css']);
+        $this->assertStringNotContainsString("\n.w-full {", "\n" . $rendered['css']);
     }
 }

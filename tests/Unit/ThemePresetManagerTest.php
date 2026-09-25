@@ -42,7 +42,7 @@ class ThemePresetManagerTest extends TestCase
         ]);
 
         $snapshot = ThemePresetManager::snapshotFromSettings('roundtrip', 'Roundtrip preset');
-        $path = sys_get_temp_dir().'/voodbuilder-theme-roundtrip.json';
+        $path = sys_get_temp_dir() . '/voodbuilder-theme-roundtrip.json';
 
         ThemePresetManager::exportToFile($snapshot, $path);
 

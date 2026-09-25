@@ -11,7 +11,7 @@ namespace Voodflow\Voodbuilder\Services;
  */
 final class VoodbuilderPortalClient
 {
-    public const LATEST_CACHE_KEY = RemotePackageVersionClient::CACHE_PREFIX.'portal.voodbuilder';
+    public const LATEST_CACHE_KEY = RemotePackageVersionClient::CACHE_PREFIX . 'portal.voodbuilder';
 
     public function getLatestPublishedTag(): ?string
     {

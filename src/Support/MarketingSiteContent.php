@@ -113,19 +113,19 @@ final class MarketingSiteContent
             secondaryLabel: 'View products',
             image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1920&q=80',
         )
-            .self::statsBar([
+            . self::statsBar([
                 ['value' => '5+', 'label' => 'Core products'],
                 ['value' => 'Filament 5', 'label' => 'Admin-native'],
                 ['value' => 'Laravel', 'label' => 'First-class'],
                 ['value' => 'Modular', 'label' => 'Pay for what you need'],
             ])
-            .self::sectionOpen('products', 'The Voodflow suite', 'Pick the plugins you need — each ships as a focused Filament companion with its own public channel where it makes sense.')
-            .self::productGrid(self::productLandings())
-            .self::sectionClose()
-            .self::valuePropSection()
-            .self::premiumTeaser()
-            .self::commercialTeaser()
-            .self::ctaSection(
+            . self::sectionOpen('products', 'The Voodflow suite', 'Pick the plugins you need — each ships as a focused Filament companion with its own public channel where it makes sense.')
+            . self::productGrid(self::productLandings())
+            . self::sectionClose()
+            . self::valuePropSection()
+            . self::premiumTeaser()
+            . self::commercialTeaser()
+            . self::ctaSection(
                 title: 'Ready to ship on Laravel?',
                 subtitle: 'Start with Voodflow automation and VoodBuilder landings, then add docs, tutorials, or the events package as your product grows.',
                 href: '/products/a-voodflow',
@@ -145,7 +145,7 @@ final class MarketingSiteContent
             secondaryLabel: 'Back to home',
             image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1920&q=80',
         )
-            .self::featureGrid('Core capabilities', [
+            . self::featureGrid('Core capabilities', [
                 ['title' => 'Visual flow canvas', 'body' => 'Drag-and-drop nodes for triggers, conditions, HTTP calls, model actions, and custom integrations.'],
                 ['title' => 'Executions & logging', 'body' => 'Trace every run, inspect payloads, and debug failures from Filament — no black-box jobs.'],
                 ['title' => 'Credentials vault', 'body' => 'Store API keys and OAuth tokens securely, then reference them from any node.'],
@@ -153,9 +153,9 @@ final class MarketingSiteContent
                 ['title' => 'Event hooks', 'body' => 'React to Eloquent events, form submissions, and companion package signals.'],
                 ['title' => 'Queue-ready', 'body' => 'Long-running steps dispatch to Laravel queues with retries and failure handling.'],
             ])
-            .self::premiumSection()
-            .self::commercialSection()
-            .self::ctaSection(
+            . self::premiumSection()
+            . self::commercialSection()
+            . self::ctaSection(
                 title: 'Automate your next release workflow',
                 subtitle: 'Pair Voodflow with VoodBuilder landings and vdocs product pages for a complete go-to-market stack.',
                 href: '/a',
@@ -175,7 +175,7 @@ final class MarketingSiteContent
             secondaryLabel: 'Pair with Voodflow',
             image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&q=80',
         )
-            .self::splitSection(
+            . self::splitSection(
                 title: 'From blank canvas to published landing',
                 image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1400&q=80',
                 items: [
@@ -185,13 +185,13 @@ final class MarketingSiteContent
                     'Menus, SEO, and locales are managed from Filament.',
                 ],
             )
-            .self::featureGrid('Why teams pick VoodBuilder', [
+            . self::featureGrid('Why teams pick VoodBuilder', [
                 ['title' => 'Editor in the browser', 'body' => 'Open any published page with ?edit=1 and iterate visually while the live site keeps its chrome.'],
                 ['title' => 'Template marketplace', 'body' => 'Save, reuse, and install page templates from secure bundle URLs.'],
                 ['title' => 'Companion blocks', 'body' => 'Dynamic blocks for events, exhibitors, forms, and media galleries plug into the same canvas.'],
                 ['title' => 'No Google Fonts CDN', 'body' => 'Self-hosted fonts and JIT CSS keep performance and privacy under your control.'],
             ])
-            .self::ctaSection(
+            . self::ctaSection(
                 title: 'Build your next landing in Filament',
                 subtitle: 'Use VoodBuilder for marketing pages and pair with vdocs or vtuts for product education.',
                 href: '/products/a-vdocs',
@@ -211,15 +211,15 @@ final class MarketingSiteContent
             secondaryLabel: 'Built on VoodBuilder',
             image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1920&q=80',
         )
-            .self::sectionOpen('package', 'One package, four plugins', 'Each plugin focuses on a slice of event operations while sharing themes, blocks, and Filament resources.')
-            .self::featureGrid('', [
+            . self::sectionOpen('package', 'One package, four plugins', 'Each plugin focuses on a slice of event operations while sharing themes, blocks, and Filament resources.')
+            . self::featureGrid('', [
                 ['title' => 'vevents', 'body' => 'Schedules, locations, organizers, and public event listings with dynamic routes.'],
                 ['title' => 'vexhibitors', 'body' => 'Exhibitor profiles, sectors, and landing pages bound to event contexts.'],
                 ['title' => 'vpartners', 'body' => 'Partner directories with sectors, logos, and detail pages for co-marketing.'],
                 ['title' => 'vsponsors', 'body' => 'Sponsor tiers, logo grids, and placement blocks across event pages.'],
             ], dark: true)
-            .self::sectionClose()
-            .self::splitSection(
+            . self::sectionClose()
+            . self::splitSection(
                 title: 'Designed for exhibition marketing sites',
                 image: 'https://images.unsplash.com/photo-1505373877841-8d25f39c3f0e?auto=format&fit=crop&w=1400&q=80',
                 items: [
@@ -229,7 +229,7 @@ final class MarketingSiteContent
                     'Locale-ready public routes for international fairs.',
                 ],
             )
-            .self::ctaSection(
+            . self::ctaSection(
                 title: 'Launch your next fair site on Laravel',
                 subtitle: 'Combine the events suite with VoodBuilder landings and Voodflow automations for registrations and notifications.',
                 href: '/products/a-voodflow',
@@ -249,13 +249,13 @@ final class MarketingSiteContent
             secondaryLabel: 'Features',
             image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80',
         )
-            .self::featureGrid('Built for product teams', [
+            . self::featureGrid('Built for product teams', [
                 ['title' => 'Sections & pages', 'body' => 'Organize reference, guides, and API docs with nested navigation.'],
                 ['title' => 'Search', 'body' => 'Built-in search across published pages with fast, server-rendered results.'],
                 ['title' => 'Theme integration', 'body' => 'Inherits chrome layouts and sub-themes from VoodBuilder for a seamless brand.'],
                 ['title' => 'Rich content', 'body' => 'Filament RichEditor blocks for callouts, code samples, and embedded media.'],
             ])
-            .self::ctaSection(
+            . self::ctaSection(
                 title: 'Docs and marketing on one stack',
                 subtitle: 'Pair vdocs with VoodBuilder landings and vtuts for onboarding content.',
                 href: '/products/a-vtuts',
@@ -275,13 +275,13 @@ final class MarketingSiteContent
             secondaryLabel: 'Features',
             image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1920&q=80',
         )
-            .self::featureGrid('From onboarding to advanced guides', [
+            . self::featureGrid('From onboarding to advanced guides', [
                 ['title' => 'Series & steps', 'body' => 'Group lessons into series with progress-friendly step pages.'],
                 ['title' => 'Categories & tags', 'body' => 'Help visitors discover content by topic or skill level.'],
                 ['title' => 'Shared chrome', 'body' => 'Documentation-style layout pairs naturally with vdocs on the same site.'],
                 ['title' => 'Filament authoring', 'body' => 'Editors use familiar admin tools — no Markdown repo required.'],
             ])
-            .self::ctaSection(
+            . self::ctaSection(
                 title: 'Educate users without leaving Laravel',
                 subtitle: 'Combine vtuts with vdocs reference material and Voodflow automations for certification flows.',
                 href: '/products/a-vdocs',
@@ -507,7 +507,7 @@ HTML;
     protected static function featureGrid(string $title, array $features, bool $dark = false): string
     {
         $heading = $title !== ''
-            ? '<h2 class="mb-10 text-center text-3xl font-bold '.($dark ? 'text-white' : 'text-vp-text-1').'">'.$title.'</h2>'
+            ? '<h2 class="mb-10 text-center text-3xl font-bold ' . ($dark ? 'text-white' : 'text-vp-text-1') . '">' . $title . '</h2>'
             : '';
 
         $cards = '';
@@ -526,10 +526,10 @@ HTML;
         }
 
         $sectionBg = $dark ? 'bg-transparent' : 'bg-vp-bg-alt';
-        $wrapperOpen = $dark ? '' : '<section class="'.$sectionBg.' py-20 body-font"><div class="mx-auto max-w-6xl px-6">';
+        $wrapperOpen = $dark ? '' : '<section class="' . $sectionBg . ' py-20 body-font"><div class="mx-auto max-w-6xl px-6">';
         $wrapperClose = $dark ? '' : '</div></section>';
 
-        return $wrapperOpen.$heading.'<div class="grid gap-6 md:grid-cols-2">'.$cards.'</div>'.$wrapperClose;
+        return $wrapperOpen . $heading . '<div class="grid gap-6 md:grid-cols-2">' . $cards . '</div>' . $wrapperClose;
     }
 
     /**
@@ -540,7 +540,7 @@ HTML;
         $list = '';
 
         foreach ($items as $item) {
-            $list .= '<li class="flex gap-3"><span class="text-vp-brand-1">✓</span><span>'.$item.'</span></li>';
+            $list .= '<li class="flex gap-3"><span class="text-vp-brand-1">✓</span><span>' . $item . '</span></li>';
         }
 
         return <<<HTML

@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
+
 /**
  * Editor Default Block Config.
  */
 final class EditorDefaultBlockConfig
 {
     /**
-     * @param  class-string<\Filament\Forms\Components\RichEditor\RichContentCustomBlock>  $blockClass
+     * @param  class-string<RichContentCustomBlock>  $blockClass
      * @return array<string, mixed>
      */
     public static function for(string $blockClass, ?int $eventId = null): array
@@ -23,7 +25,7 @@ final class EditorDefaultBlockConfig
         $config = $defaults[$blockId] ?? [];
 
         if ($config === [] && str_starts_with($blockId, 'event_landing_')) {
-            $landingId = 'landing_'.substr($blockId, strlen('event_landing_'));
+            $landingId = 'landing_' . substr($blockId, strlen('event_landing_'));
             $config = $defaults[$landingId] ?? [];
         }
 

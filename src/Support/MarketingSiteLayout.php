@@ -46,8 +46,8 @@ final class MarketingSiteLayout
         );
 
         $html = $navHtml
-            .ChromeLayoutDefaults::contentSlotHtml()
-            .$footerHtml;
+            . ChromeLayoutDefaults::contentSlotHtml()
+            . $footerHtml;
 
         $layout = ChromeLayout::query()->updateOrCreate(
             ['slug' => self::SLUG],

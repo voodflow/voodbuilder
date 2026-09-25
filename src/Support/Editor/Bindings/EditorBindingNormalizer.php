@@ -29,7 +29,7 @@ final class EditorBindingNormalizer
                     return $matches[0];
                 }
 
-                return ' data-voodbuilder-bind='.$quote.htmlspecialchars($key, ENT_QUOTES | ENT_HTML5, 'UTF-8').$quote;
+                return ' data-voodbuilder-bind=' . $quote . htmlspecialchars($key, ENT_QUOTES | ENT_HTML5, 'UTF-8') . $quote;
             },
             $html,
         ) ?? $html;

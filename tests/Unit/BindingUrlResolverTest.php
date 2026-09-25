@@ -37,6 +37,6 @@ class SlugLinkRecord extends Model
 
     public function getUrl(): string
     {
-        return '/tutorials/series/'.$this->slug;
+        return '/tutorials/series/' . $this->slug;
     }
 }

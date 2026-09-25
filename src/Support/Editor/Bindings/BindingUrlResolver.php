@@ -14,7 +14,7 @@ final class BindingUrlResolver
 {
     public static function resolve(Model $record, string $fieldId): ?string
     {
-        $urlAccessor = Str::camel($fieldId).'Url';
+        $urlAccessor = Str::camel($fieldId) . 'Url';
 
         if (method_exists($record, $urlAccessor)) {
             $url = $record->{$urlAccessor}();
@@ -66,7 +66,7 @@ final class BindingUrlResolver
             $query = parse_url($url, PHP_URL_QUERY);
 
             if (is_string($path) && $path !== '') {
-                return is_string($query) && $query !== '' ? $path.'?'.$query : $path;
+                return is_string($query) && $query !== '' ? $path . '?' . $query : $path;
             }
         }
 

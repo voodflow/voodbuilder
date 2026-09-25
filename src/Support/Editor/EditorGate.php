@@ -138,7 +138,7 @@ final class EditorGate
         return [
             'pageId' => $page->getKey(),
             'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.pages.update', $page)
-                ?? '/voodbuilder/editor/pages/'.$page->getKey(),
+                ?? '/voodbuilder/editor/pages/' . $page->getKey(),
             'csrf' => csrf_token(),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
@@ -251,7 +251,7 @@ final class EditorGate
                 ...EditorCanvas::styleUrls(),
                 ...$appTypography['stylesheetUrls'],
             ]))),
-            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)."\n".$appTypography['canvasCss'],
+            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme) . "\n" . $appTypography['canvasCss'],
             'appTypography' => [
                 'bodyFont' => $appTypography['bodyFont'],
                 'headingFont' => $appTypography['headingFont'],

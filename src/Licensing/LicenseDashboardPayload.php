@@ -73,7 +73,7 @@ final class LicenseDashboardPayload
             return str_repeat('*', strlen($key));
         }
 
-        return substr($key, 0, 4).str_repeat('*', max(4, strlen($key) - 8)).substr($key, -4);
+        return substr($key, 0, 4) . str_repeat('*', max(4, strlen($key) - 8)) . substr($key, -4);
     }
 
     private static function safeIdentifier(?string $identifier, string $licenceKey): ?string

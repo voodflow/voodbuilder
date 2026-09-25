@@ -60,7 +60,7 @@ final class ComposerPackageVersion
                 $file = $ref->getFileName();
 
                 if (is_string($file) && $file !== '') {
-                    $composerPath = dirname($file, 2).'/composer.json';
+                    $composerPath = dirname($file, 2) . '/composer.json';
                     $fromFile = self::versionFromComposerFile($composerPath);
 
                     if ($fromFile !== null) {
@@ -91,7 +91,7 @@ final class ComposerPackageVersion
             return null;
         }
 
-        return self::versionFromComposerFile(rtrim($path, '/\\').'/composer.json');
+        return self::versionFromComposerFile(rtrim($path, '/\\') . '/composer.json');
     }
 
     private static function versionFromComposerFile(string $composerPath): ?string

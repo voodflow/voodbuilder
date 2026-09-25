@@ -213,7 +213,7 @@ final class EditorHtmlSecuritySanitizer
         }
 
         foreach (self::SAFE_SCHEMES as $scheme) {
-            if (str_starts_with($normalized, $scheme.':')) {
+            if (str_starts_with($normalized, $scheme . ':')) {
                 return true;
             }
         }
@@ -242,7 +242,7 @@ final class EditorHtmlSecuritySanitizer
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 

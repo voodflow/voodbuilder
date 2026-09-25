@@ -267,6 +267,6 @@ final class ResolvableLinkSupport
 
     protected static function resolveMailUrl(string $email): string
     {
-        return str_starts_with($email, 'mailto:') ? $email : 'mailto:'.$email;
+        return str_starts_with($email, 'mailto:') ? $email : 'mailto:' . $email;
     }
 }

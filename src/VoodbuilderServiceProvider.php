@@ -204,7 +204,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
         // Upstream drag handle span is empty; our node-row adds a visible grip icon.
         View::prependNamespace('filament-nestable-tree', [
-            __DIR__.'/../resources/views/vendor/filament-nestable-tree',
+            __DIR__ . '/../resources/views/vendor/filament-nestable-tree',
         ]);
 
         Blade::componentNamespace('Voodflow\\Voodbuilder\\Components', 'voodbuilder');

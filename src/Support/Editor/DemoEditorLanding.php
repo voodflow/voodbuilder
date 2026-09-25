@@ -115,12 +115,12 @@ HTML;
 
     public static function writeUtilitiesCatalog(): void
     {
-        $path = VoodbuilderPaths::packagePath().'/resources/editor/demo-landing-catalog.html';
+        $path = VoodbuilderPaths::packagePath() . '/resources/editor/demo-landing-catalog.html';
         $html = self::payload()['html'];
 
         file_put_contents(
             $path,
-            '<!doctype html><html><body>'.$html.'</body></html>',
+            '<!doctype html><html><body>' . $html . '</body></html>',
         );
     }
 }

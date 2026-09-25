@@ -71,7 +71,7 @@ abstract class TestCase extends BaseTestCase
         ]);
         $app['config']->set('cache.default', 'array');
 
-        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        $app['config']->set('app.key', 'base64:' . base64_encode(random_bytes(32)));
         $app['config']->set('voodbuilder.pages.enabled', true);
         $app['config']->set('voodbuilder.pages.prefix', 'pages');
         $app['config']->set('voodbuilder.home.route_enabled', false);
@@ -191,9 +191,9 @@ abstract class TestCase extends BaseTestCase
             $table->nullableTimestamps();
         });
 
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
-        $dynamicApiMigrations = __DIR__.'/../../voodbuilder-dynamic-api/database/migrations';
+        $dynamicApiMigrations = __DIR__ . '/../../voodbuilder-dynamic-api/database/migrations';
         if (is_dir($dynamicApiMigrations)) {
             $this->loadMigrationsFrom($dynamicApiMigrations);
         }

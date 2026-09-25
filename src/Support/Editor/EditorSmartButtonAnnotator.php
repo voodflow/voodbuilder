@@ -21,7 +21,7 @@ final class EditorSmartButtonAnnotator
         $document = new \DOMDocument('1.0', 'UTF-8');
         $previous = libxml_use_internal_errors(true);
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
         libxml_clear_errors();
@@ -106,7 +106,7 @@ final class EditorSmartButtonAnnotator
             return true;
         }
 
-        $class = ' '.$button->getAttribute('class').' ';
+        $class = ' ' . $button->getAttribute('class') . ' ';
 
         return str_contains($class, ' cc-')
             || str_contains($class, ' carousel')
@@ -172,7 +172,7 @@ final class EditorSmartButtonAnnotator
         }
 
         // Already a Text link (or CTA handled earlier).
-        $class = ' '.$anchor->getAttribute('class').' ';
+        $class = ' ' . $anchor->getAttribute('class') . ' ';
 
         if (str_contains($class, ' vb-text-link ')) {
             return false;
@@ -190,7 +190,7 @@ final class EditorSmartButtonAnnotator
             return true;
         }
 
-        $classPadded = ' '.$anchor->getAttribute('class').' ';
+        $classPadded = ' ' . $anchor->getAttribute('class') . ' ';
 
         return str_contains($classPadded, ' cc-')
             || str_contains($classPadded, ' carousel')

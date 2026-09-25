@@ -37,19 +37,19 @@ class EditorPageController extends Controller
         $maxJs = (int) config('voodbuilder.editor.payload.max_js_bytes', 100_000);
 
         $validated = $request->validate([
-            'html' => ['nullable', 'string', 'max:'.$maxHtml],
-            'css' => ['nullable', 'string', 'max:'.$maxCss],
-            'js' => ['nullable', 'string', 'max:'.$maxJs],
+            'html' => ['nullable', 'string', 'max:' . $maxHtml],
+            'css' => ['nullable', 'string', 'max:' . $maxCss],
+            'js' => ['nullable', 'string', 'max:' . $maxJs],
             // Canvas live JIT utilities — lets Save skip Node when the editor already
             // compiled new classes (e.g. bg-cyan-400 visible before Save).
-            'live_css' => ['nullable', 'string', 'max:'.$maxCss],
+            'live_css' => ['nullable', 'string', 'max:' . $maxCss],
         ]);
 
         $incomingHtml = (string) ($validated['html'] ?? '');
         $incomingCss = (string) ($validated['css'] ?? '');
         $incomingJs = (string) ($validated['js'] ?? '');
         $liveUtilitiesCss = (string) ($validated['live_css'] ?? '');
-        $inputHash = hash('sha256', $incomingHtml."\0".$incomingCss."\0".$incomingJs);
+        $inputHash = hash('sha256', $incomingHtml . "\0" . $incomingCss . "\0" . $incomingJs);
 
         $previousPayload = $sitePage->builder_payload ?? [];
         $recorder = app(SitePageRevisionRecorder::class);

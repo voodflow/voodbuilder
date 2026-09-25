@@ -57,8 +57,8 @@ PHP);
     protected function tearDown(): void
     {
         ConfigureSubThemesForVoodbuilder::removeFromConfig($this->themeId);
-        File::deleteDirectory(resource_path('voodbuilder/themes/'.$this->themeId));
-        File::deleteDirectory(resource_path('views/voodbuilder/themes/'.$this->themeId));
+        File::deleteDirectory(resource_path('voodbuilder/themes/' . $this->themeId));
+        File::deleteDirectory(resource_path('views/voodbuilder/themes/' . $this->themeId));
 
         parent::tearDown();
     }
@@ -103,7 +103,7 @@ PHP);
     protected function seedThemeFiles(): void
     {
         $cssPath = ThemeConvention::appCssPath($this->themeId);
-        $viewsPath = ThemeConvention::appViewsPath($this->themeId).'/layouts/page.blade.php';
+        $viewsPath = ThemeConvention::appViewsPath($this->themeId) . '/layouts/page.blade.php';
 
         File::ensureDirectoryExists(dirname($cssPath));
         File::ensureDirectoryExists(dirname($viewsPath));

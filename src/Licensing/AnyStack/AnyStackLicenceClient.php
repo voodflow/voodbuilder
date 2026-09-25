@@ -28,18 +28,18 @@ final class AnyStackLicenceClient implements LicenceClient
         try {
             $response = Http::timeout($this->timeoutSeconds)
                 ->acceptJson()
-                ->post(rtrim($this->endpoint, '/').'/entitlements', [
+                ->post(rtrim($this->endpoint, '/') . '/entitlements', [
                     'licence_key' => $licenceKey,
                     'product' => 'voodbuilder',
                     'fingerprint' => self::fingerprint(),
                 ]);
         } catch (\Throwable $e) {
-            throw LicenceClientException::unreachable('Licence request failed: '.$e->getMessage(), $e);
+            throw LicenceClientException::unreachable('Licence request failed: ' . $e->getMessage(), $e);
         }
 
         if (! $response->successful()) {
             throw LicenceClientException::unreachable(
-                'Licence endpoint returned HTTP '.$response->status(),
+                'Licence endpoint returned HTTP ' . $response->status(),
             );
         }
 

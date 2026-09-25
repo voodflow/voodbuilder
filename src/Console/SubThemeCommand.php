@@ -72,7 +72,7 @@ class SubThemeCommand extends Command
         $output = (string) ($this->option('output') ?: SubThemeExporter::defaultArchivePath($themeId));
 
         if (is_dir($output)) {
-            $output = rtrim($output, '/').'/'.$themeId.'.zip';
+            $output = rtrim($output, '/') . '/' . $themeId . '.zip';
         }
 
         if (! str_ends_with(strtolower($output), '.zip')) {

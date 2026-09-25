@@ -30,7 +30,7 @@ class LandingFooterSupport
 
         if (filled($config['organizer_email'] ?? null)) {
             $email = (string) $config['organizer_email'];
-            $lines[] = self::line($email, 'mailto:'.$email, true);
+            $lines[] = self::line($email, 'mailto:' . $email, true);
         }
 
         return [
@@ -190,7 +190,7 @@ class LandingFooterSupport
         if (filled($config['copyright_brand'] ?? null)) {
             $segments[] = [
                 'type' => 'text',
-                'label' => '© '.$year.' '.strtoupper((string) $config['copyright_brand']),
+                'label' => '© ' . $year . ' ' . strtoupper((string) $config['copyright_brand']),
                 'url' => null,
                 'highlight' => false,
             ];

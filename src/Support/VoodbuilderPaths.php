@@ -27,7 +27,7 @@ final class VoodbuilderPaths
     {
         $packages = base_path('packages/voodflow/voodbuilder');
 
-        if (is_dir($packages.DIRECTORY_SEPARATOR.'resources')) {
+        if (is_dir($packages . DIRECTORY_SEPARATOR . 'resources')) {
             return $packages;
         }
 
@@ -36,12 +36,12 @@ final class VoodbuilderPaths
 
     public static function themeCssAbsolutePath(): string
     {
-        return self::packagePath().'/resources/css/theme.css';
+        return self::packagePath() . '/resources/css/theme.css';
     }
 
     public static function themeCssRelativePath(): string
     {
-        return self::relativeToBasePath(self::viteSourcePath().'/resources/css/theme.css');
+        return self::relativeToBasePath(self::viteSourcePath() . '/resources/css/theme.css');
     }
 
     /**
@@ -52,33 +52,33 @@ final class VoodbuilderPaths
         return [
             self::themeCssRelativePath(),
             'resources/js/app.js',
-            self::relativeToBasePath(self::viteSourcePath().'/resources/js/site-runtime.js'),
+            self::relativeToBasePath(self::viteSourcePath() . '/resources/js/site-runtime.js'),
         ];
     }
 
     public static function editorViteEntry(): string
     {
-        return self::relativeToBasePath(self::viteSourcePath().'/resources/js/editor/editor/init.js');
+        return self::relativeToBasePath(self::viteSourcePath() . '/resources/js/editor/editor/init.js');
     }
 
     public static function editorCssEntry(): string
     {
-        return self::relativeToBasePath(self::viteSourcePath().'/resources/css/editor/editor.css');
+        return self::relativeToBasePath(self::viteSourcePath() . '/resources/css/editor/editor.css');
     }
 
     public static function editorBlockPreviewCssEntry(): string
     {
-        return self::relativeToBasePath(self::viteSourcePath().'/resources/css/editor/block-preview-shim.css');
+        return self::relativeToBasePath(self::viteSourcePath() . '/resources/css/editor/block-preview-shim.css');
     }
 
     public static function editorTabsCssEntry(): string
     {
-        return self::relativeToBasePath(self::viteSourcePath().'/resources/css/editor/tabs.css');
+        return self::relativeToBasePath(self::viteSourcePath() . '/resources/css/editor/tabs.css');
     }
 
     public static function editorFormsCssEntry(): string
     {
-        return self::relativeToBasePath(self::viteSourcePath().'/resources/css/editor/forms.css');
+        return self::relativeToBasePath(self::viteSourcePath() . '/resources/css/editor/forms.css');
     }
 
     /**
@@ -88,7 +88,7 @@ final class VoodbuilderPaths
     {
         $entries = [
             self::themeCssRelativePath(),
-            self::relativeToBasePath(self::viteSourcePath().'/resources/js/site-runtime.js'),
+            self::relativeToBasePath(self::viteSourcePath() . '/resources/js/site-runtime.js'),
             self::editorViteEntry(),
             self::editorCssEntry(),
             self::editorTabsCssEntry(),
@@ -139,9 +139,9 @@ final class VoodbuilderPaths
         $packagesPrefix = 'packages/voodflow/voodbuilder/';
 
         if (str_starts_with($entry, $vendorPrefix)) {
-            $keys[] = $packagesPrefix.substr($entry, strlen($vendorPrefix));
+            $keys[] = $packagesPrefix . substr($entry, strlen($vendorPrefix));
         } elseif (str_starts_with($entry, $packagesPrefix)) {
-            $keys[] = $vendorPrefix.substr($entry, strlen($packagesPrefix));
+            $keys[] = $vendorPrefix . substr($entry, strlen($packagesPrefix));
         }
 
         return array_values(array_unique($keys));
@@ -155,14 +155,14 @@ final class VoodbuilderPaths
         $base = rtrim(str_replace('\\', '/', $base), '/');
         $target = str_replace('\\', '/', $target);
 
-        if (str_starts_with($target, $base.'/')) {
+        if (str_starts_with($target, $base . '/')) {
             return substr($target, strlen($base) + 1);
         }
 
         $package = realpath(self::viteSourcePath()) ?: self::viteSourcePath();
         $package = rtrim(str_replace('\\', '/', $package), '/');
 
-        if (str_starts_with($target, $package.'/')) {
+        if (str_starts_with($target, $package . '/')) {
             return substr($target, strlen($package) + 1);
         }
 

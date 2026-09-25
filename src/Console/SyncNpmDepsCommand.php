@@ -33,11 +33,11 @@ class SyncNpmDepsCommand extends Command
         $missing = ConfigureNpmForVoodbuilder::missingFromPackageJson();
 
         if ($added !== []) {
-            $this->components->info('Updated package.json with npm packages: '.implode(', ', $added));
+            $this->components->info('Updated package.json with npm packages: ' . implode(', ', $added));
         } elseif ($missing === []) {
             $this->components->info('package.json already includes required voodbuilder npm packages.');
         } else {
-            $this->components->warn('Some required npm packages are still missing: '.implode(', ', $missing));
+            $this->components->warn('Some required npm packages are still missing: ' . implode(', ', $missing));
         }
 
         if (is_file(base_path('vite.config.js'))) {

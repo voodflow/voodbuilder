@@ -120,7 +120,7 @@ final class FontStylesheets
 
         if (! is_string($path) || $path === '') {
             // Relative /build/... without scheme.
-            $path = str_starts_with($url, '/') ? $url : '/'.ltrim($url, '/');
+            $path = str_starts_with($url, '/') ? $url : '/' . ltrim($url, '/');
         }
 
         $full = public_path(ltrim($path, '/'));
@@ -148,7 +148,7 @@ final class FontStylesheets
         $cssPath = parse_url($cssUrl, PHP_URL_PATH);
         $base = is_string($cssPath) ? dirname($cssPath) : '/build/assets';
 
-        return rtrim(str_replace('\\', '/', $base), '/').'/'.ltrim($href, '/');
+        return rtrim(str_replace('\\', '/', $base), '/') . '/' . ltrim($href, '/');
     }
 
     /**
@@ -178,7 +178,7 @@ final class FontStylesheets
         $html = self::sanitizeInlineFontFamilies((string) ($payload['html'] ?? ''));
         $css = self::sanitizeComposerCss((string) ($payload['css'] ?? ''));
         $css = self::syncIdFontRulesFromInlineHtml($css, $html);
-        $ids = Voodbuilder::fonts()->detectUsedIds($css."\n".$html);
+        $ids = Voodbuilder::fonts()->detectUsedIds($css . "\n" . $html);
         $payload['html'] = $html;
         $payload['css'] = $css;
         $payload['fonts'] = $ids;
@@ -203,7 +203,7 @@ final class FontStylesheets
                 $important = (bool) preg_match('/!important\s*$/i', $raw);
                 $stack = FontDefinition::cssSafeStack((string) preg_replace('/\s*!important\s*$/i', '', $raw));
 
-                return 'font-family: '.$stack.($important ? ' !important' : '');
+                return 'font-family: ' . $stack . ($important ? ' !important' : '');
             },
             $css,
         );
@@ -261,7 +261,7 @@ final class FontStylesheets
                     continue;
                 }
 
-                $inlineFonts[$id] = $stack.' !important';
+                $inlineFonts[$id] = $stack . ' !important';
             }
         }
 
@@ -270,7 +270,7 @@ final class FontStylesheets
         }
 
         foreach ($inlineFonts as $id => $stack) {
-            $pattern = '/#'.preg_quote($id, '/').'(?![\w-])\s*\{([^{}]*)\}/';
+            $pattern = '/#' . preg_quote($id, '/') . '(?![\w-])\s*\{([^{}]*)\}/';
             $replaced = false;
 
             if (preg_match_all($pattern, $css, $idMatches, PREG_OFFSET_CAPTURE) > 0) {
@@ -290,14 +290,14 @@ final class FontStylesheets
 
                     $replaced = true;
                     $withoutFont = trim((string) preg_replace('/(?:^|;)\s*font-family\s*:[^;]*/i', '', trim($body)), '; ');
-                    $next = ($withoutFont !== '' ? $withoutFont.'; ' : '').'font-family: '.$stack;
-                    $replacement = '#'.$id.' {'.$next.';}';
-                    $css = substr($css, 0, $offset).$replacement.substr($css, $offset + strlen($full));
+                    $next = ($withoutFont !== '' ? $withoutFont . '; ' : '') . 'font-family: ' . $stack;
+                    $replacement = '#' . $id . ' {' . $next . ';}';
+                    $css = substr($css, 0, $offset) . $replacement . substr($css, $offset + strlen($full));
                 }
             }
 
             if (! $replaced) {
-                $css = '#'.$id.' {font-family: '.$stack.';}'."\n".$css;
+                $css = '#' . $id . ' {font-family: ' . $stack . ';}' . "\n" . $css;
             }
         }
 
@@ -340,7 +340,7 @@ final class FontStylesheets
                         $important = (bool) preg_match('/!important\s*$/i', $raw);
                         $stack = FontDefinition::cssSafeStack((string) preg_replace('/\s*!important\s*$/i', '', $raw));
 
-                        return 'font-family: '.$stack.($important ? ' !important' : '');
+                        return 'font-family: ' . $stack . ($important ? ' !important' : '');
                     },
                     $value,
                 );
@@ -349,7 +349,7 @@ final class FontStylesheets
                     return $matches[0];
                 }
 
-                return ' style="'.$safeStyle.'"';
+                return ' style="' . $safeStyle . '"';
             },
             $repaired,
         );
@@ -383,7 +383,7 @@ final class FontStylesheets
                     return $matches[0];
                 }
 
-                return ' style="font-family: '.self::stackFromBrokenTokens($tokens, $generics).'"';
+                return ' style="font-family: ' . self::stackFromBrokenTokens($tokens, $generics) . '"';
             },
             $html,
         );
@@ -436,14 +436,14 @@ final class FontStylesheets
                 $clean = $attrs;
 
                 foreach ($orphanNames as $name) {
-                    $clean = (string) preg_replace('/\s+'.preg_quote($name, '/').'=""/i', '', $clean);
+                    $clean = (string) preg_replace('/\s+' . preg_quote($name, '/') . '=""/i', '', $clean);
                 }
 
                 // Never invent a font-family from leftovers — CSS #id rules are the
                 // source of truth. Reconstruct only via repairBrokenFontFamilyAttributes
                 // when a broken style="font-family:" fragment is still present.
 
-                return '<'.$matches[1].$clean.$matches[3].'>';
+                return '<' . $matches[1] . $clean . $matches[3] . '>';
             },
             $html,
         );
@@ -507,7 +507,7 @@ final class FontStylesheets
                     continue;
                 }
 
-                $byId[$id]['props'][$propertyKey] = $property.': '.$value;
+                $byId[$id]['props'][$propertyKey] = $property . ': ' . $value;
             }
         }
 
@@ -519,7 +519,7 @@ final class FontStylesheets
                 continue;
             }
 
-            $merged = '#'.$id.' {'.implode('; ', array_values($entry['props'])).';}';
+            $merged = '#' . $id . ' {' . implode('; ', array_values($entry['props'])) . ';}';
 
             foreach ($entry['spans'] as [$start, $length]) {
                 $ops[] = [$start, $length, $start === $entry['first'] ? $merged : ''];
@@ -535,7 +535,7 @@ final class FontStylesheets
         $result = $css;
 
         foreach ($ops as [$start, $length, $replacement]) {
-            $result = substr($result, 0, $start).$replacement.substr($result, $start + $length);
+            $result = substr($result, 0, $start) . $replacement . substr($result, $start + $length);
         }
 
         return trim((string) preg_replace("/\n{3,}/", "\n\n", $result));
@@ -596,7 +596,7 @@ final class FontStylesheets
         $stack = "'{$resolved}'";
 
         if ($fallbacks !== []) {
-            $stack .= ', '.implode(', ', $fallbacks);
+            $stack .= ', ' . implode(', ', $fallbacks);
         }
 
         return FontDefinition::cssSafeStack($stack);

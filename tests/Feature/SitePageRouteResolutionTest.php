@@ -19,7 +19,7 @@ class SitePageRouteResolutionTest extends TestCase
     public function test_published_editor_page_resolves_by_slug_from_fixture(): void
     {
         $fixture = json_decode(
-            (string) file_get_contents(dirname(__DIR__).'/Fixtures/0.0.11/sample-page.json'),
+            (string) file_get_contents(dirname(__DIR__) . '/Fixtures/0.0.11/sample-page.json'),
             true,
             flags: JSON_THROW_ON_ERROR,
         );
@@ -41,7 +41,7 @@ class SitePageRouteResolutionTest extends TestCase
             'published_at' => now()->subMinute(),
         ]);
 
-        $this->get('/pages/'.$pageData['slug'])
+        $this->get('/pages/' . $pageData['slug'])
             ->assertOk()
             ->assertSee('Baseline', false);
     }

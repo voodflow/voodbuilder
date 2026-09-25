@@ -16,7 +16,7 @@ class SyncThemeStylesheetImportsTest extends TestCase
         $bundlePath = VoodbuilderPaths::themeCssAbsolutePath();
         $original = File::get($bundlePath);
 
-        File::put($bundlePath, $original."\n@import '../../../../../resources/voodbuilder/themes/missing/theme.css';\n");
+        File::put($bundlePath, $original . "\n@import '../../../../../resources/voodbuilder/themes/missing/theme.css';\n");
 
         try {
             $this->assertTrue(SyncThemeStylesheetImports::sync());

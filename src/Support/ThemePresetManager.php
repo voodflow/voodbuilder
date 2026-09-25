@@ -26,7 +26,7 @@ final class ThemePresetManager
      */
     public static function bundled(): Collection
     {
-        $directory = __DIR__.'/../../resources/theme-presets';
+        $directory = __DIR__ . '/../../resources/theme-presets';
 
         if (! File::isDirectory($directory)) {
             return collect();
@@ -181,6 +181,6 @@ final class ThemePresetManager
     public static function exportToFile(ThemePreset $preset, string $path): void
     {
         File::ensureDirectoryExists(dirname($path));
-        File::put($path, json_encode(self::export($preset), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+        File::put($path, json_encode(self::export($preset), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
     }
 }

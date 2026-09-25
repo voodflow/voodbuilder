@@ -24,7 +24,7 @@ class StarterPageTemplatesTest extends TestCase
             $this->assertStringNotContainsString('images.pexels.com', $definition['html']);
             $this->assertTrue(
                 str_contains($definition['html'], 'bg-vp-') || str_contains($definition['html'], 'text-vp-'),
-                'Expected theme tokens in '.$definition['name'],
+                'Expected theme tokens in ' . $definition['name'],
             );
         }
 

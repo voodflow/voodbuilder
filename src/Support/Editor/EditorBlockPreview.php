@@ -71,7 +71,7 @@ final class EditorBlockPreview
             return null;
         }
 
-        return '<div class="voodbuilder-editor-block-preview"><div class="voodbuilder-editor-block-preview__scale">'.$html.'</div></div>';
+        return '<div class="voodbuilder-editor-block-preview"><div class="voodbuilder-editor-block-preview__scale">' . $html . '</div></div>';
     }
 
     public static function wrapSiteChromeHtml(string $html, string $blockId = ''): ?string
@@ -84,6 +84,6 @@ final class EditorBlockPreview
             ? ' voodbuilder-editor-block-preview--nav'
             : '';
 
-        return '<div class="voodbuilder-editor-block-preview voodbuilder-editor-block-preview--site'.$navModifier.'"><div class="voodbuilder-editor-block-preview__scale">'.$html.'</div></div>';
+        return '<div class="voodbuilder-editor-block-preview voodbuilder-editor-block-preview--site' . $navModifier . '"><div class="voodbuilder-editor-block-preview__scale">' . $html . '</div></div>';
     }
 }

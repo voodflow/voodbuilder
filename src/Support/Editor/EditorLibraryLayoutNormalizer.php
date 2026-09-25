@@ -98,7 +98,7 @@ final class EditorLibraryLayoutNormalizer
         $previous = libxml_use_internal_errors(true);
 
         if (! $document->loadHTML(
-            '<?xml encoding="UTF-8"><div id="vb-lib-layout-root">'.$html.'</div>',
+            '<?xml encoding="UTF-8"><div id="vb-lib-layout-root">' . $html . '</div>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         )) {
             libxml_clear_errors();
@@ -121,7 +121,7 @@ final class EditorLibraryLayoutNormalizer
 
         if ($needsSlider) {
             foreach (self::HOOK_UTILITIES as $hook => $utilities) {
-                foreach ($xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " '.$hook.' ")]', $root) as $node) {
+                foreach ($xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " ' . $hook . ' ")]', $root) as $node) {
                     if (! $node instanceof DOMElement) {
                         continue;
                     }
@@ -189,6 +189,7 @@ final class EditorLibraryLayoutNormalizer
         foreach ($existing as $token) {
             if (preg_match('/^(?:sm:|md:|lg:|xl:|2xl:)?gap-/', $token) === 1) {
                 $hasGap = true;
+
                 break;
             }
         }
@@ -255,6 +256,7 @@ final class EditorLibraryLayoutNormalizer
         foreach ($parts as $part) {
             if ($part !== 'minmax(0,1fr)' && $part !== '1fr') {
                 $equalOneFr = false;
+
                 break;
             }
         }
@@ -262,10 +264,10 @@ final class EditorLibraryLayoutNormalizer
         $count = count($parts);
 
         if ($equalOneFr && $count >= 1 && $count <= 12) {
-            return 'grid-cols-'.$count;
+            return 'grid-cols-' . $count;
         }
 
-        return 'grid-cols-['.implode('_', $parts).']';
+        return 'grid-cols-[' . implode('_', $parts) . ']';
     }
 
     /**
@@ -415,7 +417,7 @@ final class EditorLibraryLayoutNormalizer
             }
 
             foreach ($existing as $class) {
-                if ($prefix !== '' && str_starts_with($class, $prefix) && preg_match('/^'.preg_quote($prefix, '/').'w-/', $class) === 1) {
+                if ($prefix !== '' && str_starts_with($class, $prefix) && preg_match('/^' . preg_quote($prefix, '/') . 'w-/', $class) === 1) {
                     return true;
                 }
 

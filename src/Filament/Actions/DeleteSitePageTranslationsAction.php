@@ -43,7 +43,7 @@ class DeleteSitePageTranslationsAction
                     ->label(__('voodbuilder::admin.fields.translations_to_delete'))
                     ->options(fn (): array => TranslationGroupDeletion::selectableOptions(
                         $record,
-                        fn (SitePage $member): string => $member->title.' ('.TranslationGroupDeletion::localeLabel($member).')',
+                        fn (SitePage $member): string => $member->title . ' (' . TranslationGroupDeletion::localeLabel($member) . ')',
                     ))
                     ->required()
                     ->columns(1),

@@ -96,7 +96,7 @@ final class ChromeLayoutRenderer
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 

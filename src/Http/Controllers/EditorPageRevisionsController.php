@@ -55,9 +55,9 @@ class EditorPageRevisionsController extends Controller
         abort_unless($sitePage->usesEditorBuilder(), 422, 'Page does not use the Editor builder.');
 
         $validated = $request->validate([
-            'html' => ['nullable', 'string', 'max:'.(int) config('voodbuilder.editor.payload.max_html_bytes', 500_000)],
-            'css' => ['nullable', 'string', 'max:'.(int) config('voodbuilder.editor.payload.max_css_bytes', 100_000)],
-            'js' => ['nullable', 'string', 'max:'.(int) config('voodbuilder.editor.payload.max_js_bytes', 100_000)],
+            'html' => ['nullable', 'string', 'max:' . (int) config('voodbuilder.editor.payload.max_html_bytes', 500_000)],
+            'css' => ['nullable', 'string', 'max:' . (int) config('voodbuilder.editor.payload.max_css_bytes', 100_000)],
+            'js' => ['nullable', 'string', 'max:' . (int) config('voodbuilder.editor.payload.max_js_bytes', 100_000)],
         ]);
 
         $revision = app(SitePageRevisionRecorder::class)->recordAutosave(

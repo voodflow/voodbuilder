@@ -157,7 +157,7 @@ final class EditorConditionHooks
                 $choices[$routeName] = [
                     'value' => (string) $routeName,
                     'label' => self::shortRouteLabel((string) $routeName, (string) $label),
-                    'title' => (string) $routeName.' — '.(string) $label,
+                    'title' => (string) $routeName . ' — ' . (string) $label,
                 ];
             }
         }

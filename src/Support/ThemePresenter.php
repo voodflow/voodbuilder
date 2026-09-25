@@ -82,9 +82,9 @@ final class ThemePresenter
 
     public static function colorLabel(string $key): string
     {
-        $langKey = $key === 'text' ? 'theme_body_text' : 'theme_'.$key;
+        $langKey = $key === 'text' ? 'theme_body_text' : 'theme_' . $key;
 
-        return (string) __('voodbuilder::settings.'.$langKey);
+        return (string) __('voodbuilder::settings.' . $langKey);
     }
 
     /**
@@ -112,7 +112,7 @@ final class ThemePresenter
     {
         $accent = self::previewColor($themeId);
 
-        return 'color-mix(in srgb, '.$accent.' 14%, #ffffff)';
+        return 'color-mix(in srgb, ' . $accent . ' 14%, #ffffff)';
     }
 
     public static function previewColor(string $themeId): string

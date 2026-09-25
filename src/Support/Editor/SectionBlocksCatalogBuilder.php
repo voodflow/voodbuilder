@@ -72,7 +72,7 @@ final class SectionBlocksCatalogBuilder
 
     public static function sourcePath(): string
     {
-        return dirname(__DIR__, 3).'/resources/editor/section-source-blocks.json';
+        return dirname(__DIR__, 3) . '/resources/editor/section-source-blocks.json';
     }
 
     public static function sourceIsAvailable(): bool
@@ -82,7 +82,7 @@ final class SectionBlocksCatalogBuilder
 
     public static function outputPath(): string
     {
-        return dirname(__DIR__, 3).'/resources/editor/section-blocks.json';
+        return dirname(__DIR__, 3) . '/resources/editor/section-blocks.json';
     }
 
     /**
@@ -114,8 +114,8 @@ final class SectionBlocksCatalogBuilder
             $number = self::VARIANT_NUMBERS[$variant] ?? '1';
 
             $blocks[] = [
-                'id' => 'vb-'.$type.'-'.$number,
-                'label' => (self::TYPE_LABELS[$type] ?? Str::headline($type)).' · '.$number,
+                'id' => 'vb-' . $type . '-' . $number,
+                'label' => (self::TYPE_LABELS[$type] ?? Str::headline($type)) . ' · ' . $number,
                 'category' => self::CATEGORY_LABELS[$type] ?? 'Sections',
                 'content' => $this->sanitizeContent((string) ($definition['content'] ?? '')),
                 'mode' => $definition['mode'] ?? 'adaptive',
@@ -132,7 +132,7 @@ final class SectionBlocksCatalogBuilder
 
         file_put_contents(
             $outputPath,
-            json_encode($blocks, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n",
+            json_encode($blocks, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
         );
 
         $this->writeUtilitiesCatalogHtml($blocks);
@@ -147,7 +147,7 @@ final class SectionBlocksCatalogBuilder
      */
     protected function writeUtilitiesCatalogHtml(array $blocks): void
     {
-        $catalogPath = dirname(__DIR__, 3).'/resources/editor/section-catalog.html';
+        $catalogPath = dirname(__DIR__, 3) . '/resources/editor/section-catalog.html';
         $parts = [];
 
         foreach ($blocks as $block) {
@@ -160,7 +160,7 @@ final class SectionBlocksCatalogBuilder
 
         file_put_contents(
             $catalogPath,
-            '<!doctype html><html><body>'.implode("\n", $parts).'</body></html>'."\n",
+            '<!doctype html><html><body>' . implode("\n", $parts) . '</body></html>' . "\n",
         );
     }
 

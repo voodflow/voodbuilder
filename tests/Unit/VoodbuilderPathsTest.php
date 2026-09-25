@@ -26,7 +26,7 @@ class VoodbuilderPathsTest extends TestCase
         $this->assertSame(VoodbuilderPaths::themeCssRelativePath(), $entries[0]);
         $this->assertSame('resources/js/app.js', $entries[1]);
         $this->assertStringEndsWith('resources/js/site-runtime.js', $entries[2]);
-        $this->assertFileExists(VoodbuilderPaths::packagePath().'/resources/js/site-runtime.js');
+        $this->assertFileExists(VoodbuilderPaths::packagePath() . '/resources/js/site-runtime.js');
     }
 
     public function test_vite_input_entries_include_site_runtime(): void

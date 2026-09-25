@@ -219,7 +219,7 @@ class InstallCommand extends Command
         $added = ConfigureNpmForVoodbuilder::apply($this->option('force'));
 
         if ($added !== []) {
-            $this->components->info('Updated package.json with npm packages: '.implode(', ', $added));
+            $this->components->info('Updated package.json with npm packages: ' . implode(', ', $added));
         } else {
             $this->components->warn('package.json already includes required voodbuilder npm packages.');
         }

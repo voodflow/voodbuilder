@@ -184,8 +184,8 @@ final class EditorImportCompatibilityAnalyzer
 
         $paths = [
             VoodbuilderPaths::themeCssAbsolutePath(),
-            VoodbuilderPaths::packagePath().'/resources/css/editor/section-utilities.css',
-            VoodbuilderPaths::packagePath().'/resources/css/mobile-nav.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/editor/section-utilities.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/mobile-nav.css',
         ];
 
         $chunks = [];
@@ -256,7 +256,7 @@ final class EditorImportCompatibilityAnalyzer
             return false;
         }
 
-        $base = preg_replace('/^'.self::VARIANT_PREFIX.'/', '', $class) ?? $class;
+        $base = preg_replace('/^' . self::VARIANT_PREFIX . '/', '', $class) ?? $class;
 
         if ($base === '') {
             return false;
@@ -346,7 +346,7 @@ final class EditorImportCompatibilityAnalyzer
         $unique = [];
 
         foreach ($adaptations as $adaptation) {
-            $key = $adaptation['from'].'|'.$adaptation['to'];
+            $key = $adaptation['from'] . '|' . $adaptation['to'];
             $unique[$key] = $adaptation;
         }
 
@@ -362,7 +362,7 @@ final class EditorImportCompatibilityAnalyzer
             return true;
         }
 
-        return preg_match('/\b'.preg_quote($token, '/').'\b/', $rawHtml) === 1;
+        return preg_match('/\b' . preg_quote($token, '/') . '\b/', $rawHtml) === 1;
     }
 
     private static function isLegacyBrandUtility(string $class): bool
@@ -381,13 +381,13 @@ final class EditorImportCompatibilityAnalyzer
 
         $escaped = self::escapeClassSelector($class);
         $needles = [
-            '.'.$escaped.'{',
-            '.'.$escaped.' ',
-            '.'.$escaped.',',
-            '.'.$escaped.':',
-            '.'.$escaped.'\n',
-            '.'.$escaped.'\r',
-            '.'.$escaped.'\t',
+            '.' . $escaped . '{',
+            '.' . $escaped . ' ',
+            '.' . $escaped . ',',
+            '.' . $escaped . ':',
+            '.' . $escaped . '\n',
+            '.' . $escaped . '\r',
+            '.' . $escaped . '\t',
         ];
 
         foreach ($needles as $needle) {

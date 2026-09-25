@@ -141,9 +141,9 @@ HTML;
     public function it_keeps_billing_toggle_buttons_native(): void
     {
         $html = '<div class="flex mx-auto border-2 border-indigo-500 rounded overflow-hidden mt-6">'
-            .'<button class="py-1 px-4 bg-indigo-500 text-white focus:outline-none">Monthly</button>'
-            .'<button class="py-1 px-4 focus:outline-none">Annually</button>'
-            .'</div>';
+            . '<button class="py-1 px-4 bg-indigo-500 text-white focus:outline-none">Monthly</button>'
+            . '<button class="py-1 px-4 focus:outline-none">Annually</button>'
+            . '</div>';
         $out = EditorSmartButtonAnnotator::annotate($html);
 
         $this->assertStringNotContainsString('data-voodbuilder-cta', $out);

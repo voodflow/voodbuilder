@@ -48,8 +48,8 @@ final class ConfigureNpmForVoodbuilder
 
         self::ensureBuildScript($package);
 
-        $encoded = json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n";
-        $originalEncoded = json_encode($original, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n";
+        $encoded = json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        $originalEncoded = json_encode($original, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
 
         if ($added === [] && $encoded === $originalEncoded && ! $force) {
             return [];
@@ -141,7 +141,7 @@ final class ConfigureNpmForVoodbuilder
      */
     public static function fontsourcePackagesFromCatalog(): array
     {
-        $path = dirname(__DIR__, 2).'/resources/fonts/core-catalog.json';
+        $path = dirname(__DIR__, 2) . '/resources/fonts/core-catalog.json';
 
         if (! is_file($path)) {
             return [

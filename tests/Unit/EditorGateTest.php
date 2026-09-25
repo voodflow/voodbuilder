@@ -73,7 +73,7 @@ class EditorGateTest extends TestCase
         $this->assertArrayHasKey('imageEditorPlaceholderHint', $config['labels']);
         $this->assertArrayHasKey('imageSettingsHeroTitle', $config['labels']);
         $this->assertArrayHasKey('imageSettingsSrc', $config['labels']);
-        $this->assertSame('/voodbuilder/editor/pages/'.$page->getKey(), $config['saveUrl']);
+        $this->assertSame('/voodbuilder/editor/pages/' . $page->getKey(), $config['saveUrl']);
         $this->assertIsString($config['uploadUrl']);
     }
 
@@ -98,7 +98,7 @@ class EditorGateTest extends TestCase
 
         $config = EditorGate::config($page);
 
-        $this->assertSame('/voodbuilder/editor/pages/'.$page->getKey(), $config['saveUrl']);
+        $this->assertSame('/voodbuilder/editor/pages/' . $page->getKey(), $config['saveUrl']);
         $this->assertIsString($config['uploadUrl']);
 
         if (Route::has('vmedia.media.upload')) {

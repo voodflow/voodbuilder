@@ -22,10 +22,10 @@ class BuildSectionsCommand extends Command
 
     public function handle(): int
     {
-        $script = VoodbuilderPaths::packagePath().'/scripts/build-section-source.mjs';
+        $script = VoodbuilderPaths::packagePath() . '/scripts/build-section-source.mjs';
 
         if (! is_file($script)) {
-            $this->components->error('Missing build script: '.$script);
+            $this->components->error('Missing build script: ' . $script);
 
             return self::FAILURE;
         }
@@ -68,7 +68,7 @@ class BuildSectionsCommand extends Command
 
         $sectionCount = (new SectionBlocksCatalogBuilder)->write();
 
-        $this->components->info('Voodbuilder section catalog ready ('.$sectionCount.' blocks): '.SectionBlocksCatalogBuilder::outputPath());
+        $this->components->info('Voodbuilder section catalog ready (' . $sectionCount . ' blocks): ' . SectionBlocksCatalogBuilder::outputPath());
         DemoEditorLanding::writeUtilitiesCatalog();
         $this->components->warn('Run `npm run build` so section-utilities.css is compiled for the canvas.');
 
@@ -78,7 +78,7 @@ class BuildSectionsCommand extends Command
     protected function sectionSourceDependenciesAreInstalled(): bool
     {
         foreach (['esbuild', 'react', 'react-dom', 'prop-types'] as $package) {
-            if (! is_dir(base_path('node_modules/'.$package))) {
+            if (! is_dir(base_path('node_modules/' . $package))) {
                 return false;
             }
         }

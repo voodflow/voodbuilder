@@ -29,7 +29,7 @@ class EditorCssSanitizerTest extends TestCase
 
         $this->assertSame(
             $reset,
-            EditorCssSanitizer::sanitize($reset.$reset.$reset),
+            EditorCssSanitizer::sanitize($reset . $reset . $reset),
         );
     }
 

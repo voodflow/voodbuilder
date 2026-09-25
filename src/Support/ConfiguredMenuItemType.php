@@ -25,10 +25,10 @@ final class ConfiguredMenuItemType implements MenuItemTypeHandler
      */
     public function __construct(
         protected string $key,
-        protected string|Closure $label,
+        protected string | Closure $label,
         protected bool $allowsRoot = true,
         protected bool $allowsChild = true,
-        protected array|Closure $formSchema = [],
+        protected array | Closure $formSchema = [],
         protected ?Closure $resolveUrl = null,
         protected ?Closure $resolveChildren = null,
         protected ?Closure $isActive = null,

@@ -31,7 +31,7 @@ class CloneNavigationMenuAction
             ->schema(fn (NavigationMenu $record): array => [
                 TextInput::make('name')
                     ->label(__('voodbuilder::admin.fields.menu_clone_name'))
-                    ->default($record->name.' (copy)')
+                    ->default($record->name . ' (copy)')
                     ->required()
                     ->maxLength(255),
                 Select::make('slug')

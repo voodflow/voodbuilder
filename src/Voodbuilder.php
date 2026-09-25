@@ -104,7 +104,7 @@ class Voodbuilder
      *     search?: \Closure|string|null,
      * }|PublicContentChannel  $definition
      */
-    public static function contentChannel(string $id, array|PublicContentChannel $definition): void
+    public static function contentChannel(string $id, array | PublicContentChannel $definition): void
     {
         $registry = app(ContentChannelRegistry::class);
 
@@ -141,7 +141,7 @@ class Voodbuilder
      *
      * @param  array{label: string, html: string, eyebrow?: string|null}|callable(): array{label: string, html: string, eyebrow?: string|null}  $definition
      */
-    public static function readingPreview(string $channelId, array|callable $definition): void
+    public static function readingPreview(string $channelId, array | callable $definition): void
     {
         app(ReadingPreviewRegistry::class)->register($channelId, $definition);
     }
@@ -207,7 +207,7 @@ class Voodbuilder
      *     has_resolvable_link?: \Closure(NavigationMenuItem): bool,
      * }|MenuItemTypeHandler  $definition
      */
-    public static function menuItemType(string $key, array|MenuItemTypeHandler $definition): void
+    public static function menuItemType(string $key, array | MenuItemTypeHandler $definition): void
     {
         app(MenuItemTypeRegistry::class)->register($key, $definition);
     }
@@ -322,7 +322,7 @@ class Voodbuilder
     /**
      * @param  list<array<string, mixed>|FontDefinition>|FontDefinition|array<string, mixed>  $fonts
      */
-    public static function registerFonts(array|FontDefinition $fonts): void
+    public static function registerFonts(array | FontDefinition $fonts): void
     {
         $catalog = self::fonts();
 

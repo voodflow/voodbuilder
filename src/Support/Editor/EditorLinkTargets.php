@@ -46,13 +46,13 @@ final class EditorLinkTargets
                 $label = (string) $page->title;
 
                 if (SitePageResolver::localizationEnabled()) {
-                    $label .= ' ('.strtoupper((string) $page->locale).')';
+                    $label .= ' (' . strtoupper((string) $page->locale) . ')';
                 }
 
                 if ($page->is_home) {
-                    $label .= ' ('.__('Home').')';
+                    $label .= ' (' . __('Home') . ')';
                 } elseif (! $page->published) {
-                    $label .= ' ('.__('Draft').')';
+                    $label .= ' (' . __('Draft') . ')';
                 }
 
                 return [
@@ -118,7 +118,7 @@ final class EditorLinkTargets
      */
     public static function dynamicMenuChildId(NavigationMenuItem $parent, string $url): string
     {
-        return 'dyn:'.$parent->getKey().':'.substr(hash('sha256', $url), 0, 16);
+        return 'dyn:' . $parent->getKey() . ':' . substr(hash('sha256', $url), 0, 16);
     }
 
     /**

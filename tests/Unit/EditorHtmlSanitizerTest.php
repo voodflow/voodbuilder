@@ -23,8 +23,8 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_preserves_escaped_json_data_attributes_for_forms(): void
     {
         $html = '<section data-vforms-managed-form="1">'
-            .'<div data-vforms-visibility="{&quot;logic&quot;:&quot;and&quot;,&quot;rules&quot;:[]}">'
-            .'<label>Name</label></div></section>';
+            . '<div data-vforms-visibility="{&quot;logic&quot;:&quot;and&quot;,&quot;rules&quot;:[]}">'
+            . '<label>Name</label></div></section>';
 
         $sanitized = EditorHtmlSanitizer::sanitize($html);
 
@@ -71,9 +71,9 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_strips_data_gjs_attributes_including_json_resizable(): void
     {
         $html = '<div class="lg:max-w-lg">'
-            .'<img alt="hero" class="w-full h-auto object-cover" '
-            .'data-gjs-type="image" data-gjs-resizable="{"ratioDefault":1}" data-gjs-locked="false"/>'
-            .'</div>';
+            . '<img alt="hero" class="w-full h-auto object-cover" '
+            . 'data-gjs-type="image" data-gjs-resizable="{"ratioDefault":1}" data-gjs-locked="false"/>'
+            . '</div>';
 
         $cleaned = EditorHtmlSanitizer::stripEditorOnlyAttributes($html);
 
@@ -86,9 +86,9 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_normalize_payload_strips_data_gjs_so_cta_labels_survive_reload(): void
     {
         $html = '<a href="#" role="button" data-voodbuilder-cta="true" '
-            .'class="inline-flex text-white bg-indigo-500" '
-            .'data-gjs-type="voodbuilder-cta-button" data-gjs-ctaLabel="Submit" '
-            .'data-gjs-droppable="e=>!x7(e)">Submit</a>';
+            . 'class="inline-flex text-white bg-indigo-500" '
+            . 'data-gjs-type="voodbuilder-cta-button" data-gjs-ctaLabel="Submit" '
+            . 'data-gjs-droppable="e=>!x7(e)">Submit</a>';
 
         $normalized = EditorGate::normalizePayload([
             'html' => $html,
@@ -107,7 +107,7 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_restore_empty_cta_labels_from_data_attribute(): void
     {
         $html = '<a href="#" role="button" data-voodbuilder-cta="true" '
-            .'data-voodbuilder-cta-label="Accept" class="inline-flex"></a>';
+            . 'data-voodbuilder-cta-label="Accept" class="inline-flex"></a>';
 
         $restored = EditorHtmlSanitizer::restoreEmptyCtaLabels($html);
 
@@ -118,11 +118,11 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_strips_logo_scroll_runtime_clones(): void
     {
         $html = '<div data-voodbuilder-logo-scroll>'
-            .'<div data-vb-logo-mover>'
-            .'<div data-vb-items-root class="vb-logo-scroll__track"><div data-vb-item>A</div></div>'
-            .'<div data-vb-logo-clone="1" class="vb-logo-scroll__track vb-logo-scroll__track--clone" aria-hidden="true"><div data-vb-item>A</div></div>'
-            .'</div>'
-            .'</div>';
+            . '<div data-vb-logo-mover>'
+            . '<div data-vb-items-root class="vb-logo-scroll__track"><div data-vb-item>A</div></div>'
+            . '<div data-vb-logo-clone="1" class="vb-logo-scroll__track vb-logo-scroll__track--clone" aria-hidden="true"><div data-vb-item>A</div></div>'
+            . '</div>'
+            . '</div>';
 
         $sanitized = EditorHtmlSanitizer::sanitize($html);
 
@@ -135,9 +135,9 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_strips_inner_drop_slot_editor_artifacts(): void
     {
         $html = '<div class="flex gap-4">'
-            .'<button type="button">CTA</button>'
-            .'<div data-voodbuilder-inner-drop="1" class="voodbuilder-editor-inner-drop-slot" aria-hidden="true"></div>'
-            .'</div>';
+            . '<button type="button">CTA</button>'
+            . '<div data-voodbuilder-inner-drop="1" class="voodbuilder-editor-inner-drop-slot" aria-hidden="true"></div>'
+            . '</div>';
 
         $cleaned = EditorHtmlSanitizer::stripEditorOnlyElements($html);
 
@@ -149,7 +149,7 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_strips_hidden_layer_elements_from_published_html(): void
     {
         $html = '<section id="keep"><h2>Visible</h2></section>'
-            .'<section id="pricing" data-vb-layer-hidden="1"><div class="pricing">Hidden pricing</div></section>';
+            . '<section id="pricing" data-vb-layer-hidden="1"><div class="pricing">Hidden pricing</div></section>';
 
         $cleaned = EditorHtmlSanitizer::stripEditorOnlyElements($html);
 
@@ -176,14 +176,14 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_repairs_corrupted_animated_counters_and_stats_layout(): void
     {
         $html = '<section data-voodbuilder-animated-stats="" data-vb-item-count="5" class="vb-animated-stats">'
-            .'<div data-vb-items-root="" class="flex flex-wrap -m-4 text-center">'
-            .'<div data-vb-item="" class="p-4 w-full sm:w-1/2 md:w-1/3">'
-            .'<span object="" class="text-5xl font-bold">2.7K</span>'
-            .'<p>Users</p>'
-            .'</div>'
-            .'</div>'
-            .'</section>'
-            .'<span object>1,250+</span>';
+            . '<div data-vb-items-root="" class="flex flex-wrap -m-4 text-center">'
+            . '<div data-vb-item="" class="p-4 w-full sm:w-1/2 md:w-1/3">'
+            . '<span object="" class="text-5xl font-bold">2.7K</span>'
+            . '<p>Users</p>'
+            . '</div>'
+            . '</div>'
+            . '</section>'
+            . '<span object>1,250+</span>';
 
         $repaired = EditorHtmlSanitizer::sanitize($html);
 
@@ -210,7 +210,7 @@ class EditorHtmlSanitizerTest extends TestCase
     public function test_strip_orphan_page_content_text_removes_text_left_with_editor_spacers(): void
     {
         $orphan = '<div data-voodbuilder-top-drop-spacer="1" class="voodbuilder-editor-top-drop-spacer"></div>'
-            ."→\nExplore products";
+            . "→\nExplore products";
 
         $this->assertSame('', EditorHtmlSanitizer::stripOrphanPageContentText($orphan));
     }
@@ -227,9 +227,9 @@ class EditorHtmlSanitizerTest extends TestCase
         config(['app.url' => 'http://localhost:8010']);
 
         $html = '<a href="http://localhost:8010/pages/about">About</a>'
-            .'<a href="http://localhost:8010">Home</a>'
-            .'<img src="http://localhost:8010/vendor/voodbuilder/voodbuilder-mark.svg">'
-            .'<a href="https://example.com/external">External</a>';
+            . '<a href="http://localhost:8010">Home</a>'
+            . '<img src="http://localhost:8010/vendor/voodbuilder/voodbuilder-mark.svg">'
+            . '<a href="https://example.com/external">External</a>';
 
         $sanitized = EditorHtmlSanitizer::normalizeSameOriginUrls($html);
 

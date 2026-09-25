@@ -79,7 +79,7 @@ final class EditorPastedComponentNormalizer
                 : EditorImportedTailwindCssBuilder::build($html);
         } elseif ($scope === 'component') {
             $base = EditorImportedTailwindCssBuilder::baseStyles();
-            $compiled = $base !== '' ? trim($base."\n\n".$compiled) : $compiled;
+            $compiled = $base !== '' ? trim($base . "\n\n" . $compiled) : $compiled;
         }
 
         return trim($compiled);
@@ -98,7 +98,7 @@ final class EditorPastedComponentNormalizer
             return self::dedupeCssRules($manualCss);
         }
 
-        return self::dedupeCssRules(trim($manualCss."\n\n".$autoCss));
+        return self::dedupeCssRules(trim($manualCss . "\n\n" . $autoCss));
     }
 
     /**
@@ -216,7 +216,7 @@ final class EditorPastedComponentNormalizer
             $manualCss = self::manualCssFromStoredComponentCss($storedCss);
             $css = self::mergeCss($manualCss !== '' ? $manualCss : null, $compiled);
 
-            return trim(VoodbuilderThemeTokenMigrator::migrateComponentCss((string) $css)."\n\n".self::componentThemeTokenBridgeCss());
+            return trim(VoodbuilderThemeTokenMigrator::migrateComponentCss((string) $css) . "\n\n" . self::componentThemeTokenBridgeCss());
         }
 
         if ($storedCss === '') {
@@ -237,7 +237,7 @@ final class EditorPastedComponentNormalizer
             return '';
         }
 
-        return trim(VoodbuilderThemeTokenMigrator::migrateComponentCss($storedCss)."\n\n".self::componentThemeTokenBridgeCss());
+        return trim(VoodbuilderThemeTokenMigrator::migrateComponentCss($storedCss) . "\n\n" . self::componentThemeTokenBridgeCss());
     }
 
     /**
@@ -333,7 +333,7 @@ final class EditorPastedComponentNormalizer
                 : '';
             // Coverage against the raw sheets (not utilitiesCssFromPublishedPageCss): that
             // helper drops valid TW rules whose selectors include :focus / escaped `:` etc.
-            $coverageCss = trim($previousClean."\n".$liveClean);
+            $coverageCss = trim($previousClean . "\n" . $liveClean);
 
             if (
                 $coverageCss !== ''
@@ -503,7 +503,7 @@ final class EditorPastedComponentNormalizer
                 }
 
                 if ($cleaned !== trim($declarations)) {
-                    $css = str_replace($match[0], $match[1].$cleaned.$match[3], $css);
+                    $css = str_replace($match[0], $match[1] . $cleaned . $match[3], $css);
                 }
             }
         }
@@ -559,7 +559,7 @@ final class EditorPastedComponentNormalizer
         foreach (array_unique($matches[1]) as $variable) {
             $escaped = preg_quote($variable, '/');
 
-            if (preg_match('/--'.$escaped.'\s*:/', $css) !== 1) {
+            if (preg_match('/--' . $escaped . '\s*:/', $css) !== 1) {
                 return true;
             }
         }
@@ -644,7 +644,7 @@ final class EditorPastedComponentNormalizer
             }
 
             if (self::shouldPreserveManualPageCssRule($selectors, $body)) {
-                $kept[] = $selectors.' {'.$body.'}';
+                $kept[] = $selectors . ' {' . $body . '}';
             }
         }
 
@@ -953,17 +953,17 @@ final class EditorPastedComponentNormalizer
         // Tailwind escapes non [a-zA-Z0-9_-] in compiled selectors (one backslash).
         $cssToken = preg_replace_callback(
             '/([^a-zA-Z0-9_-])/',
-            static fn (array $match): string => '\\'.$match[1],
+            static fn (array $match): string => '\\' . $match[1],
             $className,
         ) ?? $className;
 
-        if (str_contains($css, '.'.$cssToken) || str_contains($css, '.'.$className)) {
+        if (str_contains($css, '.' . $cssToken) || str_contains($css, '.' . $className)) {
             return true;
         }
 
         $escaped = preg_quote($cssToken, '/');
 
-        return preg_match('/\.'.$escaped.'(?:\s|\{|,|:|\/|$)/', $css) === 1;
+        return preg_match('/\.' . $escaped . '(?:\s|\{|,|:|\/|$)/', $css) === 1;
     }
 
     /**
@@ -988,7 +988,7 @@ final class EditorPastedComponentNormalizer
         $compiled = self::compileTailwindCss($html);
         $cssToPersist = $compiled !== '' ? trim(VoodbuilderThemeTokenMigrator::migrateComponentCss($compiled)) : null;
         $css = $cssToPersist !== null && $cssToPersist !== ''
-            ? trim($cssToPersist."\n\n".self::componentThemeTokenBridgeCss())
+            ? trim($cssToPersist . "\n\n" . self::componentThemeTokenBridgeCss())
             : self::resolvedCssForStoredHtml($html, null, null);
 
         return [
@@ -1138,10 +1138,10 @@ CSS;
                     $property = strtolower($parts[2]);
                     $brand = ($prefix === 'hover:' && $property === 'bg') ? 'vp-brand-2' : 'vp-brand-3';
 
-                    return $prefix.$property.'-'.$brand;
+                    return $prefix . $property . '-' . $brand;
                 }, $tokens);
 
-                return 'class='.$matches[1].implode(' ', $migrated).$matches[1];
+                return 'class=' . $matches[1] . implode(' ', $migrated) . $matches[1];
             },
             $html,
         ) ?? $html;
@@ -1230,7 +1230,7 @@ CSS;
         }
 
         if (preg_match_all('/<(section|nav|header|footer|main|article)\b/i', $html, $matches) > 1) {
-            return '<div class="voodbuilder-pasted-component">'.$html.'</div>';
+            return '<div class="voodbuilder-pasted-component">' . $html . '</div>';
         }
 
         return $html;
@@ -1250,17 +1250,17 @@ CSS;
             static function (array $matches) use (&$idMap, $suffix): string {
                 $quote = $matches[1];
                 $original = $matches[2];
-                $mapped = $idMap[$original] ?? ($original.'-vb-'.$suffix);
+                $mapped = $idMap[$original] ?? ($original . '-vb-' . $suffix);
                 $idMap[$original] = $mapped;
 
-                return 'id='.$quote.$mapped.$quote;
+                return 'id=' . $quote . $mapped . $quote;
             },
             $html,
         ) ?? $html;
 
         foreach ($idMap as $original => $mapped) {
-            $html = str_replace('url(#'.$original.')', 'url(#'.$mapped.')', $html);
-            $html = str_replace('href="#'.$original.'"', 'href="#'.$mapped.'"', $html);
+            $html = str_replace('url(#' . $original . ')', 'url(#' . $mapped . ')', $html);
+            $html = str_replace('href="#' . $original . '"', 'href="#' . $mapped . '"', $html);
         }
 
         return $html;
@@ -1339,7 +1339,7 @@ CSS;
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 

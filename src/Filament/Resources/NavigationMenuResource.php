@@ -98,9 +98,9 @@ class NavigationMenuResource extends Resource
                 $label = $page->title;
 
                 if ($page->is_home) {
-                    $label .= ' ('.__('Home').')';
+                    $label .= ' (' . __('Home') . ')';
                 } elseif (! $page->published) {
-                    $label .= ' ('.__('Draft').')';
+                    $label .= ' (' . __('Draft') . ')';
                 }
 
                 return [$page->slug => $label];
@@ -123,7 +123,7 @@ class NavigationMenuResource extends Resource
             + app(MenuItemTypeRegistry::class)->options($isChild);
     }
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-bars-3';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-bars-3';
 
     protected static ?int $navigationSort = 1;
 
@@ -190,7 +190,7 @@ class NavigationMenuResource extends Resource
                         ),
                         Placeholder::make('translation_links')
                             ->label(__('voodbuilder::admin.fields.translations'))
-                            ->content(function (?NavigationMenu $record): HtmlString|string {
+                            ->content(function (?NavigationMenu $record): HtmlString | string {
                                 if ($record === null || blank($record->translation_group_id)) {
                                     return __('voodbuilder::admin.menu_translation.none_yet');
                                 }
@@ -212,7 +212,7 @@ class NavigationMenuResource extends Resource
                                             : $menu->locale;
                                         $url = static::getUrl('edit', ['record' => $menu]);
 
-                                        return '<a href="'.e($url).'" class="text-primary-600 hover:underline">'.e($label).'</a>';
+                                        return '<a href="' . e($url) . '" class="text-primary-600 hover:underline">' . e($label) . '</a>';
                                     })
                                     ->implode(' · ');
 
@@ -314,12 +314,12 @@ class NavigationMenuResource extends Resource
                         return null;
                     }
 
-                    $url = $page->getUrl().'?edit=1';
+                    $url = $page->getUrl() . '?edit=1';
 
                     return new HtmlString(
-                        '<a href="'.e($url).'" target="_blank" rel="noopener" class="text-sm text-primary-600 hover:underline">'
-                        .e(__('voodbuilder::pro.actions.open_visual_editor'))
-                        .'</a>'
+                        '<a href="' . e($url) . '" target="_blank" rel="noopener" class="text-sm text-primary-600 hover:underline">'
+                        . e(__('voodbuilder::pro.actions.open_visual_editor'))
+                        . '</a>'
                     );
                 })
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Page)),

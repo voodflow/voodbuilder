@@ -19,7 +19,7 @@ final class FilamentAdminAssets
 
     public static function sourcePath(): string
     {
-        return VoodbuilderPaths::packagePath().'/resources/css/filament-database-notifications.css';
+        return VoodbuilderPaths::packagePath() . '/resources/css/filament-database-notifications.css';
     }
 
     public static function register(): void
@@ -41,7 +41,7 @@ final class FilamentAdminAssets
             return;
         }
 
-        $destination = public_path('css/'.self::PACKAGE.'/'.self::STYLE_ID.'.css');
+        $destination = public_path('css/' . self::PACKAGE . '/' . self::STYLE_ID . '.css');
 
         File::ensureDirectoryExists(dirname($destination));
 

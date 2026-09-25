@@ -37,10 +37,10 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
     if (config('voodbuilder.search.enabled', true)) {
         $searchRoute = trim((string) config('voodbuilder.search.route', 'search'), '/');
 
-        Route::get('/'.$searchRoute, SearchController::class)
+        Route::get('/' . $searchRoute, SearchController::class)
             ->name('voodbuilder.search');
 
-        Route::get('/'.$searchRoute.'/suggest', SearchSuggestController::class)
+        Route::get('/' . $searchRoute . '/suggest', SearchSuggestController::class)
             ->middleware('throttle:60,1')
             ->name('voodbuilder.search.suggest');
     }
@@ -60,7 +60,7 @@ Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () us
 
     if (config('voodbuilder.account.enabled', true)) {
         Route::middleware('auth')
-            ->get('/'.trim((string) config('voodbuilder.account.route', 'account'), '/'), AccountController::class)
+            ->get('/' . trim((string) config('voodbuilder.account.route', 'account'), '/'), AccountController::class)
             ->name('voodbuilder.account');
     }
 });

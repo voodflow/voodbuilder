@@ -86,19 +86,19 @@ final class EditorImportedTailwindCssBuilder
             }
         }
 
-        $base = $scope !== null ? self::baseStyles()."\n" : '';
+        $base = $scope !== null ? self::baseStyles() . "\n" : '';
 
-        return trim($base.implode("\n", $rules));
+        return trim($base . implode("\n", $rules));
     }
 
     public static function baseStyles(): string
     {
         return implode("\n", [
-            self::SCOPE.' dialog:not([open]) { display: none; }',
-            self::SCOPE.' { position: relative; }',
-            self::SCOPE.' { --color-primary: var(--color-vp-brand-2); --color-primary-hover: var(--color-vp-brand-1); --color-primary-focus: var(--color-vp-brand-1); --color-primary-line: var(--color-vp-brand-2); --color-primary-foreground: #ffffff; --color-foreground: var(--color-vp-text-1); --color-layer: var(--color-vp-bg-elv); --color-layer-hover: var(--color-vp-bg-alt); --color-layer-focus: var(--color-vp-bg-alt); --color-layer-line: var(--color-vp-divider); --color-layer-foreground: var(--color-vp-text-1); --color-surface-1: var(--color-vp-bg-alt); --color-surface: var(--color-vp-bg-alt); --color-plain: var(--color-vp-bg-elv); --color-inverse: #ffffff; --color-foreground-inverse: #ffffff; --color-muted-hover: var(--color-vp-bg-alt); --color-muted-focus: var(--color-vp-bg-alt); --color-travia-transparent: transparent; }',
-            self::SCOPE.':has(> header.absolute, header.absolute) { min-height: 42rem; }',
-            self::SCOPE.' > header.absolute { position: absolute; left: 0; right: 0; top: 0; z-index: 50; }',
+            self::SCOPE . ' dialog:not([open]) { display: none; }',
+            self::SCOPE . ' { position: relative; }',
+            self::SCOPE . ' { --color-primary: var(--color-vp-brand-2); --color-primary-hover: var(--color-vp-brand-1); --color-primary-focus: var(--color-vp-brand-1); --color-primary-line: var(--color-vp-brand-2); --color-primary-foreground: #ffffff; --color-foreground: var(--color-vp-text-1); --color-layer: var(--color-vp-bg-elv); --color-layer-hover: var(--color-vp-bg-alt); --color-layer-focus: var(--color-vp-bg-alt); --color-layer-line: var(--color-vp-divider); --color-layer-foreground: var(--color-vp-text-1); --color-surface-1: var(--color-vp-bg-alt); --color-surface: var(--color-vp-bg-alt); --color-plain: var(--color-vp-bg-elv); --color-inverse: #ffffff; --color-foreground-inverse: #ffffff; --color-muted-hover: var(--color-vp-bg-alt); --color-muted-focus: var(--color-vp-bg-alt); --color-travia-transparent: transparent; }',
+            self::SCOPE . ':has(> header.absolute, header.absolute) { min-height: 42rem; }',
+            self::SCOPE . ' > header.absolute { position: absolute; left: 0; right: 0; top: 0; z-index: 50; }',
         ]);
     }
 
@@ -119,7 +119,7 @@ final class EditorImportedTailwindCssBuilder
 
         $selector = self::scopedSelector($class, $variant, $scope);
 
-        $rule = $selector.' { '.$declaration.' }';
+        $rule = $selector . ' { ' . $declaration . ' }';
 
         if ($breakpoint === null) {
             return $rule;
@@ -131,14 +131,14 @@ final class EditorImportedTailwindCssBuilder
             return null;
         }
 
-        return '@media (min-width: '.$minWidth.'px) { '.$rule.' }';
+        return '@media (min-width: ' . $minWidth . 'px) { ' . $rule . ' }';
     }
 
     protected static function declarationForUtility(string $utility, ?string $variant = null): ?string
     {
         if ($variant === 'hover') {
             if (str_starts_with($utility, 'bg-') && isset(self::COLORS[substr($utility, 3)])) {
-                return 'background-color: '.self::COLORS[substr($utility, 3)].';';
+                return 'background-color: ' . self::COLORS[substr($utility, 3)] . ';';
             }
 
             if (str_starts_with($utility, 'ring-')) {
@@ -150,7 +150,7 @@ final class EditorImportedTailwindCssBuilder
 
         if ($variant === 'focus') {
             if (str_starts_with($utility, 'bg-') && isset(self::COLORS[substr($utility, 3)])) {
-                return 'background-color: '.self::COLORS[substr($utility, 3)].';';
+                return 'background-color: ' . self::COLORS[substr($utility, 3)] . ';';
             }
 
             return null;
@@ -185,9 +185,9 @@ final class EditorImportedTailwindCssBuilder
             $utility === 'rotate-30' => 'rotate: 30deg;',
             $utility === 'bg-white' => 'background-color: #fff;',
             $utility === 'bg-gradient-to-tr' => 'background-image: linear-gradient(to top right, var(--vb-tw-gradient-stops, #ff80b5, #9089fc));',
-            str_starts_with($utility, 'bg-') && isset(self::COLORS[substr($utility, 3)]) => 'background-color: '.self::COLORS[substr($utility, 3)].';',
-            str_starts_with($utility, 'text-') && isset(self::COLORS[substr($utility, 5)]) => 'color: '.self::COLORS[substr($utility, 5)].';',
-            str_starts_with($utility, 'border-') && isset(self::COLORS[substr($utility, 7)]) => 'border-color: '.self::COLORS[substr($utility, 7)].';',
+            str_starts_with($utility, 'bg-') && isset(self::COLORS[substr($utility, 3)]) => 'background-color: ' . self::COLORS[substr($utility, 3)] . ';',
+            str_starts_with($utility, 'text-') && isset(self::COLORS[substr($utility, 5)]) => 'color: ' . self::COLORS[substr($utility, 5)] . ';',
+            str_starts_with($utility, 'border-') && isset(self::COLORS[substr($utility, 7)]) => 'border-color: ' . self::COLORS[substr($utility, 7)] . ';',
             str_starts_with($utility, 'from-') && isset(self::COLORS[substr($utility, 5)]) => self::gradientFromDeclarationForColor(self::COLORS[substr($utility, 5)]),
             str_starts_with($utility, 'from-[#') && str_ends_with($utility, ']') => self::gradientFromDeclaration($utility),
             str_starts_with($utility, 'to-[#') && str_ends_with($utility, ']') => self::gradientToDeclaration($utility),
@@ -209,26 +209,26 @@ final class EditorImportedTailwindCssBuilder
 
     protected static function gradientFromDeclarationForColor(string $color): string
     {
-        return '--vb-tw-gradient-from: '.$color.'; --vb-tw-gradient-stops: var(--vb-tw-gradient-from), var(--vb-tw-gradient-to, transparent);';
+        return '--vb-tw-gradient-from: ' . $color . '; --vb-tw-gradient-stops: var(--vb-tw-gradient-from), var(--vb-tw-gradient-to, transparent);';
     }
 
     protected static function gradientToDeclaration(string $utility): string
     {
         $color = self::extractBracketValue($utility);
 
-        return '--vb-tw-gradient-to: '.$color.';';
+        return '--vb-tw-gradient-to: ' . $color . ';';
     }
 
     protected static function ringDeclaration(string $utility): ?string
     {
         if (preg_match('/^ring-(\d+)$/', $utility, $matches) === 1) {
-            return 'box-shadow: 0 0 0 '.$matches[1].'px rgb(17 24 39 / 0.1);';
+            return 'box-shadow: 0 0 0 ' . $matches[1] . 'px rgb(17 24 39 / 0.1);';
         }
 
         if (preg_match('/^ring-gray-900\/(\d+)$/', $utility, $matches) === 1) {
             $alpha = ((int) $matches[1]) / 100;
 
-            return 'box-shadow: 0 0 0 1px rgb(17 24 39 / '.$alpha.');';
+            return 'box-shadow: 0 0 0 1px rgb(17 24 39 / ' . $alpha . ');';
         }
 
         return null;
@@ -252,7 +252,7 @@ final class EditorImportedTailwindCssBuilder
             return null;
         }
 
-        return 'aspect-ratio: '.$matches[1].' / '.$matches[2].';';
+        return 'aspect-ratio: ' . $matches[1] . ' / ' . $matches[2] . ';';
     }
 
     protected static function widthDeclaration(string $utility): ?string
@@ -261,19 +261,19 @@ final class EditorImportedTailwindCssBuilder
             return null;
         }
 
-        return 'width: '.self::spacingToRem((float) $matches[1]).';';
+        return 'width: ' . self::spacingToRem((float) $matches[1]) . ';';
     }
 
     protected static function positionDeclaration(string $property, string $utility): ?string
     {
         $value = self::extractBracketValue($utility);
 
-        return $value !== null ? $property.': '.$value.';' : null;
+        return $value !== null ? $property . ': ' . $value . ';' : null;
     }
 
     protected static function spacingToRem(float $value): string
     {
-        return rtrim(rtrim(number_format($value * 0.25, 4, '.', ''), '0'), '.').'rem';
+        return rtrim(rtrim(number_format($value * 0.25, 4, '.', ''), '0'), '.') . 'rem';
     }
 
     protected static function extractBracketValue(string $utility): ?string
@@ -288,21 +288,21 @@ final class EditorImportedTailwindCssBuilder
     protected static function scopedSelector(string $class, ?string $variant = null, ?string $scope = self::SCOPE): string
     {
         $escaped = self::escapeClassSelector($class);
-        $prefix = $scope !== null && $scope !== '' ? $scope.' ' : '';
+        $prefix = $scope !== null && $scope !== '' ? $scope . ' ' : '';
 
         if ($variant === 'hover') {
-            return $prefix.'.'.$escaped.':hover';
+            return $prefix . '.' . $escaped . ':hover';
         }
 
         if ($variant === 'focus') {
-            return $prefix.'.'.$escaped.':focus';
+            return $prefix . '.' . $escaped . ':focus';
         }
 
         if ($variant === 'focus-visible') {
-            return $prefix.'.'.$escaped.':focus-visible';
+            return $prefix . '.' . $escaped . ':focus-visible';
         }
 
-        return $prefix.'.'.$escaped;
+        return $prefix . '.' . $escaped;
     }
 
     protected static function escapeClassSelector(string $class): string

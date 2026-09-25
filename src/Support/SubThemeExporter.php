@@ -37,9 +37,9 @@ final class SubThemeExporter
 
     public static function defaultArchivePath(string $id): string
     {
-        $filename = $id.'-'.now()->format('Y-m-d-His').'.zip';
+        $filename = $id . '-' . now()->format('Y-m-d-His') . '.zip';
 
-        return storage_path('app/voodbuilder-theme-exports/'.$filename);
+        return storage_path('app/voodbuilder-theme-exports/' . $filename);
     }
 
     /**
@@ -91,15 +91,15 @@ final class SubThemeExporter
      */
     protected static function stageArchive(SubThemeLocation $location, array $manifest): string
     {
-        $temporaryDirectory = storage_path('app/voodbuilder-theme-exports/.staging-'.uniqid('', true));
+        $temporaryDirectory = storage_path('app/voodbuilder-theme-exports/.staging-' . uniqid('', true));
         File::ensureDirectoryExists($temporaryDirectory);
 
         File::put(
-            $temporaryDirectory.'/'.self::MANIFEST_FILE,
-            json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n",
+            $temporaryDirectory . '/' . self::MANIFEST_FILE,
+            json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n",
         );
 
-        File::copy($location->cssPath, $temporaryDirectory.'/theme.css');
+        File::copy($location->cssPath, $temporaryDirectory . '/theme.css');
 
         if (is_dir($location->themeRoot)) {
             foreach (File::allFiles($location->themeRoot) as $file) {
@@ -108,7 +108,7 @@ final class SubThemeExporter
                 }
 
                 $relative = $file->getRelativePathname();
-                $target = $temporaryDirectory.'/assets/'.$relative;
+                $target = $temporaryDirectory . '/assets/' . $relative;
                 File::ensureDirectoryExists(dirname($target));
                 File::copy($file->getPathname(), $target);
             }
@@ -117,7 +117,7 @@ final class SubThemeExporter
         if (is_dir($location->viewsRoot)) {
             foreach (File::allFiles($location->viewsRoot) as $file) {
                 $relative = $file->getRelativePathname();
-                $target = $temporaryDirectory.'/views/'.$relative;
+                $target = $temporaryDirectory . '/views/' . $relative;
                 File::ensureDirectoryExists(dirname($target));
                 File::copy($file->getPathname(), $target);
             }

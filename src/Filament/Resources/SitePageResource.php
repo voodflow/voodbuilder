@@ -69,7 +69,7 @@ class SitePageResource extends Resource
 
     protected static ?string $model = SitePage::class;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-window';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-window';
 
     protected static ?int $navigationSort = 2;
 
@@ -157,9 +157,9 @@ class SitePageResource extends Resource
 
                                                 return new HtmlString(
                                                     __('voodbuilder::pro.helpers.editor_frontend', ['url' => $url])
-                                                    .' <a class="text-primary-600 underline" href="'.e($url).'" target="_blank" rel="noopener">'
-                                                    .e(__('voodbuilder::pro.actions.open_visual_editor'))
-                                                    .'</a>'
+                                                    . ' <a class="text-primary-600 underline" href="' . e($url) . '" target="_blank" rel="noopener">'
+                                                    . e(__('voodbuilder::pro.actions.open_visual_editor'))
+                                                    . '</a>'
                                                 );
                                             })
                                             ->visible(fn (?SitePage $record): bool => SitePageForm::showEditorHint($record))
@@ -262,9 +262,9 @@ class SitePageResource extends Resource
                                                 }
 
                                                 return new HtmlString(
-                                                    '<a class="text-primary-600 underline" href="'.e($url).'" target="_blank" rel="noopener">'
-                                                    .e($url)
-                                                    .'</a>'
+                                                    '<a class="text-primary-600 underline" href="' . e($url) . '" target="_blank" rel="noopener">'
+                                                    . e($url)
+                                                    . '</a>'
                                                 );
                                             })
                                             ->visible(fn (Get $get): bool => (bool) $get('is_dynamic'))
@@ -312,7 +312,7 @@ class SitePageResource extends Resource
 
                                 Placeholder::make('translation_links')
                                     ->label(__('voodbuilder::admin.fields.translations'))
-                                    ->content(function (?SitePage $record): HtmlString|string {
+                                    ->content(function (?SitePage $record): HtmlString | string {
                                         if ($record === null || blank($record->translation_group_id)) {
                                             return __('voodbuilder::admin.translation.none_yet');
                                         }
@@ -334,7 +334,7 @@ class SitePageResource extends Resource
                                                     : $page->locale;
                                                 $url = static::getUrl('edit', ['record' => $page]);
 
-                                                return '<a href="'.e($url).'" class="text-primary-600 hover:underline">'.e($label).'</a>';
+                                                return '<a href="' . e($url) . '" class="text-primary-600 hover:underline">' . e($label) . '</a>';
                                             })
                                             ->implode(' · ');
 
@@ -439,7 +439,7 @@ class SitePageResource extends Resource
                                             static::formUsesFullWidthLayout($get, $record)
                                             && $subTheme === SubThemeResolver::DEFAULT
                                         ) {
-                                            return $message.' '.__('voodbuilder::admin.helpers.sub_theme_marketing_recommended');
+                                            return $message . ' ' . __('voodbuilder::admin.helpers.sub_theme_marketing_recommended');
                                         }
 
                                         return $message;
@@ -469,7 +469,7 @@ class SitePageResource extends Resource
                     ->label(__('voodbuilder::pro.fields.builder'))
                     ->badge()
                     ->toggleable(isToggledHiddenByDefault: true)
-                    ->formatStateUsing(fn (PageBuilder|string|null $state): string => $state instanceof PageBuilder
+                    ->formatStateUsing(fn (PageBuilder | string | null $state): string => $state instanceof PageBuilder
                         ? $state->label()
                         : PageBuilder::normalize((string) $state)?->label() ?? (string) $state),
                 TextColumn::make('layout')
@@ -501,7 +501,7 @@ class SitePageResource extends Resource
                         ->label(__('voodbuilder::pro.actions.open_visual_editor'))
                         ->icon('heroicon-o-paint-brush')
                         ->color('gray')
-                        ->url(fn (SitePage $record): string => $record->getUrl().(str_contains($record->getUrl(), '?') ? '&' : '?').'edit=1')
+                        ->url(fn (SitePage $record): string => $record->getUrl() . (str_contains($record->getUrl(), '?') ? '&' : '?') . 'edit=1')
                         ->openUrlInNewTab()
                         ->visible(fn (SitePage $record): bool => $record->usesEditorBuilder()),
                     CreateSitePageTranslationAction::make(),

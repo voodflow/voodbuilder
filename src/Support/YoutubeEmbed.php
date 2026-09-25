@@ -38,7 +38,7 @@ final class YoutubeEmbed
 
     private static function embedUrl(string $videoId): string
     {
-        return 'https://www.youtube.com/embed/'.$videoId.'?rel=0';
+        return 'https://www.youtube.com/embed/' . $videoId . '?rel=0';
     }
 
     private static function extractVideoId(string $url): ?string

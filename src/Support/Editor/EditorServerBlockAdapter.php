@@ -28,7 +28,7 @@ final class EditorServerBlockAdapter
         }
 
         return new EditorBlockDefinition(
-            id: 'voodbuilder-'.$blockId,
+            id: 'voodbuilder-' . $blockId,
             label: $blockClass::getLabel(),
             category: $category,
             content: $content,

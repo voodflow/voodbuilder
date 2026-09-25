@@ -56,7 +56,7 @@ final class ChromeLayoutResolver
             return null;
         }
 
-        $cacheKey = 'voodbuilder.chrome_layout_id.'.($channelId ?? 'default');
+        $cacheKey = 'voodbuilder.chrome_layout_id.' . ($channelId ?? 'default');
 
         /** @var string|null $layoutId */
         $layoutId = Cache::remember($cacheKey, 60, function () use ($channelId): ?string {
@@ -92,16 +92,16 @@ final class ChromeLayoutResolver
         self::$tableExists = null;
 
         if ($channelId !== null) {
-            Cache::forget('voodbuilder.chrome_layout_id.'.$channelId);
-            Cache::forget('voodbuilder.chrome_layout.'.$channelId);
+            Cache::forget('voodbuilder.chrome_layout_id.' . $channelId);
+            Cache::forget('voodbuilder.chrome_layout.' . $channelId);
         }
 
         Cache::forget('voodbuilder.chrome_layout_id.default');
         Cache::forget('voodbuilder.chrome_layout.default');
 
         foreach (array_keys(app(ContentChannelRegistry::class)->all()) as $id) {
-            Cache::forget('voodbuilder.chrome_layout_id.'.$id);
-            Cache::forget('voodbuilder.chrome_layout.'.$id);
+            Cache::forget('voodbuilder.chrome_layout_id.' . $id);
+            Cache::forget('voodbuilder.chrome_layout.' . $id);
         }
     }
 

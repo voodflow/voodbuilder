@@ -29,7 +29,7 @@ final class ReadingPreviewRegistry
     /**
      * @param  PreviewDefinition|callable(): PreviewDefinition  $definition
      */
-    public function register(string $channelId, array|callable $definition): void
+    public function register(string $channelId, array | callable $definition): void
     {
         $channelId = trim($channelId);
 

@@ -40,7 +40,7 @@ class VoodbuilderLandingEditorBlocksTest extends TestCase
         $this->app->make(EditorDynamicBlockRegistry::class)->registerEditorBlocks($registry);
 
         $blocks = $registry->toEditorBlocks();
-        $footer = collect($blocks)->firstWhere('id', 'voodbuilder-'.LandingFooterBlock::getId());
+        $footer = collect($blocks)->firstWhere('id', 'voodbuilder-' . LandingFooterBlock::getId());
 
         $this->assertNotNull($footer);
         $this->assertSame('Voodbuilder / Landing', $footer['category']);

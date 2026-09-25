@@ -17,12 +17,12 @@ final class BrandMarkAssets
 
     public static function sourcePath(): string
     {
-        return VoodbuilderPaths::packagePath().'/resources/images/voodbuilder-mark.svg';
+        return VoodbuilderPaths::packagePath() . '/resources/images/voodbuilder-mark.svg';
     }
 
     public static function sourcePngPath(): string
     {
-        return VoodbuilderPaths::packagePath().'/resources/images/voodbuilder-mark.png';
+        return VoodbuilderPaths::packagePath() . '/resources/images/voodbuilder-mark.png';
     }
 
     public static function publicPath(): string

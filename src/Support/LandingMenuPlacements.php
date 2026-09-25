@@ -15,7 +15,7 @@ final class LandingMenuPlacements
 
     public static function footerColumnSlug(int $index): string
     {
-        return 'landing_footer_col_'.$index;
+        return 'landing_footer_col_' . $index;
     }
 
     /** @return list<string> */

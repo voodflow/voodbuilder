@@ -23,7 +23,7 @@ final class EditorStepTabsNormalizer
         $previous = libxml_use_internal_errors(true);
 
         if (! $document->loadHTML(
-            '<?xml encoding="UTF-8"><div id="vb-step-root">'.$html.'</div>',
+            '<?xml encoding="UTF-8"><div id="vb-step-root">' . $html . '</div>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         )) {
             libxml_clear_errors();
@@ -72,17 +72,17 @@ final class EditorStepTabsNormalizer
                 continue;
             }
 
-            $groupId = 'vb-step-'.substr(md5($navContainer->getNodePath()), 0, 8);
+            $groupId = 'vb-step-' . substr(md5($navContainer->getNodePath()), 0, 8);
             $contentsWrapper = $document->createElement('div');
             $contentsWrapper->setAttribute('class', 'vb-step-tabs__contents');
 
             foreach ($stepLinks as $index => $link) {
-                $panelId = $groupId.'-panel-'.$index;
+                $panelId = $groupId . '-panel-' . $index;
                 $link->setAttribute('role', 'tab');
                 $link->setAttribute('aria-controls', $panelId);
                 $link->setAttribute('aria-selected', $index === 0 ? 'true' : 'false');
                 $link->setAttribute('tabindex', $index === 0 ? '0' : '-1');
-                $link->setAttribute('href', '#'.$panelId);
+                $link->setAttribute('href', '#' . $panelId);
                 $link->removeAttribute('target');
 
                 $class = trim(preg_replace(
@@ -91,10 +91,10 @@ final class EditorStepTabsNormalizer
                     $link->getAttribute('class'),
                 ) ?? '');
 
-                $link->setAttribute('class', trim('vb-step-tabs__tab '.$class));
+                $link->setAttribute('class', trim('vb-step-tabs__tab ' . $class));
 
                 if ($index === 0) {
-                    $link->setAttribute('class', trim($link->getAttribute('class').' vb-step-tabs__tab--active'));
+                    $link->setAttribute('class', trim($link->getAttribute('class') . ' vb-step-tabs__tab--active'));
                 }
 
                 $panel = $document->createElement('div');
@@ -118,7 +118,7 @@ final class EditorStepTabsNormalizer
             }
 
             $navContainer->setAttribute('role', 'tablist');
-            $navContainer->setAttribute('class', trim('vb-step-tabs__bar '.$navContainer->getAttribute('class')));
+            $navContainer->setAttribute('class', trim('vb-step-tabs__bar ' . $navContainer->getAttribute('class')));
 
             foreach ($contentNodes as $node) {
                 $node->parentNode?->removeChild($node);

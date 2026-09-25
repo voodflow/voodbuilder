@@ -25,7 +25,7 @@ final class FontCatalog
 
         $this->coreBooted = true;
 
-        $path = dirname(__DIR__, 3).'/resources/fonts/core-catalog.json';
+        $path = dirname(__DIR__, 3) . '/resources/fonts/core-catalog.json';
 
         if (! is_file($path)) {
             return;
@@ -160,7 +160,7 @@ final class FontCatalog
         foreach ($this->fonts as $font) {
             $family = preg_quote($font->family, '/');
 
-            if (preg_match('/font-family\s*:\s*[^;]*'.$family.'/i', $cssOrHtml) === 1) {
+            if (preg_match('/font-family\s*:\s*[^;]*' . $family . '/i', $cssOrHtml) === 1) {
                 $used[] = $font->id;
             }
         }

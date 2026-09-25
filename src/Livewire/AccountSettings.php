@@ -26,7 +26,7 @@ class AccountSettings extends Component
 
     public string $email = '';
 
-    public TemporaryUploadedFile|string|null $avatarUpload = null;
+    public TemporaryUploadedFile | string | null $avatarUpload = null;
 
     public string $current_password = '';
 
@@ -149,7 +149,7 @@ class AccountSettings extends Component
             return null;
         }
 
-        return asset('storage/'.$user->avatar);
+        return asset('storage/' . $user->avatar);
     }
 
     public function render(): View

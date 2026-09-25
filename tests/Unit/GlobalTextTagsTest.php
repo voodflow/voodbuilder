@@ -18,7 +18,7 @@ class GlobalTextTagsTest extends TestCase
     public function it_replaces_current_year(): void
     {
         $this->assertSame(
-            '© '.date('Y').' VoodBuilder',
+            '© ' . date('Y') . ' VoodBuilder',
             GlobalTextTags::replace('© {current_year} VoodBuilder'),
         );
     }
@@ -56,7 +56,7 @@ class GlobalTextTagsTest extends TestCase
         $html = '<p>© {current_year} {brand_name}</p>';
 
         $this->assertSame(
-            '<p>© '.date('Y').' Studio</p>',
+            '<p>© ' . date('Y') . ' Studio</p>',
             GlobalTextTags::replaceInHtml($html, ['brand_name' => 'Studio']),
         );
     }
@@ -67,7 +67,7 @@ class GlobalTextTagsTest extends TestCase
         Auth::logout();
 
         $this->assertSame(
-            'Ciao , il '.date('Y').' è il tuo anno!',
+            'Ciao , il ' . date('Y') . ' è il tuo anno!',
             GlobalTextTags::replace('Ciao {logged_username}, il {current_year} è il tuo anno!'),
         );
     }
@@ -84,7 +84,7 @@ class GlobalTextTagsTest extends TestCase
         Auth::login($user);
 
         $this->assertSame(
-            'Ciao Paolo, il '.date('Y').' è il tuo anno!',
+            'Ciao Paolo, il ' . date('Y') . ' è il tuo anno!',
             GlobalTextTags::replace('Ciao {logged_username}, il {current_year} è il tuo anno!'),
         );
     }
@@ -123,7 +123,7 @@ class GlobalTextTagsTest extends TestCase
         $html = '<div class="rich"><p>Ciao {logged_username}, il {current_year}!</p></div>';
 
         $this->assertSame(
-            '<div class="rich"><p>Ciao Anna, il '.date('Y').'!</p></div>',
+            '<div class="rich"><p>Ciao Anna, il ' . date('Y') . '!</p></div>',
             GlobalTextTags::replaceInHtml($html, ['logged_username' => 'Anna']),
         );
     }

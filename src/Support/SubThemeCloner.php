@@ -13,7 +13,7 @@ final class SubThemeCloner
 {
     public static function suggestCloneId(string $sourceId): string
     {
-        return SubThemeImporter::suggestAvailableId(Str::kebab($sourceId).'-copy');
+        return SubThemeImporter::suggestAvailableId(Str::kebab($sourceId) . '-copy');
     }
 
     public static function clone(
@@ -49,7 +49,7 @@ final class SubThemeCloner
             return self::cloneFromDefinition($sourceId, $targetId, $label, $importColors);
         }
 
-        $archivePath = storage_path('app/voodbuilder-theme-exports/.clone-'.uniqid('', true).'.zip');
+        $archivePath = storage_path('app/voodbuilder-theme-exports/.clone-' . uniqid('', true) . '.zip');
 
         try {
             SubThemeExporter::export($sourceId, $archivePath);
@@ -99,7 +99,7 @@ final class SubThemeCloner
         $definition = SubThemeLocator::definitionFor($sourceId);
         $resolvedLabel = filled($label)
             ? trim((string) $label)
-            : (($definition['label'] ?? $sourceId).' copy');
+            : (($definition['label'] ?? $sourceId) . ' copy');
 
         $scaffold = SubThemeScaffolder::createFromDefinition($targetId, $resolvedLabel, $definition);
 

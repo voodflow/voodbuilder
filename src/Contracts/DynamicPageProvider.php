@@ -6,13 +6,14 @@ namespace Voodflow\Voodbuilder\Contracts;
 
 use Illuminate\Database\Eloquent\Model;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\DynamicPages\AbstractDynamicPageProvider;
 use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
  * Companion contract for dynamic SitePage templates that claim public routes.
  *
  * Register with {@see Voodbuilder::dynamicPageProvider()}. Extend
- * {@see \Voodflow\Voodbuilder\Support\DynamicPages\AbstractDynamicPageProvider}
+ * {@see AbstractDynamicPageProvider}
  * so optional contract methods keep working when the interface grows.
  *
  * A published dynamic SitePage for this channel + claimable route wins over

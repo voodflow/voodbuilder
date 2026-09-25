@@ -71,25 +71,25 @@ final class SectionItemCountAnnotator
             'max' => 4,
         ],
         'vb-voodpricing-cards' => [
-            'root' => ".//*[@data-vb-items-root]",
+            'root' => './/*[@data-vb-items-root]',
             'item' => './div[@data-vb-item]',
             'min' => 2,
             'max' => 6,
         ],
         'vb-voodpricing-spotlight' => [
-            'root' => ".//*[@data-vb-items-root]",
+            'root' => './/*[@data-vb-items-root]',
             'item' => './div[@data-vb-item]',
             'min' => 2,
             'max' => 5,
         ],
         'vb-voodpricing-minimal' => [
-            'root' => ".//*[@data-vb-items-root]",
+            'root' => './/*[@data-vb-items-root]',
             'item' => './div[@data-vb-item]',
             'min' => 2,
             'max' => 6,
         ],
         'vb-landing02-toolkit' => [
-            'root' => ".//*[@data-vb-items-root]",
+            'root' => './/*[@data-vb-items-root]',
             'item' => './div[@data-vb-item]',
             'min' => 1,
             'max' => 8,
@@ -126,7 +126,7 @@ final class SectionItemCountAnnotator
         $document = new DOMDocument('1.0', 'UTF-8');
         $previous = libxml_use_internal_errors(true);
 
-        $wrapped = '<?xml encoding="UTF-8"><div id="vb-section-annotate-root">'.$html.'</div>';
+        $wrapped = '<?xml encoding="UTF-8"><div id="vb-section-annotate-root">' . $html . '</div>';
         $document->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         libxml_clear_errors();
         libxml_use_internal_errors($previous);

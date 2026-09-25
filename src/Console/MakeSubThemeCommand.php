@@ -47,7 +47,7 @@ class MakeSubThemeCommand extends Command
             $this->components->warn('Theme CSS file was not written — check disk permissions.');
         }
 
-        $viewsRoot = ThemeConvention::appViewsPath($result->id).'/layouts';
+        $viewsRoot = ThemeConvention::appViewsPath($result->id) . '/layouts';
 
         $this->newLine();
         $this->components->info("Sub-theme \"{$result->id}\" created.");

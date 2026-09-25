@@ -147,7 +147,7 @@ final class SearchExcerpt
         $snippet = mb_substr($plain, $start, $end - $start);
 
         if ($start > 0) {
-            $snippet = '…'.$snippet;
+            $snippet = '…' . $snippet;
         }
         if ($end < mb_strlen($plain)) {
             $snippet .= '…';
@@ -164,7 +164,7 @@ final class SearchExcerpt
             return e($plain);
         }
 
-        $parts = preg_split('/('.preg_quote($term, '/').')/iu', $plain, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split('/(' . preg_quote($term, '/') . ')/iu', $plain, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         if ($parts === false) {
             return e($plain);
@@ -178,7 +178,7 @@ final class SearchExcerpt
             }
 
             if (strcasecmp($part, $term) === 0) {
-                $html .= '<mark class="vb-search-mark">'.e($part).'</mark>';
+                $html .= '<mark class="vb-search-mark">' . e($part) . '</mark>';
             } else {
                 $html .= e($part);
             }

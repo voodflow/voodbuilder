@@ -163,7 +163,7 @@ class EditorPastedComponentNormalizerTest extends TestCase
     {
         $html = '<div class="voodbuilder-pasted-component"><a class="bg-vp-brand-3 text-white hover:bg-vp-brand-2">Contact</a></div>';
         $storedCss = '.voodbuilder-pasted-component { --color-indigo-600: oklch(51.1% 0.262 276.966); }'
-            .' .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
+            . ' .bg-vp-brand-3 { background-color: var(--color-vp-brand-3); }';
 
         $resolved = EditorPastedComponentNormalizer::resolvedCssForStoredHtml($html, $storedCss);
 
@@ -331,7 +331,7 @@ CSS;
     public function test_resolve_published_page_css_ignores_component_instance_utilities(): void
     {
         $html = '<section class="p-4">Page</section>'
-            .'<div data-voodbuilder-component="cmp-1"><div class="voodbuilder-pasted-component"><div class="bg-blue-200">Card</div></div></div>';
+            . '<div data-voodbuilder-component="cmp-1"><div class="voodbuilder-pasted-component"><div class="bg-blue-200">Card</div></div></div>';
         $storedCss = '.p-4 { padding: 1rem; }';
 
         $resolved = EditorPastedComponentNormalizer::resolvePublishedPageCss($html, $storedCss);

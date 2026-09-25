@@ -631,7 +631,7 @@ final class EditorImportedTailwindSupport
                     return $matches[0];
                 }
 
-                return 'class='.$matches[1].'dark '.$matches[2].$matches[1];
+                return 'class=' . $matches[1] . 'dark ' . $matches[2] . $matches[1];
             },
             $html,
             1,
@@ -666,7 +666,7 @@ final class EditorImportedTailwindSupport
     {
         foreach (self::LINE_HEIGHT_REPLACEMENTS as $from => $to) {
             $html = preg_replace(
-                '/\b'.preg_quote($from, '/').'\b/',
+                '/\b' . preg_quote($from, '/') . '\b/',
                 $to,
                 $html,
             ) ?? $html;
@@ -689,7 +689,7 @@ final class EditorImportedTailwindSupport
                     $migrated[] = self::CLASS_REPLACEMENTS[$class] ?? $class;
                 }
 
-                return 'class='.$quote.implode(' ', $migrated).$quote;
+                return 'class=' . $quote . implode(' ', $migrated) . $quote;
             },
             $html,
         ) ?? $html;
@@ -717,8 +717,9 @@ final class EditorImportedTailwindSupport
         $needsPass = str_contains($html, 'el-dialog');
 
         foreach (self::LAYOUT_PSEUDO_TAGS as $tag) {
-            if (stripos($html, '<'.$tag) !== false || stripos($html, '</'.$tag) !== false) {
+            if (stripos($html, '<' . $tag) !== false || stripos($html, '</' . $tag) !== false) {
                 $needsPass = true;
+
                 break;
             }
         }
@@ -1119,7 +1120,7 @@ final class EditorImportedTailwindSupport
         if ($style === '') {
             $element->setAttribute('style', $required);
         } elseif (! str_contains($style, 'max-width')) {
-            $element->setAttribute('style', rtrim($style, ';').';'.$required);
+            $element->setAttribute('style', rtrim($style, ';') . ';' . $required);
         }
     }
 
@@ -1211,7 +1212,7 @@ final class EditorImportedTailwindSupport
         if ($kept === []) {
             $element->removeAttribute('style');
         } else {
-            $element->setAttribute('style', implode('; ', $kept).';');
+            $element->setAttribute('style', implode('; ', $kept) . ';');
         }
     }
 
@@ -1275,6 +1276,7 @@ final class EditorImportedTailwindSupport
 
             if (self::isContentShellElement($child)) {
                 $existing = $child;
+
                 break;
             }
         }
@@ -1491,17 +1493,17 @@ final class EditorImportedTailwindSupport
         $body = $document->getElementsByTagName('body')->item(0);
 
         if ($body === null || $body->childNodes->length !== 1) {
-            return '<div class="voodbuilder-pasted-component relative">'.$html.'</div>';
+            return '<div class="voodbuilder-pasted-component relative">' . $html . '</div>';
         }
 
         $root = $body->firstChild;
 
         if (! $root instanceof DOMElement) {
-            return '<div class="voodbuilder-pasted-component relative">'.$html.'</div>';
+            return '<div class="voodbuilder-pasted-component relative">' . $html . '</div>';
         }
 
         $existing = trim($root->getAttribute('class'));
-        $root->setAttribute('class', trim(($existing !== '' ? $existing.' ' : '').'voodbuilder-pasted-component relative'));
+        $root->setAttribute('class', trim(($existing !== '' ? $existing . ' ' : '') . 'voodbuilder-pasted-component relative'));
 
         return self::extractBodyHtml($document) ?? $html;
     }
@@ -1512,7 +1514,7 @@ final class EditorImportedTailwindSupport
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 
@@ -1541,21 +1543,21 @@ final class EditorImportedTailwindSupport
 
     protected static function mergeStyleProperty(string $style, string $property, string $value): string
     {
-        $declaration = $property.': '.$value.';';
+        $declaration = $property . ': ' . $value . ';';
         $style = trim($style);
 
         if ($style === '') {
             return $declaration;
         }
 
-        $pattern = '/\b'.preg_quote($property, '/').'\s*:[^;]*;?/i';
+        $pattern = '/\b' . preg_quote($property, '/') . '\s*:[^;]*;?/i';
         $replaced = preg_replace($pattern, $declaration, $style);
 
         if (is_string($replaced) && $replaced !== $style) {
             return trim($replaced);
         }
 
-        return rtrim($style, ';').';'.$declaration;
+        return rtrim($style, ';') . ';' . $declaration;
     }
 
     protected static function cssUrl(string $url): string

@@ -32,7 +32,7 @@ final class SitePageRevisionRecorder
         $slimmed = PageCssArtifactStore::slimPayloadForHistory(
             $previousPayload,
             (int) $page->getKey(),
-            'prev-'.now()->format('YmdHis').'-'.uniqid(),
+            'prev-' . now()->format('YmdHis') . '-' . uniqid(),
         );
 
         SitePageRevision::query()->create([
@@ -64,7 +64,7 @@ final class SitePageRevisionRecorder
         $payload = PageCssArtifactStore::slimPayloadForHistory(
             $payload,
             (int) $page->getKey(),
-            'auto-'.now()->format('YmdHis').'-'.uniqid(),
+            'auto-' . now()->format('YmdHis') . '-' . uniqid(),
         );
 
         $latest = $this->latestAutosave($page);

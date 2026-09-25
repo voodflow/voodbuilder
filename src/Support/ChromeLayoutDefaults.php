@@ -81,6 +81,6 @@ HTML;
 
     public static function starterHtml(): string
     {
-        return self::navZoneHtml().self::progressZoneHtml().self::contentSlotHtml().self::footerZoneHtml();
+        return self::navZoneHtml() . self::progressZoneHtml() . self::contentSlotHtml() . self::footerZoneHtml();
     }
 }

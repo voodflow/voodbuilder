@@ -122,7 +122,7 @@ final class ConfigureSubThemesForVoodbuilder
             $updated = preg_replace(
                 '/\n];\s*$/',
                 "\n\n    /* Custom visual themes for this application */\n    'sub_themes' => [\n{$exported}    ],\n];\n",
-                rtrim($contents)."\n",
+                rtrim($contents) . "\n",
                 1,
             );
 
@@ -136,8 +136,8 @@ final class ConfigureSubThemesForVoodbuilder
         $exported = self::exportSubThemes($subThemes);
 
         return substr($contents, 0, $bounds['open'] + 1)
-            ."\n".$exported.'    '
-            .substr($contents, $bounds['close']);
+            . "\n" . $exported . '    '
+            . substr($contents, $bounds['close']);
     }
 
     /**
@@ -223,7 +223,7 @@ final class ConfigureSubThemesForVoodbuilder
             $entries[] = rtrim(self::formatEntry($id, $definition));
         }
 
-        return implode("\n", $entries)."\n";
+        return implode("\n", $entries) . "\n";
     }
 
     /**
@@ -283,7 +283,7 @@ final class ConfigureSubThemesForVoodbuilder
         $landingLayout = addslashes($normalized['layouts']['landing']);
         $css = addslashes($normalized['css']);
 
-        $capabilitiesExport = "['".implode("', '", array_map('addslashes', $normalized['capabilities']))."']";
+        $capabilitiesExport = "['" . implode("', '", array_map('addslashes', $normalized['capabilities'])) . "']";
 
         $chromeBlock = '';
 
@@ -295,22 +295,22 @@ final class ConfigureSubThemesForVoodbuilder
                     continue;
                 }
 
-                $chromeLines[] = "                '{$flag}' => ".($value ? 'true' : 'false').',';
+                $chromeLines[] = "                '{$flag}' => " . ($value ? 'true' : 'false') . ',';
             }
 
             if ($chromeLines !== []) {
-                $chromeBlock = "\n            'chrome' => [\n".implode("\n", $chromeLines)."\n            ],";
+                $chromeBlock = "\n            'chrome' => [\n" . implode("\n", $chromeLines) . "\n            ],";
             }
         }
 
         $extraLayouts = '';
 
         if (isset($normalized['layouts']['article']) && is_string($normalized['layouts']['article'])) {
-            $extraLayouts .= "\n                'article' => '".addslashes($normalized['layouts']['article'])."',";
+            $extraLayouts .= "\n                'article' => '" . addslashes($normalized['layouts']['article']) . "',";
         }
 
         if (isset($normalized['layouts']['section_index']) && is_string($normalized['layouts']['section_index'])) {
-            $extraLayouts .= "\n                'section_index' => '".addslashes($normalized['layouts']['section_index'])."',";
+            $extraLayouts .= "\n                'section_index' => '" . addslashes($normalized['layouts']['section_index']) . "',";
         }
 
         return <<<PHP

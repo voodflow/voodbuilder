@@ -50,10 +50,10 @@ final class ChromeLayoutEditorPreview
         $subTheme = SubThemeResolver::normalize($subTheme ?? self::shellSubTheme());
 
         return '<div data-voodbuilder-chrome-shell data-voodbuilder-sub-theme="'
-            .e($subTheme)
-            .'">'
-            .$html
-            .'</div>';
+            . e($subTheme)
+            . '">'
+            . $html
+            . '</div>';
     }
 
     /**
@@ -77,27 +77,27 @@ final class ChromeLayoutEditorPreview
     {
         $resolvedSubTheme = SubThemeResolver::normalize($subTheme ?? self::shellSubTheme(layout: $layout));
         $rendered = app(ChromeLayoutRenderer::class)->render($layout, canvasPreview: true);
-        $subThemeAttr = ' data-voodbuilder-sub-theme="'.e($resolvedSubTheme).'"';
+        $subThemeAttr = ' data-voodbuilder-sub-theme="' . e($resolvedSubTheme) . '"';
 
         $slot = '<div'
-            .' data-voodbuilder-content-slot="main"'
-            .' data-voodbuilder-page-content="1"'
-            .' class="voodbuilder-page-content-slot voodbuilder-chrome-content-slot"'
-            .'>'
-            .$pageHtml
-            .'</div>';
+            . ' data-voodbuilder-content-slot="main"'
+            . ' data-voodbuilder-page-content="1"'
+            . ' class="voodbuilder-page-content-slot voodbuilder-chrome-content-slot"'
+            . '>'
+            . $pageHtml
+            . '</div>';
 
         $before = $rendered['before'] !== ''
-            ? '<div data-voodbuilder-chrome-shell-part="before" data-voodbuilder-chrome-shell-locked="1" data-voodbuilder-chrome-shell="1"'.$subThemeAttr.'>'.$rendered['before'].'</div>'
+            ? '<div data-voodbuilder-chrome-shell-part="before" data-voodbuilder-chrome-shell-locked="1" data-voodbuilder-chrome-shell="1"' . $subThemeAttr . '>' . $rendered['before'] . '</div>'
             : '';
         $after = $rendered['after'] !== ''
-            ? '<div data-voodbuilder-chrome-shell-part="after" data-voodbuilder-chrome-shell-locked="1" data-voodbuilder-chrome-shell="1"'.$subThemeAttr.'>'.$rendered['after'].'</div>'
+            ? '<div data-voodbuilder-chrome-shell-part="after" data-voodbuilder-chrome-shell-locked="1" data-voodbuilder-chrome-shell="1"' . $subThemeAttr . '>' . $rendered['after'] . '</div>'
             : '';
 
-        $chromeHtml = $before.$slot.$after;
+        $chromeHtml = $before . $slot . $after;
         $chromeCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($rendered['css']));
         $componentCss = ThemePalette::stripEmbeddedPaletteOverrides(
-            ComponentRuntimeBridge::componentCssForHtml($rendered['before'].$rendered['after']) ?? '',
+            ComponentRuntimeBridge::componentCssForHtml($rendered['before'] . $rendered['after']) ?? '',
         );
         // Page CSS can bake stale --vx-header-bg etc.; strip so admin/canvas palette wins.
         $safePageCss = ThemePalette::stripEmbeddedPaletteOverrides(trim($pageCss));

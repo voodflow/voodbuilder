@@ -156,7 +156,7 @@ final class ThemeBindings
 
     public static function channelAreaDescription(PublicContentChannel $channel): string
     {
-        $key = 'voodbuilder::theme_bindings.channels.'.$channel->id();
+        $key = 'voodbuilder::theme_bindings.channels.' . $channel->id();
         $translation = __($key);
 
         if ($translation !== $key) {

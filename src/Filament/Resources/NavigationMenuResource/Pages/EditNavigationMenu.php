@@ -81,7 +81,7 @@ class EditNavigationMenu extends EditRecord
         $this->cacheTreeActions();
     }
 
-    public function mount(int|string $record): void
+    public function mount(int | string $record): void
     {
         static::registerPreviewAssets();
         static::registerMenuTreeAssets();

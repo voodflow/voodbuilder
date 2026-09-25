@@ -237,11 +237,11 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
     public function test_preserves_background_color_when_stripping_conflicting_text_color(): void
     {
         $html = '<section class="text-vp-text-2 voodbuilder-editor-section" style="'
-            .'color: rgb(60, 60, 67);'
-            .'background-color:#daa0a0;'
-            .'border-color:black;'
-            .'box-shadow:0 0 5px 0 black;'
-            .'">Content</section>';
+            . 'color: rgb(60, 60, 67);'
+            . 'background-color:#daa0a0;'
+            . 'border-color:black;'
+            . 'box-shadow:0 0 5px 0 black;'
+            . '">Content</section>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
@@ -293,8 +293,8 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
     public function test_migrate_html_preserves_background_classes_inside_component_instances(): void
     {
         $html = '<div class="voodbuilder-editor-component-instance bg-blue-400" data-voodbuilder-component="abc">'
-            .'<div class="voodbuilder-pasted-component bg-blue-400"><p class="text-blue-500">Hi</p></div>'
-            .'</div>';
+            . '<div class="voodbuilder-pasted-component bg-blue-400"><p class="text-blue-500">Hi</p></div>'
+            . '</div>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
@@ -347,11 +347,11 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
     public function test_does_not_treat_hero_media_as_section_container(): void
     {
         $html = '<section data-voodbuilder-section-block="vb-hero-cinematic" class="voodbuilder-editor-section relative">'
-            .'<div class="voodbuilder-hero-media" data-voodbuilder-role="media" aria-hidden="true">'
-            .'<img class="voodbuilder-hero-media__img" src="/x.jpg" alt="" />'
-            .'</div>'
-            .'<div class="voodbuilder-editor-container relative z-10">Copy</div>'
-            .'</section>';
+            . '<div class="voodbuilder-hero-media" data-voodbuilder-role="media" aria-hidden="true">'
+            . '<img class="voodbuilder-hero-media__img" src="/x.jpg" alt="" />'
+            . '</div>'
+            . '<div class="voodbuilder-editor-container relative z-10">Copy</div>'
+            . '</section>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
@@ -390,7 +390,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
     public function test_does_not_force_layout_max_width_when_content_width_attr_present(): void
     {
         $html = '<div class="voodbuilder-editor-container relative px-5 w-full max-w-[80rem] mx-auto"'
-            .' data-voodbuilder-content-width="normal">Content</div>';
+            . ' data-voodbuilder-content-width="normal">Content</div>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 
@@ -402,7 +402,7 @@ class VoodbuilderThemeTokenMigratorTest extends TestCase
     public function test_does_not_readd_layout_max_width_for_full_content_width(): void
     {
         $html = '<div class="voodbuilder-editor-container relative px-5 w-full"'
-            .' data-voodbuilder-content-width="full">Content</div>';
+            . ' data-voodbuilder-content-width="full">Content</div>';
 
         $migrated = VoodbuilderThemeTokenMigrator::migrateHtml($html);
 

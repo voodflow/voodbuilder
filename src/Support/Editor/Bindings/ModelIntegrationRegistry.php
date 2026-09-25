@@ -22,14 +22,14 @@ final class ModelIntegrationRegistry
         $alias = $integration->getAlias();
 
         $this->byAlias[$alias] = $integration;
-        $this->byListKey[$alias.'.list'] = $integration;
+        $this->byListKey[$alias . '.list'] = $integration;
     }
 
     public function forget(ModelIntegration $integration): void
     {
         $alias = $integration->getAlias();
 
-        unset($this->byAlias[$alias], $this->byListKey[$alias.'.list']);
+        unset($this->byAlias[$alias], $this->byListKey[$alias . '.list']);
     }
 
     public function findByAlias(string $alias): ?ModelIntegration
@@ -67,8 +67,8 @@ final class ModelIntegrationRegistry
 
         foreach ($this->byAlias as $alias => $integration) {
             $items[] = [
-                'id' => $alias.'.list',
-                'label' => $integration->name.' · '.__('voodbuilder::model_integrations.bindings.repeat_source'),
+                'id' => $alias . '.list',
+                'label' => $integration->name . ' · ' . __('voodbuilder::model_integrations.bindings.repeat_source'),
                 'sortFields' => $sortFields->forIntegration($integration),
                 'defaultSort' => 'id',
                 'defaultDirection' => 'desc',

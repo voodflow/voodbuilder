@@ -25,7 +25,7 @@ final class ThemeConvention
 {
     public static function packageCssPath(string $id): string
     {
-        return VoodbuilderPaths::packagePath()."/resources/themes/{$id}/theme.css";
+        return VoodbuilderPaths::packagePath() . "/resources/themes/{$id}/theme.css";
     }
 
     public static function packageCssImport(): string
@@ -70,17 +70,17 @@ final class ThemeConvention
         $relative = VoodbuilderPaths::relativeToBasePath($absoluteCssPath);
 
         if (str_starts_with($relative, 'packages/voodflow/voodbuilder/resources/themes/')) {
-            return '../themes/'.basename(dirname($absoluteCssPath)).'/theme.css';
+            return '../themes/' . basename(dirname($absoluteCssPath)) . '/theme.css';
         }
 
         if (str_starts_with($relative, 'vendor/voodflow/voodbuilder/resources/themes/')) {
-            return '../themes/'.basename(dirname($absoluteCssPath)).'/theme.css';
+            return '../themes/' . basename(dirname($absoluteCssPath)) . '/theme.css';
         }
 
         $fromBundle = str_replace('\\', '/', realpath($bundleDir) ?: $bundleDir);
         $toTheme = str_replace('\\', '/', $absoluteCssPath);
 
-        $relativePath = self::relativePath($fromBundle, dirname($toTheme)).'/theme.css';
+        $relativePath = self::relativePath($fromBundle, dirname($toTheme)) . '/theme.css';
 
         return $relativePath !== '/theme.css' ? $relativePath : null;
     }
@@ -93,7 +93,7 @@ final class ThemeConvention
 
         $pairs = [
             "data-voodbuilder-sub-theme='{$fromId}'" => "data-voodbuilder-sub-theme='{$toId}'",
-            'data-voodbuilder-sub-theme="'.$fromId.'"' => 'data-voodbuilder-sub-theme="'.$toId.'"',
+            'data-voodbuilder-sub-theme="' . $fromId . '"' => 'data-voodbuilder-sub-theme="' . $toId . '"',
             "voodbuilder-sub-theme-{$fromId}" => "voodbuilder-sub-theme-{$toId}",
         ];
 
@@ -139,6 +139,6 @@ final class ThemeConvention
             array_shift($toParts);
         }
 
-        return str_repeat('../', count($fromParts)).implode('/', $toParts);
+        return str_repeat('../', count($fromParts)) . implode('/', $toParts);
     }
 }

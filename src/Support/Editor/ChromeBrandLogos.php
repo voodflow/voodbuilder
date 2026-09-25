@@ -201,10 +201,10 @@ final class ChromeBrandLogos
         $def = self::sizeDefinition($size);
 
         if ($fullWidth) {
-            return trim($def['height'].' w-full max-w-full object-contain object-left');
+            return trim($def['height'] . ' w-full max-w-full object-contain object-left');
         }
 
-        return trim($def['height'].' w-auto '.$def['desktop_max'].' object-contain object-left');
+        return trim($def['height'] . ' w-auto ' . $def['desktop_max'] . ' object-contain object-left');
     }
 
     public static function mobileLogoClass(mixed $size, bool $fullWidth = false): string
@@ -212,10 +212,10 @@ final class ChromeBrandLogos
         $def = self::sizeDefinition($size);
 
         if ($fullWidth) {
-            return trim($def['height'].' w-full max-w-full object-contain object-left');
+            return trim($def['height'] . ' w-full max-w-full object-contain object-left');
         }
 
-        return trim($def['height'].' w-auto '.$def['mobile_max'].' object-contain object-left');
+        return trim($def['height'] . ' w-auto ' . $def['mobile_max'] . ' object-contain object-left');
     }
 
     /**
@@ -235,14 +235,14 @@ final class ChromeBrandLogos
         $normalizedShape = self::normalizeShape($shape);
 
         if ($fullWidth || $logoOnly) {
-            return trim($def['height'].' w-full max-w-full object-contain object-left');
+            return trim($def['height'] . ' w-full max-w-full object-contain object-left');
         }
 
         if ($packageMark || $normalizedShape !== 'circle') {
-            return trim($def['height'].' w-auto '.$def['desktop_max'].' object-contain object-left');
+            return trim($def['height'] . ' w-auto ' . $def['desktop_max'] . ' object-contain object-left');
         }
 
-        return trim($def['square'].' rounded-full object-cover');
+        return trim($def['square'] . ' rounded-full object-cover');
     }
 
     public static function publicUrl(mixed $value): ?string

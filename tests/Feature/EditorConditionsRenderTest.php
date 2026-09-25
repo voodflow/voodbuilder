@@ -14,7 +14,7 @@ class EditorConditionsRenderTest extends TestCase
     public function test_fixture_conditions_keep_matching_locale_blocks(): void
     {
         $fixture = json_decode(
-            (string) file_get_contents(dirname(__DIR__).'/Fixtures/0.0.11/sample-page.json'),
+            (string) file_get_contents(dirname(__DIR__) . '/Fixtures/0.0.11/sample-page.json'),
             true,
             flags: JSON_THROW_ON_ERROR,
         );
@@ -41,7 +41,7 @@ class EditorConditionsRenderTest extends TestCase
     public function test_fixture_conditions_hide_non_matching_locale_blocks(): void
     {
         $fixture = json_decode(
-            (string) file_get_contents(dirname(__DIR__).'/Fixtures/0.0.11/sample-page.json'),
+            (string) file_get_contents(dirname(__DIR__) . '/Fixtures/0.0.11/sample-page.json'),
             true,
             flags: JSON_THROW_ON_ERROR,
         );

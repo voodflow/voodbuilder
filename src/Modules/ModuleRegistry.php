@@ -139,7 +139,7 @@ final class ModuleRegistry
     {
         return new ModuleContext(
             app: $this->app,
-            config: (array) config('voodbuilder.modules.'.$module->id(), []),
+            config: (array) config('voodbuilder.modules.' . $module->id(), []),
             enabled: $this->isEnabled($module->id()),
         );
     }

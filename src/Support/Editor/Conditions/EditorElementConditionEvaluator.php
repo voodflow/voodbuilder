@@ -114,7 +114,7 @@ final class EditorElementConditionEvaluator
             return '/';
         }
 
-        return '/'.ltrim($trimmed, '/');
+        return '/' . ltrim($trimmed, '/');
     }
 
     protected function compareBool(bool $actual, string $compare, bool $expected): bool

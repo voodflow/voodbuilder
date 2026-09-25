@@ -14,6 +14,6 @@ final class PublicDiskUrl
 {
     public static function fromPath(string $path): string
     {
-        return '/storage/'.ltrim(str_replace('\\', '/', $path), '/');
+        return '/storage/' . ltrim(str_replace('\\', '/', $path), '/');
     }
 }

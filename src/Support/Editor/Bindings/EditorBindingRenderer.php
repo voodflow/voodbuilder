@@ -92,7 +92,7 @@ final class EditorBindingRenderer
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 
@@ -224,7 +224,7 @@ final class EditorBindingRenderer
             return true;
         }
 
-        $class = ' '.$element->getAttribute('class').' ';
+        $class = ' ' . $element->getAttribute('class') . ' ';
 
         return str_contains($class, ' vb-rich-text-dynamic ');
     }
@@ -317,7 +317,7 @@ final class EditorBindingRenderer
         if ($tag === 'button') {
             $element->setAttribute(
                 'onclick',
-                'window.location.href='.json_encode($decoded, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP),
+                'window.location.href=' . json_encode($decoded, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP),
             );
         }
     }
@@ -393,7 +393,7 @@ final class EditorBindingRenderer
             return true;
         }
 
-        $class = ' '.$element->getAttribute('class').' ';
+        $class = ' ' . $element->getAttribute('class') . ' ';
 
         return str_contains($class, ' vb-animated-counter ');
     }

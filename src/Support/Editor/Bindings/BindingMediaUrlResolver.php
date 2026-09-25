@@ -17,7 +17,7 @@ final class BindingMediaUrlResolver
         Model $record,
         string $fieldId,
         ?string $resolvedValue = null,
-        bool|BindingContext $previewContext = false,
+        bool | BindingContext $previewContext = false,
     ): ?string {
         $context = self::bindingContext($previewContext);
 
@@ -33,7 +33,7 @@ final class BindingMediaUrlResolver
             return $fromMedia;
         }
 
-        $urlAccessor = Str::camel($fieldId).'Url';
+        $urlAccessor = Str::camel($fieldId) . 'Url';
 
         if (method_exists($record, $urlAccessor)) {
             $accessorUrl = $record->{$urlAccessor}();
@@ -52,7 +52,7 @@ final class BindingMediaUrlResolver
 
     public static function editorMediaPreviewPath(int $mediaId): string
     {
-        return '/voodbuilder/editor/media/'.$mediaId;
+        return '/voodbuilder/editor/media/' . $mediaId;
     }
 
     public static function normalizeForEditor(string $value): string
@@ -133,7 +133,7 @@ final class BindingMediaUrlResolver
         return null;
     }
 
-    protected static function bindingContext(bool|BindingContext $previewContext): BindingContext
+    protected static function bindingContext(bool | BindingContext $previewContext): BindingContext
     {
         if ($previewContext instanceof BindingContext) {
             return $previewContext;

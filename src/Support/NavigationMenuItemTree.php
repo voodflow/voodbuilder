@@ -34,7 +34,7 @@ class NavigationMenuItemTree
             ->maxVisibleDepth(static::MAX_DEPTH)
             ->searchable()
             ->getRecordUsing(
-                fn (int|string $id): ?NavigationMenuItem => NavigationMenuItem::query()
+                fn (int | string $id): ?NavigationMenuItem => NavigationMenuItem::query()
                     ->where('menu_id', $menu->id)
                     ->whereKey($id)
                     ->first(),

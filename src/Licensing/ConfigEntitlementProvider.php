@@ -7,6 +7,4 @@ namespace Voodflow\Voodbuilder\Licensing;
 /**
  * @deprecated Use CommunityEntitlementProvider or TestingEntitlementProvider.
  */
-final class ConfigEntitlementProvider extends CommunityEntitlementProvider
-{
-}
+final class ConfigEntitlementProvider extends CommunityEntitlementProvider {}

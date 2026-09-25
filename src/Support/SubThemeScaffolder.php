@@ -30,7 +30,7 @@ final class SubThemeScaffolder
 
         $label = trim($label) !== '' ? trim($label) : str($id)->headline()->toString();
         $themeRoot = dirname(ThemeConvention::appCssPath($id));
-        $viewsRoot = ThemeConvention::appViewsPath($id).'/layouts';
+        $viewsRoot = ThemeConvention::appViewsPath($id) . '/layouts';
         $cssPath = ThemeConvention::appCssPath($id);
 
         if (File::isDirectory($themeRoot) && ! $force) {
@@ -164,7 +164,7 @@ final class SubThemeScaffolder
             return;
         }
 
-        $stubPath = dirname(__DIR__, 2).'/stubs/sub-theme/'.$stub;
+        $stubPath = dirname(__DIR__, 2) . '/stubs/sub-theme/' . $stub;
         $contents = str_replace(
             array_keys($replacements),
             array_values($replacements),

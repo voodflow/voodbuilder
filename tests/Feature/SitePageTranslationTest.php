@@ -22,7 +22,7 @@ class SitePageTranslationTest extends TestCase
     {
         parent::setUp();
 
-        $vtutsViews = dirname(__DIR__, 2).'/../vtuts/resources/views';
+        $vtutsViews = dirname(__DIR__, 2) . '/../vtuts/resources/views';
 
         if (is_dir($vtutsViews)) {
             View::addNamespace('vtuts', $vtutsViews);
@@ -252,7 +252,7 @@ class SitePageTranslationTest extends TestCase
         $this->assertContains(
             'site_pages_slug_locale_unique',
             $indexNames,
-            'Expected composite slug+locale index, found: '.implode(', ', $indexNames),
+            'Expected composite slug+locale index, found: ' . implode(', ', $indexNames),
         );
         $this->assertNotContains('site_pages_slug_unique', $indexNames);
 

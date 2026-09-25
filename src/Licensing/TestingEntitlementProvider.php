@@ -37,7 +37,7 @@ final class TestingEntitlementProvider implements EntitlementProvider
             new LicenceStatus(
                 edition: $normalized,
                 active: true,
-                identifier: 'testing:'.$normalized,
+                identifier: 'testing:' . $normalized,
             ),
         );
     }

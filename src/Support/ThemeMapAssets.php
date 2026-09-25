@@ -22,12 +22,12 @@ final class ThemeMapAssets
 
     public static function distPath(): string
     {
-        return VoodbuilderPaths::packagePath().'/resources/dist/theme-map.js';
+        return VoodbuilderPaths::packagePath() . '/resources/dist/theme-map.js';
     }
 
     public static function distCssPath(): string
     {
-        return VoodbuilderPaths::packagePath().'/resources/dist/theme-map.css';
+        return VoodbuilderPaths::packagePath() . '/resources/dist/theme-map.css';
     }
 
     public static function isBuilt(): bool
@@ -60,12 +60,12 @@ final class ThemeMapAssets
             return;
         }
 
-        self::publishIfStale(self::distPath(), public_path('js/'.self::PACKAGE.'/'.self::SCRIPT_ID.'.js'));
+        self::publishIfStale(self::distPath(), public_path('js/' . self::PACKAGE . '/' . self::SCRIPT_ID . '.js'));
 
         if (is_file(self::distCssPath())) {
             self::publishIfStale(
                 self::distCssPath(),
-                public_path('css/'.self::PACKAGE.'/'.self::STYLE_ID.'.css'),
+                public_path('css/' . self::PACKAGE . '/' . self::STYLE_ID . '.css'),
             );
         }
     }
@@ -92,7 +92,7 @@ final class ThemeMapAssets
         self::ensurePublished();
 
         return self::versionedPublicUrl(
-            public_path('js/'.self::PACKAGE.'/'.self::SCRIPT_ID.'.js'),
+            public_path('js/' . self::PACKAGE . '/' . self::SCRIPT_ID . '.js'),
             FilamentAsset::getScriptSrc(self::SCRIPT_ID, self::PACKAGE),
         );
     }
@@ -106,7 +106,7 @@ final class ThemeMapAssets
         self::ensurePublished();
 
         return self::versionedPublicUrl(
-            public_path('css/'.self::PACKAGE.'/'.self::STYLE_ID.'.css'),
+            public_path('css/' . self::PACKAGE . '/' . self::STYLE_ID . '.css'),
             FilamentAsset::getStyleHref(self::STYLE_ID, self::PACKAGE),
         );
     }
@@ -174,6 +174,6 @@ final class ThemeMapAssets
 
         $base = strtok($fallback, '?') ?: $fallback;
 
-        return $base.'?v='.filemtime($publicPath);
+        return $base . '?v=' . filemtime($publicPath);
     }
 }

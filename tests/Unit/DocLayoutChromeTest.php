@@ -13,7 +13,7 @@ class DocLayoutChromeTest extends TestCase
     public function test_doc_sidebar_stays_in_flow_and_does_not_cover_footer(): void
     {
         $contents = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/views/layouts/doc.blade.php',
+            VoodbuilderPaths::packagePath() . '/resources/views/layouts/doc.blade.php',
         );
 
         $this->assertStringNotContainsString('fixed top-0 bottom-0', $contents);
@@ -36,7 +36,7 @@ class DocLayoutChromeTest extends TestCase
     public function test_landing_css_keeps_full_chrome_bars_with_boxed_nav_footer_containers(): void
     {
         $contents = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/css/landing.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/landing.css',
         );
 
         $this->assertStringContainsString(
@@ -50,7 +50,7 @@ class DocLayoutChromeTest extends TestCase
     public function test_landing_css_first_child_padding_flush_yields_to_author_utilities(): void
     {
         $contents = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/css/landing.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/landing.css',
         );
 
         // Contract: soft first-block chrome flush must not beat Tailwind py-*/pt-*.
@@ -74,7 +74,7 @@ class DocLayoutChromeTest extends TestCase
     public function test_landing_css_section_traits_and_footer_hero_escape_yield_to_author_utilities(): void
     {
         $contents = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/css/landing.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/landing.css',
         );
 
         // Soft section width/padding traits must not be unlayered high-specificity @apply.
@@ -117,7 +117,7 @@ class DocLayoutChromeTest extends TestCase
     public function test_chrome_block_utilities_include_lg_footer_layout_rules(): void
     {
         $contents = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/css/editor/chrome-block-utilities.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/editor/chrome-block-utilities.css',
         );
 
         $this->assertStringContainsString('.lg\\:flex-row', $contents);
@@ -137,7 +137,7 @@ class DocLayoutChromeTest extends TestCase
     public function test_chrome_block_utilities_container_default_yields_to_author_utilities(): void
     {
         $contents = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/css/editor/chrome-block-utilities.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/editor/chrome-block-utilities.css',
         );
 
         // Unlayered `.voodbuilder-editor-container { max-width }` beat author max-w-*.
@@ -159,16 +159,16 @@ class DocLayoutChromeTest extends TestCase
     public function test_chrome_app_main_is_content_driven_not_sticky_footer_by_default(): void
     {
         $chromeApp = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/views/layouts/chrome-app.blade.php',
+            VoodbuilderPaths::packagePath() . '/resources/views/layouts/chrome-app.blade.php',
         );
         $app = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/views/layouts/app.blade.php',
+            VoodbuilderPaths::packagePath() . '/resources/views/layouts/app.blade.php',
         );
         $landing = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/css/landing.css',
+            VoodbuilderPaths::packagePath() . '/resources/css/landing.css',
         );
         $siteTheme = (string) file_get_contents(
-            VoodbuilderPaths::packagePath().'/resources/themes/site/theme.css',
+            VoodbuilderPaths::packagePath() . '/resources/themes/site/theme.css',
         );
 
         // Sticky footer (main flex-1 under body min-h-screen) created a huge gap

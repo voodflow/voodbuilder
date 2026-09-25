@@ -21,7 +21,7 @@ use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
  */
 class AuthController extends Controller
 {
-    public function showLogin(): View|RedirectResponse
+    public function showLogin(): View | RedirectResponse
     {
         return view('voodbuilder::pages.auth.login');
     }
@@ -46,7 +46,7 @@ class AuthController extends Controller
         return redirect()->intended($this->redirectAfterAuth());
     }
 
-    public function showRegister(): View|RedirectResponse
+    public function showRegister(): View | RedirectResponse
     {
         if (! config('voodbuilder.auth.registration_enabled', true)) {
             abort(404);

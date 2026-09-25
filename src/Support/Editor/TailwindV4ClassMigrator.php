@@ -24,7 +24,7 @@ final class TailwindV4ClassMigrator
     public static function migrateHtml(string $html): string
     {
         foreach (self::REPLACEMENTS as $from => $to) {
-            $html = preg_replace('/\b'.preg_quote($from, '/').'\b/', $to, $html) ?? $html;
+            $html = preg_replace('/\b' . preg_quote($from, '/') . '\b/', $to, $html) ?? $html;
         }
 
         return $html;

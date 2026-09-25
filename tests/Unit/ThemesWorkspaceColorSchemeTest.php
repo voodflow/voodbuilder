@@ -81,8 +81,8 @@ PHP);
     {
         foreach ([$this->sourceId, $this->targetId] as $id) {
             ConfigureSubThemesForVoodbuilder::removeFromConfig($id);
-            File::deleteDirectory(resource_path('voodbuilder/themes/'.$id));
-            File::deleteDirectory(resource_path('views/voodbuilder/themes/'.$id));
+            File::deleteDirectory(resource_path('voodbuilder/themes/' . $id));
+            File::deleteDirectory(resource_path('views/voodbuilder/themes/' . $id));
         }
 
         parent::tearDown();
@@ -138,7 +138,7 @@ PHP);
     protected function seedThemeFiles(string $themeId): void
     {
         $cssPath = ThemeConvention::appCssPath($themeId);
-        $viewsPath = ThemeConvention::appViewsPath($themeId).'/layouts/page.blade.php';
+        $viewsPath = ThemeConvention::appViewsPath($themeId) . '/layouts/page.blade.php';
 
         File::ensureDirectoryExists(dirname($cssPath));
         File::ensureDirectoryExists(dirname($viewsPath));

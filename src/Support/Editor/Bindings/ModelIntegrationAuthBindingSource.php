@@ -33,7 +33,7 @@ final class ModelIntegrationAuthBindingSource extends AbstractModelIntegrationBi
 
     public function id(): string
     {
-        return $this->integration->getAlias().'.auth';
+        return $this->integration->getAlias() . '.auth';
     }
 
     public function label(): string

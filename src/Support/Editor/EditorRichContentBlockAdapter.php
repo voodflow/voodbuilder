@@ -28,7 +28,7 @@ final class EditorRichContentBlockAdapter
         $previewHtml = EditorBlockPreview::wrapHtml(self::prepareBlockHtml($editorInner));
 
         return new EditorBlockDefinition(
-            id: 'voodbuilder-'.$blockId,
+            id: 'voodbuilder-' . $blockId,
             label: $blockClass::getLabel(),
             category: $category,
             content: self::wrap($blockId, $config, $editorInner),
@@ -72,7 +72,7 @@ final class EditorRichContentBlockAdapter
     {
         $safeLabel = htmlspecialchars($label, ENT_QUOTES | ENT_HTML5);
 
-        return '<div class="voodbuilder-editor-dynamic-placeholder rounded-lg border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-sm text-vp-text-2">'.$safeLabel.'</div>';
+        return '<div class="voodbuilder-editor-dynamic-placeholder rounded-lg border border-dashed border-vp-divider bg-vp-bg-alt p-6 text-center text-sm text-vp-text-2">' . $safeLabel . '</div>';
     }
 
     /**
@@ -129,12 +129,12 @@ HTML;
             $classes = trim($classMatch[2]);
 
             if (! str_contains($classes, 'voodbuilder-editor-dynamic')) {
-                $classes = trim($classes.' voodbuilder-editor-dynamic');
+                $classes = trim($classes . ' voodbuilder-editor-dynamic');
             }
 
             $attrs = preg_replace(
                 '/\bclass=(["\'])(.*?)\1/is',
-                'class='.$classMatch[1].$classes.$classMatch[1],
+                'class=' . $classMatch[1] . $classes . $classMatch[1],
                 $attrs,
                 1,
             ) ?? $attrs;
@@ -142,16 +142,16 @@ HTML;
             $attrs .= ' class="voodbuilder-editor-dynamic"';
         }
 
-        $attrs .= ' data-voodbuilder-block="'.$blockId.'" data-voodbuilder-config="'.$encodedConfig.'"'.$hydrateSlots;
+        $attrs .= ' data-voodbuilder-block="' . $blockId . '" data-voodbuilder-config="' . $encodedConfig . '"' . $hydrateSlots;
 
-        return '<'.$tag.$attrs.'>'.substr($trimmed, strlen($matches[0]));
+        return '<' . $tag . $attrs . '>' . substr($trimmed, strlen($matches[0]));
     }
 
     public static function previewMedia(string $html, string $label): string
     {
         $migrated = self::prepareBlockHtml($html);
 
-        return '<div class="voodbuilder-editor-block-preview"><div class="voodbuilder-editor-block-preview__scale">'.$migrated.'</div></div>';
+        return '<div class="voodbuilder-editor-block-preview"><div class="voodbuilder-editor-block-preview__scale">' . $migrated . '</div></div>';
     }
 
     /**

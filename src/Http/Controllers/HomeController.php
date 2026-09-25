@@ -25,7 +25,7 @@ use Voodflow\Vtuts\Support\Locales;
  */
 class HomeController extends Controller
 {
-    public function __invoke(Request $request): View|RedirectResponse
+    public function __invoke(Request $request): View | RedirectResponse
     {
         $locale = $this->resolvedHomeLocale();
         $page = SitePage::homePage($locale);

@@ -209,7 +209,7 @@ final class AppTypography
 
     public static function cssSizeFor(string $size): string
     {
-        return 'var(--text-'.self::normalizeSize($size).')';
+        return 'var(--text-' . self::normalizeSize($size) . ')';
     }
 
     /**
@@ -220,7 +220,7 @@ final class AppTypography
         $parts = [];
 
         foreach ($cssVariables as $name => $value) {
-            $parts[] = $name.': '.$value;
+            $parts[] = $name . ': ' . $value;
         }
 
         return implode('; ', $parts);

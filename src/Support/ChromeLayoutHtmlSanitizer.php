@@ -104,7 +104,7 @@ final class ChromeLayoutHtmlSanitizer
             return true;
         }
 
-        $class = ' '.trim((string) $element->getAttribute('class')).' ';
+        $class = ' ' . trim((string) $element->getAttribute('class')) . ' ';
 
         return str_contains($class, ' vb-reading-progress ');
     }
@@ -200,7 +200,7 @@ final class ChromeLayoutHtmlSanitizer
         $previous = libxml_use_internal_errors(true);
 
         $document->loadHTML(
-            '<?xml encoding="UTF-8"><body>'.$html.'</body>',
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
         );
 

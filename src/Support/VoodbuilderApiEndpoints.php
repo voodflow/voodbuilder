@@ -27,6 +27,6 @@ final class VoodbuilderApiEndpoints
             $slug = 'voodbuilder';
         }
 
-        return rtrim(self::BASE_URL, '/').'/v1/packages/'.$slug.'/latest';
+        return rtrim(self::BASE_URL, '/') . '/v1/packages/' . $slug . '/latest';
     }
 }

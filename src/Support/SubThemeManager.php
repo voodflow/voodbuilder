@@ -133,7 +133,7 @@ final class SubThemeManager
         }
 
         if (! preg_match('/^[a-z]/', $slug)) {
-            $slug = 'theme-'.$slug;
+            $slug = 'theme-' . $slug;
         }
 
         return $slug;

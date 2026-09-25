@@ -13,12 +13,12 @@ final class ModelIntegrationLatestBindingSource extends AbstractModelIntegration
 {
     public function id(): string
     {
-        return $this->integration->getAlias().'.latest';
+        return $this->integration->getAlias() . '.latest';
     }
 
     public function label(): string
     {
-        return $this->integration->name.' · '.__('voodbuilder::model_integrations.bindings.latest');
+        return $this->integration->name . ' · ' . __('voodbuilder::model_integrations.bindings.latest');
     }
 
     public function fields(): array

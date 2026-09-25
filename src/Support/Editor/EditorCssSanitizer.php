@@ -98,7 +98,7 @@ final class EditorCssSanitizer
 
                 $kebab = strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $property) ?? $property);
 
-                return $kebab.':';
+                return $kebab . ':';
             },
             $css,
         ) ?? $css;
@@ -106,7 +106,7 @@ final class EditorCssSanitizer
 
     private static function stripBalancedAtRule(string $css, string $atName): string
     {
-        $needle = '@'.$atName;
+        $needle = '@' . $atName;
         $offset = 0;
         $length = strlen($css);
 
@@ -131,6 +131,7 @@ final class EditorCssSanitizer
 
                     if ($depth === 0) {
                         $end = $i;
+
                         break;
                     }
                 }
@@ -140,7 +141,7 @@ final class EditorCssSanitizer
                 break;
             }
 
-            $css = substr($css, 0, $start).substr($css, $end + 1);
+            $css = substr($css, 0, $start) . substr($css, $end + 1);
             $length = strlen($css);
             $offset = $start;
         }
@@ -174,8 +175,8 @@ final class EditorCssSanitizer
     {
         $reset = '* { box-sizing: border-box; } body {margin: 0;}';
 
-        while (str_contains($css, $reset.$reset)) {
-            $css = str_replace($reset.$reset, $reset, $css);
+        while (str_contains($css, $reset . $reset)) {
+            $css = str_replace($reset . $reset, $reset, $css);
         }
 
         return $css;
