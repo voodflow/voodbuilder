@@ -147,7 +147,7 @@ final class EditorBindingRenderer
 
                         match ($field->type) {
                             BindingField::TYPE_IMAGE => $this->applyImageBinding($element, $escaped, $bindingKey, $context),
-                            BindingField::TYPE_URL => $this->applyUrlBinding($element, $escaped),
+                            BindingField::TYPE_URL => $element = $this->applyUrlBinding($element, $escaped),
                             default => $this->applyTextBinding($element, $escaped, $tag),
                         };
                         $contentResolved = true;
@@ -180,7 +180,7 @@ final class EditorBindingRenderer
             $hrefValue = $this->registry->resolve($hrefKey, $context);
 
             if ($hrefValue !== null && $hrefValue !== '') {
-                $this->applyUrlBinding(
+                $element = $this->applyUrlBinding(
                     $element,
                     htmlspecialchars($hrefValue, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 );
@@ -302,7 +302,10 @@ final class EditorBindingRenderer
         return new BindingImageAltResolver($this->registry);
     }
 
-    protected function applyUrlBinding(DOMElement $element, string $url): void
+    /**
+     * @return DOMElement the bound element (a new `<a>` when a button was converted)
+     */
+    protected function applyUrlBinding(DOMElement $element, string $url): DOMElement
     {
         $decoded = html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $tag = strtolower($element->tagName);
@@ -311,15 +314,51 @@ final class EditorBindingRenderer
             $element->setAttribute('href', $decoded);
             $this->stripSpuriousDirectTextNodes($element);
 
-            return;
+            return $element;
         }
 
         if ($tag === 'button') {
-            $element->setAttribute(
-                'onclick',
-                'window.location.href=' . json_encode($decoded, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP),
-            );
+            return $this->replaceButtonWithLink($element, $decoded);
         }
+
+        return $element;
+    }
+
+    /**
+     * A bound button navigates, so it becomes a real link: inline `onclick` would be
+     * stripped by the security sanitizer and never worked on the published page.
+     */
+    protected function replaceButtonWithLink(DOMElement $button, string $url): DOMElement
+    {
+        $document = $button->ownerDocument;
+
+        if ($document === null || $button->parentNode === null) {
+            return $button;
+        }
+
+        $link = $document->createElement('a');
+
+        foreach (iterator_to_array($button->attributes) as $attribute) {
+            if (in_array(strtolower($attribute->name), ['type', 'onclick', 'formaction', 'form', 'name', 'value', 'disabled'], true)) {
+                continue;
+            }
+
+            $link->setAttribute($attribute->name, $attribute->value);
+        }
+
+        $link->setAttribute('href', $url);
+
+        if (! $link->hasAttribute('role')) {
+            $link->setAttribute('role', 'button');
+        }
+
+        while ($button->firstChild !== null) {
+            $link->appendChild($button->firstChild);
+        }
+
+        $button->parentNode->replaceChild($link, $button);
+
+        return $link;
     }
 
     /**

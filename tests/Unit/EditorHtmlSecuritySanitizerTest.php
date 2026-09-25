@@ -38,6 +38,9 @@ final class EditorHtmlSecuritySanitizerTest extends TestCase
             'form javascript action' => ['<form action="javascript:alert(1)"></form>', 'javascript:'],
             'xlink javascript' => ['<svg><a xlink:href="javascript:alert(1)">x</a></svg>', 'javascript:'],
             'formaction javascript' => ['<button formaction="javascript:alert(1)">x</button>', 'javascript:'],
+            'iframe data svg document' => ['<iframe src="data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+"></iframe>', 'data:image'],
+            'svg set href' => ['<svg><a><set attributeName="href" to="javascript:alert(1)"/>x</a></svg>', 'javascript:'],
+            'svg animate xlink href' => ['<svg><a><animate attributeName="xlink:href" values="javascript:alert(1)"/>x</a></svg>', 'javascript:'],
         ];
     }
 

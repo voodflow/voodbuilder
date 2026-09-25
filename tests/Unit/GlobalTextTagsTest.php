@@ -118,6 +118,19 @@ class GlobalTextTagsTest extends TestCase
     }
 
     #[Test]
+    public function replace_in_html_escapes_settings_values(): void
+    {
+        $this->assertSame(
+            '<p>&lt;img src=x onerror=alert(1)&gt; · A &amp; B · https://x.test/?a=1&amp;b=&quot;2&quot;</p>',
+            GlobalTextTags::replaceInHtml('<p>{brand_name} · {site_name} · {site_url}</p>', [
+                'brand_name' => '<img src=x onerror=alert(1)>',
+                'site_name' => 'A & B',
+                'site_url' => 'https://x.test/?a=1&b="2"',
+            ]),
+        );
+    }
+
+    #[Test]
     public function replace_in_html_works_on_rich_text_markup(): void
     {
         $html = '<div class="rich"><p>Ciao {logged_username}, il {current_year}!</p></div>';
