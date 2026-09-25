@@ -630,6 +630,7 @@ final class EditorGate
             'readingElementH5' => __('voodbuilder::pro.editor_ui.reading_element_h5'),
             'readingLocalNavMenu' => __('voodbuilder::reading.menu'),
             'readingOnThisPage' => __('voodbuilder::reading.on_this_page'),
+            'readingReturnToTop' => __('voodbuilder::reading.return_to_top'),
             'readingPagerPrev' => __('voodbuilder::reading.prev'),
             'readingPagerNext' => __('voodbuilder::reading.next'),
             'readingSize' => __('voodbuilder::pro.editor_ui.reading_size'),

@@ -362,6 +362,7 @@ export function initReadingLocalNav(scope = document) {
 
         if (target.closest('[data-vp-reading-drawer-toggle]')) {
             event.preventDefault();
+            event.stopPropagation();
             setReadingDrawerOpen(doc, ! isDrawerOpen());
 
             return;
@@ -387,7 +388,7 @@ export function initReadingLocalNav(scope = document) {
                 details.removeAttribute('open');
             }
         });
-    });
+    }, true);
 
     doc.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') {

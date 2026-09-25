@@ -7,6 +7,7 @@
 import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { ensureFontLoaded } from './fonts/font-loader.js';
+import { initReadingLocalNav } from './site-chrome-runtime.js';
 
 const ELEMENTS = ['h1', 'h2', 'h3', 'h4', 'h5', 'p'];
 
@@ -477,27 +478,33 @@ function defaultAsideHtml(preview, labels) {
     `;
 }
 
-/** Mobile / tablet local nav (VitePress): shown by chrome-layout-canvas.css per device. */
-function localNavPreviewHtml(labels, { showSecondary, showAside }) {
+/** Mobile / tablet local nav — same hooks as the public `<x-voodbuilder::reading-local-nav>`. */
+function localNavPreviewHtml(labels, { showSecondary, showAside, outlineHtml = '' }) {
     if (! showSecondary && ! showAside) {
         return '';
     }
 
     const menu = showSecondary
-        ? `<span class="voodbuilder-editor-reading__local-nav-menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h16" /></svg>
-                ${escapeHtml(labels.readingLocalNavMenu ?? 'Menu')}
-            </span>`
+        ? `<button type="button" class="vp-local-nav__menu" data-vp-reading-drawer-toggle aria-controls="vp-editor-reading-drawer" aria-expanded="false">
+                <svg class="vp-local-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h16" /></svg>
+                <span>${escapeHtml(labels.readingLocalNavMenu ?? 'Menu')}</span>
+            </button>`
         : '';
     const outline = showAside
-        ? `<span class="voodbuilder-editor-reading__local-nav-outline">
-                ${escapeHtml(labels.readingOnThisPage ?? labels.readingTocTitle ?? 'On this page')}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-            </span>`
+        ? `<details class="vp-local-nav__outline" data-vp-local-outline>
+                <summary>
+                    <span>${escapeHtml(labels.readingOnThisPage ?? labels.readingTocTitle ?? 'On this page')}</span>
+                    <svg class="vp-local-nav__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                </summary>
+                <div class="vp-local-nav__outline-panel">
+                    <a href="#" class="vp-local-nav__top" data-vp-local-outline-top>${escapeHtml(labels.readingReturnToTop ?? 'Return to top')}</a>
+                    ${outlineHtml}
+                </div>
+            </details>`
         : '';
 
     return `
-        <div class="voodbuilder-editor-reading__local-nav${showSecondary ? ' has-sidebar' : ''}${showAside ? ' has-outline' : ''}">
+        <div class="vp-local-nav voodbuilder-editor-reading__local-nav${showSecondary ? ' has-sidebar' : ''}${showAside ? ' has-outline' : ''}" data-vp-local-nav>
             ${menu}
             ${outline}
         </div>
@@ -526,15 +533,23 @@ function buildPreviewMarkup(preview, vars, labels, { showSecondary, showAside })
         showAside ? 'has-aside' : '',
     ].filter(Boolean).join(' ');
 
+    const outlineHtml = showAside ? defaultAsideHtml(preview, labels) : '';
+
     const sidebar = showSecondary
         ? `
-            <aside class="voodbuilder-editor-reading__sidebar" data-voodbuilder-reading-sidebar>
+            <aside
+                id="vp-editor-reading-drawer"
+                class="voodbuilder-editor-reading__sidebar vp-reading-drawer"
+                data-voodbuilder-reading-sidebar
+                data-vp-reading-drawer
+            >
                 <div class="voodbuilder-editor-reading__sidebar-scroll" data-vb-reading-clear-pad>
                     <nav class="voodbuilder-editor-reading__sidebar-nav" aria-label="Documentation">
                         ${defaultSidebarHtml(preview, labels)}
                     </nav>
                 </div>
             </aside>
+            <div class="vp-reading-backdrop voodbuilder-editor-reading__backdrop" data-vp-reading-drawer-close aria-hidden="true"></div>
         `
         : '';
 
@@ -542,7 +557,7 @@ function buildPreviewMarkup(preview, vars, labels, { showSecondary, showAside })
         ? `
             <aside class="voodbuilder-editor-reading__aside" data-voodbuilder-reading-sidebar>
                 <div class="voodbuilder-editor-reading__aside-scroll">
-                    ${defaultAsideHtml(preview, labels)}
+                    ${outlineHtml}
                 </div>
             </aside>
         `
@@ -553,7 +568,7 @@ function buildPreviewMarkup(preview, vars, labels, { showSecondary, showAside })
             ${sidebar}
             <div class="voodbuilder-editor-reading__main">
                 <div class="voodbuilder-editor-reading__main-pad" data-vb-reading-clear-pad>
-                    ${localNavPreviewHtml(labels, { showSecondary, showAside })}
+                    ${localNavPreviewHtml(labels, { showSecondary, showAside, outlineHtml })}
                     <div class="voodbuilder-editor-reading__main-row">
                         <article class="vp-doc voodbuilder-editor-reading__article">
                             ${preview.html ?? ''}
@@ -828,6 +843,8 @@ export function registerReadingTypographyUi(editor, options = {}) {
         previewHost.innerHTML = buildPreviewMarkup(preview, vars, labels, { showSecondary, showAside });
         applyReadingVarsToCanvas(editor, vars);
         scheduleReadingPreviewClearance(() => syncReadingPreviewClearance(editor, previewHost));
+        initReadingLocalNav(doc);
+        doc.documentElement?.classList?.remove('vp-reading-drawer-open');
 
         // If Grapes synced the host into the model, strip it again without wiping our DOM host.
         window.requestAnimationFrame(() => {
@@ -842,6 +859,7 @@ export function registerReadingTypographyUi(editor, options = {}) {
                 slotEl.appendChild(previewHost);
             }
 
+            initReadingLocalNav(doc);
             scheduleReadingPreviewClearance(() => syncReadingPreviewClearance(editor, previewHost));
         });
     };
@@ -1137,6 +1155,8 @@ export function registerReadingTypographyUi(editor, options = {}) {
     // Sizes are per viewport: re-point the size selects and canvas vars at the new device.
     const onDeviceChange = () => {
         renderControls();
+        const doc = editor.Canvas?.getDocument?.();
+        doc?.documentElement?.classList?.remove('vp-reading-drawer-open');
         applyReadingVarsToCanvas(editor, cssVariables());
 
         if (previewVisible) {

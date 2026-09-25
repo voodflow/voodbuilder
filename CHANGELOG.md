@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.4] - 2026-09-26
+
+### Fixed
+
+- Integration tab selects: flat non-native styling on macOS (no glossy system chrome)
+- Layout editor mobile preview: local nav Menu / “On this page” are interactive (drawer + details), matching the public VitePress pattern
+
+### Changed
+
+- Reading preview uses the same `data-vp-*` hooks as companion pages so canvas chrome runtime can drive the drawer
+
 ## [1.11.3] - 2026-09-26
 
 ### Fixed
