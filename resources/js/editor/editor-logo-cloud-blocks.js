@@ -7,6 +7,7 @@ import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { resolveBlockLabel } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
 import { widthClassesForItemCount } from './section-item-count.js';
+import { hydratePropsFromAttributes } from './component-attr-hydrate.js';
 
 export const LOGO_CLOUD_CATEGORY = 'Animated';
 
@@ -204,6 +205,7 @@ function registerLogoGridType(editor) {
                 'data-vb-item-count': 6,
             },
             init() {
+                hydratePropsFromAttributes(this, ['data-vb-item-count']);
                 this.on('change:data-vb-item-count', () => syncLogoCloudItems(this, 'bordered'));
             },
         },
@@ -236,6 +238,7 @@ function registerLogoSplitType(editor) {
                 'data-vb-item-count': 6,
             },
             init() {
+                hydratePropsFromAttributes(this, ['data-vb-item-count']);
                 this.on('change:data-vb-item-count', () => syncLogoCloudItems(this, 'plain'));
             },
         },

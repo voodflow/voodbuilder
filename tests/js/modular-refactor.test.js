@@ -2377,6 +2377,6 @@ describe('basic-elements-settings icon apply', () => {
 
         expect(host.__paintedGlyph()).toBe('star');
         expect(host.__styleState().width).toBe('24px');
-        expect(host.__styleState().maxWidth).toBe('24px');
+        expect(host.__styleState()['max-width']).toBe('24px');
     });
 });

@@ -3,6 +3,7 @@
  */
 
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
+import { hydratePropsFromAttributes } from './component-attr-hydrate.js';
 import { resolveBlockLabel } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
 import { DEFAULT_TABLER_ICON, tablerIconSvg } from './tabler-icons-catalog.js';
@@ -240,6 +241,7 @@ function registerLinkableType(editor, typeName, defaults = {}) {
                 traits: linkTraitSchema(),
             },
             init() {
+                hydrateIconLinkPropsFromAttributes(this);
                 this.on('change:linkType change:data-vb-link-type change:href change:target', () => applyLinkProps(this));
 
                 const classes = this.getClasses?.() ?? [];
@@ -363,6 +365,7 @@ function registerImageGalleryType(editor) {
                 'data-vb-item-count': 6,
             },
             init() {
+                hydratePropsFromAttributes(this, ['data-vb-item-count']);
                 this.on('change:data-vb-item-count', () => syncImageGalleryCount(this));
             },
         },
@@ -545,6 +548,13 @@ function registerAnchorType(editor) {
                 'data-vb-anchor-id': 'section',
             },
             init() {
+                const savedAttrs = this.getAttributes?.() ?? {};
+
+                if (savedAttrs['data-vb-anchor-id'] == null && savedAttrs.id) {
+                    this.set('data-vb-anchor-id', String(savedAttrs.id), { silent: true });
+                }
+
+                hydratePropsFromAttributes(this, ['data-vb-anchor-id']);
                 syncAnchorId(this);
                 this.on('change:data-vb-anchor-id', () => syncAnchorId(this));
                 this.on('change:attributes:id', () => {
@@ -588,6 +598,7 @@ function registerReadingTimeType(editor) {
                 'data-vb-words-per-minute': 200,
             },
             init() {
+                hydratePropsFromAttributes(this, ['data-vb-words-per-minute']);
                 this.on('change:data-vb-words-per-minute', () => {
                     this.addAttributes({
                         'data-vb-words-per-minute': String(this.get('data-vb-words-per-minute') ?? 200),

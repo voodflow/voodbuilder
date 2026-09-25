@@ -630,6 +630,24 @@ function readLinkAttributes(component) {
     };
 }
 
+/**
+ * Every edit path writes the `href` attribute; the `href: '#'` prop default must not beat it.
+ *
+ * @param {unknown} attrHref
+ * @param {unknown} propHref
+ * @returns {string}
+ */
+export function resolveCtaSerializedHref(attrHref, propHref) {
+    const fromAttr = String(attrHref ?? '').trim();
+    const fromProp = String(propHref ?? '').trim();
+
+    if (fromAttr !== '' && fromAttr !== '#') {
+        return fromAttr;
+    }
+
+    return fromProp || fromAttr || '#';
+}
+
 export function hydrateLinkPropsFromAttributes(component) {
     const { href, target, linkType, linkRef } = readLinkAttributes(component);
     const updates = {};
@@ -1116,15 +1134,15 @@ function registerLinkableButtonType(editor) {
                     : { ...(this.getAttributes?.() ?? {}) };
 
                 const label = extractButtonLabel(this);
-                const linkType = String(this.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url');
-                const linkRef = String(this.get('linkRef') ?? attrs['data-vb-link'] ?? '');
+                const linkType = String(attrs['data-vb-link-type'] || this.get('linkType') || 'url');
+                const linkRef = String(attrs['data-vb-link'] ?? this.get('linkRef') ?? '');
 
                 attrs['data-voodbuilder-cta'] = 'true';
                 attrs[CTA_LABEL_ATTR] = label;
                 attrs.role = attrs.role || 'button';
                 attrs['data-vb-link-type'] = linkType;
                 attrs['data-vb-link'] = linkType === 'url' ? null : (linkRef || null);
-                attrs.href = this.get('href') || attrs.href || '#';
+                attrs.href = resolveCtaSerializedHref(attrs.href, this.get('href'));
 
                 return attrs;
             },

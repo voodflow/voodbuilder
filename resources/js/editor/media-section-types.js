@@ -15,6 +15,7 @@ import {
 } from './hero-video-embed.js';
 import { componentClassList } from './style-tailwind-class-groups.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
+import { hydratePropsFromAttributes } from './component-attr-hydrate.js';
 
 const BG_SIZE_OPTIONS = [
     { id: 'cover', label: 'Cover' },
@@ -501,8 +502,16 @@ function registerMediaHeroType(editor, typeId, blockId, name, sync, traits) {
                     .map((trait) => trait.name)
                     .filter((traitName) => typeof traitName === 'string');
 
+                hydratePropsFromAttributes(this, traitNames);
+
                 traitNames.forEach((traitName) => {
-                    this.on(`change:${traitName}`, () => sync(this));
+                    this.on(`change:${traitName}`, () => {
+                        const value = this.get(traitName);
+
+                        // Sync reads attributes; mirror the trait prop so it reaches saved HTML.
+                        this.addAttributes({ [traitName]: value == null ? '' : String(value) });
+                        sync(this);
+                    });
                 });
 
                 this.on('change:attributes', () => sync(this));
