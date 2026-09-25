@@ -6,6 +6,7 @@
  * recognizeType() classifies .mp4 URLs correctly, and seed uploads from disk.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { applyResponsiveImageAttrs, resolveResponsiveImageUrls } from './responsive-image.js';
 
 const VIDEO_EXT_RE = /\.(mp4|webm|ogg|ogv|mov|m4v)(?:\?|#|$)/i;
@@ -284,8 +285,9 @@ export async function loadMediaLibrary(editor, mediaLibraryUrl, options = {}) {
         const payload = await response.json();
         const assets = Array.isArray(payload?.data) ? payload.data : [];
         seedAssetManager(editor, assets, { replace: Boolean(options.replace) });
-    } catch {
+    } catch (error) {
         // Library is optional; Choose still works via upload.
+        debugSwallowed(error);
     }
 }
 

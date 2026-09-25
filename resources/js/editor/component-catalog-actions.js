@@ -2,6 +2,7 @@
  * Save canvas selections to the component catalog (shared by sidebar, canvas, and layers menus).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { alertDialog, componentMetaDialog } from './editor-dialog.js';
 import { editorApiHeaders } from './editor-api.js';
 import {
@@ -71,8 +72,9 @@ export function isChromeStructureCatalogSaveBlocked(component) {
                 return true;
             }
         }
-    } catch {
+    } catch (error) {
         // Ignore find() failures on incomplete models.
+        debugSwallowed(error);
     }
 
     if (component.getAttributes?.()?.['data-voodbuilder-editor-site-header']) {

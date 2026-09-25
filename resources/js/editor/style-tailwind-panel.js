@@ -3,6 +3,7 @@
  * Same pattern as Animation: apply exclusive utility classes, never invent Grapes inline CSS.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import {
     clearBackgroundCssRules,
     clearStyleProperty,
@@ -202,8 +203,9 @@ function persistSurfacePaint(editor, component, styles) {
                     ...styles,
                 });
             }
-        } catch {
+        } catch (error) {
             // CssComposer may be unavailable during boot.
+            debugSwallowed(error);
         }
     }
 
@@ -240,8 +242,9 @@ function persistSurfacePaint(editor, component, styles) {
                         );
                     }
                 }
-            } catch {
+            } catch (error) {
                 // Frame may be unavailable.
+                debugSwallowed(error);
             }
         }
 
@@ -249,8 +252,9 @@ function persistSurfacePaint(editor, component, styles) {
         // canvas so page wallpaper is visible under opaque site/events shells.
         try {
             syncPageSurfaceCanvasWallpaperPreview(editor, styles);
-        } catch {
+        } catch (error) {
             // Optional canvas preview.
+            debugSwallowed(error);
         }
 
         return;
@@ -397,8 +401,9 @@ function applyBackgroundLayoutCss(editor, component, groupId, utilityValue) {
         if (pageSurface) {
             try {
                 syncPageSurfaceCanvasWallpaperPreview(editor);
-            } catch {
+            } catch (error) {
                 // Optional.
+                debugSwallowed(error);
             }
         }
 
@@ -419,8 +424,9 @@ function applyBackgroundLayoutCss(editor, component, groupId, utilityValue) {
                     [prop]: cssValue,
                 });
             }
-        } catch {
+        } catch (error) {
             // CssComposer may be unavailable during boot.
+            debugSwallowed(error);
         }
     }
 
@@ -431,8 +437,9 @@ function applyBackgroundLayoutCss(editor, component, groupId, utilityValue) {
     if (pageSurface) {
         try {
             syncPageSurfaceCanvasWallpaperPreview(editor, { [prop]: cssValue });
-        } catch {
+        } catch (error) {
             // Optional canvas preview.
+            debugSwallowed(error);
         }
     }
 }
@@ -652,16 +659,18 @@ function ensureTextGradientPaint(editor, component) {
                 color: 'transparent',
                 '-webkit-text-fill-color': 'transparent',
             });
-        } catch {
+        } catch (error) {
             // Optional.
+            debugSwallowed(error);
         }
     }
 
     try {
         component.view?.updateClasses?.();
         component.view?.updateStyle?.();
-    } catch {
+    } catch (error) {
         // View may be unavailable.
+        debugSwallowed(error);
     }
 }
 
@@ -945,8 +954,9 @@ function scheduleClassCompile(editor, writtenClass = '') {
         // Device-scoped Style CSS paints immediately (does not wait for JIT).
         try {
             injectEditorBreakpointStyleCss(editor);
-        } catch {
+        } catch (error) {
             // Frame may be unavailable.
+            debugSwallowed(error);
         }
 
         return;
@@ -1097,8 +1107,9 @@ function wireViewportStrip(editor, strip) {
 
             try {
                 editor.setDevice?.(id);
-            } catch {
+            } catch (error) {
                 // Device manager may be unavailable during boot.
+                debugSwallowed(error);
             }
         });
     });
@@ -1352,8 +1363,9 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
                 }
             }
         }
-    } catch {
+    } catch (error) {
         // Optional migrate.
+        debugSwallowed(error);
     }
 }
 
@@ -1486,8 +1498,9 @@ function applyGroup(editor, component, groupId, value) {
             try {
                 component.view?.updateClasses?.();
                 component.view?.updateStyle?.();
-            } catch {
+            } catch (error) {
                 // View may be unavailable during bulk updates.
+                debugSwallowed(error);
             }
 
             // Page-surface paints are CssComposer-only — JIT on the content slot
@@ -1529,8 +1542,9 @@ function applyGroup(editor, component, groupId, value) {
 
             try {
                 component.view?.updateClasses?.();
-            } catch {
+            } catch (error) {
                 // View may be unavailable during bulk updates.
+                debugSwallowed(error);
             }
 
             scheduleClassCompile(editor, styleWrittenToken(editor, value));
@@ -1572,8 +1586,9 @@ function applyGroup(editor, component, groupId, value) {
 
             try {
                 component.view?.updateClasses?.();
-            } catch {
+            } catch (error) {
                 // View may be unavailable during bulk updates.
+                debugSwallowed(error);
             }
 
             // Bare token — gradients stay at base (bundled in section-utilities).
@@ -1690,8 +1705,9 @@ function applyGroup(editor, component, groupId, value) {
         // DOM first (realtime), compile only if the utility is missing from canvas CSS.
         try {
             component.view?.updateClasses?.();
-        } catch {
+        } catch (error) {
             // View may be unavailable during bulk updates.
+            debugSwallowed(error);
         }
 
         // Size / position / repeat: also write #id CSS and re-paint the photo.
@@ -2405,8 +2421,9 @@ function readBackgroundImageUrl(component, editor = null) {
                     return found;
                 }
             }
-        } catch {
+        } catch (error) {
             // Frame may be unavailable.
+            debugSwallowed(error);
         }
     }
 
@@ -2526,15 +2543,17 @@ function clearDecorationBackgroundImage(editor, component) {
 
         try {
             syncPageSurfaceCanvasWallpaperPreview(editor, { 'background-image': '' });
-        } catch {
+        } catch (error) {
             // Optional canvas preview clear.
+            debugSwallowed(error);
         }
 
         try {
             component.view?.updateStyle?.();
             component.view?.updateAttributes?.();
-        } catch {
+        } catch (error) {
             // View may be unavailable.
+            debugSwallowed(error);
         }
 
         return;
@@ -2596,8 +2615,9 @@ function clearDecorationBackgroundImage(editor, component) {
                 el.style.background = '';
             }
         }
-    } catch {
+    } catch (error) {
         // Frame may be unavailable.
+        debugSwallowed(error);
     }
 
     // Never re-write background-image for gradient-only: TW `.bg-gradient-to-*`
@@ -2608,8 +2628,9 @@ function clearDecorationBackgroundImage(editor, component) {
     if (pageSurface) {
         try {
             syncPageSurfaceCanvasWallpaperPreview(editor, { 'background-image': '' });
-        } catch {
+        } catch (error) {
             // Optional canvas preview clear.
+            debugSwallowed(error);
         }
     }
 
@@ -2618,8 +2639,9 @@ function clearDecorationBackgroundImage(editor, component) {
         component.view?.updateAttributes?.();
         target.view?.updateStyles?.();
         component.view?.updateClasses?.();
-    } catch {
+    } catch (error) {
         // View may be unavailable.
+        debugSwallowed(error);
     }
 }
 
@@ -2718,8 +2740,9 @@ function paintDecorationGradientPreview(editor, component) {
 
         component.view?.updateStyle?.();
         target.view?.updateStyles?.();
-    } catch {
+    } catch (error) {
         // Frame may be unavailable.
+        debugSwallowed(error);
     }
 }
 
@@ -2758,8 +2781,9 @@ function resolveBackgroundFadeColor(editor, component) {
                 return computed;
             }
         }
-    } catch {
+    } catch (error) {
         // Canvas frame may be unavailable during boot.
+        debugSwallowed(error);
     }
 
     if (authored !== '' && authored.toLowerCase() !== 'transparent') {
@@ -2827,8 +2851,9 @@ function releaseAuthorBackgroundImageForUtilities(editor, component) {
             el.style.removeProperty?.('background-image');
             el.style.backgroundImage = '';
         }
-    } catch {
+    } catch (error) {
         // Frame may be unavailable.
+        debugSwallowed(error);
     }
 
     restoreSolidBackgroundColorAfterImageClear(editor, component);
@@ -2949,8 +2974,9 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
         try {
             component.view?.updateClasses?.();
             component.view?.updateStyle?.();
-        } catch {
+        } catch (error) {
             // View may be unavailable.
+            debugSwallowed(error);
         }
 
         if (! isPageSurfaceComponent(component, editor)) {
@@ -4267,8 +4293,9 @@ function syncPageSurfaceStylePanelChrome(stylesMount, editor) {
             for (const fold of decorations.querySelectorAll('[data-voodbuilder-deco-fold]')) {
                 try {
                     fold.open = true;
-                } catch {
+                } catch (error) {
                     // <details> may be unavailable.
+                    debugSwallowed(error);
                 }
             }
         }
@@ -4421,8 +4448,9 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         if (isPageSurfaceComponent(pageTarget, editor)) {
             try {
                 syncPageSurfaceCanvasWallpaperPreview(editor);
-            } catch {
+            } catch (error) {
                 // Optional canvas preview.
+                debugSwallowed(error);
             }
         }
     };
@@ -4502,8 +4530,9 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             try {
                 hydrateAuthorStylesFromIdRules(editor);
                 hydrateDecorationBackgroundImages(editor);
-            } catch {
+            } catch (error) {
                 // Optional hydrate after frame mount.
+                debugSwallowed(error);
             }
         }, 120);
     });
@@ -4546,8 +4575,9 @@ export function registerStyleTailwindPanel(editor, options = {}) {
                 if (src !== '' && (painted === '' || darkPage)) {
                     reapplyDecorationBackgroundPaint(editor, component, src);
                 }
-            } catch {
+            } catch (error) {
                 // Optional hydrate — still sync from CssComposer below.
+                debugSwallowed(error);
             }
 
             sanitizeInventedStyles(editor, component);
@@ -4557,8 +4587,9 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             try {
                 const stylePanel = stylesMount.closest?.('[data-voodbuilder-inspector="style"]');
                 ensurePageSurfaceAction(editor, stylePanel, labels);
-            } catch {
+            } catch (error) {
                 // Optional — registerPageSurfaceStyles also syncs on select.
+                debugSwallowed(error);
             }
         }, 0);
     });
@@ -4567,8 +4598,9 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             try {
                 hydrateAuthorStylesFromIdRules(editor);
                 hydrateDecorationBackgroundImages(editor);
-            } catch {
+            } catch (error) {
                 // Ignore hydrate race after remount.
+                debugSwallowed(error);
             }
 
             const selected = editor.getSelected?.();
@@ -4655,8 +4687,9 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
         try {
             syncPageSurfaceCanvasWallpaperPreview(editor);
-        } catch {
+        } catch (error) {
             // Optional canvas preview.
+            debugSwallowed(error);
         }
     };
 
@@ -4817,8 +4850,9 @@ export function hydrateDecorationBackgroundImages(editor) {
                 try {
                     component.removeAttributes?.(STYLE_BG_SRC_ATTR);
                     clearStyleProperty(editor, component, 'background-image', { family: false });
-                } catch {
+                } catch (error) {
                     // Optional cleanup.
+                    debugSwallowed(error);
                 }
 
                 return;
@@ -4871,15 +4905,17 @@ export function hydrateDecorationBackgroundImages(editor) {
     if (updated > 0) {
         try {
             editor.trigger?.('update');
-        } catch {
+        } catch (error) {
             // Optional.
+            debugSwallowed(error);
         }
     }
 
     try {
         syncPageSurfaceCanvasWallpaperPreview(editor);
-    } catch {
+    } catch (error) {
         // Optional canvas wallpaper preview after hydrate.
+        debugSwallowed(error);
     }
 
     return updated;

@@ -11,6 +11,8 @@
  *   Dark  → dark: / dark:md: / dark:lg:
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 /** Breakpoint prefixes the Style panel can author (v1). */
 export const STYLE_BREAKPOINT_PREFIXES = Object.freeze(['', 'md:', 'lg:']);
 
@@ -81,16 +83,18 @@ export function isStyleEditingDark(editor = null) {
         if (stored === 'light') {
             return false;
         }
-    } catch {
+    } catch (error) {
         // Ignore storage failures.
+        debugSwallowed(error);
     }
 
     try {
         if (document.documentElement.classList.contains('dark')) {
             return true;
         }
-    } catch {
+    } catch (error) {
         // Host document may be unavailable.
+        debugSwallowed(error);
     }
 
     try {
@@ -99,8 +103,9 @@ export function isStyleEditingDark(editor = null) {
         if (doc?.documentElement) {
             return doc.documentElement.classList.contains('dark');
         }
-    } catch {
+    } catch (error) {
         // Frame may be unavailable during boot.
+        debugSwallowed(error);
     }
 
     return false;

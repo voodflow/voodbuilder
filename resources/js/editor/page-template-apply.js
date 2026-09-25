@@ -6,6 +6,7 @@
  * per-node handlers during setComponents / slot.components().
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { choiceDialog } from './editor-dialog.js';
 import { findPageContentSlotInEditor } from './chrome-content-slot-utils.js';
 import { settleEditorCanvasPreview } from './vb-runtime.js';
@@ -182,8 +183,9 @@ function settleTemplateCanvas(editor) {
         if (frameDoc) {
             settleEditorCanvasPreview({ root: frameDoc });
         }
-    } catch {
+    } catch (error) {
         // Optional preview settle.
+        debugSwallowed(error);
     }
 }
 
@@ -205,15 +207,17 @@ export function forceTemplatePageCssRebuild(editor, delayMs = 250) {
         } catch {
             try {
                 editor.__voodbuilderInvalidatePageCss?.();
-            } catch {
+            } catch (error) {
                 // Optional JIT hooks.
+                debugSwallowed(error);
             }
         }
 
         try {
             editor.trigger?.('voodbuilder:page-css-invalidate');
-        } catch {
+        } catch (error) {
             // Optional invalidate bus.
+            debugSwallowed(error);
         }
     };
 
@@ -255,8 +259,9 @@ export function shouldForceCssRebuildAfterTemplate(template, mode = 'replace') {
 export function notifyPageCssReadyFromTemplate(editor, css = '') {
     try {
         editor.__voodbuilderSyncPageCssBootTracking?.();
-    } catch {
+    } catch (error) {
         // Optional boot sync.
+        debugSwallowed(error);
     }
 
     try {
@@ -264,8 +269,9 @@ export function notifyPageCssReadyFromTemplate(editor, css = '') {
             css: String(css ?? ''),
             html: '',
         });
-    } catch {
+    } catch (error) {
         // Optional compile bus.
+        debugSwallowed(error);
     }
 }
 
@@ -343,8 +349,9 @@ function runBulkStructureUpdate(editor, work) {
                     : editor.getWrapper?.();
 
                 scanLinkableButtons(editor, root);
-            } catch {
+            } catch (error) {
                 // Optional CTA upgrade after bulk apply.
+                debugSwallowed(error);
             }
 
             editor.trigger('voodbuilder:site-chrome-updated');

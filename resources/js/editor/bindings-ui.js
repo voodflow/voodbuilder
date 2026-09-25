@@ -2,6 +2,7 @@
  * Editor "Make dynamic" UI — binds selected components to server data sources.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { alertDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
 import { isEditorBooting } from './editor-lifecycle.js';
@@ -243,8 +244,9 @@ function normalizeEditorAssetUrl(value) {
                 return `${url.pathname}${url.search}`;
             }
         }
-    } catch {
+    } catch (error) {
         // Keep original value when URL parsing fails.
+        debugSwallowed(error);
     }
 
     if (text.startsWith('/')) {

@@ -3,6 +3,7 @@
  * Few controls, native contenteditable — Bricks-like, dependency-free.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { createFormSection } from './editor-form-ui.js';
 import {
     applyRichTextLinkAttrs,
@@ -605,8 +606,9 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
                         const sel = window.getSelection?.();
                         sel?.removeAllRanges?.();
                         sel?.addRange?.(snapshotRange);
-                    } catch {
+                    } catch (error) {
                         // Selection may be lost after the modal — fall back to createLink/unlink.
+                        debugSwallowed(error);
                     }
                 }
 
@@ -652,8 +654,9 @@ export function createLightRichTextEditor({ value = '<p></p>', labels = {}, edit
                             const sel = window.getSelection?.();
                             sel?.removeAllRanges?.();
                             sel?.addRange?.(snapshotRange);
-                        } catch {
+                        } catch (error) {
                             // Selection may be gone after the menu closes.
+                            debugSwallowed(error);
                         }
                     }
 

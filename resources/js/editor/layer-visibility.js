@@ -11,6 +11,8 @@
  * - inline display:none (so getHtml carries hide without relying on #id CSS)
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 export const LAYER_HIDDEN_ATTR = 'data-vb-layer-hidden';
 export const LAYER_NAME_ATTR = 'data-voodbuilder-layer-name';
 
@@ -61,8 +63,9 @@ export function isLayerHidden(editor, component) {
         if (editor?.LayerManager?.isVisible && ! editor.LayerManager.isVisible(component)) {
             return true;
         }
-    } catch {
+    } catch (error) {
         // Ignore LayerManager races during boot.
+        debugSwallowed(error);
     }
 
     const id = component.getId?.();
@@ -308,8 +311,9 @@ export function restoreLayerVisibilityFromAttributes(editor) {
             if (editor.LayerManager?.setVisible && editor.LayerManager.isVisible?.(component)) {
                 editor.LayerManager.setVisible(component, false);
             }
-        } catch {
+        } catch (error) {
             // Marker + inline already applied.
+            debugSwallowed(error);
         }
     });
 }
@@ -340,15 +344,17 @@ export function registerLayerVisibilityPersistence(editor) {
         window.requestAnimationFrame(() => {
             try {
                 restoreLayerVisibilityFromAttributes(editor);
-            } catch {
+            } catch (error) {
                 // Ignore hydrate races.
+                debugSwallowed(error);
             }
         });
         window.setTimeout(() => {
             try {
                 restoreLayerVisibilityFromAttributes(editor);
-            } catch {
+            } catch (error) {
                 // Ignore hydrate races.
+                debugSwallowed(error);
             }
         }, 200);
     });

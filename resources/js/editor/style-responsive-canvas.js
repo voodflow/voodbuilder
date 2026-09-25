@@ -4,6 +4,7 @@
  * disagree; without this, changing md:mt-8 / md:text-9xl looks like a no-op.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { SPACING_SCALE } from './style-tailwind-class-groups.js';
 
 /** Default Tailwind v4 font-size scale (rem). */
@@ -257,8 +258,9 @@ export function registerEditorBreakpointFontSizeCss(editor) {
     const inject = () => {
         try {
             injectEditorBreakpointStyleCss(editor);
-        } catch {
+        } catch (error) {
             // Frame may be mid-reload.
+            debugSwallowed(error);
         }
     };
 

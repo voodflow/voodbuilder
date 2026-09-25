@@ -3,6 +3,7 @@
  * Header and footer accept chrome blocks; Progress is an optional reading-progress strip.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import {
     CHROME_DROP_ZONE_ATTR,
     CONTENT_SLOT_ATTR,
@@ -173,8 +174,9 @@ function unwrapChromeShellWrapper(editor) {
 
         try {
             shell.remove();
-        } catch {
+        } catch (error) {
             // Shell may already be detached during concurrent layout refresh.
+            debugSwallowed(error);
         }
     });
 }
@@ -351,8 +353,9 @@ function flattenDefaultWrappers(zone) {
 
         try {
             child.remove();
-        } catch {
+        } catch (error) {
             // Wrapper may already be removed during flatten.
+            debugSwallowed(error);
         }
     });
 }
@@ -443,8 +446,9 @@ function migrateReadingProgressIntoProgressZone(navZone, progressZone, footerZon
                     found.push(match);
                 }
             });
-        } catch {
+        } catch (error) {
             // Grapes find may throw on detached trees.
+            debugSwallowed(error);
         }
 
         return found;
@@ -487,8 +491,9 @@ function normalizeProgressZone(progressZone, navZone, footerZone) {
         if (keptProgress) {
             try {
                 child.remove();
-            } catch {
+            } catch (error) {
                 // Duplicate progress may already be detached.
+                debugSwallowed(error);
             }
 
             return;
@@ -841,8 +846,9 @@ function dedupeContentSlots(editor, component) {
     if (existing && existing !== component && isValidGrapesComponent(component)) {
         try {
             component.remove();
-        } catch {
+        } catch (error) {
             // Duplicate slot may already be detached.
+            debugSwallowed(error);
         }
     }
 }
@@ -1157,8 +1163,9 @@ export function registerChromeLayoutEditor(editor, options = {}) {
                 if (isValidGrapesComponent(component)) {
                     try {
                         component.remove();
-                    } catch {
+                    } catch (error) {
                         // Misplaced block may already be detached.
+                        debugSwallowed(error);
                     }
                 }
 

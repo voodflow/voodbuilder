@@ -2,6 +2,8 @@
  * Shared helpers for visual editor API calls.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 export function resolveCsrfToken(fallback = '') {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         ?? fallback;
@@ -39,8 +41,9 @@ export async function resolveApiErrorMessage(response, fallback, labels = {}) {
         if (typeof payload?.message === 'string' && payload.message.trim() !== '') {
             return payload.message;
         }
-    } catch {
+    } catch (error) {
         // ignore non-json bodies
+        debugSwallowed(error);
     }
 
     return fallback;

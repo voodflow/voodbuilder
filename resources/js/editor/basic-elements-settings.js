@@ -2,6 +2,7 @@
  * Content-panel settings for Basic elements: Icon, Text link, Divider.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import {
     createFormSection,
     createSelectField,
@@ -484,8 +485,9 @@ function replaceIconGlyph(component, svgHtml) {
                 [...collection].forEach((child) => {
                     try {
                         collection.remove(child);
-                    } catch {
+                    } catch (error) {
                         // ignore
+                        debugSwallowed(error);
                     }
                 });
             } else if (typeof component.empty === 'function') {
@@ -496,8 +498,9 @@ function replaceIconGlyph(component, svgHtml) {
         } catch {
             try {
                 component.components([]);
-            } catch {
+            } catch (error) {
                 // Last resort: overwrite below.
+                debugSwallowed(error);
             }
         }
     }

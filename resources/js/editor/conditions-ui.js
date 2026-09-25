@@ -6,6 +6,7 @@
  * - Each group: all conditions inside must pass (AND)
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { encodeBlockConfig } from './voodbuilder-dynamic-config.js';
 import { enhanceInspectorSelects } from './inspector-select-ui.js';
 import {
@@ -57,8 +58,9 @@ function parseConditionJson(raw) {
             if (parsed && typeof parsed === 'object' && ! Array.isArray(parsed)) {
                 return parsed;
             }
-        } catch {
+        } catch (error) {
             // try next candidate
+            debugSwallowed(error);
         }
     }
 

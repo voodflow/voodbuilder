@@ -2,6 +2,8 @@
  * Clipboard helpers for visual editor UI.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 /**
  * Last successful class/style copy (system clipboard may be blocked on HTTP).
  * Paste handlers can fall back to this when `clipboardData` is empty.
@@ -73,8 +75,9 @@ export async function copyTextToClipboard(text) {
 
             return true;
         }
-    } catch {
+    } catch (error) {
         // Fall through — common on http://non-localhost and after async UI.
+        debugSwallowed(error);
     }
 
     const ok = copyTextViaExecCommand(value);

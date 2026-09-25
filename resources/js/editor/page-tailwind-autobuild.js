@@ -12,6 +12,7 @@
  * Style Manager paints are inline — they must NOT trigger compile-css.
  * Never compile during block/sorter drag (selector:add storms on drag-start).
  */
+import { debugSwallowed } from './debug-swallowed.js';
 import { placeCanvasLiveStyle } from './canvas-live-style.js';
 import { editorApiHeaders } from './editor-api.js';
 import { beginEditorBuild, endEditorBuild, resetEditorBuildStatus } from './editor-build-status.js';
@@ -561,8 +562,9 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             }
 
             lastClassSet = currentPageClassSet();
-        } catch {
+        } catch (error) {
             // Canvas/frame may not be ready yet.
+            debugSwallowed(error);
         }
     };
 
@@ -1112,8 +1114,9 @@ export function registerPageTailwindAutobuild(editor, options = {}) {
             (editor.__voodbuilderCssRebuildCancelHooks ?? []).forEach((hook) => {
                 try {
                     hook();
-                } catch {
+                } catch (error) {
                     // Ignore cancel-hook failures.
+                    debugSwallowed(error);
                 }
             });
 
@@ -1327,15 +1330,17 @@ export function schedulePageCssAfterInsert(editor) {
         } catch {
             try {
                 editor.__voodbuilderInvalidatePageCss?.();
-            } catch {
+            } catch (error) {
                 // ignore
+                debugSwallowed(error);
             }
         }
 
         try {
             editor.trigger?.('voodbuilder:page-css-invalidate');
-        } catch {
+        } catch (error) {
             // ignore
+            debugSwallowed(error);
         }
     };
 

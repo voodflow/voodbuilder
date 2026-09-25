@@ -3,6 +3,7 @@
  * have children (otherwise the placer only shows thin "between" lines).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { safeFindComponents, walkComponentTree } from './tailwind-visual-style.js';
 
 export const INNER_DROP_SLOT_ATTR = 'data-voodbuilder-inner-drop';
@@ -182,8 +183,9 @@ export function readInnerDropSlotsVisiblePreference() {
 export function saveInnerDropSlotsVisiblePreference(active) {
     try {
         localStorage.setItem(INNER_DROP_SLOTS_STORAGE_KEY, active ? '1' : '0');
-    } catch {
+    } catch (error) {
         // Ignore storage errors.
+        debugSwallowed(error);
     }
 }
 
@@ -240,8 +242,9 @@ export function clearInnerDropSlots(editor) {
 
         doc?.querySelectorAll?.(`[${INNER_DROP_SLOT_ATTR}], .voodbuilder-editor-inner-drop-slot`)
             ?.forEach((node) => node.remove());
-    } catch {
+    } catch (error) {
         // Canvas may be unavailable during destroy.
+        debugSwallowed(error);
     }
 
     setInnerDropDragBodyClass(editor, false);

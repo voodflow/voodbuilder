@@ -3,6 +3,7 @@
  * Uses only public Editor APIs: appendTo, Panels, BlockManager container.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { STYLE_MANAGER_SECTORS } from './editor-chrome.js';
 import { registerBlockPins } from './block-pins.js';
 import { lucideIcon, tablerIcon } from './editor-icons.js';
@@ -1111,8 +1112,9 @@ function syncChromeLayoutStylePanel(editor, mounts) {
     if (! hideControls && targetingPage) {
         try {
             editor.__voodbuilderSyncPageSurfaceStyleChrome?.();
-        } catch {
+        } catch (error) {
             // Style panel may not be registered yet.
+            debugSwallowed(error);
         }
     }
 
@@ -1150,8 +1152,9 @@ function syncChromeLayoutStylePanel(editor, mounts) {
                 // Sync chrome again after mounts are visible (still sync — no rAF).
                 editor.__voodbuilderSyncPageSurfaceStyleChrome?.();
                 editor.trigger?.('voodbuilder:page-surface-focus');
-            } catch {
+            } catch (error) {
                 // Style panel may not be mounted yet.
+                debugSwallowed(error);
             }
         }
 

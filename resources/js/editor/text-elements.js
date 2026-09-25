@@ -2,6 +2,7 @@
  * Basic Text vs Rich Text component types + plain RTE behaviour.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { resolveBlockLabel } from './section-block-meta.js';
 
 export function isBasicTextComponent(component) {
@@ -369,8 +370,9 @@ export function configurePlainTextRte(editor) {
 
         try {
             editing.view?.disableEditing?.();
-        } catch {
+        } catch (error) {
             // Ignore races during remount.
+            debugSwallowed(error);
         }
     });
 }

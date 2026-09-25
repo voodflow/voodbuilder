@@ -3,6 +3,7 @@
  * Uses only the public Editor API (Commands, Devices, Canvas).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { registerEditorPanelToggles } from './editor-panel-toggles.js';
 import { registerEditorPanelResize } from './editor-panel-resize.js';
@@ -80,8 +81,9 @@ function readOutlinePreference() {
 function saveOutlinePreference(active) {
     try {
         localStorage.setItem(OUTLINE_STORAGE_KEY, active ? '1' : '0');
-    } catch {
+    } catch (error) {
         // Ignore storage errors (private mode, quota, etc.).
+        debugSwallowed(error);
     }
 }
 
@@ -322,8 +324,9 @@ function createThemeToggleButton(labels = {}) {
 
         try {
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        } catch {
+        } catch (error) {
             // Ignore storage failures.
+            debugSwallowed(error);
         }
 
         syncThemeToggleButton(button, isDark, labels);

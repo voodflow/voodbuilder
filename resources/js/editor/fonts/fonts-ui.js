@@ -2,6 +2,7 @@
  * Wire FontCatalog into GrapesJS Style Manager + live canvas preview.
  */
 
+import { debugSwallowed } from '../debug-swallowed.js';
 import {
     bootCoreFontCatalog,
     cssSafeFontStack,
@@ -221,8 +222,9 @@ function syncStyleManagerFontFamilyValue(editor, canonical) {
         // Custom font-select view reads value via update(); force a refresh.
         property.view?.setValue?.(stack);
         property.view?.update?.({ value: stack, el: property.view?.el, createdEl: property.view?.createdEl });
-    } catch {
+    } catch (error) {
         // ignore SM quirks
+        debugSwallowed(error);
     }
 }
 

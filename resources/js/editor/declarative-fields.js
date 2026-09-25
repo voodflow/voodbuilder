@@ -13,6 +13,7 @@
  * Optional data-vb-items-layout="preserve" keeps author grid/card classes intact.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { registerBlockSettings } from './blocks/settings/index.js';
 import {
     applyIconToComponent,
@@ -353,8 +354,9 @@ function releaseCanvasRteIfEditing(editor, component) {
 
     try {
         editing.view?.disableEditing?.();
-    } catch {
+    } catch (error) {
         // Best-effort — avoid blocking Content-panel writes.
+        debugSwallowed(error);
     }
 }
 

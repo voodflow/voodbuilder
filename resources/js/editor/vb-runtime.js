@@ -2,6 +2,7 @@
  * Frontend runtime for VoodBuilder Editor utility blocks (carousel, counters, CTA, logos, …).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { initScrollSliders } from './slider-runtime.js';
 import { applyReadingProgressCssVars, applyReadingProgressTop, computeArticleScrollProgress, computePageScrollProgress } from './reading-progress-appearance.js';
 
@@ -847,8 +848,9 @@ export function restartCssKeyframeAnimations(root) {
                     try {
                         animation.cancel();
                         animation.play();
-                    } catch {
+                    } catch (error) {
                         // Ignore unfinished / finished animations.
+                        debugSwallowed(error);
                     }
                 });
 
@@ -896,8 +898,9 @@ export function settleEditorCanvasPreview(options = {}) {
         initReadingTime({ root });
         initSocialShare({ root });
         initReadingProgress({ root, demo: true });
-    } catch {
+    } catch (error) {
         // Optional utility previews.
+        debugSwallowed(error);
     }
 
     root.querySelectorAll('[data-voodbuilder-animated-cta]').forEach((node) => {

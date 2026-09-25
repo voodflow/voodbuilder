@@ -3,6 +3,7 @@
  * @see https://grapesjs.com/docs/api/component.html#toolbar
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import {
     canEditBlockCode,
     CMD_EDIT_BLOCK_CODE,
@@ -689,8 +690,9 @@ export function registerCanvasComponentToolbar(editor, labels = {}) {
         const restore = () => {
             try {
                 restoreContentWidthFromAttributes(editor);
-            } catch {
+            } catch (error) {
                 // Ignore hydrate errors during early boot.
+                debugSwallowed(error);
             }
         };
 

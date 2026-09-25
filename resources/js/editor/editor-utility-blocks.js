@@ -2,6 +2,7 @@
  * VoodBuilder utility blocks — Basic, Media, and Utilities (post helpers).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { hydratePropsFromAttributes } from './component-attr-hydrate.js';
 import { resolveBlockLabel } from './section-block-meta.js';
@@ -1193,8 +1194,9 @@ export function configureUtilityBlocksCanvas(editor) {
                 if (frameDoc) {
                     settleEditorCanvasPreview({ root: frameDoc, playCounters: false });
                 }
-            } catch {
+            } catch (error) {
                 // Optional.
+                debugSwallowed(error);
             }
         }, 60);
     });

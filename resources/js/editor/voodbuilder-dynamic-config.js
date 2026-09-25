@@ -3,6 +3,8 @@
  * Editor getHtml() breaks raw JSON quotes inside attributes.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 export function encodeBlockConfig(config) {
     const json = typeof config === 'string' ? config : JSON.stringify(config ?? {});
 
@@ -30,8 +32,9 @@ export function parseBlockConfig(raw) {
             if (parsed && typeof parsed === 'object' && ! Array.isArray(parsed)) {
                 return parsed;
             }
-        } catch {
+        } catch (error) {
             // try next candidate
+            debugSwallowed(error);
         }
     }
 

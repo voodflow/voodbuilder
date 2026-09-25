@@ -2,6 +2,7 @@
  * Pure component-tree helpers — no Editor imports, no side effects.
  */
 
+import { debugSwallowed } from '../debug-swallowed.js';
 import { ATTR } from './attrs.js';
 import { isMediaHeroId } from '../media-hero.js';
 
@@ -30,8 +31,9 @@ export function readBlockId(component) {
         if (fromGet != null && String(fromGet).trim() !== '') {
             return String(fromGet).trim();
         }
-    } catch {
+    } catch (error) {
         // Ignore model get failures.
+        debugSwallowed(error);
     }
 
     try {
@@ -41,8 +43,9 @@ export function readBlockId(component) {
         if (fromEl != null && String(fromEl).trim() !== '') {
             return String(fromEl).trim();
         }
-    } catch {
+    } catch (error) {
         // Canvas frame may not be ready yet.
+        debugSwallowed(error);
     }
 
     const type = String(component.get?.('type') ?? '');

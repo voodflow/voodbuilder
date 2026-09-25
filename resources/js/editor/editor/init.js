@@ -4,6 +4,7 @@
  * Customise behaviour via init options, events, and plugins (voodbuilder-editor.js).
  * Never patch node_modules/grapesjs: changes there are lost on npm update.
  */
+import { debugSwallowed } from '../debug-swallowed.js';
 import '../inspector-color-preload.js';
 import grapesjs from 'grapesjs';
 import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
@@ -259,8 +260,9 @@ function applyInitialContent(editor, initial, options = {}) {
         hydrateDecorationBackgroundImages(editor);
         restoreLayerVisibilityFromAttributes(editor);
         editor.__voodbuilderHydrateCanvasFonts?.(initial.css ?? editor.getCss?.() ?? '');
-    } catch {
+    } catch (error) {
         // Ignore hydrate errors during early boot.
+        debugSwallowed(error);
     }
 
     if (! initial.html?.trim()) {
@@ -269,8 +271,9 @@ function applyInitialContent(editor, initial, options = {}) {
 
     try {
         restoreContentWidthFromAttributes(editor);
-    } catch {
+    } catch (error) {
         // Ignore hydrate errors during early boot.
+        debugSwallowed(error);
     }
 }
 
@@ -314,8 +317,9 @@ function resolveEditorChromePrefersDark(fallback = false) {
         if (stored === 'light') {
             return false;
         }
-    } catch {
+    } catch (error) {
         // Ignore storage failures.
+        debugSwallowed(error);
     }
 
     if (document.documentElement.classList.contains('dark')) {
@@ -456,8 +460,9 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
             if (typeof sync === 'function') {
                 sync(editor);
             }
-        } catch {
+        } catch (error) {
             // Optional — Style panel wires this after mount.
+            debugSwallowed(error);
         }
     };
 
@@ -1392,12 +1397,14 @@ export function initVoodbuilderEditor(container, options = {}) {
                     restoreLayerVisibilityFromAttributes(editor);
                     hydrateDecorationBackgroundImages(editor);
                     void editor.__voodbuilderHydrateCanvasFonts?.(editor.getCss?.() ?? '');
-                } catch {
+                } catch (error) {
                     // Ignore hydrate race during boot.
+                    debugSwallowed(error);
                 }
             });
-        } catch {
+        } catch (error) {
             // Ignore hydrate errors during early boot.
+            debugSwallowed(error);
         }
         ensureLayoutSectionTraits(editor);
         pruneEmptySections(editor);
@@ -1620,12 +1627,14 @@ export function initVoodbuilderEditor(container, options = {}) {
                     settleEditorCanvasPreview({
                         root: editor.Canvas?.getDocument?.() ?? frameDoc,
                     });
-                } catch {
+                } catch (error) {
                     // Optional.
+                    debugSwallowed(error);
                 }
             }, 350);
-        } catch {
+        } catch (error) {
             // VB runtime is optional in the editor canvas.
+            debugSwallowed(error);
         }
 
         try {
@@ -1633,8 +1642,9 @@ export function initVoodbuilderEditor(container, options = {}) {
             purgeDesyncedPaintCssRules(editor);
             hydrateAuthorStylesFromIdRules(editor);
             hydrateDecorationBackgroundImages(editor);
-        } catch {
+        } catch (error) {
             // Ignore paint sync errors during early frame mount.
+            debugSwallowed(error);
         }
     });
 
@@ -2207,8 +2217,9 @@ async function loadBlocks(editor, blocksUrl, labels = {}) {
         console.error('Voodbuilder Editor: could not load block catalog.', error);
         try {
             refreshBlocksLibraryUi(editor);
-        } catch {
+        } catch (error) {
             // Ignore secondary UI failures after a catalog load error.
+            debugSwallowed(error);
         }
 
         void alertDialog({
@@ -2584,8 +2595,9 @@ function mountFrontendEditor() {
                     const baseline = buildPayload(editor, { mutate: false });
                     editor.__voodbuilderLastSavePayloadHash = hashSavePayload(baseline);
                     editor.__voodbuilderPageSaveClean = true;
-                } catch {
+                } catch (error) {
                     // Ignore.
+                    debugSwallowed(error);
                 }
 
                 window.setTimeout(() => {
@@ -2696,8 +2708,9 @@ function mountFrontendEditor() {
                     const parsed = JSON.parse(body);
                     detail = parsed?.message
                         ?? (parsed?.errors ? Object.values(parsed.errors).flat().join(' ') : body);
-                } catch {
+                } catch (error) {
                     // keep raw body
+                    debugSwallowed(error);
                 }
 
                 throw new Error(detail || `Save failed (${response.status})`);

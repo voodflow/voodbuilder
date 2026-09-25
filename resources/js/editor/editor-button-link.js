@@ -9,6 +9,7 @@
  * (survives data-gjs strip), and a single textnode child for HTML export.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { isInsideChromeShellPartComponent } from './chrome-content-slot-utils.js';
 import { resolveEditorLinkHref as resolveSharedLinkHref } from './editor-link-resolve.js';
 
@@ -1526,8 +1527,9 @@ export function hydrateCtasAfterHtmlInsert(editor, root = null) {
             } else {
                 ensureCtaButtonsForExport(editor);
             }
-        } catch {
+        } catch (error) {
             // ignore
+            debugSwallowed(error);
         }
     };
 

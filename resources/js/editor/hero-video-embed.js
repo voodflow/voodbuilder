@@ -2,6 +2,8 @@
  * YouTube / Vimeo URLs for full-bleed hero backgrounds (muted loop embeds).
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 export const HERO_VIDEO_PROVIDERS = {
     file: 'file',
     yt: 'yt',
@@ -79,8 +81,9 @@ export function normalizeHeroVideoId(value, provider) {
         if (embedMatch?.[1]) {
             return embedMatch[1];
         }
-    } catch {
+    } catch (error) {
         // keep raw
+        debugSwallowed(error);
     }
 
     return raw;

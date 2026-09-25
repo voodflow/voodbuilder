@@ -3,6 +3,8 @@
  * Widths persist in localStorage.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
+
 const STORAGE_LEFT = 'voodbuilder:gjs:panel-left-width';
 const STORAGE_RIGHT = 'voodbuilder:gjs:panel-right-width';
 
@@ -33,8 +35,9 @@ function readRem(key, fallback) {
 function writeRem(key, value) {
     try {
         window.localStorage.setItem(key, String(value));
-    } catch {
+    } catch (error) {
         // ignore quota / private mode
+        debugSwallowed(error);
     }
 }
 

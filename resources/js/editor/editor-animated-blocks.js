@@ -2,6 +2,7 @@
  * Animated Editor elements — CTA, counter, stats, logo scroll.
  */
 
+import { debugSwallowed } from './debug-swallowed.js';
 import { previewSvg, thumbWrap } from './editor-block-preview-utils.js';
 import { hydratePropsFromAttributes } from './component-attr-hydrate.js';
 import { resolveBlockLabel } from './section-block-meta.js';
@@ -1670,8 +1671,9 @@ export function configureAnimatedCanvas(editor) {
             }
 
             initLogoScroll({ root: frameDoc });
-        } catch {
+        } catch (error) {
             // Optional in editor.
+            debugSwallowed(error);
         }
     };
 
@@ -1690,8 +1692,9 @@ export function configureAnimatedCanvas(editor) {
             replayEditorCanvasAnimations({ root: frameDoc });
             initLogoScroll({ root: frameDoc });
             lastCounterPlayAt = Date.now();
-        } catch {
+        } catch (error) {
             // Optional in editor.
+            debugSwallowed(error);
         }
     };
 
