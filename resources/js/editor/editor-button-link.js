@@ -568,7 +568,14 @@ function resolveLinkHref(editor, linkType, linkRef, href) {
 
 function syncLinkableButtonTraits(component, editor, { forceSelect = false } = {}) {
     // Silent trait schema refresh — never remount TraitManager unless selecting.
-    component.set('traits', linkTraitsFor(editor, component), { silent: true });
+    // A raw array under `traits` crashes TraitManager ("e.get is not a function") on select.
+    const traits = linkTraitsFor(editor, component);
+
+    if (typeof component.__loadTraits === 'function') {
+        component.__loadTraits(traits, { silent: true });
+    } else {
+        component.set('traits', traits, { silent: true });
+    }
 
     if (! forceSelect || editor?.getSelected?.() !== component) {
         return;

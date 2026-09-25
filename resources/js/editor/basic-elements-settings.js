@@ -8,6 +8,7 @@ import {
     createSelectField,
     createTextField,
 } from './editor-form-ui.js';
+import { createLinkTargetFields } from './link-target-fields.js';
 import {
     TEXT_COLOR_GRADIENT_VALUE,
     TEXT_COLOR_OPTIONS,
@@ -1797,197 +1798,37 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         value: label,
     });
 
-    const typeField = createSelectField({
-        label: labels.buttonLinkType ?? 'Link type',
-        name: 'textLinkType',
-        value: linkType,
-        options: linkTypeSelectOptions(labels),
-        onChange: (value) => {
-            linkType = value;
-            syncVisibility();
-            commit();
+    const linkFields = createLinkTargetFields({
+        labels,
+        targets,
+        names: {
+            type: 'textLinkType',
+            href: 'textLinkHref',
+            page: 'textLinkRefPage',
+            menu: 'textLinkRefMenu',
+            mail: 'textLinkMail',
+            subject: 'textLinkMailSubject',
+            route: 'textLinkRefRoute',
+            target: 'textLinkTarget',
+            routeParamPrefix: 'textLinkRouteParam_',
         },
+        initial: { linkType, linkRef, href, target, mailSubject, routeParams },
+        urlValue: href === '#' ? '' : href,
+        emptyHref: '#',
+        onChange: () => commit(),
+        enhanceSelects: (root) => editor.__voodbuilderEnhanceInspectorSelects?.(root),
     });
+    const { urlInput, mailInput, subjectInput, syncVisibility } = linkFields;
 
-    const { field: urlField, input: urlInput } = createTextField({
-        label: labels.buttonLinkUrl ?? 'Link URL',
-        name: 'textLinkHref',
-        value: href === '#' ? '' : href,
-        placeholder: labels.buttonLinkUrlPlaceholder ?? 'https:// or /page',
-    });
-
-    const pageField = createSelectField({
-        label: labels.buttonLinkPage ?? 'Page',
-        name: 'textLinkRefPage',
-        value: linkRef,
-        options: [
-            { value: '', label: '—' },
-            ...(targets.pages ?? []).map((item) => ({
-                value: String(item.id),
-                label: item.label,
-            })),
-        ],
-        onChange: (value) => {
-            linkRef = value;
-            commit();
-        },
-    });
-
-    const menuField = createSelectField({
-        label: labels.buttonLinkMenu ?? 'Menu item',
-        name: 'textLinkRefMenu',
-        value: linkRef,
-        options: [
-            { value: '', label: '—' },
-            ...(targets.menuItems ?? []).map((item) => ({
-                value: String(item.id),
-                label: item.label,
-            })),
-        ],
-        onChange: (value) => {
-            linkRef = value;
-            commit();
-        },
-    });
-
-    const { field: mailField, input: mailInput } = createTextField({
-        label: labels.buttonLinkMail ?? 'Email address',
-        name: 'textLinkMail',
-        value: linkType === 'mail' ? linkRef : '',
-        placeholder: labels.buttonLinkMailPlaceholder ?? 'name@example.com',
-    });
-
-    const { field: subjectField, input: subjectInput } = createTextField({
-        label: labels.buttonLinkMailSubject ?? 'Subject',
-        name: 'textLinkMailSubject',
-        value: mailSubject,
-        placeholder: labels.buttonLinkMailSubjectPlaceholder ?? 'Optional subject',
-    });
-
-    const routeField = createSelectField({
-        label: labels.buttonLinkRoute ?? 'App route',
-        name: 'textLinkRefRoute',
-        value: linkType === 'route' ? linkRef : '',
-        options: [
-            { value: '', label: '—' },
-            ...(targets.routes ?? []).map((item) => ({
-                value: String(item.id),
-                label: item.label,
-            })),
-        ],
-        onChange: (value) => {
-            linkRef = value;
-            routeParams = {};
-            rebuildRouteParamFields();
-            commit();
-        },
-    });
-
-    const routeParamsMount = document.createElement('div');
-    routeParamsMount.className = 'voodbuilder-editor-form-route-params';
-
-    const targetField = createSelectField({
-        label: labels.buttonLinkTarget ?? 'Open in',
-        name: 'textLinkTarget',
-        value: target,
-        options: [
-            { value: '', label: labels.buttonLinkSameTab ?? 'Same tab' },
-            { value: '_blank', label: labels.buttonLinkNewTab ?? 'New tab' },
-        ],
-        onChange: (value) => {
-            target = value;
-            commit();
-        },
-    });
-
-    fields.append(
-        labelField,
-        typeField,
-        urlField,
-        pageField,
-        menuField,
-        mailField,
-        subjectField,
-        routeField,
-        routeParamsMount,
-        targetField,
-    );
+    fields.append(labelField, ...linkFields.fields);
     mount.appendChild(section);
-
-    const rebuildRouteParamFields = () => {
-        routeParamsMount.replaceChildren();
-
-        if (linkType !== 'route' || ! linkRef) {
-            return;
-        }
-
-        const entry = (targets.routes ?? []).find((item) => String(item.id) === String(linkRef));
-
-        for (const paramName of entry?.requiredParams ?? []) {
-            const { field, input } = createTextField({
-                label: paramName,
-                name: `textLinkRouteParam_${paramName}`,
-                value: String(routeParams[paramName] ?? ''),
-                placeholder: paramName,
-            });
-
-            input.addEventListener('input', () => {
-                routeParams = { ...routeParams, [paramName]: input.value };
-                commit();
-            });
-            input.addEventListener('change', () => {
-                routeParams = { ...routeParams, [paramName]: input.value };
-                commit();
-            });
-
-            routeParamsMount.appendChild(field);
-        }
-
-        editor.__voodbuilderEnhanceInspectorSelects?.(routeParamsMount);
-    };
-
-    const syncVisibility = () => {
-        urlField.hidden = linkType !== 'url';
-        pageField.hidden = linkType !== 'page';
-        menuField.hidden = linkType !== 'menu';
-        mailField.hidden = linkType !== 'mail';
-        subjectField.hidden = linkType !== 'mail';
-        routeField.hidden = linkType !== 'route';
-        routeParamsMount.hidden = linkType !== 'route';
-        targetField.hidden = linkType === 'mail';
-        rebuildRouteParamFields();
-    };
 
     const commit = () => {
         label = String(labelInput.value || 'Text link').trim() || 'Text link';
-        href = String(urlInput.value || '#').trim() || '#';
-        mailSubject = String(subjectInput.value || '').trim();
-
-        if (linkType === 'page') {
-            linkRef = String(pageField.querySelector('select')?.value || '');
-        } else if (linkType === 'menu') {
-            linkRef = String(menuField.querySelector('select')?.value || '');
-        } else if (linkType === 'mail') {
-            linkRef = String(mailInput.value || '').trim();
-            href = buildMailtoHref(linkRef, mailSubject);
-        } else if (linkType === 'route') {
-            linkRef = String(routeField.querySelector('select')?.value || '');
-        } else {
-            linkRef = '';
-        }
-
-        target = linkType === 'mail'
-            ? ''
-            : String(targetField.querySelector('select')?.value || '');
 
         applyTextLinkToComponent(component, editor, {
             label,
-            linkType,
-            linkRef,
-            href,
-            target,
-            mailSubject,
-            routeParams,
+            ...linkFields.read(),
         });
     };
 

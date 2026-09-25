@@ -3,13 +3,11 @@
  * (URL · page · menu · mail · route + target).
  */
 
-import { createSelectField, createTextField } from './editor-form-ui.js';
+import { createLinkTargetFields } from './link-target-fields.js';
 import { enhanceInspectorSelects } from './inspector-select-ui.js';
 import {
     MAIL_SUBJECT_ATTR,
     ROUTE_PARAMS_ATTR,
-    buildMailtoHref,
-    linkTypeSelectOptions,
     parseMailtoHref,
     resolveAppRouteHref,
     resolveEditorLinkHref,
@@ -244,7 +242,6 @@ export function linkPickerDialog(options = {}) {
     let linkRef = String(options.defaultLinkRef ?? '').trim();
     let target = String(options.defaultTarget ?? '').trim();
     let mailSubject = String(options.defaultMailSubject ?? '').trim();
-    let routeParams = {};
 
     const allowed = new Set(['url', 'page', 'menu', 'mail', 'route']);
 
@@ -293,156 +290,31 @@ export function linkPickerDialog(options = {}) {
         const fields = document.createElement('div');
         fields.className = 'voodbuilder-editor-form__fields';
 
-        const typeField = createSelectField({
-            label: labels.buttonLinkType ?? 'Link type',
-            name: 'linkPickerType',
-            value: linkType,
-            options: linkTypeSelectOptions(labels),
-            onChange: (value) => {
-                linkType = value;
-                syncVisibility();
+        const linkFields = createLinkTargetFields({
+            labels,
+            targets,
+            names: {
+                type: 'linkPickerType',
+                href: 'linkPickerHref',
+                page: 'linkPickerPage',
+                menu: 'linkPickerMenu',
+                mail: 'linkPickerMail',
+                subject: 'linkPickerMailSubject',
+                route: 'linkPickerRoute',
+                target: 'linkPickerTarget',
+                routeParamPrefix: 'linkPickerRouteParam_',
             },
+            initial: { linkType, linkRef, href, target, mailSubject, routeParams: {} },
+            urlValue: href === '#' ? '' : href,
+            urlPlaceholder: labels.buttonLinkUrlPlaceholder ?? labels.rteLinkPlaceholder ?? 'https:// or /page',
+            emptyHref: '',
+            enhanceSelects: enhanceInspectorSelects,
         });
+        const { urlInput, mailInput } = linkFields;
 
-        const { field: urlField, input: urlInput } = createTextField({
-            label: labels.buttonLinkUrl ?? 'Link URL',
-            name: 'linkPickerHref',
-            value: href === '#' ? '' : href,
-            placeholder: labels.buttonLinkUrlPlaceholder ?? labels.rteLinkPlaceholder ?? 'https:// or /page',
-        });
-
-        const pageField = createSelectField({
-            label: labels.buttonLinkPage ?? 'Page',
-            name: 'linkPickerPage',
-            value: linkRef,
-            options: [
-                { value: '', label: '—' },
-                ...(targets.pages ?? []).map((item) => ({
-                    value: String(item.id),
-                    label: item.label,
-                })),
-            ],
-            onChange: (value) => {
-                linkRef = value;
-            },
-        });
-
-        const menuField = createSelectField({
-            label: labels.buttonLinkMenu ?? 'Menu item',
-            name: 'linkPickerMenu',
-            value: linkRef,
-            options: [
-                { value: '', label: '—' },
-                ...(targets.menuItems ?? []).map((item) => ({
-                    value: String(item.id),
-                    label: item.label,
-                })),
-            ],
-            onChange: (value) => {
-                linkRef = value;
-            },
-        });
-
-        const { field: mailField, input: mailInput } = createTextField({
-            label: labels.buttonLinkMail ?? 'Email address',
-            name: 'linkPickerMail',
-            value: linkType === 'mail' ? linkRef : '',
-            placeholder: labels.buttonLinkMailPlaceholder ?? 'name@example.com',
-        });
-
-        const { field: subjectField, input: subjectInput } = createTextField({
-            label: labels.buttonLinkMailSubject ?? 'Subject',
-            name: 'linkPickerMailSubject',
-            value: mailSubject,
-            placeholder: labels.buttonLinkMailSubjectPlaceholder ?? 'Optional subject',
-        });
-
-        const routeField = createSelectField({
-            label: labels.buttonLinkRoute ?? 'App route',
-            name: 'linkPickerRoute',
-            value: linkType === 'route' ? linkRef : '',
-            options: [
-                { value: '', label: '—' },
-                ...(targets.routes ?? []).map((item) => ({
-                    value: String(item.id),
-                    label: item.label,
-                })),
-            ],
-            onChange: (value) => {
-                linkRef = value;
-                routeParams = {};
-                rebuildRouteParamFields();
-            },
-        });
-
-        const routeParamsMount = document.createElement('div');
-        routeParamsMount.className = 'voodbuilder-editor-form-route-params';
-
-        const targetField = createSelectField({
-            label: labels.buttonLinkTarget ?? 'Open in',
-            name: 'linkPickerTarget',
-            value: target,
-            options: [
-                { value: '', label: labels.buttonLinkSameTab ?? 'Same tab' },
-                { value: '_blank', label: labels.buttonLinkNewTab ?? 'New tab' },
-            ],
-            onChange: (value) => {
-                target = value;
-            },
-        });
-
-        const rebuildRouteParamFields = () => {
-            routeParamsMount.replaceChildren();
-
-            if (linkType !== 'route' || ! linkRef) {
-                return;
-            }
-
-            const entry = (targets.routes ?? []).find((item) => String(item.id) === String(linkRef));
-
-            for (const paramName of entry?.requiredParams ?? []) {
-                const { field, input } = createTextField({
-                    label: paramName,
-                    name: `linkPickerRouteParam_${paramName}`,
-                    value: String(routeParams[paramName] ?? ''),
-                    placeholder: paramName,
-                });
-
-                input.addEventListener('input', () => {
-                    routeParams = { ...routeParams, [paramName]: input.value };
-                });
-
-                routeParamsMount.appendChild(field);
-            }
-
-            enhanceInspectorSelects(routeParamsMount);
-        };
-
-        const syncVisibility = () => {
-            urlField.hidden = linkType !== 'url';
-            pageField.hidden = linkType !== 'page';
-            menuField.hidden = linkType !== 'menu';
-            mailField.hidden = linkType !== 'mail';
-            subjectField.hidden = linkType !== 'mail';
-            routeField.hidden = linkType !== 'route';
-            routeParamsMount.hidden = linkType !== 'route';
-            targetField.hidden = linkType === 'mail';
-            rebuildRouteParamFields();
-        };
-
-        fields.append(
-            typeField,
-            urlField,
-            pageField,
-            menuField,
-            mailField,
-            subjectField,
-            routeField,
-            routeParamsMount,
-            targetField,
-        );
+        fields.append(...linkFields.fields);
         body.appendChild(fields);
-        syncVisibility();
+        linkFields.syncVisibility();
 
         const footer = document.createElement('footer');
         footer.className = 'voodbuilder-editor-dialog__footer';
@@ -484,25 +356,9 @@ export function linkPickerDialog(options = {}) {
         };
 
         const submit = async () => {
-            href = String(urlInput.value || '').trim();
-            mailSubject = String(subjectInput.value || '').trim();
-
-            if (linkType === 'page') {
-                linkRef = String(pageField.querySelector('select')?.value || '');
-            } else if (linkType === 'menu') {
-                linkRef = String(menuField.querySelector('select')?.value || '');
-            } else if (linkType === 'mail') {
-                linkRef = String(mailInput.value || '').trim();
-                href = buildMailtoHref(linkRef, mailSubject);
-            } else if (linkType === 'route') {
-                linkRef = String(routeField.querySelector('select')?.value || '');
-            } else {
-                linkRef = '';
-            }
-
-            target = linkType === 'mail'
-                ? ''
-                : String(targetField.querySelector('select')?.value || '');
+            const state = linkFields.read();
+            const { routeParams } = state;
+            ({ linkType, linkRef, href, target, mailSubject } = state);
 
             if (linkType === 'url' && href === '') {
                 urlInput.focus();
@@ -511,10 +367,7 @@ export function linkPickerDialog(options = {}) {
             }
 
             if ((linkType === 'page' || linkType === 'menu' || linkType === 'route') && linkRef === '') {
-                const select = (
-                    linkType === 'page' ? pageField : linkType === 'menu' ? menuField : routeField
-                ).querySelector('select');
-                select?.focus();
+                linkFields.referenceField(linkType)?.querySelector('select')?.focus();
 
                 return;
             }
