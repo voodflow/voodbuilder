@@ -6,8 +6,8 @@ namespace Voodflow\Voodbuilder\Filament\Concerns;
 
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\TranslationGroupQuery;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Lists Canonical Translation Groups trait.
@@ -23,7 +23,7 @@ trait ListsCanonicalTranslationGroups
     {
         return SelectFilter::make('locale')
             ->label(__('voodbuilder::admin.fields.language'))
-            ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
+            ->options(fn (): array => SiteLocales::options())
             ->query(function (Builder $query, array $data): void {
                 $locale = $data['value'] ?? null;
 
@@ -33,6 +33,6 @@ trait ListsCanonicalTranslationGroups
 
                 TranslationGroupQuery::whereGroupHasLocale($query, $locale);
             })
-            ->hidden(fn (): bool => ! class_exists(Locales::class) || count(Locales::codes()) <= 1);
+            ->hidden(fn (): bool => count(SiteLocales::codes()) <= 1);
     }
 }

@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
 use Voodflow\Voodbuilder\Support\Navigation;
 use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
-use Voodflow\Vtuts\Support\Locales;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 
 /**
  * Navigation Menu.
@@ -38,7 +38,7 @@ class NavigationMenu extends Model
     {
         static::creating(function (NavigationMenu $menu): void {
             if (blank($menu->locale)) {
-                $menu->locale = class_exists(Locales::class) ? Locales::default() : 'en';
+                $menu->locale = SiteLocales::default();
             }
 
             if (blank($menu->translation_group_id)) {

@@ -28,7 +28,6 @@ use Throwable;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\Popups\PopupsOrphanStatus;
-use Voodflow\Vtuts\Support\Locales;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
@@ -62,10 +61,6 @@ class VoodbuilderSettingsPage extends Page
     public function mount(): void
     {
         $data = VoodbuilderSettings::data();
-
-        if (blank($data['primary_locale'] ?? null) && class_exists(Locales::class)) {
-            $data['primary_locale'] = VoodbuilderSettings::primaryLocale();
-        }
 
         $this->data = $data;
         $this->form->fill($data);
@@ -220,14 +215,6 @@ class VoodbuilderSettingsPage extends Page
                                                     ->default(true)
                                                     ->live()
                                                     ->visible(fn (): bool => class_exists(LocaleSwitcher::class)
-                                                        && LocaleSwitcher::enabled()),
-                                                Select::make('primary_locale')
-                                                    ->label(__('voodbuilder::settings.primary_locale'))
-                                                    ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : [])
-                                                    ->default(fn (): string => VoodbuilderSettings::primaryLocale())
-                                                    ->helperText(__('voodbuilder::settings.primary_locale_help'))
-                                                    ->visible(fn (): bool => class_exists(Locales::class)
-                                                        && class_exists(LocaleSwitcher::class)
                                                         && LocaleSwitcher::enabled()),
                                             ]),
                                     ]),

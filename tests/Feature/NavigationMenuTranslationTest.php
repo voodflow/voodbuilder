@@ -30,11 +30,11 @@ class NavigationMenuTranslationTest extends TestCase
     {
         parent::defineEnvironment($app);
 
-        $app['config']->set('vtuts.locales', [
+        $app['config']->set('app.locales', [
             'en' => 'English',
             'it' => 'Italiano',
         ]);
-        $app['config']->set('vtuts.default_locale', 'en');
+        $app['config']->set('app.default_locale', 'en');
         $app['config']->set('vtuts.features.localization', true);
     }
 

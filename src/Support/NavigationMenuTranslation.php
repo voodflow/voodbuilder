@@ -11,7 +11,6 @@ use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Navigation Menu Translation.
@@ -25,7 +24,7 @@ final class NavigationMenuTranslation
     {
         $existing = self::existingLocales($menu);
 
-        return collect(Locales::options())
+        return collect(SiteLocales::options())
             ->reject(fn (string $label, string $code): bool => $code === $menu->locale || in_array($code, $existing, true))
             ->all();
     }
@@ -44,7 +43,7 @@ final class NavigationMenuTranslation
 
     public static function createFrom(NavigationMenu $source, string $targetLocale): NavigationMenu
     {
-        if (! in_array($targetLocale, Locales::codes(), true)) {
+        if (! in_array($targetLocale, SiteLocales::codes(), true)) {
             throw new \InvalidArgumentException("Unsupported locale [{$targetLocale}].");
         }
 

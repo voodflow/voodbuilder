@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Site Page Home.
@@ -62,9 +61,7 @@ final class SitePageHome
     {
         return self::conflictingHomes($page)
             ->map(function (SitePage $conflict): string {
-                $localeLabel = class_exists(Locales::class)
-                    ? (Locales::options()[$conflict->locale] ?? $conflict->locale)
-                    : $conflict->locale;
+                $localeLabel = SiteLocales::options()[$conflict->locale] ?? $conflict->locale;
 
                 return "{$conflict->title} ({$localeLabel})";
             })

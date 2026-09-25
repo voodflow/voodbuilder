@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Cache;
 use Voodflow\Voodbuilder\Enums\MenuLinkDisplay;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Navigation.
@@ -87,8 +86,8 @@ final class Navigation
                     continue;
                 }
 
-                if (NavigationMenuResolver::localizationEnabled() && class_exists(Locales::class)) {
-                    foreach (Locales::codes() as $code) {
+                if (NavigationMenuResolver::localizationEnabled()) {
+                    foreach (SiteLocales::codes() as $code) {
                         Cache::forget(self::cacheKey($slug, $code));
                     }
 

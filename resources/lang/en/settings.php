@@ -8,10 +8,6 @@ return [
     'favicon_light_help' => 'Used in light browser chrome and as the default favicon. Leave empty to use the Voodflow mark.',
     'favicon_dark' => 'Favicon (dark)',
     'favicon_dark_help' => 'Optional variant for dark browser chrome (OS/browser prefers-color-scheme). Does not follow the site theme toggle.',
-    'primary_locale' => 'Primary site language',
-    'primary_locale_help' => 'Default language for the site UI and listings. Uses clean URLs without a /en/ or /it/ prefix. Linked translations use their own slug (e.g. /tutorials/my-article and /tutorials/il-mio-articolo).',
-    'default_ui_locale' => 'Default UI language',
-    'default_ui_locale_help' => 'Applied to navigation, buttons, and other interface strings when the language switcher is hidden.',
 
     'header_nav' => [
         'section' => 'Header & navigation defaults',

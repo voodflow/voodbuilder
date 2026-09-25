@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vtuts\Support\Locales;
-
 /**
  * Demo Sub Theme Content.
  */
@@ -121,9 +119,7 @@ final class DemoSubThemeContent
      */
     private static function withLocale(?string $locale, callable $callback): mixed
     {
-        $locale ??= class_exists(Locales::class)
-            ? Locales::default()
-            : app()->getLocale();
+        $locale ??= SiteLocales::default();
 
         $previousLocale = app()->getLocale();
         app()->setLocale($locale);

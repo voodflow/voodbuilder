@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 
 /**
  * Editor Condition Hooks.
@@ -200,25 +201,7 @@ final class EditorConditionHooks
      */
     private static function localeChoices(): array
     {
-        $explicit = config('voodbuilder.editor.conditions.locales');
-
-        if (is_array($explicit) && $explicit !== []) {
-            return self::normalizeChoices($explicit);
-        }
-
-        foreach (['app.locales', 'vtuts.locales', 'vdocs.locales'] as $configKey) {
-            $locales = config($configKey);
-
-            if (is_array($locales) && $locales !== []) {
-                return self::normalizeChoices($locales);
-            }
-        }
-
-        $locale = app()->getLocale();
-
-        return [
-            ['value' => $locale, 'label' => strtoupper($locale)],
-        ];
+        return self::normalizeChoices(SiteLocales::options());
     }
 
     /**

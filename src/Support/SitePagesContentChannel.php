@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Collection;
 use Voodflow\Voodbuilder\Contracts\PublicContentChannel;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Site Pages Content Channel.
@@ -48,7 +47,7 @@ final class SitePagesContentChannel implements PublicContentChannel
         return SitePage::query()
             ->published()
             ->when(
-                class_exists(Locales::class),
+                count(SiteLocales::codes()) > 1,
                 fn ($query) => $query->where('locale', SitePageResolver::preferredLocale()),
             )
             ->where(function ($query) use ($like): void {

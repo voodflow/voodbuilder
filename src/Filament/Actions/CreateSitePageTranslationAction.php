@@ -9,9 +9,9 @@ use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageTranslation;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Filament action: Create Site Page Translation.
@@ -42,7 +42,7 @@ class CreateSitePageTranslationAction
                 Notification::make()
                     ->title(__('voodbuilder::admin.notifications.translation_created'))
                     ->body(__('voodbuilder::admin.notifications.translation_created_body', [
-                        'locale' => Locales::options()[$translation->locale] ?? $translation->locale,
+                        'locale' => SiteLocales::options()[$translation->locale] ?? $translation->locale,
                     ]))
                     ->success()
                     ->send();

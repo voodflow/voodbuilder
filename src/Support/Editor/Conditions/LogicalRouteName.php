@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor\Conditions;
 
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 
 /**
  * Normalize locale-prefixed route names for editor conditions and visibility rules.
@@ -90,24 +91,7 @@ final class LogicalRouteName
      */
     private static function knownLocales(): array
     {
-        $locales = [];
-
-        foreach (['voodbuilder.editor.conditions.locales', 'app.locales', 'vtuts.locales', 'vdocs.locales'] as $key) {
-            $configured = config($key);
-
-            if (! is_array($configured)) {
-                continue;
-            }
-
-            foreach ($configured as $configuredKey => $value) {
-                foreach ([$configuredKey, $value] as $candidate) {
-                    if (is_string($candidate) && $candidate !== '') {
-                        $locales[] = strtolower($candidate);
-                    }
-                }
-            }
-        }
-
+        $locales = array_map('strtolower', SiteLocales::codes());
         $locales[] = strtolower(app()->getLocale());
         $locales[] = strtolower((string) config('app.fallback_locale', 'en'));
 

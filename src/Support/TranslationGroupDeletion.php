@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Translation Group Deletion.
@@ -94,9 +93,7 @@ final class TranslationGroupDeletion
     {
         $locale = (string) $record->getAttribute('locale');
 
-        return class_exists(Locales::class)
-            ? (Locales::options()[$locale] ?? strtoupper($locale))
-            : strtoupper($locale);
+        return SiteLocales::options()[$locale] ?? strtoupper($locale);
     }
 
     /**

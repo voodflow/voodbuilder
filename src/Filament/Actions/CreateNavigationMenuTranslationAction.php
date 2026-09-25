@@ -11,7 +11,7 @@ use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
 use Voodflow\Voodbuilder\Support\NavigationMenuTranslation;
-use Voodflow\Vtuts\Support\Locales;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 
 /**
  * Filament action: Create Navigation Menu Translation.
@@ -42,7 +42,7 @@ class CreateNavigationMenuTranslationAction
                 Notification::make()
                     ->title(__('voodbuilder::admin.notifications.menu_translation_created'))
                     ->body(__('voodbuilder::admin.notifications.menu_translation_created_body', [
-                        'locale' => Locales::options()[$translation->locale] ?? $translation->locale,
+                        'locale' => SiteLocales::options()[$translation->locale] ?? $translation->locale,
                     ]))
                     ->success()
                     ->send();

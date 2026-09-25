@@ -42,8 +42,8 @@ use Voodflow\Voodbuilder\Support\MenuRouteParameterField;
 use Voodflow\Voodbuilder\Support\MenuTablerIcons;
 use Voodflow\Voodbuilder\Support\NavigationMenuPlacements;
 use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Filament resource: Navigation Menu.
@@ -160,7 +160,7 @@ class NavigationMenuResource extends Resource
                                 ignoreRecord: true,
                                 modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where(
                                     'locale',
-                                    $get('locale') ?? (class_exists(Locales::class) ? Locales::default() : 'en'),
+                                    $get('locale') ?? SiteLocales::default(),
                                 ),
                             )
                             ->native(false)
@@ -182,8 +182,8 @@ class NavigationMenuResource extends Resource
                         static::translatableLocaleSelect(
                             Select::make('locale')
                                 ->label(__('voodbuilder::admin.fields.language'))
-                                ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
-                                ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
+                                ->options(fn (): array => SiteLocales::options())
+                                ->default(fn (): string => SiteLocales::default())
                                 ->required()
                                 ->native(false)
                                 ->visible(fn (): bool => NavigationMenuResolver::localizationEnabled()),
@@ -209,9 +209,7 @@ class NavigationMenuResource extends Resource
 
                                 $links = $siblings
                                     ->map(function (NavigationMenu $menu): string {
-                                        $label = class_exists(Locales::class)
-                                            ? (Locales::options()[$menu->locale] ?? $menu->locale)
-                                            : $menu->locale;
+                                        $label = SiteLocales::options()[$menu->locale] ?? $menu->locale;
                                         $url = static::getUrl('edit', ['record' => $menu]);
 
                                         return '<a href="' . e($url) . '" class="text-primary-600 hover:underline">' . e($label) . '</a>';

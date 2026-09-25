@@ -18,7 +18,6 @@ use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * HTTP controller: Home.
@@ -86,19 +85,15 @@ class HomeController extends Controller
 
     protected function resolvedHomeLocale(): ?string
     {
-        if (! class_exists(Locales::class)) {
-            return null;
-        }
-
         $queryLocale = request()->query('locale');
 
-        if (is_string($queryLocale) && Locales::isValid($queryLocale)) {
+        if (is_string($queryLocale) && SiteLocales::isValid($queryLocale)) {
             return $queryLocale;
         }
 
         $routeLocale = request()->route('locale');
 
-        if (is_string($routeLocale) && Locales::isValid($routeLocale)) {
+        if (is_string($routeLocale) && SiteLocales::isValid($routeLocale)) {
             return $routeLocale;
         }
 

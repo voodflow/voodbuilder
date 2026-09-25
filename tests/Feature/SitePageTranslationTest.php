@@ -42,11 +42,7 @@ class SitePageTranslationTest extends TestCase
             'en' => 'English',
             'it' => 'Italiano',
         ]);
-        $app['config']->set('vtuts.locales', [
-            'en' => 'English',
-            'it' => 'Italiano',
-        ]);
-        $app['config']->set('vtuts.default_locale', 'en');
+        $app['config']->set('app.default_locale', 'en');
         $app['config']->set('vtuts.features.localization', true);
         $app['config']->set('voodbuilder.home.route_enabled', true);
     }

@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
 use Voodflow\Voodbuilder\Http\Controllers\SitePageUnlockController;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Registers public site-page catch-alls after companion reserved prefixes are known.
@@ -26,7 +25,7 @@ final class SitePageRoutes
 
         $localeMiddleware = [];
 
-        if (class_exists(Locales::class) && config('vtuts.features.localization', false)) {
+        if (config('vtuts.features.localization', false)) {
             $localeMiddleware[] = 'vtuts.locale';
         }
 

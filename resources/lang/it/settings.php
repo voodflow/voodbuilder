@@ -8,10 +8,6 @@ return [
     'favicon_light_help' => 'Usata con chrome del browser chiaro e come favicon predefinita. Lascia vuoto per il marchio Voodflow.',
     'favicon_dark' => 'Favicon (scuro)',
     'favicon_dark_help' => 'Variante opzionale per chrome del browser scuro (prefers-color-scheme di OS/browser). Non segue lo switcher tema del sito.',
-    'primary_locale' => 'Lingua primaria del sito',
-    'primary_locale_help' => 'Lingua predefinita per interfaccia ed elenchi. URL senza prefisso /en/ o /it/. Le traduzioni collegate usano slug propri (es. /tutorials/my-article e /tutorials/il-mio-articolo).',
-    'default_ui_locale' => 'Lingua predefinita dell’interfaccia',
-    'default_ui_locale_help' => 'Usata per menu, pulsanti e altre stringhe dell’interfaccia quando lo switcher lingua è nascosto.',
 
     'header_nav' => [
         'section' => 'Default header e navigazione',

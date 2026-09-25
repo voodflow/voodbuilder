@@ -7,8 +7,8 @@ namespace Voodflow\Voodbuilder\Filament\Columns;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Model;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\TranslationGroupDeletion;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Translation Locale Column.
@@ -46,15 +46,13 @@ final class TranslationLocaleColumn
 
                 return $labels !== '' ? $labels : null;
             })
-            ->visible(fn (): bool => class_exists(Locales::class) && count(Locales::codes()) > 1);
+            ->visible(fn (): bool => count(SiteLocales::codes()) > 1);
     }
 
     protected static function localeLabel(Model $record): string
     {
         $locale = (string) $record->getAttribute('locale');
 
-        return class_exists(Locales::class)
-            ? (Locales::options()[$locale] ?? strtoupper($locale))
-            : strtoupper($locale);
+        return SiteLocales::options()[$locale] ?? strtoupper($locale);
     }
 }

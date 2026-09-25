@@ -9,9 +9,9 @@ use Illuminate\Support\Facades\Cache;
 use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\BrandMarkAssets;
 use Voodflow\Voodbuilder\Support\ContentChannelThemes;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemePalette;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Voodbuilder Settings.
@@ -43,8 +43,6 @@ class VoodbuilderSettings extends Model
             'show_account_link' => true,
             'sticky_nav' => false,
             'show_language_switcher' => true,
-            'primary_locale' => null,
-            'default_ui_locale' => null,
             'logo' => null,
             'logo_mobile' => null,
             'favicon' => null,
@@ -114,10 +112,6 @@ class VoodbuilderSettings extends Model
      */
     protected static function normalizeData(array $data): array
     {
-        if (blank($data['primary_locale'] ?? null) && filled($data['default_ui_locale'] ?? null)) {
-            $data['primary_locale'] = $data['default_ui_locale'];
-        }
-
         $data['sub_theme_colors'] = ThemePalette::normalize($data['sub_theme_colors'] ?? []);
         $data['sub_theme_colors'] = self::migrateLegacyThemeColorKeys($data['sub_theme_colors']);
         $data['content_channel_sub_themes'] = ContentChannelThemes::normalizeOverrides(
@@ -212,29 +206,12 @@ class VoodbuilderSettings extends Model
         return $title;
     }
 
+    /**
+     * Site primary language: `APP_LOCALE` from .env (see SiteLocales), never a stored setting.
+     */
     public static function primaryLocale(): string
     {
-        $locale = static::get('primary_locale') ?? static::get('default_ui_locale');
-
-        if (is_string($locale) && $locale !== '') {
-            if (class_exists(Locales::class)) {
-                if (Locales::isValid($locale)) {
-                    return $locale;
-                }
-            } else {
-                return $locale;
-            }
-        }
-
-        $configured = (string) config('vtuts.default_locale', config('app.locale', 'en'));
-
-        if (class_exists(Locales::class)) {
-            return Locales::isValid($configured)
-                ? $configured
-                : Locales::codes()[0];
-        }
-
-        return $configured;
+        return SiteLocales::default();
     }
 
     public static function defaultUiLocale(): string
@@ -310,15 +287,7 @@ class VoodbuilderSettings extends Model
             $data['theme_mode'] = 'light';
         }
 
-        if (array_key_exists('primary_locale', $data) && class_exists(Locales::class)) {
-            $locale = $data['primary_locale'];
-
-            if (! is_string($locale) || ! Locales::isValid($locale)) {
-                $data['primary_locale'] = Locales::codes()[0];
-            }
-
-            $data['default_ui_locale'] = $data['primary_locale'];
-        }
+        unset($data['primary_locale'], $data['default_ui_locale']);
 
         foreach (['logo', 'logo_mobile', 'favicon', 'favicon_dark', 'seo_default_image', 'geo_organization_logo'] as $uploadKey) {
             if (array_key_exists($uploadKey, $data)) {

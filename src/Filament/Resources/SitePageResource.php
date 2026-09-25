@@ -52,12 +52,12 @@ use Voodflow\Voodbuilder\Filament\Resources\SitePageResource\Pages\ListSitePages
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageForm;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemeBindings;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Filament resource: Site Page.
@@ -118,7 +118,7 @@ class SitePageResource extends Resource
                                                 ignoreRecord: true,
                                                 modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where(
                                                     'locale',
-                                                    $get('locale') ?? (class_exists(Locales::class) ? Locales::default() : 'en'),
+                                                    $get('locale') ?? SiteLocales::default(),
                                                 ),
                                             )
                                             ->disabled(fn (?SitePage $record): bool => (bool) $record?->is_home),
@@ -301,8 +301,8 @@ class SitePageResource extends Resource
                                 static::translatableLocaleSelect(
                                     Select::make('locale')
                                         ->label(__('voodbuilder::admin.fields.language'))
-                                        ->options(fn (): array => class_exists(Locales::class) ? Locales::options() : ['en' => 'English'])
-                                        ->default(fn (): string => class_exists(Locales::class) ? Locales::default() : 'en')
+                                        ->options(fn (): array => SiteLocales::options())
+                                        ->default(fn (): string => SiteLocales::default())
                                         ->required()
                                         ->native(false)
                                         ->visible(fn (): bool => SitePageResolver::localizationEnabled()),
@@ -329,9 +329,7 @@ class SitePageResource extends Resource
 
                                         $links = $siblings
                                             ->map(function (SitePage $page): string {
-                                                $label = class_exists(Locales::class)
-                                                    ? (Locales::options()[$page->locale] ?? $page->locale)
-                                                    : $page->locale;
+                                                $label = SiteLocales::options()[$page->locale] ?? $page->locale;
                                                 $url = static::getUrl('edit', ['record' => $page]);
 
                                                 return '<a href="' . e($url) . '" class="text-primary-600 hover:underline">' . e($label) . '</a>';

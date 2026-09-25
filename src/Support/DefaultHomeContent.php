@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
-use Voodflow\Vtuts\Support\Locales;
-
 /**
  * Default Home Content.
  */
@@ -14,9 +12,7 @@ final class DefaultHomeContent
     /** @return array<string, mixed> */
     public static function content(?string $locale = null): array
     {
-        $locale ??= class_exists(Locales::class)
-            ? Locales::default()
-            : app()->getLocale();
+        $locale ??= SiteLocales::default();
 
         $previousLocale = app()->getLocale();
         app()->setLocale($locale);

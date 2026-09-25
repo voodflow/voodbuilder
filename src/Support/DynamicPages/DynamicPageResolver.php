@@ -10,10 +10,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageAccess;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Resolve a published dynamic SitePage template and render it instead of Blade.
@@ -112,8 +112,8 @@ final class DynamicPageResolver
             }
         }
 
-        if (class_exists(Locales::class) && $locale !== Locales::default()) {
-            return self::findTemplate($channel, $routeName, Locales::default());
+        if ($locale !== SiteLocales::default()) {
+            return self::findTemplate($channel, $routeName, SiteLocales::default());
         }
 
         return null;

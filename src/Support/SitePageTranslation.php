@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Str;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Site Page Translation.
@@ -20,7 +19,7 @@ final class SitePageTranslation
     {
         $existing = self::existingLocales($page);
 
-        return collect(Locales::options())
+        return collect(SiteLocales::options())
             ->reject(fn (string $label, string $code): bool => $code === $page->locale || in_array($code, $existing, true))
             ->all();
     }
@@ -39,7 +38,7 @@ final class SitePageTranslation
 
     public static function createFrom(SitePage $source, string $targetLocale): SitePage
     {
-        if (! in_array($targetLocale, Locales::codes(), true)) {
+        if (! in_array($targetLocale, SiteLocales::codes(), true)) {
             throw new \InvalidArgumentException("Unsupported locale [{$targetLocale}].");
         }
 

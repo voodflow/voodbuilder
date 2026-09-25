@@ -8,18 +8,16 @@ use Voodflow\Voodbuilder\Http\Controllers\AuthController;
 use Voodflow\Voodbuilder\Http\Controllers\HomeController;
 use Voodflow\Voodbuilder\Http\Controllers\SearchController;
 use Voodflow\Voodbuilder\Http\Controllers\SearchSuggestController;
-use Voodflow\Vtuts\Support\Locales;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 
 $localeMiddleware = [];
 
-if (class_exists(Locales::class) && config('vtuts.features.localization', false)) {
+if (config('vtuts.features.localization', false)) {
     $localeMiddleware[] = 'vtuts.locale';
 }
 
-$usesLocaleUrlPrefix = class_exists(Locales::class) && Locales::usesUrlPrefix();
-$nonDefaultLocales = $usesLocaleUrlPrefix && class_exists(Locales::class)
-    ? Locales::nonDefaultCodes()
-    : [];
+$usesLocaleUrlPrefix = SiteLocales::usesUrlPrefix();
+$nonDefaultLocales = $usesLocaleUrlPrefix ? SiteLocales::nonDefaultCodes() : [];
 
 Route::middleware(array_merge(['web'], $localeMiddleware))->group(function () use ($nonDefaultLocales): void {
     if (config('voodbuilder.home.route_enabled', true)) {

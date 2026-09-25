@@ -33,7 +33,6 @@ use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Site Page.
@@ -125,7 +124,7 @@ class SitePage extends Model implements HasRichContent
     {
         static::creating(function (SitePage $page): void {
             if (blank($page->locale)) {
-                $page->locale = class_exists(Locales::class) ? Locales::default() : 'en';
+                $page->locale = SiteLocales::default();
             }
 
             if (blank($page->translation_group_id)) {

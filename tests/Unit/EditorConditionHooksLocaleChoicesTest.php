@@ -10,42 +10,15 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 
 class EditorConditionHooksLocaleChoicesTest extends TestCase
 {
-    public function test_it_prefers_explicit_voodbuilder_locales_over_host_and_legacy_configs(): void
+    public function test_it_uses_host_app_locales_and_ignores_package_configs(): void
     {
-        config()->set('voodbuilder.editor.conditions.locales', [
-            'fr' => 'Francais',
-            'de' => 'Deutsch',
-        ]);
         config()->set('app.locales', [
             'en' => 'English',
             'it' => 'Italiano',
         ]);
-        config()->set('vtuts.locales', [
-            'es' => 'Espanol',
-        ]);
-        config()->set('vdocs.locales', [
-            'pt' => 'Portugues',
-        ]);
-
-        $this->assertSame([
-            ['value' => 'fr', 'label' => 'Francais'],
-            ['value' => 'de', 'label' => 'Deutsch'],
-        ], $this->localeChoices());
-    }
-
-    public function test_it_prefers_app_locales_over_legacy_package_locales(): void
-    {
-        config()->set('voodbuilder.editor.conditions.locales', null);
-        config()->set('app.locales', [
-            'en' => 'English',
-            'it' => 'Italiano',
-        ]);
-        config()->set('vtuts.locales', [
-            'es' => 'Espanol',
-        ]);
-        config()->set('vdocs.locales', [
-            'pt' => 'Portugues',
-        ]);
+        config()->set('voodbuilder.editor.conditions.locales', ['fr' => 'Francais']);
+        config()->set('vtuts.locales', ['es' => 'Espanol']);
+        config()->set('vdocs.locales', ['pt' => 'Portugues']);
 
         $this->assertSame([
             ['value' => 'en', 'label' => 'English'],
@@ -53,21 +26,18 @@ class EditorConditionHooksLocaleChoicesTest extends TestCase
         ], $this->localeChoices());
     }
 
-    public function test_it_falls_back_to_current_locale_when_no_configs_are_available(): void
+    public function test_it_falls_back_to_the_configured_default_locale(): void
     {
         app()->setLocale('it');
 
-        config()->set('voodbuilder.editor.conditions.locales', null);
         config()->set('app.locales', null);
-        config()->set('vtuts.locales', null);
-        config()->set('vdocs.locales', null);
-        config()->set('cosmolab.locales', [
-            'en' => 'English',
-        ]);
+        config()->set('app.default_locale', 'en');
+        config()->set('vtuts.locales', ['es' => 'Espanol']);
 
-        $this->assertSame([
-            ['value' => 'it', 'label' => 'IT'],
-        ], $this->localeChoices());
+        $choices = $this->localeChoices();
+
+        $this->assertCount(1, $choices);
+        $this->assertSame('en', $choices[0]['value']);
     }
 
     /**

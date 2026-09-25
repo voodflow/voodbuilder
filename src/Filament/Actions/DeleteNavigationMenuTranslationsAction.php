@@ -10,8 +10,8 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\TranslationGroupDeletion;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Filament action: Delete Navigation Menu Translations.
@@ -24,8 +24,7 @@ class DeleteNavigationMenuTranslationsAction
             ->label(__('voodbuilder::admin.actions.delete_translations'))
             ->icon('heroicon-o-trash')
             ->color('danger')
-            ->visible(fn (NavigationMenu $record): bool => class_exists(Locales::class)
-                && count(Locales::codes()) > 1
+            ->visible(fn (NavigationMenu $record): bool => count(SiteLocales::codes()) > 1
                 && TranslationGroupDeletion::hasDeletableTranslations($record))
             ->modalHeading(__('voodbuilder::admin.translation.delete_translations_heading'))
             ->modalDescription(__('voodbuilder::admin.translation.delete_translations_modal_description'))

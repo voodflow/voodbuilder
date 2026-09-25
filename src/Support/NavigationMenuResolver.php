@@ -8,7 +8,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Navigation Menu Resolver.
@@ -67,7 +66,7 @@ final class NavigationMenuResolver
                     return $menu;
                 }
 
-                $defaultLocale = class_exists(Locales::class) ? Locales::default() : $locale;
+                $defaultLocale = SiteLocales::default();
 
                 if ($defaultLocale !== $locale) {
                     $menu = NavigationMenu::query()

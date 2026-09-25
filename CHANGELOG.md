@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-09-25
+
+### Changed
+
+- Site languages have a single source: `APP_LOCALES` / `APP_LOCALE` in the host `.env`, read as `config('app.locales')` / `config('app.default_locale')`. VoodBuilder no longer depends on `Voodflow\Vtuts\Support\Locales` and ignores package configs (`vtuts.locales`, `vdocs.locales`, `voodbuilder.editor.conditions.locales`, …)
+- The primary site language is `APP_LOCALE`; the "Primary site language" setting was removed
+- Icon link settings use the shared link target fields (Button, Text link, link picker); typing a route parameter keeps focus
+
+### Upgrade
+
+- Add to the host `config/app.php`: `'locales' => env('APP_LOCALES', env('APP_LOCALE', 'en'))` and `'default_locale' => env('APP_LOCALE', 'en')`, then set `APP_LOCALES=en,it` in `.env`
+
 ## [1.8.0] - 2026-09-25
 
 ### Fixed

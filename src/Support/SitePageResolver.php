@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Vtuts\Support\Locales;
 
 /**
  * Site Page Resolver.
@@ -70,7 +69,7 @@ final class SitePageResolver
             return $candidates->first();
         }
 
-        $primary = class_exists(Locales::class) ? Locales::default() : $locale;
+        $primary = SiteLocales::default();
 
         return $candidates->firstWhere('locale', $locale)
             ?? $candidates->firstWhere('locale', $primary)
@@ -102,7 +101,7 @@ final class SitePageResolver
             ->published()
             ->where('slug', $slug)
             ->orderByRaw('CASE WHEN locale = ? THEN 0 ELSE 1 END', [
-                class_exists(Locales::class) ? Locales::default() : $locale,
+                SiteLocales::default(),
             ])
             ->first();
 
@@ -120,19 +119,14 @@ final class SitePageResolver
     public static function localizationEnabled(): bool
     {
         return self::hasLocalizationColumns()
-            && class_exists(Locales::class)
             && (bool) config('vtuts.features.localization', false)
-            && count(Locales::codes()) > 1;
+            && count(SiteLocales::codes()) > 1;
     }
 
     public static function preferredLocale(): string
     {
-        if (! class_exists(Locales::class)) {
-            return 'en';
-        }
-
         $locale = app()->getLocale();
 
-        return Locales::isValid($locale) ? $locale : Locales::default();
+        return SiteLocales::isValid($locale) ? $locale : SiteLocales::default();
     }
 }
