@@ -90,7 +90,7 @@ body.voodbuilder-canvas-ready .vb-animated-cta[data-vb-anim='scale-in'] [data-vb
     }
 
     .vb-animate-on-visible {
-        animation-play-state: running !important;
+        animation: unset !important;
     }
 }
 
@@ -108,18 +108,19 @@ body.voodbuilder-canvas-ready .vb-animated-cta[data-vb-anim='scale-in'] [data-vb
 
 /**
  * Style Manager animations with Interaction = “on visible”.
- * Keep paused until .is-visible (IntersectionObserver in vb-runtime).
+ * Use animation:none until .is-visible (not play-state) so Chrome starts the
+ * keyframes once cleanly — play-state toggles often look like a double-run,
+ * especially next to a fixed page wallpaper.
  * In the Editor canvas, always run so authors can preview (same idea as CTA).
  */
 .vb-animate-on-visible:not(.is-visible) {
-    animation-play-state: paused !important;
+    animation: none !important;
 }
 
-.vb-animate-on-visible.is-visible,
-.gjs-dashed .vb-animate-on-visible,
-.voodbuilder-editor-canvas-mount .vb-animate-on-visible,
-body.voodbuilder-canvas-ready .vb-animate-on-visible {
-    animation-play-state: running !important;
+.gjs-dashed .vb-animate-on-visible:not(.is-visible),
+.voodbuilder-editor-canvas-mount .vb-animate-on-visible:not(.is-visible),
+body.voodbuilder-canvas-ready .vb-animate-on-visible:not(.is-visible) {
+    animation: unset !important;
 }
 
 /* Section catalog brand mark — kept in theme so public pages need no section-utilities.css */

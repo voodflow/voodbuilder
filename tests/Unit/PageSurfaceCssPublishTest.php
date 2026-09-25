@@ -9,7 +9,7 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 
 class PageSurfaceCssPublishTest extends TestCase
 {
-    public function test_remap_for_public_rewrites_orphan_wallpaper_id_to_body(): void
+    public function test_remap_for_public_rewrites_orphan_wallpaper_id_to_fixed_layer(): void
     {
         $css = '#iabc123 { background-image: url(/x.jpg); } .keep { color: red; }';
         $html = '<section class="hero">Hello</section>';
@@ -17,15 +17,18 @@ class PageSurfaceCssPublishTest extends TestCase
         $remapped = PageSurfaceCssPublish::remapForPublic($css, $html);
 
         $this->assertStringContainsString(PageSurfaceCssPublish::bodyTarget(), $remapped);
-        $this->assertStringContainsString('background-image: url(/x.jpg)', $remapped);
-        $this->assertStringContainsString('background-size: cover', $remapped);
-        $this->assertStringContainsString('background-position: center', $remapped);
-        $this->assertStringContainsString('background-repeat: no-repeat', $remapped);
-        $this->assertStringContainsString('background-attachment: fixed', $remapped);
+        $this->assertStringContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $remapped);
+        $this->assertStringContainsString('position:fixed', $remapped);
+        $this->assertStringContainsString('background-image:url(/x.jpg)', $remapped);
+        $this->assertStringContainsString('background-size:cover', $remapped);
+        $this->assertStringContainsString('background-position:center', $remapped);
+        $this->assertStringContainsString('background-repeat:no-repeat', $remapped);
+        $this->assertStringNotContainsString('background-attachment', $remapped);
         $this->assertStringNotContainsString('#iabc123', $remapped);
         $this->assertStringContainsString('.keep { color: red; }', $remapped);
         $this->assertStringContainsString('background-color: transparent !important', $remapped);
         $this->assertStringContainsString('.voodbuilder-site-shell', $remapped);
+        $this->assertStringContainsString('background-image: none', $remapped);
     }
 
     public function test_remap_for_public_keeps_ids_present_in_html(): void
@@ -38,17 +41,19 @@ class PageSurfaceCssPublishTest extends TestCase
         $this->assertStringContainsString('#hero', $remapped);
         $this->assertStringContainsString('background-size: contain', $remapped);
         $this->assertStringNotContainsString(PageSurfaceCssPublish::bodyTarget(), $remapped);
+        $this->assertStringNotContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $remapped);
     }
 
-    public function test_remap_for_public_keeps_author_layout_props(): void
+    public function test_remap_for_public_keeps_author_layout_props_on_fixed_layer(): void
     {
         $css = '#iabc123 { background-image: url(/x.jpg); background-size: contain; background-position: top; }';
 
         $remapped = PageSurfaceCssPublish::remapForPublic($css, '');
 
-        $this->assertStringContainsString('background-size: contain', $remapped);
-        $this->assertStringContainsString('background-position: top', $remapped);
-        $this->assertStringContainsString('background-attachment: fixed', $remapped);
+        $this->assertStringContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $remapped);
+        $this->assertStringContainsString('background-size:contain', $remapped);
+        $this->assertStringContainsString('background-position:top', $remapped);
+        $this->assertStringNotContainsString('background-attachment', $remapped);
         $this->assertDoesNotMatchRegularExpression('/background-size:\s*cover/', $remapped);
     }
 
@@ -63,9 +68,9 @@ CSS;
 
         $overlay = PageSurfaceCssPublish::publicWallpaperOverlay($css, $html);
 
-        $this->assertStringContainsString(PageSurfaceCssPublish::bodyTarget(), $overlay);
+        $this->assertStringContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $overlay);
         $this->assertStringContainsString('url(/w.jpg)', $overlay);
-        $this->assertStringContainsString('background-position: top', $overlay);
+        $this->assertStringContainsString('background-position:top', $overlay);
         $this->assertStringNotContainsString('url(/h.jpg)', $overlay);
         $this->assertStringNotContainsString('.keep', $overlay);
         $this->assertStringContainsString('background-color: transparent !important', $overlay);
@@ -74,10 +79,13 @@ CSS;
 
     public function test_public_wallpaper_overlay_transparent_shells_for_legacy_body_rules(): void
     {
-        $css = 'html, body { background-image: url(/legacy.jpg); background-size: cover; }';
+        $css = 'html, body { background-image: url(/legacy.jpg); background-size: cover; background-attachment: fixed; }';
 
         $overlay = PageSurfaceCssPublish::publicWallpaperOverlay($css, '');
 
+        $this->assertStringContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $overlay);
+        $this->assertStringContainsString('url(/legacy.jpg)', $overlay);
+        $this->assertStringNotContainsString('background-attachment', $overlay);
         $this->assertStringContainsString('background-color: transparent !important', $overlay);
         $this->assertStringContainsString('.voodbuilder-events-shell', $overlay);
     }

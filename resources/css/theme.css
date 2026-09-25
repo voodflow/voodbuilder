@@ -1798,6 +1798,20 @@ button[data-voodbuilder-cta='true']:empty::before {
     animation: vb-cta-rise 0.7s ease forwards;
 }
 
+/* With on-visible: hold rise until IntersectionObserver adds .is-visible
+ * (avoids a half-played rise that Chrome then restarts — looks like a double-run). */
+.vb-cta-glow-pulse.vb-animate-on-visible:not(.is-visible) [data-vb-anim-child] {
+    animation: none !important;
+    opacity: 0;
+}
+
+.vb-cta-glow-pulse.vb-animate-on-visible.is-visible [data-vb-anim-child],
+.gjs-dashed .vb-cta-glow-pulse.vb-animate-on-visible [data-vb-anim-child],
+.voodbuilder-editor-canvas-mount .vb-cta-glow-pulse.vb-animate-on-visible [data-vb-anim-child],
+body.voodbuilder-canvas-ready .vb-cta-glow-pulse.vb-animate-on-visible [data-vb-anim-child] {
+    animation: vb-cta-rise 0.7s ease forwards;
+}
+
 .vb-cta-glow-pulse [data-vb-anim-child='1'] {
     animation-delay: 0.05s;
 }

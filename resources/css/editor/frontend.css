@@ -6530,7 +6530,7 @@ body.voodbuilder-canvas-ready .vb-animated-cta[data-vb-anim="scale-in"] [data-vb
     }
 
     .vb-animate-on-visible {
-        animation-play-state: running !important;
+        animation: unset !important;
     }
 }
 
@@ -6544,14 +6544,13 @@ body.voodbuilder-canvas-ready .vb-animated-cta[data-vb-anim="scale-in"] [data-vb
 }
 
 .vb-animate-on-visible:not(.is-visible) {
-    animation-play-state: paused !important;
+    animation: none !important;
 }
 
-.vb-animate-on-visible.is-visible,
-.gjs-dashed .vb-animate-on-visible,
-.voodbuilder-editor-canvas-mount .vb-animate-on-visible,
-body.voodbuilder-canvas-ready .vb-animate-on-visible {
-    animation-play-state: running !important;
+.gjs-dashed .vb-animate-on-visible:not(.is-visible),
+.voodbuilder-editor-canvas-mount .vb-animate-on-visible:not(.is-visible),
+body.voodbuilder-canvas-ready .vb-animate-on-visible:not(.is-visible) {
+    animation: unset !important;
 }
 
 

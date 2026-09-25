@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Support\Editor;
 
 /**
- * Remap Grapes page-surface #id wallpaper rules to html/body for public pages.
+ * Remap Grapes page-surface #id wallpaper rules to a fixed paint layer for public pages.
  *
  * Editor Save keeps wrapper #id rules so Style Size/Position/Repeat can hydrate
  * after reload. The wrapper id is not present in published HTML, so orphan
- * wallpaper #id rules must become body/html rules at publish time.
+ * wallpaper #id rules must become public surface rules at publish time.
+ *
+ * Prefer `body::before { position: fixed }` over `background-attachment: fixed` —
+ * Chrome repaints/janks fixed attachments when on-page animations use transform.
  */
 final class PageSurfaceCssPublish
 {
@@ -17,7 +20,7 @@ final class PageSurfaceCssPublish
 
     /**
      * Remap orphan #id wallpaper rules (and wrapper attribute selectors) to the
-     * public page surface targets, then fill missing cover/center/no-repeat/fixed.
+     * public page surface fixed layer, then keep chrome shells transparent.
      */
     public static function remapForPublic(string $css, string $html = ''): string
     {
@@ -55,7 +58,9 @@ final class PageSurfaceCssPublish
             $remapped,
         ) ?? $remapped;
 
-        return self::ensureWallpaperLayout($remapped).self::transparentShellOverlay($remapped);
+        $promoted = self::promoteWallpaperToFixedLayer($remapped);
+
+        return $promoted.self::transparentShellOverlay($promoted !== '' ? $promoted : $remapped);
     }
 
     /**
@@ -127,15 +132,19 @@ final class PageSurfaceCssPublish
         $overlay = trim(implode("\n", array_unique($blocks)));
 
         if ($overlay === '') {
-            // Legacy sheets already remapped to body — still need transparent shells.
+            // Legacy sheets already remapped to body — promote + transparent shells.
             if (self::cssHasWallpaper($source)) {
-                return trim(self::transparentShellOverlay($source));
+                $promoted = self::promoteWallpaperToFixedLayer($source);
+
+                return trim($promoted.self::transparentShellOverlay($promoted !== '' ? $promoted : $source));
             }
 
             return '';
         }
 
-        return trim($overlay.self::transparentShellOverlay($overlay));
+        $promoted = self::promoteWallpaperToFixedLayer($overlay);
+
+        return trim($promoted.self::transparentShellOverlay($promoted));
     }
 
     public static function bodyTarget(): string
@@ -143,6 +152,11 @@ final class PageSurfaceCssPublish
         $class = self::PAGE_SURFACE_CLASS;
 
         return "html, body, body.{$class}, .{$class}";
+    }
+
+    public static function fixedLayerSelector(): string
+    {
+        return 'body.'.self::PAGE_SURFACE_CLASS.'::before';
     }
 
     /**
@@ -179,21 +193,41 @@ final class PageSurfaceCssPublish
         return (bool) preg_match('/background-image\s*:[^;]*url\s*\(/i', $declarations);
     }
 
-    private static function ensureWallpaperLayout(string $css): string
+    /**
+     * Move wallpaper paint from html/body onto a position:fixed ::before layer.
+     * Avoids Chrome scroll jank from background-attachment:fixed + transform animations.
+     */
+    private static function promoteWallpaperToFixedLayer(string $css): string
     {
         $class = preg_quote(self::PAGE_SURFACE_CLASS, '/');
+        $layerSelector = self::fixedLayerSelector();
+        $layerBlocks = [];
 
-        return preg_replace_callback(
+        $rewritten = preg_replace_callback(
             '/(html\s*,\s*body[^,{]*(?:,[^,{]*)*|body[^,{]*(?:,[^,{]*'.$class.'[^,{]*)*)\{([^{}]*)\}/i',
-            static function (array $match): string {
+            static function (array $match) use (&$layerBlocks, $layerSelector): string {
                 if (! self::declarationHasWallpaper($match[2])) {
                     return $match[0];
                 }
 
-                return $match[1].' {'.self::withWallpaperDefaults($match[2]).'}';
+                $prepared = self::withWallpaperDefaults($match[2]);
+                $layerDecls = self::wallpaperLayerDeclarations($prepared);
+                $hostDecls = self::wallpaperHostDeclarations($prepared);
+
+                if ($layerDecls !== '') {
+                    $layerBlocks[] = $layerSelector.' {'.$layerDecls.'}';
+                }
+
+                return $match[1].' {'.$hostDecls.'}';
             },
             $css,
         ) ?? $css;
+
+        if ($layerBlocks === []) {
+            return $rewritten;
+        }
+
+        return trim($rewritten."\n".implode("\n", array_unique($layerBlocks)));
     }
 
     private static function withWallpaperDefaults(string $declarations): string
@@ -212,10 +246,44 @@ final class PageSurfaceCssPublish
             $next .= '; background-repeat: no-repeat';
         }
 
-        if (! preg_match('/background-attachment\s*:/i', $next)) {
-            $next .= '; background-attachment: fixed';
-        }
+        // Drop attachment:fixed — the fixed ::before layer replaces it.
+        $next = preg_replace('/background-attachment\s*:[^;]+;?/i', '', $next) ?? $next;
 
         return trim(preg_replace('/;;+/', ';', preg_replace('/^;\s*/', '', $next) ?? $next) ?? $next);
+    }
+
+    private static function wallpaperLayerDeclarations(string $declarations): string
+    {
+        $parts = [
+            'content:""',
+            'position:fixed',
+            'inset:0',
+            'z-index:-1',
+            'pointer-events:none',
+        ];
+
+        foreach (['background-image', 'background-size', 'background-position', 'background-repeat'] as $property) {
+            if (preg_match('/'.preg_quote($property, '/').'\s*:\s*([^;]+)/i', $declarations, $match) === 1) {
+                $parts[] = $property.':'.trim($match[1]);
+            }
+        }
+
+        return implode('; ', $parts);
+    }
+
+    private static function wallpaperHostDeclarations(string $declarations): string
+    {
+        $host = $declarations;
+        $host = preg_replace('/background-image\s*:[^;]+;?/i', '', $host) ?? $host;
+        $host = preg_replace('/background-size\s*:[^;]+;?/i', '', $host) ?? $host;
+        $host = preg_replace('/background-position\s*:[^;]+;?/i', '', $host) ?? $host;
+        $host = preg_replace('/background-repeat\s*:[^;]+;?/i', '', $host) ?? $host;
+        $host = preg_replace('/background-attachment\s*:[^;]+;?/i', '', $host) ?? $host;
+        $host = trim(preg_replace('/;;+/', ';', preg_replace('/^;\s*;?/', '', $host) ?? $host) ?? $host);
+
+        // Clear any inherited/image paint on the host so only ::before shows the photo.
+        $clear = 'background-image: none';
+
+        return $host === '' ? $clear : $host.'; '.$clear;
     }
 }

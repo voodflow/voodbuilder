@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.166] - 2026-09-25
+
+### Fixed
+
+- Page wallpaper no longer stutters on scroll in Chrome: publish paints via `body::before { position: fixed }` instead of `background-attachment: fixed` (which repaints against transform animations)
+- On-visible Style Manager animations (and glow-pulse rise with on-visible) start once cleanly — `animation: none` until `.is-visible` instead of `animation-play-state` toggles that looked like a double-run
+
 ## [0.1.165] - 2026-09-25
 
 ### Fixed
