@@ -308,6 +308,13 @@ function ensureInitialContent(editor, initial) {
 }
 
 function resolveEditorChromePrefersDark(fallback = false) {
+    // Live host DOM wins over localStorage: Filament (and other shells) stamp
+    // `html.dark` without always writing the VoodBuilder `theme` key — checking
+    // storage first left the Grapes iframe stuck in light while the UI went dark.
+    if (document.documentElement.classList.contains('dark')) {
+        return true;
+    }
+
     try {
         const stored = window.localStorage?.getItem('theme');
 
@@ -323,10 +330,6 @@ function resolveEditorChromePrefersDark(fallback = false) {
         debugSwallowed(error);
     }
 
-    if (document.documentElement.classList.contains('dark')) {
-        return true;
-    }
-
     const scheme = document.documentElement.style.colorScheme;
 
     if (scheme === 'dark') {
@@ -338,6 +341,69 @@ function resolveEditorChromePrefersDark(fallback = false) {
     }
 
     return Boolean(fallback);
+}
+
+/**
+ * Inject companion ES modules into the canvas iframe after the body is ready.
+ *
+ * Do NOT pass these through Grapes `canvas.scripts`: Grapes waits for every
+ * script onload before renderBody / frame:load:body, so a Vite module (or a
+ * hung import) delayed or blocked theme stamping and left the canvas light.
+ *
+ * @param {object} editor
+ * @param {Array<string|{src: string, type?: string}>} scripts
+ */
+function injectCanvasCompanionScripts(editor, scripts = []) {
+    const entries = (Array.isArray(scripts) ? scripts : [])
+        .map((entry) => {
+            if (typeof entry === 'string' && entry.trim() !== '') {
+                return { src: entry.trim(), type: 'module' };
+            }
+
+            if (entry && typeof entry === 'object' && typeof entry.src === 'string' && entry.src.trim() !== '') {
+                return {
+                    src: entry.src.trim(),
+                    type: String(entry.type ?? 'module'),
+                };
+            }
+
+            return null;
+        })
+        .filter(Boolean);
+
+    if (entries.length === 0) {
+        return;
+    }
+
+    const inject = () => {
+        const doc = editor.Canvas?.getDocument?.();
+
+        if (! doc?.head) {
+            return;
+        }
+
+        entries.forEach((entry) => {
+            const already = [...doc.querySelectorAll('script[data-voodbuilder-canvas-script]')]
+                .some((el) => el.getAttribute('data-voodbuilder-canvas-script') === entry.src);
+
+            if (already) {
+                return;
+            }
+
+            const script = doc.createElement('script');
+            script.type = entry.type || 'module';
+            script.src = entry.src;
+            script.async = true;
+            script.dataset.voodbuilderCanvasScript = entry.src;
+            doc.head.appendChild(script);
+        });
+    };
+
+    editor.on('canvas:frame:load:body', inject);
+    editor.on('load', () => {
+        window.requestAnimationFrame(inject);
+    });
+    inject();
 }
 
 function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
@@ -469,6 +535,8 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
 
     editor.__voodbuilderApplyCanvasTheme = apply;
     editor.on('canvas:frame:load', () => apply());
+    // Body render finishes after styles; re-stamp so late frame boot cannot miss dark.
+    editor.on('canvas:frame:load:body', () => apply());
     editor.on('load', () => apply());
     // Library drops can paint before palette order / .dark recalc settles.
     editor.on('block:drag:stop', () => {
@@ -477,6 +545,18 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
     window.addEventListener('voodbuilder:theme-changed', (event) => {
         apply(event?.detail?.isDark);
     });
+
+    // Filament (and other host shells) toggle `html.dark` without our CustomEvent.
+    if (! editor.__voodbuilderHostThemeObserver) {
+        const hostRoot = document.documentElement;
+        const hostObserver = new MutationObserver(() => {
+            apply(hostRoot.classList.contains('dark'));
+        });
+
+        hostObserver.observe(hostRoot, { attributes: true, attributeFilter: ['class', 'style'] });
+        editor.__voodbuilderHostThemeObserver = hostObserver;
+    }
+
     apply();
 }
 
@@ -865,7 +945,10 @@ export function initVoodbuilderEditor(container, options = {}) {
         },
         canvas: {
             styles: options.canvasStyles ?? [],
-            scripts: options.canvasScripts ?? [],
+            // Companion ES modules are injected after body render — see
+            // injectCanvasCompanionScripts(). Grapes canvas.scripts blocks
+            // renderBody until every script onloads and broke dark-mode sync.
+            scripts: [],
             frameStyle: [options.canvasFrameStyle, options.themePaletteCss]
                 .filter((part) => typeof part === 'string' && part.trim() !== '')
                 .join('\n'),
@@ -1235,6 +1318,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         chromeLayoutCss: options.chromeLayoutCss ?? '',
         popupMode: Boolean(options.popupMode),
     });
+    injectCanvasCompanionScripts(editor, options.canvasScripts ?? []);
 
     registerPopupPreviewThemeSelect(editor, options, {
         toolsMount: shell?.mounts?.canvasToolbar ?? null,

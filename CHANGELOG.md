@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.14] - 2026-09-26
+
+### Fixed
+
+- Editor canvas dark mode: companion ES modules no longer go through Grapes `canvas.scripts` (that blocked `renderBody` and left the iframe light while the chrome went dark). Scripts inject after body load; theme prefers live `html.dark` and re-syncs on host class changes / `frame:load:body`.
+
 ## [1.11.13] - 2026-09-26
 
 ### Fixed
