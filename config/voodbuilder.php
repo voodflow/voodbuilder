@@ -412,6 +412,12 @@ return [
         'enabled' => env('VOODBUILDER_EDITOR_ENABLED', true),
         'vite' => VoodbuilderPaths::editorViteEntry(),
         'canvas_styles' => VoodbuilderPaths::editorCanvasStyleEntries(),
+        /*
+        | Extra Vite entry paths (or absolute URLs) injected as <script type="module">
+        | into the GrapesJS canvas iframe. Companions (e.g. voodflow workflow demo)
+        | append entries so islands see html.dark on the canvas document.
+        */
+        'canvas_scripts' => [],
         'upload' => [
             'disk' => 'public',
             // Public files land under storage/app/public/voodbuilder (URL /storage/voodbuilder/…).

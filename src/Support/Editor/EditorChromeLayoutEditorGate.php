@@ -106,6 +106,7 @@ final class EditorChromeLayoutEditorGate
                 ...$appTypography['stylesheetUrls'],
                 ...$readingTypography['stylesheetUrls'],
             ]))),
+            'canvasScripts' => EditorCanvas::scriptTags(),
             'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)
                 . "\n" . $appTypography['editorCanvasCss']
                 . self::readingTypographyCanvasCss($readingTypography),

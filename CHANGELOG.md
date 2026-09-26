@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.12] - 2026-09-26
+
+### Added
+
+- Editor canvas: `voodbuilder.editor.canvas_scripts` — companion ES modules injected into the Grapes iframe (`type=module`) so islands can read canvas `html.dark`
+
 ## [1.11.11] - 2026-09-26
 
 ### Fixed

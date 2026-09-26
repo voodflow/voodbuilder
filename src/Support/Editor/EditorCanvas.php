@@ -28,6 +28,33 @@ final class EditorCanvas
     }
 
     /**
+     * Companion ES module scripts injected into the GrapesJS canvas iframe head.
+     * Used for islands that must see the canvas `html.dark` theme (e.g. Voodflow workflow demo).
+     *
+     * @return list<array{src: string, type: string}>
+     */
+    public static function scriptTags(): array
+    {
+        $entries = config('voodbuilder.editor.canvas_scripts', []);
+
+        if (! is_array($entries)) {
+            return [];
+        }
+
+        return collect($entries)
+            ->filter(static fn ($entry): bool => is_string($entry) && trim($entry) !== '')
+            ->map(static fn (string $entry): ?string => self::resolveViteAsset(trim($entry)))
+            ->filter()
+            ->unique()
+            ->map(static fn (string $url): array => [
+                'src' => $url,
+                'type' => 'module',
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
      * Stylesheets required on published Editor pages.
      *
      * Intentionally empty: authored content CSS lives in `theme.css` → `landing.css`

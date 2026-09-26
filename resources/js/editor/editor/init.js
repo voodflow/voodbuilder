@@ -865,6 +865,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         },
         canvas: {
             styles: options.canvasStyles ?? [],
+            scripts: options.canvasScripts ?? [],
             frameStyle: [options.canvasFrameStyle, options.themePaletteCss]
                 .filter((part) => typeof part === 'string' && part.trim() !== '')
                 .join('\n'),
@@ -2381,6 +2382,7 @@ function mountFrontendEditor() {
         viewPageUrl: config.viewPageUrl ?? config.exitUrl,
         initial: config.initial ?? {},
         canvasStyles: config.canvasStyles ?? [],
+        canvasScripts: config.canvasScripts ?? [],
         canvasFrameStyle: config.canvasFrameStyle,
         themePaletteCss: config.themePaletteCss ?? '',
         subTheme: config.subTheme,

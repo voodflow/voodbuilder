@@ -251,6 +251,7 @@ final class EditorGate
                 ...EditorCanvas::styleUrls(),
                 ...$appTypography['stylesheetUrls'],
             ]))),
+            'canvasScripts' => EditorCanvas::scriptTags(),
             'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme) . "\n" . $appTypography['editorCanvasCss'],
             'appTypography' => [
                 'bodyFont' => $appTypography['bodyFont'],
