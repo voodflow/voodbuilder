@@ -14,6 +14,7 @@ import grapesjsBlocksBasic from 'grapesjs-blocks-basic';
 import 'grapick/dist/grapick.min.css';
 
 import { alertDialog } from '../editor-dialog.js';
+import { truncateDialogMessage } from '../editor-api.js';
 import { createInspectorEmptyState } from '../inspector-empty-state.js';
 import { registerMediaPickerCommands, registerVideoAssetType } from '../editor-assets.js';
 import voodbuilderEditorPlugin, {
@@ -2761,9 +2762,10 @@ function mountFrontendEditor() {
             if (showErrorDialog) {
                 const detail = error instanceof Error ? error.message.trim() : '';
                 const base = config.labels?.error ?? 'Could not save the page.';
+                const detailSafe = detail ? truncateDialogMessage(detail) : '';
 
                 await alertDialog({
-                    message: detail && detail !== base ? `${base}\n\n${detail}` : base,
+                    message: detailSafe && detailSafe !== base ? `${base}\n\n${detailSafe}` : base,
                     labels: config.labels ?? {},
                 });
             }

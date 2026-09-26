@@ -3563,10 +3563,13 @@ html[data-voodbuilder-sub-theme='site'] body.voodbuilder-editor-editing .voodbui
 
 .voodbuilder-editor-dialog__message {
     margin: 0;
+    max-height: min(40vh, 18rem);
+    overflow: auto;
     font-size: 0.875rem;
     line-height: 1.5;
     color: var(--color-vp-text-2, #475569);
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .voodbuilder-editor-dialog__link {

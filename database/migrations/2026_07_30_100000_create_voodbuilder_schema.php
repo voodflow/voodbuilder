@@ -102,8 +102,8 @@ return new class extends Migration
                 $table->string('category')->nullable();
                 $table->text('description')->nullable();
                 $table->longText('html');
-                $table->text('css')->nullable();
-                $table->text('js')->nullable();
+                $table->longText('css')->nullable();
+                $table->longText('js')->nullable();
                 $table->timestamps();
             });
         }

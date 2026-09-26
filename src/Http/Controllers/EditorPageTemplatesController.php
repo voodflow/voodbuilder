@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Http\Controllers;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -72,14 +73,22 @@ class EditorPageTemplatesController extends Controller
             'project' => null,
         ], recompilePageCss: true, liveUtilitiesCss: $liveUtilitiesCss !== '' ? $liveUtilitiesCss : null);
 
-        $template = PageTemplate::query()->create([
-            'name' => $validated['name'],
-            'category' => self::normalizeTemplateCategory($validated['category'] ?? null),
-            'description' => $validated['description'] ?? null,
-            'html' => $normalized['html'],
-            'css' => $normalized['css'] !== '' ? $normalized['css'] : null,
-            'js' => filled($normalized['js'] ?? null) ? $normalized['js'] : null,
-        ]);
+        try {
+            $template = PageTemplate::query()->create([
+                'name' => $validated['name'],
+                'category' => self::normalizeTemplateCategory($validated['category'] ?? null),
+                'description' => $validated['description'] ?? null,
+                'html' => $normalized['html'],
+                'css' => $normalized['css'] !== '' ? $normalized['css'] : null,
+                'js' => filled($normalized['js'] ?? null) ? $normalized['js'] : null,
+            ]);
+        } catch (QueryException $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'css' => __('voodbuilder::pro.page_templates.save_payload_too_large'),
+            ]);
+        }
 
         return response()->json(['template' => $this->toArray($template)], 201);
     }

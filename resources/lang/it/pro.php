@@ -560,6 +560,7 @@ return [
         'save' => 'Salva',
         'save_title' => 'Salva pagina come template',
         'save_error' => 'Impossibile salvare il template pagina.',
+        'save_payload_too_large' => 'Questa pagina è troppo grande per essere salvata come template. Rimuovi sezioni inutilizzate e riprova.',
         'name' => 'Nome template',
         'name_placeholder' => 'Landing · Prodotto',
         'category' => 'Categoria',

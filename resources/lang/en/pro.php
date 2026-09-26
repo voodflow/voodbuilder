@@ -560,6 +560,7 @@ return [
         'save' => 'Save',
         'save_title' => 'Save page as template',
         'save_error' => 'Could not save page template.',
+        'save_payload_too_large' => 'This page is too large to save as a template. Try removing unused sections, then save again.',
         'name' => 'Template name',
         'name_placeholder' => 'Landing · Product',
         'category' => 'Category',
