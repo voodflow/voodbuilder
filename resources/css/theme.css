@@ -2116,20 +2116,29 @@ button[data-voodbuilder-cta='true']:empty::before {
     animation: none;
 }
 
-/* Hold until the CTA section is visible (single gate). */
+/* Hold until the CTA section is visible (single gate) — public pages only. */
 .vb-animated-cta:not(.is-visible) .vb-cta-glow-pulse [data-vb-anim-child] {
     animation: none !important;
     opacity: 0;
 }
 
-.vb-animated-cta.is-visible .vb-cta-glow-pulse [data-vb-anim-child],
-.gjs-dashed .vb-cta-glow-pulse [data-vb-anim-child],
-.voodbuilder-editor-canvas-mount .vb-cta-glow-pulse [data-vb-anim-child],
-body.voodbuilder-canvas-ready .vb-cta-glow-pulse [data-vb-anim-child] {
-    /* Override generic .vb-animated-cta.is-visible opacity:1 — keyframes own the fade. */
+/* Public entrance: one keyframe path when the section becomes visible. */
+.vb-animated-cta.is-visible .vb-cta-glow-pulse [data-vb-anim-child] {
     opacity: 0;
     transform: none;
     animation: vb-cta-rise 0.7s ease forwards;
+}
+
+/*
+ * Editor: keep glow-pulse copy visible.
+ * Grapes remounts on select/save and restarts keyframes from opacity:0, which made
+ * the hero title/subtitle vanish until a full reload.
+ */
+.gjs-dashed .vb-cta-glow-pulse [data-vb-anim-child],
+body.voodbuilder-canvas-ready .vb-cta-glow-pulse [data-vb-anim-child] {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
 }
 
 /* Nested Style Manager fades on the same nodes would restart after rise — kill them. */

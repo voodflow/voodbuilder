@@ -1011,6 +1011,9 @@ export function buildPageSurfaceCanvasWallpaperCss(lightStyles, darkStyles = nul
 
     const hostId = String(options?.hostId ?? '').trim().replace(/[^\w-]/g, '');
     const hostClear = [
+        'html, body {',
+        '  min-height: 100%;',
+        '}',
         `html, body, body.${PAGE_SURFACE_CLASS}, [data-gjs-type="wrapper"] {`,
         '  background-image: none !important;',
         // Opaque body/html theme fills hide body::before (z-index:-1) in the iframe.

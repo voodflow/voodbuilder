@@ -339,6 +339,18 @@ function applyTemplateCssPayload(editor, css, options = {}) {
         editor.setStyle(normalized);
         editor.__voodbuilderApplyPageLiveCss?.(normalized);
 
+        try {
+            // Template CSS carries wallpaper as `#oldWrapperId { background-image… }`.
+            // Remap onto this page's wrapper + canvas ::before preview.
+            if (typeof editor.__voodbuilderHydratePageSurfaceWallpaper === 'function') {
+                editor.__voodbuilderHydratePageSurfaceWallpaper(normalized);
+            } else {
+                editor.__voodbuilderSyncPageSurfaceWallpaper?.(null);
+            }
+        } catch (error) {
+            debugSwallowed(error);
+        }
+
         return;
     }
 

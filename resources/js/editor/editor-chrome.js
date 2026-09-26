@@ -628,6 +628,13 @@ export function configureEditorChrome(editor, options = {}) {
         window.clearTimeout(deviceRefreshTimer);
         deviceRefreshTimer = window.setTimeout(() => {
             editor.refresh();
+
+            // Canvas-only wallpaper <style> is not in CssComposer — refresh can drop it.
+            try {
+                editor.__voodbuilderSyncPageSurfaceWallpaper?.(null);
+            } catch {
+                // Optional page-surface hook.
+            }
         }, DEVICE_FRAME_TRANSITION_MS);
     };
 

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    applyTemplatePayload,
     cssLooksLikeCompiledUtilitySheet,
     forceTemplatePageCssRebuild,
     notifyPageCssReadyFromTemplate,
@@ -86,5 +87,47 @@ describe('notifyPageCssReadyFromTemplate', () => {
             css: '.flex{display:flex}',
             html: '',
         });
+    });
+});
+
+describe('applyTemplatePayload wallpaper hydrate', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('hydrates page-surface wallpaper from template CSS onto the current page', () => {
+        vi.stubGlobal('requestAnimationFrame', (cb) => {
+            cb(0);
+
+            return 1;
+        });
+        vi.stubGlobal('window', {
+            requestAnimationFrame: (cb) => {
+                cb(0);
+
+                return 1;
+            },
+        });
+
+        const hydrate = vi.fn();
+        const editor = {
+            __voodbuilderChromeShellMode: false,
+            setComponents: vi.fn(),
+            setStyle: vi.fn(),
+            __voodbuilderApplyPageLiveCss: vi.fn(),
+            __voodbuilderHydratePageSurfaceWallpaper: hydrate,
+            trigger: vi.fn(),
+            getWrapper: () => ({ components: () => [] }),
+        };
+
+        applyTemplatePayload(editor, {
+            html: '<section>Hero</section>',
+            css: "#oldwrap{background-image:url('/storage/bg.webp');background-size:cover}",
+        });
+
+        expect(editor.setStyle).toHaveBeenCalled();
+        expect(hydrate).toHaveBeenCalledWith(
+            expect.stringContaining('background-image:url'),
+        );
     });
 });

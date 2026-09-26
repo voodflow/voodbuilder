@@ -3646,6 +3646,13 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     editor.__voodbuilderTailwindStylePanelRegistered = true;
     editor.__voodbuilderTailwindStyleOnly = true;
     editor.__voodbuilderSyncPageSurfaceWallpaper = syncPageSurfaceCanvasWallpaperPreview;
+    editor.__voodbuilderHydratePageSurfaceWallpaper = (css = '') => {
+        const hydrated = hydratePageSurfaceWallpaperFromCss(editor, css);
+
+        syncPageSurfaceCanvasWallpaperPreview(editor);
+
+        return hydrated;
+    };
 
     registerEditorBreakpointFontSizeCss(editor);
 
@@ -3976,6 +3983,15 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
         if (selected && sectorsReady()) {
             syncSelectsFromComponent(stylesMount, selected, editor, syncOpts());
+        }
+
+        // Device switch / refresh can drop the canvas-only wallpaper <style> tag.
+        try {
+            window.setTimeout(() => {
+                syncPageSurfaceCanvasWallpaperPreview(editor);
+            }, 380);
+        } catch (error) {
+            debugSwallowed(error);
         }
     };
 
