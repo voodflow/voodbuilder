@@ -58,7 +58,9 @@
                             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                             data-mobile-nav-close
                         >
-                            <span>{{ __($item->label) }}</span>
+                            <span class="voodbuilder-nav-menu-item__text">
+                                <span class="voodbuilder-nav-menu-item__label">{{ __($item->label) }}</span>
+                            </span>
                         </a>
                     </li>
                 @endif
@@ -81,10 +83,12 @@
             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
             data-mobile-nav-close
         >
-            <span>{{ __($item->label) }}</span>
-            @if ($item->resolvedDescription())
-                <span class="block text-xs font-normal normal-case tracking-normal text-vp-text-2">{{ __($item->resolvedDescription()) }}</span>
-            @endif
+            <span class="voodbuilder-nav-menu-item__text">
+                <span class="voodbuilder-nav-menu-item__label">{{ __($item->label) }}</span>
+                @if ($item->resolvedDescription())
+                    <span class="voodbuilder-nav-menu-item__description">{{ __($item->resolvedDescription()) }}</span>
+                @endif
+            </span>
             @if ($item->isExternal())
                 <x-voodbuilder::external-link-icon />
             @endif

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.5] - 2026-09-26
+
+### Fixed
+
+- Mobile nav: mega-menu descriptions no longer sit in a separate flex column beside the label — label and caption stack vertically inside the drawer
+
 ## [1.11.4] - 2026-09-26
 
 ### Fixed

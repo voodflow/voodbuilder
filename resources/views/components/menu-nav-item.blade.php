@@ -57,7 +57,7 @@
                             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                             data-mobile-nav-close
                         >
-                            <x-voodbuilder::menu-nav-item-content :item="$item" />
+                            <x-voodbuilder::menu-nav-item-content :item="$item" :show-icon="false" />
                         </a>
                     </li>
                 @endif
@@ -136,7 +136,7 @@
                 @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 data-mobile-nav-close
             >
-                <x-voodbuilder::menu-nav-item-content :item="$item" />
+                <x-voodbuilder::menu-nav-item-content :item="$item" :show-icon="false" />
                 @if ($item->isExternal())
                     <x-voodbuilder::external-link-icon />
                 @endif

@@ -1,11 +1,12 @@
 @props([
     'item',
     'showDescription' => true,
+    'showIcon' => true,
 ])
 
 @php
     /** @var \Voodflow\Voodbuilder\Models\NavigationMenuItem $item */
-    $icon = $item->resolvedIcon();
+    $icon = $showIcon ? $item->resolvedIcon() : null;
     $description = $showDescription ? $item->resolvedDescription() : null;
 @endphp
 

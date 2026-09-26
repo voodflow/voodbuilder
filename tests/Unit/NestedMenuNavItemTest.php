@@ -92,4 +92,27 @@ class NestedMenuNavItemTest extends TestCase
         $this->assertStringContainsString('Docs', $html);
         $this->assertStringContainsString('Overview', $html);
     }
+
+    public function test_mobile_item_stacks_description_under_label(): void
+    {
+        $item = new NavigationMenuItem([
+            'label' => 'Vcookiebar',
+            'description' => 'Cookie consent bar',
+            'type' => MenuItemType::Url,
+            'link' => 'https://example.test/docs/vcookiebar',
+        ]);
+
+        $html = view('voodbuilder::components.menu-nav-mobile-item', [
+            'item' => $item,
+            'depth' => 1,
+        ])->render();
+
+        $this->assertStringContainsString('voodbuilder-nav-menu-item__text', $html);
+        $this->assertStringContainsString('voodbuilder-nav-menu-item__label', $html);
+        $this->assertStringContainsString('voodbuilder-nav-menu-item__description', $html);
+        $this->assertMatchesRegularExpression(
+            '/voodbuilder-nav-menu-item__text[\s\S]*Vcookiebar[\s\S]*Cookie consent bar[\s\S]*<\/span>\s*<\/span>/',
+            $html,
+        );
+    }
 }
