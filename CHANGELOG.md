@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.11] - 2026-09-26
+
+### Fixed
+
+- Theme safelist: `grid-cols-[repeat(auto-fit,minmax(…))]` utilities ship in the public theme so marketing/product grids stay multi-column on published pages (editor JIT already had them)
+
 ## [1.11.7] - 2026-09-26
 
 ### Fixed
