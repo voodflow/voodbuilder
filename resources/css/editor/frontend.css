@@ -920,6 +920,24 @@ body.voodbuilder-editor-editing .voodbuilder-editor-boot-overlay:not([hidden]) {
     max-width: 16rem;
 }
 
+.voodbuilder-editor-status-spinner__elapsed {
+    margin: 0;
+    color: var(--color-vp-text-3, #94a3b8);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+.voodbuilder-editor-status-spinner__slow {
+    margin: 0;
+    max-width: 16rem;
+    color: #64748b;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
 .voodbuilder-editor-shell__center {
     display: flex;
     flex: 1 1 auto;

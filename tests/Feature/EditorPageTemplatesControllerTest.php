@@ -73,6 +73,32 @@ class EditorPageTemplatesControllerTest extends TestCase
             ->assertJsonPath('templates.0.name', 'Product landing');
     }
 
+    public function test_store_accepts_live_css_for_fast_path(): void
+    {
+        $user = $this->adminUser();
+
+        $this->actingAs($user);
+
+        $liveUtilities = '.flex{display:flex}.gap-2{gap:.5rem}.p-4{padding:1rem}';
+
+        $response = $this->postJson(route('voodbuilder.editor.page-templates.store'), [
+            'name' => 'Fast path landing',
+            'category' => 'General',
+            'html' => '<section class="flex gap-2 p-4">Hero</section>',
+            'css' => '.hero { color: red; }',
+            'live_css' => $liveUtilities,
+            'js' => '',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('template.name', 'Fast path landing');
+
+        $storedCss = (string) PageTemplate::query()->where('name', 'Fast path landing')->value('css');
+
+        $this->assertNotSame('', $storedCss);
+        $this->assertStringContainsString('display:flex', $storedCss);
+    }
+
     public function test_admin_can_delete_page_template(): void
     {
         $user = $this->adminUser();

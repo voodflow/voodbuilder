@@ -8,7 +8,7 @@ import { debugSwallowed } from './debug-swallowed.js';
 const BUILD_SCOPES = new Map();
 let markIdSeq = 0;
 /** Failsafe when begin/end pairs desync after aborted compiles or observer storms. */
-const STUCK_BUILD_RESET_MS = 20_000;
+const STUCK_BUILD_RESET_MS = 45_000;
 let stuckBuildTimer = null;
 
 function escapeHtml(value) {
@@ -105,6 +105,109 @@ const BOOT_PHASE_FALLBACK_LABELS = {
 
 /** How long a single phase may run before we admit it is slow. */
 const BOOT_PHASE_SLOW_MS = 4_000;
+
+/** Compact compile overlay: show “still working” after this many ms. */
+const BUILD_SLOW_MS = 4_000;
+
+/** Elapsed tick for compile / apply overlays. */
+let buildElapsedTimer = null;
+let buildElapsedStartedAt = 0;
+let buildSlowTimer = null;
+let buildStatusLabels = {
+    slow: 'This is taking longer than usual — still working.',
+};
+
+function formatBuildElapsed(ms) {
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+
+    if (min === 0) {
+        return `${sec}s`;
+    }
+
+    return `${min}:${String(sec).padStart(2, '0')}`;
+}
+
+function updateBuildElapsedLabels(editor) {
+    if (! buildElapsedStartedAt) {
+        return;
+    }
+
+    const text = formatBuildElapsed(Date.now() - buildElapsedStartedAt);
+
+    for (const overlay of [
+        editor?.__voodbuilderCanvasBuildOverlay,
+        editor?.__voodbuilderClassesBuildOverlay,
+    ]) {
+        const elapsedEl = overlay?.querySelector?.('[data-voodbuilder-build-elapsed]');
+
+        if (elapsedEl) {
+            elapsedEl.textContent = text;
+            elapsedEl.hidden = false;
+        }
+    }
+}
+
+function armBuildSlowHint(editor) {
+    window.clearTimeout(buildSlowTimer);
+    buildSlowTimer = window.setTimeout(() => {
+        if (totalBuildCount() === 0) {
+            return;
+        }
+
+        for (const overlay of [
+            editor?.__voodbuilderCanvasBuildOverlay,
+            editor?.__voodbuilderClassesBuildOverlay,
+        ]) {
+            const slow = overlay?.querySelector?.('[data-voodbuilder-build-slow]');
+
+            if (slow) {
+                slow.textContent = buildStatusLabels.slow;
+                slow.hidden = false;
+            }
+        }
+    }, BUILD_SLOW_MS);
+}
+
+function startBuildElapsedTracking(editor) {
+    if (buildElapsedTimer) {
+        return;
+    }
+
+    buildElapsedStartedAt = Date.now();
+    updateBuildElapsedLabels(editor);
+    armBuildSlowHint(editor);
+    buildElapsedTimer = window.setInterval(() => {
+        updateBuildElapsedLabels(editor);
+    }, 1_000);
+}
+
+function stopBuildElapsedTracking(editor) {
+    window.clearInterval(buildElapsedTimer);
+    window.clearTimeout(buildSlowTimer);
+    buildElapsedTimer = null;
+    buildSlowTimer = null;
+    buildElapsedStartedAt = 0;
+
+    for (const overlay of [
+        editor?.__voodbuilderCanvasBuildOverlay,
+        editor?.__voodbuilderClassesBuildOverlay,
+    ]) {
+        const elapsedEl = overlay?.querySelector?.('[data-voodbuilder-build-elapsed]');
+        const slow = overlay?.querySelector?.('[data-voodbuilder-build-slow]');
+
+        if (elapsedEl) {
+            elapsedEl.textContent = '';
+            elapsedEl.hidden = true;
+        }
+
+        if (slow) {
+            slow.hidden = true;
+            slow.textContent = '';
+        }
+    }
+}
 
 /** Full-screen boot splash (editor cold start). */
 function bootSplashMarkup({ label, brand, version, edition }) {
@@ -238,6 +341,8 @@ function spinnerMarkup(label) {
                 ${animatedMarkMarkup(40)}
             </div>
             <span class="voodbuilder-editor-status-spinner__label">${escapeHtml(label)}</span>
+            <span class="voodbuilder-editor-status-spinner__elapsed" data-voodbuilder-build-elapsed hidden></span>
+            <p class="voodbuilder-editor-status-spinner__slow" data-voodbuilder-build-slow hidden></p>
         </div>
     `;
 }
@@ -251,6 +356,7 @@ function armStuckBuildFailsafe(editor) {
 
         console.warn('VoodBuilder Editor: compile overlay stuck — resetting build counters.');
         BUILD_SCOPES.clear();
+        stopBuildElapsedTracking(editor);
         syncClassesOverlay(editor);
     }, STUCK_BUILD_RESET_MS);
 }
@@ -320,9 +426,14 @@ export function beginEditorBuild(editor, scope = 'default') {
         return;
     }
 
+    const wasIdle = totalBuildCount() === 0;
     BUILD_SCOPES.set(scope, (BUILD_SCOPES.get(scope) ?? 0) + 1);
     armStuckBuildFailsafe(editor);
     syncClassesOverlay(editor);
+
+    if (wasIdle) {
+        startBuildElapsedTracking(editor);
+    }
 }
 
 /**
@@ -365,12 +476,17 @@ export function endEditorBuild(editor, scope = 'default') {
 
     disarmStuckBuildFailsafe();
     syncClassesOverlay(editor);
+
+    if (totalBuildCount() === 0) {
+        stopBuildElapsedTracking(editor);
+    }
 }
 
 /** Clear stuck compile overlays (e.g. after a failed/aborted build storm). */
 export function resetEditorBuildStatus(editor) {
     BUILD_SCOPES.clear();
     disarmStuckBuildFailsafe();
+    stopBuildElapsedTracking(editor);
     syncClassesOverlay(editor);
 }
 
@@ -417,6 +533,9 @@ export function registerEditorBuildStatus(editor, shell, labels = {}, meta = {})
         ready: labels.bootPhaseReady ?? BOOT_PHASE_FALLBACK_LABELS.ready,
     };
     editor.__voodbuilderBootLabels = {
+        slow: labels.bootSlow ?? 'This is taking longer than usual — still working.',
+    };
+    buildStatusLabels = {
         slow: labels.bootSlow ?? 'This is taking longer than usual — still working.',
     };
 

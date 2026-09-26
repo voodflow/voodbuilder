@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    cssLooksLikeCompiledUtilitySheet,
     forceTemplatePageCssRebuild,
     notifyPageCssReadyFromTemplate,
     shouldForceCssRebuildAfterTemplate,
@@ -34,16 +35,39 @@ describe('forceTemplatePageCssRebuild', () => {
     });
 });
 
+describe('cssLooksLikeCompiledUtilitySheet', () => {
+    it('rejects empty and author-only sheets', () => {
+        expect(cssLooksLikeCompiledUtilitySheet('')).toBe(false);
+        expect(cssLooksLikeCompiledUtilitySheet('.hero { color: red; }')).toBe(false);
+        expect(cssLooksLikeCompiledUtilitySheet('#page-1 { background: white; }')).toBe(false);
+    });
+
+    it('accepts a Tailwind-sized utility sheet', () => {
+        const utilities = Array.from({ length: 20 }, (_, i) => `.util-${i}{display:flex}`).join('');
+
+        expect(cssLooksLikeCompiledUtilitySheet(utilities)).toBe(true);
+    });
+});
+
 describe('shouldForceCssRebuildAfterTemplate', () => {
     it('forces rebuild when the template has no stylesheet', () => {
         expect(shouldForceCssRebuildAfterTemplate({ html: '<section></section>', css: '' })).toBe(true);
         expect(shouldForceCssRebuildAfterTemplate({ html: '<section></section>', css: null })).toBe(true);
     });
 
-    it('skips rebuild when a compiled sheet is already stored on the template', () => {
+    it('forces rebuild when CSS is only author rules', () => {
         expect(shouldForceCssRebuildAfterTemplate({
             html: '<section class="flex"></section>',
-            css: '.flex { display: flex }',
+            css: '.hero { color: red; } #x { padding: 1rem; }',
+        })).toBe(true);
+    });
+
+    it('skips rebuild when a compiled utility sheet is stored on the template', () => {
+        const utilities = Array.from({ length: 20 }, (_, i) => `.flex-${i}\\:gap-2{display:flex;gap:.5rem}`).join('');
+
+        expect(shouldForceCssRebuildAfterTemplate({
+            html: '<section class="flex"></section>',
+            css: utilities,
         })).toBe(false);
     });
 });

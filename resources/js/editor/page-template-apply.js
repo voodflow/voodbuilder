@@ -232,22 +232,43 @@ export function forceTemplatePageCssRebuild(editor, delayMs = 250) {
 }
 
 /**
- * Templates persisted via Save current page / import already include a compiled
- * utility sheet. Re-running compile-css after apply only adds multi-second wait.
+ * True when stored CSS looks like a published/JIT utility sheet (not only #id author rules).
+ * Author-only sheets are small; Tailwind output has many class selectors.
+ *
+ * @param {string} css
+ * @returns {boolean}
+ */
+export function cssLooksLikeCompiledUtilitySheet(css) {
+    const sheet = String(css ?? '').trim();
+
+    if (sheet === '') {
+        return false;
+    }
+
+    // Tailwind JIT output is dense with class selectors; author #id / BEM sheets are sparse.
+    const classSelectors = sheet.match(/(?:^|[,{\s}])\.[a-zA-Z_]/gm);
+
+    return (classSelectors?.length ?? 0) >= 12;
+}
+
+/**
+ * Templates saved with live_css (or a full published sheet) already include utilities.
+ * Re-running compile-css after apply only adds multi-second wait.
+ * Author-only / empty css still needs Node JIT (starters with `css: null`).
  *
  * @param {object} template
  * @param {'replace'|'keep'} [mode]
  */
-export function shouldForceCssRebuildAfterTemplate(template, mode = 'replace') {
+export function shouldForceCssRebuildAfterTemplate(template, _mode = 'replace') {
     const css = String(templatePayload(template).css ?? '').trim();
 
     if (css === '') {
         return true;
     }
 
-    // Append with a stylesheet still needs a pass when the template CSS is only
-    // author rules — rare for saved templates; keep the fast path when any CSS ships.
-    return false;
+    // Append/replace both skip when the template already ships utilities
+    // (apply merges CSS; missing tokens can be patched by a later soft schedule).
+    return ! cssLooksLikeCompiledUtilitySheet(css);
 }
 
 /**
@@ -331,8 +352,10 @@ function applyTemplateCssPayload(editor, css, options = {}) {
 /**
  * @param {object} editor
  * @param {() => void} work
+ * @param {{ rebuildCss?: boolean }} [options]
  */
-function runBulkStructureUpdate(editor, work) {
+function runBulkStructureUpdate(editor, work, options = {}) {
+    const rebuildCss = options.rebuildCss === true;
     editor.__voodbuilderBulkStructureUpdate = true;
 
     try {
@@ -356,12 +379,15 @@ function runBulkStructureUpdate(editor, work) {
 
             editor.trigger('voodbuilder:site-chrome-updated');
 
-            if ((editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0) {
-                // Prompt/drop still owns the suspend lock — compile after it releases.
-                editor.__voodbuilderFlushCssRebuildOnResume = true;
-            } else {
-                // Force, not schedule-if-missing: replace/append always needs a full JIT.
-                editor.__voodbuilderForcePageCssRebuild?.(200);
+            // CSS rebuild is owned by applyPageTemplateWithPrompt (or callers that
+            // pass rebuildCss). Auto-forcing here raced unlock and always recompiled
+            // even when the template already shipped a utility sheet.
+            if (rebuildCss) {
+                if ((editor.__voodbuilderCssRebuildSuspendDepth ?? 0) > 0) {
+                    editor.__voodbuilderFlushCssRebuildOnResume = true;
+                } else {
+                    editor.__voodbuilderForcePageCssRebuild?.(200);
+                }
             }
 
             editor.__voodbuilderAfterBulkStructureUpdate?.();
@@ -395,7 +421,7 @@ export function applyTemplatePayload(editor, template) {
         }
 
         editor.setComponents(html);
-    });
+    }, { rebuildCss: false });
 
     applyTemplateCssPayload(editor, payload.css ?? '', { replace: true });
 
@@ -423,7 +449,7 @@ export function appendTemplatePayload(editor, template) {
         if (html) {
             wrapper.append(html);
         }
-    });
+    }, { rebuildCss: false });
 
     if (String(payload.css ?? '').trim() !== '') {
         const existingCss = String(editor.getCss?.() ?? '').trim();
@@ -442,13 +468,13 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
     const manageSuspend = options.alreadySuspended !== true;
     let applied = false;
     let buildStarted = false;
+    let mode = 'replace';
 
     if (manageSuspend) {
         editor.__voodbuilderSetCssRebuildSuspended?.(true);
     }
 
     try {
-        let mode = 'replace';
         const hasContent = pageHasContent(editor);
 
         if (hasContent) {
@@ -499,9 +525,13 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
 
         applied = true;
 
+        const willCompile = shouldForceCssRebuildAfterTemplate(template, mode);
+
         setEditorBuildLabel(
             editor,
-            labels.compilingStyles ?? 'Compiling styles…',
+            willCompile
+                ? (labels.compilingStyles ?? 'Compiling styles…')
+                : (labels.pageTemplatesApplyingStyles ?? labels.applyingStyles ?? 'Applying styles…'),
         );
 
         return true;
@@ -514,14 +544,20 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
             editor.__voodbuilderSetCssRebuildSuspended?.(false);
         }
 
-        // Skip Node JIT when the template already shipped a compiled sheet (Save /
-        // import persist full CSS). Starters with empty css still force a rebuild.
+        // Skip Node JIT when the template already shipped a compiled sheet (Save with
+        // live_css / import). Starters and author-only css still force a rebuild.
         if (applied) {
             const css = String(templatePayload(template).css ?? '').trim();
 
             if (needsCssRebuild) {
+                // When the outer drop handler still holds suspend, Force is deferred —
+                // wait only after we own unlock (manageSuspend), else the drop finally
+                // flushes and a second wait would hang until the 20s failsafe.
                 forceTemplatePageCssRebuild(editor);
-                await waitForPageCssCompiled(editor);
+
+                if (manageSuspend || (editor.__voodbuilderCssRebuildSuspendDepth ?? 0) === 0) {
+                    await waitForPageCssCompiled(editor, 45_000);
+                }
             } else {
                 notifyPageCssReadyFromTemplate(editor, css);
             }
@@ -529,10 +565,6 @@ export async function applyPageTemplateWithPrompt(editor, template, labels = {},
 
         if (buildStarted) {
             endEditorBuild(editor, TEMPLATE_APPLY_SCOPE);
-            setEditorBuildLabel(
-                editor,
-                labels.compilingStyles ?? 'Compiling styles…',
-            );
         }
     }
 }

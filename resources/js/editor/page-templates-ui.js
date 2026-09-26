@@ -8,6 +8,7 @@ import { buildPayload } from './editor.js';
 import { lucideIcon } from './editor-icons.js';
 import { mountTopbarAction } from './editor-layout.js';
 import { applyPageTemplateWithPrompt } from './page-template-apply.js';
+import { beginEditorBuild, endEditorBuild, setEditorBuildLabel } from './editor-build-status.js';
 
 export { applyTemplatePayload } from './page-template-apply.js';
 
@@ -319,47 +320,66 @@ export function registerPageTemplatesUi(editor, options = {}) {
             return;
         }
 
-        let payload;
+        const saveScope = 'page-template-save';
+        beginEditorBuild(editor, saveScope);
+        setEditorBuildLabel(
+            editor,
+            labels.pageTemplatesSaving ?? 'Saving template…',
+        );
 
         try {
-            payload = buildPayload(editor);
-        } catch (error) {
-            console.error('VoodBuilder template save failed', error);
+            await new Promise((resolve) => globalThis.requestAnimationFrame(() => resolve()));
 
-            await alertDialog({
-                message: labels.pageTemplatesSaveError ?? 'Could not read the current page.',
-                labels,
+            let payload;
+
+            try {
+                payload = buildPayload(editor, { light: true });
+            } catch (error) {
+                console.error('VoodBuilder template save failed', error);
+
+                await alertDialog({
+                    message: labels.pageTemplatesSaveError ?? 'Could not read the current page.',
+                    labels,
+                });
+
+                return;
+            }
+
+            setEditorBuildLabel(
+                editor,
+                labels.pageTemplatesSavingServer ?? 'Storing template…',
+            );
+
+            const response = await fetch(baseUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: editorApiHeaders(csrf, { json: true }),
+                body: JSON.stringify({
+                    name: meta.name,
+                    category: meta.category,
+                    html: payload.html,
+                    css: payload.css,
+                    live_css: payload.live_css ?? '',
+                    js: payload.js,
+                }),
             });
 
-            return;
+            if (! response.ok) {
+                await alertDialog({
+                    message: await resolveApiErrorMessage(
+                        response,
+                        labels.pageTemplatesSaveError ?? 'Could not save page template.',
+                    ),
+                    labels,
+                });
+
+                return;
+            }
+
+            await openModal();
+        } finally {
+            endEditorBuild(editor, saveScope);
         }
-
-        const response = await fetch(baseUrl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: editorApiHeaders(csrf, { json: true }),
-            body: JSON.stringify({
-                name: meta.name,
-                category: meta.category,
-                html: payload.html,
-                css: payload.css,
-                js: payload.js,
-            }),
-        });
-
-        if (! response.ok) {
-            await alertDialog({
-                message: await resolveApiErrorMessage(
-                    response,
-                    labels.pageTemplatesSaveError ?? 'Could not save page template.',
-                ),
-                labels,
-            });
-
-            return;
-        }
-
-        await openModal();
     });
 
     exportBtn?.addEventListener('click', async () => {

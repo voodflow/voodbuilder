@@ -9,7 +9,8 @@ import { buildPayload } from './editor.js';
 import { lucideIcon, tablerIcon } from './editor-icons.js';
 import { applyBlocksLibraryUi, collapseLibraryCategories, readBlocksSearchQuery } from './blocks-library-sync.js';
 import { refreshComponentBlocksLibrary } from './components-ui.js';
-import { applyPageTemplateWithPrompt, forceTemplatePageCssRebuild, shouldForceCssRebuildAfterTemplate } from './page-template-apply.js';
+import { applyPageTemplateWithPrompt, shouldForceCssRebuildAfterTemplate } from './page-template-apply.js';
+import { beginEditorBuild, endEditorBuild, setEditorBuildLabel } from './editor-build-status.js';
 import {
     PAGE_TEMPLATE_BLOCK_PREFIX,
     PAGE_TEMPLATE_CATEGORY_PREFIX,
@@ -762,39 +763,60 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             return;
         }
 
-        let payload;
+        const saveScope = 'page-template-save';
+        beginEditorBuild(editor, saveScope);
+        setEditorBuildLabel(
+            editor,
+            labels.pageTemplatesSaving ?? 'Saving template…',
+        );
 
         try {
-            payload = buildPayload(editor);
-        } catch {
-            await alertDialog({ message: labels.pageTemplatesSaveError ?? 'Could not read page.', labels });
+            await new Promise((resolve) => globalThis.requestAnimationFrame(() => resolve()));
 
-            return;
-        }
+            let payload;
 
-        const response = await fetch(baseUrl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: editorApiHeaders(csrf, { json: true }),
-            body: JSON.stringify({
-                name: meta.name,
-                category: meta.category,
-                html: payload.html,
-                css: payload.css,
-                js: payload.js,
-            }),
-        });
+            try {
+                // Light snapshot: same as page Save-fast — skip full-tree export syncs.
+                // live_css lets the server skip Node when canvas JIT already covers classes.
+                payload = buildPayload(editor, { light: true });
+            } catch {
+                await alertDialog({ message: labels.pageTemplatesSaveError ?? 'Could not read page.', labels });
 
-        if (! response.ok) {
-            await alertDialog({
-                message: await resolveApiErrorMessage(response, labels.pageTemplatesSaveError ?? 'Could not save.'),
-                labels,
+                return;
+            }
+
+            setEditorBuildLabel(
+                editor,
+                labels.pageTemplatesSavingServer ?? 'Storing template…',
+            );
+
+            const response = await fetch(baseUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: editorApiHeaders(csrf, { json: true }),
+                body: JSON.stringify({
+                    name: meta.name,
+                    category: meta.category,
+                    html: payload.html,
+                    css: payload.css,
+                    live_css: payload.live_css ?? '',
+                    js: payload.js,
+                }),
             });
 
-            return;
-        }
+            if (! response.ok) {
+                await alertDialog({
+                    message: await resolveApiErrorMessage(response, labels.pageTemplatesSaveError ?? 'Could not save.'),
+                    labels,
+                });
 
-        await syncCatalog();
+                return;
+            }
+
+            await syncCatalog();
+        } finally {
+            endEditorBuild(editor, saveScope);
+        }
     });
 
     templatesMount.querySelector('[data-voodbuilder-page-template-export]')?.addEventListener('click', async () => {
@@ -959,11 +981,9 @@ export function registerPageTemplatesSidebar(editor, options = {}) {
             const needsCssRebuild = Boolean(template && shouldForceCssRebuildAfterTemplate(template));
             editor.__voodbuilderFlushCssRebuildOnResume = needsCssRebuild;
             editor.__voodbuilderSetCssRebuildSuspended?.(false);
-            // applyPageTemplateWithPrompt already seeds CSS or force-rebuilds.
-            // Only schedule a second JIT for empty-css starters after outer unlock.
-            if (needsCssRebuild) {
-                forceTemplatePageCssRebuild(editor, 320);
-            }
+            // applyPageTemplateWithPrompt already force-rebuilds when it owns unlock.
+            // With alreadySuspended it only queues Force while locked — flush on unlock
+            // (above) starts the compile; do not schedule a second Force here.
         }
     });
 

@@ -48,21 +48,29 @@ class EditorPageTemplatesController extends Controller
         abort_unless(PageBuilderAccess::userCanUsePageBuilder(), 403);
         TemplateAuthoringBridge::authorizeAuthoring();
 
+        $maxHtml = (int) config('voodbuilder.editor.payload.max_html_bytes', 500_000);
+        $maxCss = (int) config('voodbuilder.editor.payload.max_css_bytes', 1_000_000);
+        $maxJs = (int) config('voodbuilder.editor.payload.max_js_bytes', 100_000);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'category' => ['nullable', 'string', 'max:64'],
             'description' => ['nullable', 'string', 'max:500'],
-            'html' => ['required', 'string', 'max:500000'],
-            'css' => ['nullable', 'string', 'max:250000'],
-            'js' => ['nullable', 'string', 'max:100000'],
+            'html' => ['required', 'string', 'max:' . $maxHtml],
+            'css' => ['nullable', 'string', 'max:' . $maxCss],
+            // Canvas live JIT — same fast-path as page Save (skip Node when classes are covered).
+            'live_css' => ['nullable', 'string', 'max:' . $maxCss],
+            'js' => ['nullable', 'string', 'max:' . $maxJs],
         ]);
+
+        $liveUtilitiesCss = trim((string) ($validated['live_css'] ?? ''));
 
         $normalized = EditorGate::normalizePayload([
             'html' => $validated['html'],
             'css' => $validated['css'] ?? '',
             'js' => $validated['js'] ?? '',
             'project' => null,
-        ], recompilePageCss: true);
+        ], recompilePageCss: true, liveUtilitiesCss: $liveUtilitiesCss !== '' ? $liveUtilitiesCss : null);
 
         $template = PageTemplate::query()->create([
             'name' => $validated['name'],
