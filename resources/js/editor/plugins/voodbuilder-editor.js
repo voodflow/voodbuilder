@@ -1218,6 +1218,15 @@ function registerDynamicBlockRefreshOnDrop(editor) {
 }
 
 function registerDynamicBlockGuards(editor) {
+    // Mark intentional root deletes before Grapes walks children. Without this,
+    // each child:remove runs findDynamicBlockAncestor + queueMicrotask (core-nodes
+    // has hundreds of leaves) and delete feels multi-second.
+    editor.on('component:remove:before', (component) => {
+        if (component?.get?.('type') === 'voodbuilder-dynamic') {
+            component.__voodbuilderRemoving = true;
+        }
+    });
+
     editor.on('component:remove', (removed) => {
         if (removed.get('type') === 'voodbuilder-dynamic') {
             return;
@@ -1234,7 +1243,7 @@ function registerDynamicBlockGuards(editor) {
             let current = removed;
 
             while (current) {
-                if (current.__voodbuilderRefreshing) {
+                if (current.__voodbuilderRefreshing || current.__voodbuilderRemoving) {
                     return true;
                 }
 
@@ -1261,6 +1270,10 @@ function registerDynamicBlockGuards(editor) {
             return;
         }
 
+        if (dynamic.__voodbuilderRemoving || dynamic.__voodbuilderRefreshing) {
+            return;
+        }
+
         // Media heroes are editable catalog sections typed as dynamic via
         // data-voodbuilder-block — never cascade-delete the whole hero when a
         // child (social share, CTA, copy) is removed.
@@ -1274,6 +1287,10 @@ function registerDynamicBlockGuards(editor) {
 
         window.queueMicrotask(() => {
             if (! dynamic.parent?.()) {
+                return;
+            }
+
+            if (dynamic.__voodbuilderRemoving || dynamic.__voodbuilderRefreshing) {
                 return;
             }
 

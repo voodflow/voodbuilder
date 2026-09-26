@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.13] - 2026-09-26
+
+### Fixed
+
+- Dynamic companion blocks: mark intentional root deletes (`component:remove:before`) so child-remove storms (e.g. Core nodes grid) no longer cascade hundreds of microtasks and stall the editor
+
 ## [1.11.12] - 2026-09-26
 
 ### Added
