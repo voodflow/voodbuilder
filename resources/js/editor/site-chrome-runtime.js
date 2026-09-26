@@ -193,7 +193,12 @@ function setMobileNavSectionOpen(section, open) {
         return;
     }
 
-    panel.hidden = ! open;
+    section.classList.toggle('is-open', open);
+    panel.classList.toggle('is-open', open);
+    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    // Keep legacy `hidden` off so CSS grid-row animation can run.
+    panel.hidden = false;
+    panel.removeAttribute('hidden');
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     toggle.querySelector('[data-voodbuilder-nav-mobile-chevron]')?.classList.toggle('rotate-180', open);
 }
@@ -213,14 +218,19 @@ export function initMobileNavSections(scope = document) {
             return;
         }
 
-        toggle.addEventListener('click', () => {
-            const willOpen = panel.hidden;
+        // Normalize initial state from markup (is-open / legacy hidden).
+        setMobileNavSectionOpen(section, section.classList.contains('is-open') || panel.classList.contains('is-open'));
+
+        toggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const willOpen = ! section.classList.contains('is-open');
             setMobileNavSectionOpen(section, willOpen);
         });
     });
 }
 
-const MOBILE_NAV_CLOSE_MS = 300;
+const MOBILE_NAV_CLOSE_MS = 400;
 
 function mobileNavRoot(doc) {
     return doc?.documentElement ?? doc;
@@ -250,11 +260,14 @@ export function setMobileNavOpen(doc, open) {
         mobileNav.hidden = false;
         mobileNav.removeAttribute('hidden');
         mobileNav.setAttribute('aria-hidden', 'false');
-        // Sync class before paint so CSS transition + Editor model sync see the open state.
-        void mobileNav.offsetWidth;
-        mobileNav.classList.add('is-open');
+        // Mark open immediately (scroll-lock + toggle state); delay panel class so CSS transition runs.
         root?.classList?.add('voodbuilder-mobile-nav-open');
         doc.body?.classList?.add('voodbuilder-mobile-nav-open');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                mobileNav.classList.add('is-open');
+            });
+        });
     } else {
         mobileNav.classList.remove('is-open');
         root?.classList?.remove('voodbuilder-mobile-nav-open');

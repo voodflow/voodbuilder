@@ -29,8 +29,9 @@ body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav {
 }
 
 .voodbuilder-mobile-nav__overlay {
-    @apply absolute inset-0 opacity-0 transition-opacity duration-300 ease-out;
+    @apply absolute inset-0 opacity-0;
     background: var(--voodbuilder-mobile-overlay);
+    transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__overlay,
@@ -40,11 +41,13 @@ body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__overlay {
 }
 
 .voodbuilder-mobile-nav__panel {
-    @apply absolute top-0 right-0 flex h-full flex-col shadow-2xl transition-transform duration-300 ease-out;
+    @apply absolute top-0 right-0 flex h-full flex-col shadow-2xl;
     width: var(--voodbuilder-mobile-width);
     background: var(--voodbuilder-mobile-bg);
     color: var(--voodbuilder-mobile-text);
     transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
 }
 
 .voodbuilder-mobile-nav.is-open .voodbuilder-mobile-nav__panel,
@@ -86,9 +89,33 @@ body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__panel {
     @apply space-y-1;
 }
 
+/* Fluid accordion for nested mega sections (weDevs-style product lists). */
+.voodbuilder-mobile-nav [data-voodbuilder-nav-mobile-panel] {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.voodbuilder-mobile-nav [data-voodbuilder-nav-mobile-item].is-open > [data-voodbuilder-nav-mobile-panel],
+.voodbuilder-mobile-nav [data-voodbuilder-nav-mobile-panel].is-open {
+    grid-template-rows: 1fr;
+}
+
+.voodbuilder-mobile-nav__sublinks {
+    @apply min-h-0 space-y-1 overflow-hidden pt-1 pl-1;
+}
+
 .voodbuilder-mobile-nav__link {
-    @apply flex min-h-11 items-center justify-between gap-3 rounded-xl px-3 text-[15px] font-medium transition-colors;
+    @apply flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium;
     color: var(--voodbuilder-mobile-text);
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.voodbuilder-mobile-nav__link > [data-voodbuilder-nav-mobile-chevron],
+.voodbuilder-mobile-nav__link > svg:last-child {
+    margin-left: auto;
+    flex-shrink: 0;
+    align-self: center;
 }
 
 /* Keep label + description stacked; do not let flex row treat them as columns. */
@@ -122,9 +149,34 @@ body.voodbuilder-mobile-nav-open .voodbuilder-mobile-nav__panel {
 }
 
 .voodbuilder-mobile-nav__link > .voodbuilder-nav-menu-item__icon {
-    width: 1.75rem;
-    height: 1.75rem;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
     margin-top: 0;
+    border-radius: 0.5rem;
+    color: var(--voodbuilder-mobile-accent);
+    background-color: color-mix(in srgb, var(--voodbuilder-mobile-accent) 12%, transparent);
+}
+
+.voodbuilder-mobile-nav__link--rich {
+    @apply min-h-12 items-start py-2.5;
+}
+
+.voodbuilder-mobile-nav__link--secondary.voodbuilder-mobile-nav__link--rich {
+    @apply min-h-12;
+}
+
+.voodbuilder-mobile-nav__link--rich .voodbuilder-nav-menu-item__label {
+    font-weight: 600;
+    line-height: 1.3rem;
+}
+
+.voodbuilder-mobile-nav__link--rich .voodbuilder-nav-menu-item__description {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
 }
 
 .voodbuilder-mobile-nav__link:hover {

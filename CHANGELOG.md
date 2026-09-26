@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.6] - 2026-09-26
+
+### Changed
+
+- Mobile mega menu (weDevs-inspired): icons + stacked titles/subtitles in the site drawer; fluid slide-in (0.4s) and accordion expand without `hidden` snap
+- Docs/tuts reading drawer: smoother slide easing
+
 ## [1.11.5] - 2026-09-26
 
 ### Fixed

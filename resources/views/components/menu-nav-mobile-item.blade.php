@@ -16,6 +16,7 @@
         1 => 'pl-3',
         default => 'pl-6',
     };
+    $isRich = $item->hasRichPresentation();
 @endphp
 
 @if ($hasChildren && $depth < 2)
@@ -29,7 +30,9 @@
             ])
             aria-expanded="{{ $isActive ? 'true' : 'false' }}"
         >
-            <span>{{ __($item->label) }}</span>
+            <span class="voodbuilder-nav-menu-item__text">
+                <span class="voodbuilder-nav-menu-item__label">{{ __($item->label) }}</span>
+            </span>
             <svg
                 data-voodbuilder-nav-mobile-chevron
                 @class([
@@ -45,22 +48,25 @@
             </svg>
         </button>
 
-        <div data-voodbuilder-nav-mobile-panel @unless($isActive) hidden @endunless>
-            <ul class="mt-1 space-y-1 pl-3">
+        <div
+            data-voodbuilder-nav-mobile-panel
+            @class(['is-open' => $isActive])
+            aria-hidden="{{ $isActive ? 'false' : 'true' }}"
+        >
+            <ul class="voodbuilder-mobile-nav__sublinks">
                 @if ($hasParentLink)
                     <li>
                         <a
                             href="{{ $item->resolveUrl() }}"
                             @class([
                                 'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
+                                'voodbuilder-mobile-nav__link--rich' => $item->hasRichPresentation(),
                                 'is-active' => $item->isSelfActive(),
                             ])
                             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                             data-mobile-nav-close
                         >
-                            <span class="voodbuilder-nav-menu-item__text">
-                                <span class="voodbuilder-nav-menu-item__label">{{ __($item->label) }}</span>
-                            </span>
+                            <x-voodbuilder::menu-nav-item-content :item="$item" />
                         </a>
                     </li>
                 @endif
@@ -78,17 +84,13 @@
             @class([
                 'voodbuilder-mobile-nav__link',
                 'voodbuilder-mobile-nav__link--secondary' => $depth > 0,
+                'voodbuilder-mobile-nav__link--rich' => $isRich,
                 'is-active' => $isActive,
             ])
             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
             data-mobile-nav-close
         >
-            <span class="voodbuilder-nav-menu-item__text">
-                <span class="voodbuilder-nav-menu-item__label">{{ __($item->label) }}</span>
-                @if ($item->resolvedDescription())
-                    <span class="voodbuilder-nav-menu-item__description">{{ __($item->resolvedDescription()) }}</span>
-                @endif
-            </span>
+            <x-voodbuilder::menu-nav-item-content :item="$item" />
             @if ($item->isExternal())
                 <x-voodbuilder::external-link-icon />
             @endif

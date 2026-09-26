@@ -165,52 +165,78 @@
         const mobileNav = document.querySelector('[data-mobile-nav]');
         const mobileToggle = document.querySelector('[data-mobile-nav-toggle]');
 
-        function setMobileNavOpen(open) {
+        /**
+         * Scroll-lock follows the open class. Open/close + accordion are owned by
+         * site-chrome-runtime (avoid double-toggle that kills CSS transitions).
+         */
+        function syncMobileNavScrollLock() {
+            setScrollLocked(document.body.classList.contains('voodbuilder-mobile-nav-open'));
+        }
+
+        syncMobileNavScrollLock();
+
+        if (document.body) {
+            new MutationObserver(syncMobileNavScrollLock).observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class'],
+            });
+        }
+
+        // Fallback when the Vite site-runtime chunk is unavailable.
+        function setMobileNavOpenFallback(open) {
             if (! mobileNav || ! mobileToggle) {
                 return;
             }
 
             if (open) {
                 mobileNav.hidden = false;
+                mobileNav.removeAttribute('hidden');
                 mobileNav.setAttribute('aria-hidden', 'false');
                 requestAnimationFrame(() => {
-                    mobileNav.classList.add('is-open');
+                    requestAnimationFrame(() => {
+                        mobileNav.classList.add('is-open');
+                        document.body.classList.add('voodbuilder-mobile-nav-open');
+                    });
                 });
             } else {
                 mobileNav.classList.remove('is-open');
+                document.body.classList.remove('voodbuilder-mobile-nav-open');
                 mobileNav.setAttribute('aria-hidden', 'true');
                 window.setTimeout(() => {
                     if (! mobileNav.classList.contains('is-open')) {
                         mobileNav.hidden = true;
                     }
-                }, 300);
+                }, 400);
             }
 
             mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            document.body.classList.toggle('voodbuilder-mobile-nav-open', open);
-            setScrollLocked(open);
         }
 
-        mobileToggle?.addEventListener('click', () => {
-            setMobileNavOpen(! mobileNav.classList.contains('is-open'));
-        });
-
-        document.addEventListener('click', (event) => {
-            const target = event.target instanceof Element
-                ? event.target.closest('[data-mobile-nav-close]')
-                : null;
-
-            if (target) {
-                setMobileNavOpen(false);
+        window.setTimeout(() => {
+            if (! mobileNav || ! mobileToggle || mobileToggle.dataset.voodbuilderMobileNavBound === 'true') {
+                return;
             }
-        });
 
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && mobileNav?.classList.contains('is-open')) {
-                setMobileNavOpen(false);
-            }
-        });
+            mobileToggle.addEventListener('click', () => {
+                setMobileNavOpenFallback(! mobileNav.classList.contains('is-open'));
+            });
 
+            document.addEventListener('click', (event) => {
+                const target = event.target instanceof Element
+                    ? event.target.closest('[data-mobile-nav-close]')
+                    : null;
+
+                if (target) {
+                    setMobileNavOpenFallback(false);
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && mobileNav.classList.contains('is-open')) {
+                    setMobileNavOpenFallback(false);
+                }
+            });
+        }, 0);
         const article = document.querySelector(
             '[data-tutorial-article], [data-doc-article], [data-vdocs-article], [data-voodbuilder-article]',
         );

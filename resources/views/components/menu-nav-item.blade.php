@@ -44,20 +44,25 @@
                 </svg>
             </button>
 
-            <div data-voodbuilder-nav-mobile-panel @unless($isActive) hidden @endunless>
-                <ul class="mt-1 space-y-1 pl-3">
+            <div
+                data-voodbuilder-nav-mobile-panel
+                @class(['is-open' => $isActive])
+                aria-hidden="{{ $isActive ? 'false' : 'true' }}"
+            >
+                <ul class="voodbuilder-mobile-nav__sublinks">
                 @if ($hasParentLink)
                     <li>
                         <a
                             href="{{ $item->resolveUrl() }}"
                             @class([
                                 'voodbuilder-mobile-nav__link voodbuilder-mobile-nav__link--secondary',
+                                'voodbuilder-mobile-nav__link--rich' => $item->hasRichPresentation(),
                                 'is-active' => $item->isSelfActive(),
                             ])
                             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                             data-mobile-nav-close
                         >
-                            <x-voodbuilder::menu-nav-item-content :item="$item" :show-icon="false" />
+                            <x-voodbuilder::menu-nav-item-content :item="$item" />
                         </a>
                     </li>
                 @endif
@@ -131,12 +136,13 @@
                 href="{{ $item->resolveUrl() }}"
                 @class([
                     'voodbuilder-mobile-nav__link',
+                    'voodbuilder-mobile-nav__link--rich' => $item->hasRichPresentation(),
                     'is-active' => $isActive,
                 ])
                 @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
                 data-mobile-nav-close
             >
-                <x-voodbuilder::menu-nav-item-content :item="$item" :show-icon="false" />
+                <x-voodbuilder::menu-nav-item-content :item="$item" />
                 @if ($item->isExternal())
                     <x-voodbuilder::external-link-icon />
                 @endif
