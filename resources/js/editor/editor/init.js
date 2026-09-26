@@ -395,6 +395,9 @@ function injectCanvasCompanionScripts(editor, scripts = []) {
             script.src = entry.src;
             script.async = true;
             script.dataset.voodbuilderCanvasScript = entry.src;
+            script.addEventListener('load', () => {
+                editor.__voodbuilderApplyCanvasTheme?.();
+            }, { once: true });
             doc.head.appendChild(script);
         });
     };
@@ -544,6 +547,15 @@ function applyCanvasDocumentTheme(editor, subTheme, themeOptions = {}) {
     });
     window.addEventListener('voodbuilder:theme-changed', (event) => {
         apply(event?.detail?.isDark);
+    });
+
+    // Filament / other tabs may change localStorage `theme` without our event.
+    window.addEventListener('storage', (event) => {
+        if (event.key !== 'theme') {
+            return;
+        }
+
+        apply();
     });
 
     // Filament (and other host shells) toggle `html.dark` without our CustomEvent.

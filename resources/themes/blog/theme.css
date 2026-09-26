@@ -9,7 +9,9 @@ html[data-voodbuilder-sub-theme='blog'] {
     --width-vp-content: 42rem;
     --width-vp-layout: 72rem;
     --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
 
+html[data-voodbuilder-sub-theme='blog']:not(.dark) {
     --color-vp-bg: #fafafa;
     --color-vp-bg-alt: #f4f4f5;
     --color-vp-text-1: #15171a;

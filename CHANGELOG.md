@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.15] - 2026-09-26
+
+### Fixed
+
+- Sub-theme light palettes (`site` / `blog` / `news`) now use `:not(.dark)` so light `--color-vp-*` tokens never apply when the editor/canvas is in dark mode
+- Canvas theme re-applies after companion script load and on `storage` theme changes
+
 ## [1.11.14] - 2026-09-26
 
 ### Fixed

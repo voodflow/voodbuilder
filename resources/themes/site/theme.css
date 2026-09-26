@@ -6,7 +6,9 @@
 html[data-voodbuilder-sub-theme='site'] {
     --width-vp-content: 48rem;
     --width-vp-layout: 80rem;
+}
 
+html[data-voodbuilder-sub-theme='site']:not(.dark) {
     --color-vp-bg: #f4f5f7;
     --color-vp-bg-alt: #ffffff;
     --color-vp-bg-elv: #ffffff;

@@ -9,7 +9,9 @@ html[data-voodbuilder-sub-theme='news'] {
     --width-vp-content: 50rem;
     --width-vp-layout: 96rem;
     --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
 
+html[data-voodbuilder-sub-theme='news']:not(.dark) {
     --color-vp-bg: #fffdf8;
     --color-vp-bg-alt: #f8f4ec;
     --color-vp-text-1: #1a1a1a;
