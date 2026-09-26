@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.7] - 2026-09-26
+
+### Fixed
+
+- Hero CTA glow-pulse: Chrome no longer double-plays entrance (CTA transition + `vb-cta-rise`); nested on-visible markers inherit the section reveal
+
 ## [1.11.6] - 2026-09-26
 
 ### Changed

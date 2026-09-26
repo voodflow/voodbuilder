@@ -37,10 +37,10 @@ function bootSiteRuntime() {
         siteRuntimeCoreBooted = true;
     } else {
         // Soft re-bind after Livewire navigations (new header/drawer nodes).
+        // Do not re-run viewport/CTA animations — that restarts hero keyframes in Chrome.
         initSiteChrome();
         initVideoFacades();
         initHeroBackgroundVideos();
-        initVbRuntime();
     }
 
     bootPopupsIfConfigured();

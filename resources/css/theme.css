@@ -2102,23 +2102,41 @@ button[data-voodbuilder-cta='true']:empty::before {
     animation: vb-cta-glow 2.4s ease-out infinite;
 }
 
-.vb-cta-glow-pulse [data-vb-anim-child] {
-    opacity: 0;
-    animation: vb-cta-rise 0.7s ease forwards;
+/*
+ * Glow-pulse entrance: ONE keyframe path only.
+ * Generic .vb-animated-cta transitions + vb-cta-rise together look like a double-run in Chrome
+ * when both the section and the inner .vb-cta-glow-pulse get .is-visible.
+ */
+.vb-animated-cta .vb-cta-glow-pulse [data-vb-anim-child] {
+    transition: none !important;
 }
 
-/* With on-visible: hold rise until IntersectionObserver adds .is-visible
- * (avoids a half-played rise that Chrome then restarts — looks like a double-run). */
-.vb-cta-glow-pulse.vb-animate-on-visible:not(.is-visible) [data-vb-anim-child] {
+.vb-cta-glow-pulse [data-vb-anim-child] {
+    opacity: 0;
+    animation: none;
+}
+
+/* Hold until the CTA section is visible (single gate). */
+.vb-animated-cta:not(.is-visible) .vb-cta-glow-pulse [data-vb-anim-child] {
     animation: none !important;
     opacity: 0;
 }
 
-.vb-cta-glow-pulse.vb-animate-on-visible.is-visible [data-vb-anim-child],
-.gjs-dashed .vb-cta-glow-pulse.vb-animate-on-visible [data-vb-anim-child],
-.voodbuilder-editor-canvas-mount .vb-cta-glow-pulse.vb-animate-on-visible [data-vb-anim-child],
-body.voodbuilder-canvas-ready .vb-cta-glow-pulse.vb-animate-on-visible [data-vb-anim-child] {
+.vb-animated-cta.is-visible .vb-cta-glow-pulse [data-vb-anim-child],
+.gjs-dashed .vb-cta-glow-pulse [data-vb-anim-child],
+.voodbuilder-editor-canvas-mount .vb-cta-glow-pulse [data-vb-anim-child],
+body.voodbuilder-canvas-ready .vb-cta-glow-pulse [data-vb-anim-child] {
+    /* Override generic .vb-animated-cta.is-visible opacity:1 — keyframes own the fade. */
+    opacity: 0;
+    transform: none;
     animation: vb-cta-rise 0.7s ease forwards;
+}
+
+/* Nested Style Manager fades on the same nodes would restart after rise — kill them. */
+.vb-animated-cta.is-visible .vb-cta-glow-pulse [data-vb-anim-child].animate-fade,
+.vb-animated-cta.is-visible .vb-cta-glow-pulse [data-vb-anim-child][class*='animate-'] {
+    /* vb-cta-rise already set above; keep that single animation */
+    animation-name: vb-cta-rise;
 }
 
 .vb-cta-glow-pulse [data-vb-anim-child='1'] {

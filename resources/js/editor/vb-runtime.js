@@ -763,18 +763,27 @@ export function initViewportAnimations(options = {}) {
     }
 
     const reveal = (node) => {
+        if (node.dataset.vbViewportRevealed === '1' && ! force) {
+            return;
+        }
+
         if (force) {
             node.classList.remove('is-visible');
+            delete node.dataset.vbViewportRevealed;
             void node.offsetWidth;
         }
 
         window.requestAnimationFrame(() => {
             node.classList.add('is-visible');
+            node.dataset.vbViewportRevealed = '1';
         });
     };
 
     if (prefersReducedMotion()) {
-        nodes.forEach((node) => node.classList.add('is-visible'));
+        nodes.forEach((node) => {
+            node.classList.add('is-visible');
+            node.dataset.vbViewportRevealed = '1';
+        });
 
         return;
     }
@@ -797,7 +806,15 @@ export function initViewportAnimations(options = {}) {
     }, { threshold: 0.15, rootMargin: '0px 0px -5% 0px' });
 
     nodes.forEach((node) => {
-        if (node.classList.contains('is-visible') && ! force) {
+        if ((node.classList.contains('is-visible') || node.dataset.vbViewportRevealed === '1') && ! force) {
+            return;
+        }
+
+        // Nested markers inside an animated CTA inherit the parent reveal —
+        // observing them separately restarts keyframes in Chrome.
+        const animatedCta = node.closest('[data-voodbuilder-animated-cta]');
+
+        if (animatedCta && animatedCta !== node) {
             return;
         }
 
@@ -945,6 +962,10 @@ export function initAnimatedCtas(options = {}) {
     }
 
     const reveal = (node) => {
+        if (node.dataset.vbCtaRevealed === '1' && ! force) {
+            return;
+        }
+
         const duration = Math.max(200, parseNumber(node.getAttribute('data-vb-anim-duration'), 700));
         const delay = Math.max(0, parseNumber(node.getAttribute('data-vb-anim-delay'), 0));
 
@@ -953,17 +974,31 @@ export function initAnimatedCtas(options = {}) {
 
         if (force) {
             node.classList.remove('is-visible');
+            delete node.dataset.vbCtaRevealed;
             // Force reflow so CSS transition replays in the editor canvas.
             void node.offsetWidth;
         }
 
         window.requestAnimationFrame(() => {
             node.classList.add('is-visible');
+            node.dataset.vbCtaRevealed = '1';
+            // Propagate to nested on-visible markers so they don't IO-restart keyframes.
+            node.querySelectorAll('.vb-animate-on-visible').forEach((child) => {
+                child.classList.add('is-visible');
+                child.dataset.vbViewportRevealed = '1';
+            });
         });
     };
 
     if (prefersReducedMotion()) {
-        nodes.forEach((node) => node.classList.add('is-visible'));
+        nodes.forEach((node) => {
+            node.classList.add('is-visible');
+            node.dataset.vbCtaRevealed = '1';
+            node.querySelectorAll('.vb-animate-on-visible').forEach((child) => {
+                child.classList.add('is-visible');
+                child.dataset.vbViewportRevealed = '1';
+            });
+        });
 
         return;
     }
@@ -990,6 +1025,10 @@ export function initAnimatedCtas(options = {}) {
             // Editor canvas iframes often miss the first intersection; replay immediately.
             reveal(node);
 
+            return;
+        }
+
+        if (node.classList.contains('is-visible') || node.dataset.vbCtaRevealed === '1') {
             return;
         }
 
