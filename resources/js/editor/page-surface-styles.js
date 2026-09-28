@@ -599,18 +599,26 @@ export function collectEditorComponentIds(editor) {
 }
 
 /**
- * Best page-wallpaper candidate from any `#id` rule (including known ids).
+ * Best page-wallpaper candidate from any `#id` rule.
  * Used when the wrapper is empty but a prior Save left the paint on a content
  * ghost or a regenerated-id orphan that is still "known" in the tree.
  *
+ * Section/block decoration photos also use `#id { background-image; size; … }`.
+ * Those must NOT be promoted to page wallpaper — only preferId matches or rules
+ * with `background-attachment: fixed` (page-surface signature) are eligible when
+ * the id is still present in the live component tree.
+ *
  * @param {string} css
- * @param {{ dark?: boolean, preferId?: string }} [options]
+ * @param {{ dark?: boolean, preferId?: string, knownIds?: Iterable<string>|Set<string> }} [options]
  * @returns {Record<string, string>}
  */
 export function extractBestPageWallpaperFromCss(css, options = {}) {
     const source = String(css ?? '');
     const dark = Boolean(options.dark);
     const preferId = String(options.preferId ?? '').trim();
+    const knownIds = options.knownIds instanceof Set
+        ? options.knownIds
+        : new Set([...(options.knownIds ?? [])].map((id) => String(id ?? '').trim()).filter(Boolean));
     let best = null;
     let bestScore = -1;
 
@@ -640,6 +648,16 @@ export function extractBestPageWallpaperFromCss(css, options = {}) {
             continue;
         }
 
+        const isPreferId = preferId !== '' && id === preferId;
+        const isKnownContent = knownIds.size > 0 && knownIds.has(id) && ! isPreferId;
+        const hasFixedAttachment = /background-attachment\s*:\s*fixed/i.test(body);
+
+        // Live content blocks (CTA, pricing, …) share the same layout props as
+        // page wallpaper. Never promote those decoration photos onto the page.
+        if (isKnownContent && ! hasFixedAttachment) {
+            continue;
+        }
+
         const styles = {};
         const declRe = /([a-z-]+)\s*:\s*([^;]+)/gi;
         let decl;
@@ -665,11 +683,11 @@ export function extractBestPageWallpaperFromCss(css, options = {}) {
             score += 3;
         }
 
-        if (/background-attachment\s*:\s*fixed/i.test(body)) {
-            score += 2;
+        if (hasFixedAttachment) {
+            score += 5;
         }
 
-        if (preferId !== '' && id === preferId) {
+        if (isPreferId) {
             score += 10;
         }
 
@@ -724,11 +742,17 @@ export function extractOrphanWallpaperStylesFromCss(css, knownIds = []) {
             continue;
         }
 
-        // Prefer wallpaper-ish rules (layout props or attachment) over random photo paints.
-        const looksLikePageWallpaper = /background-(?:size|position|repeat|attachment)\s*:/i.test(body)
-            || /background-attachment\s*:\s*fixed/i.test(body);
+        const hasFixedAttachment = /background-attachment\s*:\s*fixed/i.test(body);
+        const hasLayout = /background-(?:size|position|repeat)\s*:/i.test(body);
 
-        if (! looksLikePageWallpaper && Object.keys(styles).length > 0) {
+        // Page wallpaper: attachment:fixed, or legacy image-only #id.
+        // Section decorations often have size/position/repeat without fixed — skip those.
+        if (! hasFixedAttachment && hasLayout) {
+            continue;
+        }
+
+        // Prefer wallpaper-ish rules (fixed attachment) over bare image-only paints.
+        if (! hasFixedAttachment && Object.keys(styles).length > 0) {
             continue;
         }
 
@@ -780,6 +804,17 @@ export function extractDarkOrphanWallpaperStylesFromCss(css, knownIds = []) {
         }
 
         if (! /background-image\s*:/i.test(body) || ! /url\s*\(/i.test(body)) {
+            continue;
+        }
+
+        const hasFixedAttachment = /background-attachment\s*:\s*fixed/i.test(body);
+        const hasLayout = /background-(?:size|position|repeat)\s*:/i.test(body);
+
+        if (! hasFixedAttachment && hasLayout) {
+            continue;
+        }
+
+        if (! hasFixedAttachment && Object.keys(styles).length > 0) {
             continue;
         }
 
@@ -859,7 +894,7 @@ export function readPageSurfaceWallpaperStyles(editor, css = '') {
         return orphan;
     }
 
-    return extractBestPageWallpaperFromCss(sheet, { preferId: id });
+    return extractBestPageWallpaperFromCss(sheet, { preferId: id, knownIds: known });
 }
 
 /**
@@ -911,7 +946,7 @@ export function readPageSurfaceDarkWallpaperStyles(editor, css = '') {
         return orphan;
     }
 
-    return extractBestPageWallpaperFromCss(sheet, { dark: true, preferId: id });
+    return extractBestPageWallpaperFromCss(sheet, { dark: true, preferId: id, knownIds: known });
 }
 
 /**
@@ -939,6 +974,11 @@ export function withWallpaperLayoutDefaults(styles) {
 
     if (! String(next['background-repeat'] ?? '').trim()) {
         next['background-repeat'] = 'no-repeat';
+    }
+
+    // Page wallpaper signature — distinguishes page surface from section decoration.
+    if (! String(next['background-attachment'] ?? '').trim()) {
+        next['background-attachment'] = 'fixed';
     }
 
     return next;
@@ -1174,13 +1214,16 @@ export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
         fromSheet = extractOrphanWallpaperStylesFromCss(sheet, known);
     }
 
-    // Known-id ghost (chrome-shell empty instance that kept the old wrapper id)
-    // or image-only #id — still reclaim onto the current wrapper.
+    // Known-id ghost (chrome-shell empty instance that kept the old wrapper id
+    // with background-attachment:fixed) or image-only preferId — reclaim onto
+    // the current wrapper. Never steal section/block decoration photos.
     if (! fromSheet['background-image']) {
-        fromSheet = extractBestPageWallpaperFromCss(sheet, { preferId: id });
+        fromSheet = extractBestPageWallpaperFromCss(sheet, { preferId: id, knownIds: known });
     }
 
     let hydrated = false;
+    const existingAttrUrl = String(wrapper?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim()
+        || String(getPageSurfaceWallpaperUrlCache(editor).light ?? '').trim();
 
     if (fromSheet['background-image']) {
         try {
@@ -1196,6 +1239,17 @@ export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
             ]) {
                 if (! String(existing[prop] ?? '').trim() && fromSheet[prop]) {
                     next[prop] = fromSheet[prop];
+                }
+            }
+
+            // Durable page attr wins over a sheet candidate (avoids overwriting
+            // the real page photo with a section decoration picked as "best").
+            if (existingAttrUrl !== '') {
+                const sheetUrl = String(next['background-image'] ?? '')
+                    .match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/i)?.[1]?.trim() ?? '';
+
+                if (sheetUrl !== '' && sheetUrl !== existingAttrUrl) {
+                    next['background-image'] = `url("${existingAttrUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`;
                 }
             }
 
@@ -1225,7 +1279,11 @@ export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
     let darkFromSheet = extractDarkOrphanWallpaperStylesFromCss(sheet, known);
 
     if (! darkFromSheet['background-image']) {
-        darkFromSheet = extractBestPageWallpaperFromCss(sheet, { dark: true, preferId: id });
+        darkFromSheet = extractBestPageWallpaperFromCss(sheet, {
+            dark: true,
+            preferId: id,
+            knownIds: known,
+        });
     }
 
     if (! darkFromSheet['background-image']) {

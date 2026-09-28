@@ -73,8 +73,9 @@ final class PageSurfaceCssPublish
                     return $match[0];
                 }
 
-                // Only remap ids that paint a wallpaper (avoid rewriting unrelated orphans).
-                if (! self::idRuleHasWallpaper($remapped, $id)) {
+                // Only remap true page wallpapers (attachment:fixed). Section
+                // decoration photos must not become the public page background.
+                if (! self::idRuleHasPageWallpaper($remapped, $id)) {
                     return $match[0];
                 }
 
@@ -100,7 +101,7 @@ final class PageSurfaceCssPublish
      */
     private static function transparentShellOverlay(string $css): string
     {
-        if (! self::cssHasWallpaper($css)) {
+        if (! self::cssHasPageSurfaceWallpaper($css)) {
             return '';
         }
 
@@ -114,9 +115,32 @@ final class PageSurfaceCssPublish
             . "}\n";
     }
 
-    private static function cssHasWallpaper(string $css): bool
+    /**
+     * True only for page-surface wallpaper (body/html remaps or fixed ::before),
+     * not for section/block `#id { background-image }` decoration rules.
+     */
+    private static function cssHasPageSurfaceWallpaper(string $css): bool
     {
-        return (bool) preg_match('/background-image\s*:[^;]*url\s*\(/i', $css);
+        $class = preg_quote(self::PAGE_SURFACE_CLASS, '/');
+
+        if (preg_match(
+            '/body\.' . $class . '::before\s*\{[^}]*background-image\s*:[^;]*url\s*\(/i',
+            $css,
+        ) === 1) {
+            return true;
+        }
+
+        if (preg_match(
+            '/html\.dark\s+body\.' . $class . '::before\s*\{[^}]*background-image\s*:[^;]*url\s*\(/i',
+            $css,
+        ) === 1) {
+            return true;
+        }
+
+        return (bool) preg_match(
+            '/(?:html\s*,\s*body|body\.' . $class . '|\.' . $class . ')\s*\{[^}]*background-image\s*:[^;]*url\s*\(/i',
+            $css,
+        );
     }
 
     /**
@@ -141,7 +165,7 @@ final class PageSurfaceCssPublish
                 $id = $match[1];
                 $body = $match[2];
 
-                if (isset($idsInHtml[$id]) || ! self::declarationHasWallpaper($body)) {
+                if (isset($idsInHtml[$id]) || ! self::declarationHasPageWallpaper($body)) {
                     continue;
                 }
 
@@ -160,7 +184,7 @@ final class PageSurfaceCssPublish
                     continue;
                 }
 
-                if (isset($idsInHtml[$id]) || ! self::declarationHasWallpaper($body)) {
+                if (isset($idsInHtml[$id]) || ! self::declarationHasPageWallpaper($body)) {
                     continue;
                 }
 
@@ -184,7 +208,8 @@ final class PageSurfaceCssPublish
 
         if ($overlay === '') {
             // Legacy sheets already remapped to body — promote + transparent shells.
-            if (self::cssHasWallpaper($source)) {
+            // Ignore section/block `#id` decoration photos (not page-surface targets).
+            if (self::cssHasPageSurfaceWallpaper($source)) {
                 $promoted = self::promoteWallpaperToFixedLayer($source);
 
                 return trim($promoted . self::transparentShellOverlay($promoted !== '' ? $promoted : $source));
@@ -238,7 +263,7 @@ final class PageSurfaceCssPublish
         return $ids;
     }
 
-    private static function idRuleHasWallpaper(string $css, string $id): bool
+    private static function idRuleHasPageWallpaper(string $css, string $id): bool
     {
         $escaped = preg_quote($id, '/');
 
@@ -254,7 +279,7 @@ final class PageSurfaceCssPublish
                 continue;
             }
 
-            if (self::declarationHasWallpaper($match[1])) {
+            if (self::declarationHasPageWallpaper($match[1])) {
                 return true;
             }
         }
@@ -270,12 +295,33 @@ final class PageSurfaceCssPublish
             return false;
         }
 
-        return self::declarationHasWallpaper($match[1]);
+        return self::declarationHasPageWallpaper($match[1]);
     }
 
     private static function declarationHasWallpaper(string $declarations): bool
     {
         return (bool) preg_match('/background-image\s*:[^;]*url\s*\(/i', $declarations);
+    }
+
+    /**
+     * Page-surface wallpaper (wrapper #id) is saved with background-attachment:fixed,
+     * or as a legacy image-only #id rule. Section/block decoration photos often share
+     * size/position/repeat without fixed — those must not become the public page BG.
+     */
+    private static function declarationHasPageWallpaper(string $declarations): bool
+    {
+        if (! self::declarationHasWallpaper($declarations)) {
+            return false;
+        }
+
+        if (preg_match('/background-attachment\s*:\s*fixed/i', $declarations) === 1) {
+            return true;
+        }
+
+        // Legacy page wallpaper: image only (layout defaults applied at publish).
+        $hasLayout = preg_match('/background-(?:size|position|repeat)\s*:/i', $declarations) === 1;
+
+        return ! $hasLayout;
     }
 
     /**

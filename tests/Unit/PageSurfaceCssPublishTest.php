@@ -42,11 +42,13 @@ class PageSurfaceCssPublishTest extends TestCase
         $this->assertStringContainsString('background-size: contain', $remapped);
         $this->assertStringNotContainsString(PageSurfaceCssPublish::bodyTarget(), $remapped);
         $this->assertStringNotContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $remapped);
+        // Section decoration must not force chrome shells transparent (page wallpaper only).
+        $this->assertStringNotContainsString('voodbuilder-site-shell', $remapped);
     }
 
     public function test_remap_for_public_keeps_author_layout_props_on_fixed_layer(): void
     {
-        $css = '#iabc123 { background-image: url(/x.jpg); background-size: contain; background-position: top; }';
+        $css = '#iabc123 { background-image: url(/x.jpg); background-size: contain; background-position: top; background-attachment: fixed; }';
 
         $remapped = PageSurfaceCssPublish::remapForPublic($css, '');
 
@@ -57,10 +59,25 @@ class PageSurfaceCssPublishTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/background-size:\s*cover/', $remapped);
     }
 
+    public function test_remap_for_public_does_not_promote_section_decoration_orphans(): void
+    {
+        // Section Style photos get size/position/repeat without attachment:fixed.
+        $css = '#icta { background-image: url(/cta.jpg); background-size: cover; background-position: center; background-repeat: no-repeat; }';
+        $html = '<section class="hero">Hello</section>';
+
+        $remapped = PageSurfaceCssPublish::remapForPublic($css, $html);
+
+        $this->assertStringContainsString('#icta', $remapped);
+        $this->assertStringContainsString('url(/cta.jpg)', $remapped);
+        $this->assertStringNotContainsString(PageSurfaceCssPublish::bodyTarget(), $remapped);
+        $this->assertStringNotContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $remapped);
+        $this->assertStringNotContainsString('voodbuilder-site-shell', $remapped);
+    }
+
     public function test_public_wallpaper_overlay_emits_only_orphan_wallpaper_rules(): void
     {
         $css = <<<'CSS'
-#iwrap { background-image: url(/w.jpg); background-position: top; }
+#iwrap { background-image: url(/w.jpg); background-position: top; background-attachment: fixed; }
 #hero { background-image: url(/h.jpg); }
 .keep { color: red; }
 CSS;
@@ -109,9 +126,9 @@ CSS;
     public function test_remap_for_public_drops_grapes_comma_html_dark_wallpaper(): void
     {
         $css = <<<'CSS'
-#iwrap { background-image: url(/light.jpg); background-size: cover; }
+#iwrap { background-image: url(/light.jpg); background-size: cover; background-attachment: fixed; }
 #iwrap, html.dark { background-image: url(/dark.jpg); background-size: cover; }
-html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; }
+html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; background-attachment: fixed; }
 CSS;
 
         $remapped = PageSurfaceCssPublish::remapForPublic($css, '');
@@ -124,7 +141,7 @@ CSS;
 
     public function test_public_wallpaper_overlay_emits_dark_orphan_wallpaper(): void
     {
-        $css = 'html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; }';
+        $css = 'html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; background-attachment: fixed; }';
 
         $overlay = PageSurfaceCssPublish::publicWallpaperOverlay($css, '');
 
@@ -135,8 +152,8 @@ CSS;
     public function test_public_wallpaper_overlay_keeps_light_and_dark_layers_separate(): void
     {
         $css = <<<'CSS'
-#iwrap { background-image: url(/light.jpg); background-size: cover; }
-html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; }
+#iwrap { background-image: url(/light.jpg); background-size: cover; background-attachment: fixed; }
+html.dark #iwrap { background-image: url(/dark.jpg); background-size: cover; background-attachment: fixed; }
 CSS;
 
         $overlay = PageSurfaceCssPublish::publicWallpaperOverlay($css, '');

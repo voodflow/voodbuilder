@@ -179,6 +179,13 @@ describe('page-surface-styles', () => {
         expect(orphan['background-attachment']).toBe('fixed');
     });
 
+    it('extractOrphanWallpaperStylesFromCss ignores section decoration orphans', () => {
+        const css = `#icta { background-image:url(/cta.jpg); background-size:cover; background-position:center; background-repeat:no-repeat }`;
+        const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['inew']));
+
+        expect(orphan['background-image']).toBeUndefined();
+    });
+
     it('extractOrphanWallpaperStylesFromCss ignores ids still present in the tree', () => {
         const css = `#i40b { background-image:url(/page.jpg); background-size:cover }`;
         const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['i40b']));
@@ -336,7 +343,8 @@ describe('page-surface-styles', () => {
                 getIdRule: () => ({ getStyle: () => ({}) }),
                 setIdRule,
             },
-            __voodbuilderPageLiveCss: `#ighost { background-image:url(/page.jpg); background-size:cover; background-repeat:no-repeat }`,
+            // Page wallpaper signature includes attachment:fixed (section decorations do not).
+            __voodbuilderPageLiveCss: `#ighost { background-image:url(/page.jpg); background-size:cover; background-repeat:no-repeat; background-attachment:fixed }`,
             Canvas: { getDocument: () => null },
         };
 
@@ -347,6 +355,60 @@ describe('page-surface-styles', () => {
         }));
         expect(addAttributes).toHaveBeenCalledWith(expect.objectContaining({
             'data-vb-style-bg-src': expect.stringContaining('/page.jpg'),
+        }));
+    });
+
+    it('hydratePageSurfaceWallpaperFromCss does not steal section decoration photos onto the page', () => {
+        const setIdRule = vi.fn();
+        const addAttributes = vi.fn();
+        const editor = {
+            getWrapper: () => ({
+                getId: () => 'iwrap',
+                getAttributes: () => ({}),
+                addAttributes,
+                onAll: (fn) => {
+                    fn({ getId: () => 'iwrap' });
+                    fn({ getId: () => 'icta' });
+                },
+            }),
+            Css: {
+                getIdRule: () => ({ getStyle: () => ({}) }),
+                setIdRule,
+            },
+            // CTA/section decoration: cover/center/no-repeat, no attachment:fixed.
+            __voodbuilderPageLiveCss: `#icta { background-image:url(/cta.jpg); background-size:cover; background-position:center; background-repeat:no-repeat }`,
+            Canvas: { getDocument: () => null },
+        };
+
+        expect(hydratePageSurfaceWallpaperFromCss(editor)).toBe(false);
+        expect(setIdRule).not.toHaveBeenCalled();
+        expect(addAttributes).not.toHaveBeenCalled();
+    });
+
+    it('hydrate keeps durable page attr when sheet has a different section photo', () => {
+        const setIdRule = vi.fn();
+        const addAttributes = vi.fn();
+        const editor = {
+            getWrapper: () => ({
+                getId: () => 'iwrap',
+                getAttributes: () => ({ 'data-vb-style-bg-src': '/page.jpg' }),
+                addAttributes,
+                onAll: (fn) => {
+                    fn({ getId: () => 'iwrap' });
+                    fn({ getId: () => 'icta' });
+                },
+            }),
+            Css: {
+                getIdRule: () => ({ getStyle: () => ({}) }),
+                setIdRule,
+            },
+            __voodbuilderPageLiveCss: `html, body { background-image:url(/cta.jpg); background-size:cover }`,
+            Canvas: { getDocument: () => null },
+        };
+
+        expect(hydratePageSurfaceWallpaperFromCss(editor)).toBe(true);
+        expect(setIdRule).toHaveBeenCalledWith('iwrap', expect.objectContaining({
+            'background-image': expect.stringContaining('/page.jpg'),
         }));
     });
 
