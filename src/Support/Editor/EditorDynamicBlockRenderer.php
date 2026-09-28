@@ -15,6 +15,20 @@ use Voodflow\Voodbuilder\Models\SitePage;
  */
 final class EditorDynamicBlockRenderer
 {
+    /** @var list<string> */
+    protected const ANCHOR_ATTRIBUTES = ['data-voodbuilder-dropzone', 'data-voodbuilder-layer-name'];
+
+    /** @var list<string> */
+    protected const ANCHORED_AUTHOR_ATTRIBUTES = [
+        'id',
+        'class',
+        'style',
+        'data-vb-style-bg-src',
+        'data-vb-style-bg-src-dark',
+        'data-vb-style-bg-opacity',
+        'data-vb-bg-color-opacity',
+    ];
+
     public function __construct(
         protected EditorDynamicBlockRegistry $registry,
         protected EditorServerBlockRegistry $serverRegistry,
@@ -128,6 +142,7 @@ final class EditorDynamicBlockRenderer
         $authorRootChrome = $this->captureAuthorRootChrome($node);
         $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
         $authorChromeMenuSlots = $this->captureAuthorChromeMenuSlotClasses($node);
+        $authorAnchoredElements = $this->captureAuthorAnchoredElements($node);
         $hiddenLayerNames = $this->captureHiddenLayerNames($node);
 
         // Core nodes: Layers eye-hide on "Custom Nodes" must flip Blade config so
@@ -156,6 +171,7 @@ final class EditorDynamicBlockRenderer
             $this->restoreAuthorRootChrome($node, $authorRootChrome);
             $this->restoreAuthorContentWidthShells($node, $authorContentWidthShells);
             $this->restoreAuthorChromeMenuSlotClasses($node, $authorChromeMenuSlots);
+            $this->restoreAuthorAnchoredElements($node, $authorAnchoredElements);
 
             return;
         }
@@ -169,8 +185,141 @@ final class EditorDynamicBlockRenderer
         $rendered = $this->applyAuthorRootChromeToHtml($rendered, $authorRootChrome);
         $rendered = $this->applyAuthorContentWidthShellsToHtml($rendered, $authorContentWidthShells);
         $rendered = $this->applyAuthorChromeMenuSlotClassesToHtml($rendered, $authorChromeMenuSlots);
+        $rendered = $this->applyAuthorAnchoredElementsToHtml($rendered, $authorAnchoredElements);
 
         $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
+    }
+
+    /**
+     * Style panel edits on inner block nodes (e.g. a pricing copy card photo +
+     * tint) live on elements Blade re-creates from scratch. Nodes with a stable
+     * anchor attribute are matched by anchor value + occurrence so the author
+     * id / classes / inline paint survive the remount.
+     *
+     * @return array<string, array<string, string>>
+     */
+    protected function captureAuthorAnchoredElements(DOMElement $node): array
+    {
+        $captured = [];
+
+        foreach ($this->anchoredElements($node) as $key => $element) {
+            $attributes = [];
+
+            foreach (self::ANCHORED_AUTHOR_ATTRIBUTES as $attribute) {
+                if ($element->hasAttribute($attribute)) {
+                    $attributes[$attribute] = trim((string) $element->getAttribute($attribute));
+                }
+            }
+
+            $decorated = ($attributes['style'] ?? '') !== ''
+                || count(array_diff_key($attributes, ['id' => true, 'class' => true, 'style' => true])) > 0;
+
+            // Without author paint, Blade classes stay authoritative (template updates win).
+            if (! $decorated) {
+                unset($attributes['class'], $attributes['style']);
+            }
+
+            if ($attributes === [] || implode('', $attributes) === '') {
+                continue;
+            }
+
+            $captured[$key] = $attributes;
+        }
+
+        return $captured;
+    }
+
+    /**
+     * @param  array<string, array<string, string>>  $captured
+     */
+    protected function restoreAuthorAnchoredElements(DOMElement $node, array $captured): void
+    {
+        if ($captured === []) {
+            return;
+        }
+
+        foreach ($this->anchoredElements($node) as $key => $element) {
+            if (! isset($captured[$key])) {
+                continue;
+            }
+
+            foreach ($captured[$key] as $attribute => $value) {
+                if ($attribute === 'style') {
+                    $fresh = trim((string) $element->getAttribute('style'));
+                    $value = $this->mergeAuthorRootStyles($value, $fresh);
+                }
+
+                if ($value === '') {
+                    continue;
+                }
+
+                $element->setAttribute($attribute, $value);
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, array<string, string>>  $captured
+     */
+    protected function applyAuthorAnchoredElementsToHtml(string $html, array $captured): string
+    {
+        if ($html === '' || $captured === []) {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        $this->restoreAuthorAnchoredElements($body, $captured);
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * Inner nodes (not nested dynamic blocks) keyed by `attribute=value#occurrence`.
+     *
+     * @return array<string, DOMElement>
+     */
+    protected function anchoredElements(DOMElement $root): array
+    {
+        $elements = [];
+        $occurrences = [];
+
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement || $this->isInsideNestedDynamicBlock($element, $root)) {
+                continue;
+            }
+
+            foreach (self::ANCHOR_ATTRIBUTES as $anchor) {
+                if (! $element->hasAttribute($anchor)) {
+                    continue;
+                }
+
+                $base = $anchor . '=' . trim((string) $element->getAttribute($anchor));
+                $index = $occurrences[$base] ?? 0;
+                $occurrences[$base] = $index + 1;
+                $elements[$base . '#' . $index] = $element;
+
+                break;
+            }
+        }
+
+        return $elements;
+    }
+
+    protected function isInsideNestedDynamicBlock(DOMElement $element, DOMElement $root): bool
+    {
+        for ($parent = $element; $parent !== null && $parent !== $root; $parent = $parent->parentNode) {
+            if ($parent instanceof DOMElement && $parent->hasAttribute('data-voodbuilder-block')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

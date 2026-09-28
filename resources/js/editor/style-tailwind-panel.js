@@ -1395,6 +1395,47 @@ function resolveSolidBackgroundColorCss(utility) {
 }
 
 /**
+ * `background-color: … !important` for a Color at Opacity < 100%, or ''.
+ *
+ * @param {string} color bg-* utility
+ * @param {string} opacityPercent '' = 100%
+ * @returns {string}
+ */
+function composeTranslucentBackgroundColor(color, opacityPercent) {
+    const pct = String(opacityPercent ?? '').trim();
+    const base = String(color ?? '').trim();
+
+    if (base === '' || pct === '' || pct === '100') {
+        return '';
+    }
+
+    // Prefer resolved CSS (hex / theme var). Never fall back to currentColor —
+    // that left opaque bg-* utilities looking like opacity did nothing.
+    const colorCss = resolveSolidBackgroundColorCss(base) || cssColorFromBackgroundUtility(base);
+
+    if (colorCss === '') {
+        return '';
+    }
+
+    const alpha = Math.min(1, Math.max(0, Number.parseInt(pct, 10) / 100));
+    const painted = toRgbaWithAlpha(colorCss, alpha)
+        ?? `color-mix(in oklab, ${colorCss} ${pct}%, transparent)`;
+
+    // !important beats compiled opaque .bg-* on canvas and publish.
+    return withImportantCssValue(painted);
+}
+
+/**
+ * @param {object|null|undefined} component
+ * @returns {string}
+ */
+function translucentBackgroundColorPaint(component) {
+    const { color, opacity } = resolveBackgroundColorAndOpacity(componentClassList(component), component);
+
+    return composeTranslucentBackgroundColor(color, opacity);
+}
+
+/**
  * Paint solid Color opacity via inline/#id (Grapes cannot store `bg-black/60`).
  * Plain `bg-*` stays for the Color field; alpha lives in data-vb-bg-color-opacity.
  */
@@ -1404,31 +1445,16 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     }
 
     const target = resolveVisualStyleTarget(component) ?? component;
-    const pct = String(opacityPercent ?? '').trim();
-    const base = String(color ?? '').trim();
+    const painted = composeTranslucentBackgroundColor(color, opacityPercent);
 
-    if (base === '' || pct === '' || pct === '100') {
+    if (painted === '') {
         clearStyleProperty(editor, target, 'background-color', { family: false });
 
         return;
     }
 
-    const hex = resolveSolidBackgroundColorCss(base);
-    const alpha = Math.min(1, Math.max(0, Number.parseInt(pct, 10) / 100));
-    // Prefer resolved CSS (hex / theme var). Never fall back to currentColor —
-    // that left opaque bg-* utilities looking like opacity did nothing.
-    const colorCss = hex || cssColorFromBackgroundUtility(base);
-
-    if (colorCss === '') {
-        return;
-    }
-
-    const painted = toRgbaWithAlpha(colorCss, alpha)
-        ?? `color-mix(in oklab, ${colorCss} ${pct}%, transparent)`;
-
-    // Neutralize opaque utility paint — !important beats compiled .bg-* on canvas.
     persistSurfacePaint(editor, component, {
-        'background-color': withImportantCssValue(painted),
+        'background-color': painted,
     });
 }
 
@@ -2885,8 +2911,9 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     // re-enters chrome-shell refresh and freezes Save.
     persistSurfacePaint(editor, component, withPageSurfaceWallpaperDefaults(editor, component, {
         'background-image': cssValue,
-        // Kill solid Color flash: tint is only in overlay layers above the photo.
-        'background-color': 'transparent',
+        // Opaque Color would flash before the photo loads (tint lives in overlay
+        // layers). A Color with explicit Opacity keeps its alpha paint instead.
+        'background-color': translucentBackgroundColorPaint(component) || 'transparent',
     }));
 
     // Do NOT scrub live page CSS here — Save / reload need #id{url} as a
