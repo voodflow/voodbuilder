@@ -285,19 +285,7 @@ function persistSurfacePaint(editor, component, styles) {
                         el.style.removeProperty?.(property);
                     }
 
-                    const bgColor = styles['background-color'];
-
-                    if (bgColor != null && bgColor !== '') {
-                        const raw = String(bgColor);
-                        const important = /\s*!important\s*$/i.test(raw);
-                        const cssValue = raw.replace(/\s*!important\s*$/i, '').trim();
-
-                        el.style.setProperty?.(
-                            'background-color',
-                            cssValue,
-                            important ? 'important' : '',
-                        );
-                    }
+                    applyImportantBackgroundColorToEl(el, styles['background-color']);
                 }
             } catch (error) {
                 // Frame may be unavailable.
@@ -317,7 +305,49 @@ function persistSurfacePaint(editor, component, styles) {
         return;
     }
 
-    target.addStyle?.(styles, { inline: true, noEvent: true });
+    // Grapes addStyle often drops `!important` from the value string — opaque
+    // `bg-*` utilities then win and Color Opacity looks broken on the canvas.
+    // Keep #id + inline for Save, and force the DOM for live preview.
+    const inlineStyles = {};
+
+    for (const [property, value] of Object.entries(styles)) {
+        if (value == null || value === '') {
+            continue;
+        }
+
+        inlineStyles[property] = String(value).replace(/\s*!important\s*$/i, '').trim();
+    }
+
+    if (Object.keys(inlineStyles).length > 0) {
+        target.addStyle?.(inlineStyles, { inline: true, noEvent: true });
+    }
+
+    try {
+        const el = target?.getEl?.() ?? target?.view?.el;
+        applyImportantBackgroundColorToEl(el, styles['background-color']);
+    } catch (error) {
+        debugSwallowed(error);
+    }
+}
+
+/**
+ * @param {HTMLElement|null|undefined} el
+ * @param {unknown} bgColor
+ */
+function applyImportantBackgroundColorToEl(el, bgColor) {
+    if (! el?.style || bgColor == null || bgColor === '') {
+        return;
+    }
+
+    const raw = String(bgColor);
+    const important = /\s*!important\s*$/i.test(raw);
+    const cssValue = raw.replace(/\s*!important\s*$/i, '').trim();
+
+    el.style.setProperty?.(
+        'background-color',
+        cssValue,
+        important ? 'important' : '',
+    );
 }
 
 /**
@@ -1419,7 +1449,7 @@ function composeTranslucentBackgroundColor(color, opacityPercent) {
 
     const alpha = Math.min(1, Math.max(0, Number.parseInt(pct, 10) / 100));
     const painted = toRgbaWithAlpha(colorCss, alpha)
-        ?? `color-mix(in oklab, ${colorCss} ${pct}%, transparent)`;
+        ?? `color-mix(in srgb, ${colorCss} ${pct}%, transparent)`;
 
     // !important beats compiled opaque .bg-* on canvas and publish.
     return withImportantCssValue(painted);
@@ -3500,6 +3530,8 @@ function wireSectorFields(editor, sector, labels = {}) {
         'height',
         'max-width',
         'background',
+        // Without this, Opacity only updates the select — Color stays opaque.
+        'background-opacity',
         'gradient-direction',
         'gradient-from',
         'gradient-via',
