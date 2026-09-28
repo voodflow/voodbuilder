@@ -43,6 +43,8 @@ import {
     spacingGroupFor,
     applySpacingToken,
     setSpacingLinkMode,
+    rememberStyleSubject,
+    styleWriteTarget,
 } from '../../resources/js/editor/style-tailwind-panel.js';
 import { STYLE_MANAGER_SECTORS } from '../../resources/js/editor/editor-chrome.js';
 import {
@@ -723,5 +725,64 @@ describe('style viewport breakpoints', () => {
 
         expect(next).toContain('text-4xl');
         expect(next).toContain('dark:md:text-5xl');
+    });
+});
+
+describe('style write target', () => {
+    function makeEditor() {
+        const wrapper = { get: (key) => (key === 'type' ? 'wrapper' : undefined), getId: () => 'wrap', find: vi.fn(() => []) };
+        const editor = { selected: null, getWrapper: () => wrapper, getSelected: () => editor.selected };
+
+        return { editor, wrapper };
+    }
+
+    function makeSection(id) {
+        let removed = false;
+
+        return {
+            get: () => 'default',
+            getId: () => id,
+            isRemoved: () => removed,
+            remove: () => {
+                removed = true;
+            },
+        };
+    }
+
+    it('keeps writing to the section when selection drops, never to the page', () => {
+        const { editor, wrapper } = makeEditor();
+        const section = makeSection('cta1');
+
+        editor.selected = section;
+        rememberStyleSubject(editor, section);
+        editor.selected = null;
+
+        expect(styleWriteTarget(editor)).toBe(section);
+        expect(styleWriteTarget(editor)).not.toBe(wrapper);
+    });
+
+    it('re-resolves a remounted section by id and returns null when it is gone', () => {
+        const { editor, wrapper } = makeEditor();
+        const section = makeSection('cta1');
+        const remounted = makeSection('cta1');
+
+        rememberStyleSubject(editor, section);
+        section.remove();
+        wrapper.find.mockReturnValueOnce([remounted]).mockReturnValue([]);
+
+        expect(styleWriteTarget(editor)).toBe(remounted);
+        expect(wrapper.find).toHaveBeenCalledWith('#cta1');
+
+        remounted.remove();
+
+        expect(styleWriteTarget(editor)).toBeNull();
+    });
+
+    it('targets the page wrapper only when the page is the explicit subject', () => {
+        const { editor, wrapper } = makeEditor();
+
+        rememberStyleSubject(editor, null);
+
+        expect(styleWriteTarget(editor)).toBe(wrapper);
     });
 });

@@ -143,13 +143,77 @@ import {
 import { hexForUtility } from './tailwind-color-palette.js';
 
 /**
- * Style panel writes must follow page-surface targeting (wrapper when nothing
- * is selected / force page mode), not only Grapes getSelected().
+ * Remember which surface the Style panel is editing: a concrete element, or the
+ * page. Only explicit user actions (select an element, select the wrapper,
+ * "Page background…") change it — a transient deselect (media picker, dynamic
+ * block remount) must never turn an element edit into a page edit.
+ *
+ * @param {object|null|undefined} editor
+ * @param {object|null|undefined} component
+ */
+export function rememberStyleSubject(editor, component) {
+    if (! editor) {
+        return;
+    }
+
+    if (! component || isPageSurfaceComponent(component, editor)) {
+        editor.__voodbuilderStyleSubject = { page: true, component: null, id: '' };
+
+        return;
+    }
+
+    editor.__voodbuilderStyleSubject = {
+        page: false,
+        component,
+        id: String(component.getId?.() ?? '').trim(),
+    };
+}
+
+/**
+ * Live element for an element subject (re-resolved by id after remount).
  *
  * @param {object|null|undefined} editor
  * @returns {object|null}
  */
-function styleWriteTarget(editor) {
+function resolveElementStyleSubject(editor) {
+    const subject = editor?.__voodbuilderStyleSubject ?? null;
+
+    if (! subject || subject.page) {
+        return null;
+    }
+
+    if (subject.component && ! subject.component.isRemoved?.()) {
+        return subject.component;
+    }
+
+    if (subject.id === '') {
+        return null;
+    }
+
+    const safeId = subject.id.replace(/[^\w-]/g, '');
+    const found = safeId === '' ? null : (editor.getWrapper?.()?.find?.(`#${safeId}`)?.[0] ?? null);
+
+    if (found) {
+        subject.component = found;
+    }
+
+    return found;
+}
+
+/**
+ * Target for Style panel writes. An element subject stays the target even when
+ * Grapes selection is momentarily empty; it never falls back to the page.
+ *
+ * @param {object|null|undefined} editor
+ * @returns {object|null}
+ */
+export function styleWriteTarget(editor) {
+    const subject = editor?.__voodbuilderStyleSubject ?? null;
+
+    if (subject && ! subject.page) {
+        return resolveElementStyleSubject(editor);
+    }
+
     return resolveStyleTarget(editor) ?? editor?.getSelected?.() ?? null;
 }
 
@@ -169,8 +233,8 @@ function persistSurfacePaint(editor, component, styles) {
 
     // Page wallpaper must always live on the Grapes wrapper #id — resolveVisualStyleTarget
     // can redirect to a single child shell and would otherwise overwrite light via setIdRule.
-    const targetingPage = isPageSurfaceComponent(component, editor)
-        || isTargetingPageSurface(editor);
+    // Decide from the component passed in, never from global selection state.
+    const targetingPage = isPageSurfaceComponent(component, editor);
     const wrapper = targetingPage ? (editor.getWrapper?.() ?? component) : null;
     const target = targetingPage
         ? wrapper
@@ -367,8 +431,7 @@ function applyBackgroundLayoutCss(editor, component, groupId, utilityValue) {
         return;
     }
 
-    const targetingPage = isPageSurfaceComponent(component, editor)
-        || isTargetingPageSurface(editor);
+    const targetingPage = isPageSurfaceComponent(component, editor);
     const wrapper = targetingPage ? (editor.getWrapper?.() ?? component) : null;
     const target = targetingPage
         ? wrapper
@@ -2247,8 +2310,7 @@ function readBackgroundImageUrl(component, editor = null) {
     const target = resolveVisualStyleTarget(component) ?? component;
     const nodes = target === component ? [component] : [component, target];
     const pageSurface = isPageSurfaceComponent(target, editor)
-        || isPageSurfaceComponent(component, editor)
-        || (editor && isTargetingPageSurface(editor));
+        || isPageSurfaceComponent(component, editor);
     const darkPage = pageSurface && isStyleEditingDark(editor);
     const srcAttr = darkPage ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
 
@@ -2350,8 +2412,7 @@ function persistBackgroundImageSrcAttr(component, url, editor = null) {
     }
 
     const src = String(url ?? '').trim();
-    const targetingPage = isPageSurfaceComponent(component, editor)
-        || (editor && isTargetingPageSurface(editor));
+    const targetingPage = isPageSurfaceComponent(component, editor);
     const wrapper = targetingPage ? (editor?.getWrapper?.() ?? component) : null;
     const target = targetingPage
         ? wrapper
@@ -2430,8 +2491,7 @@ function clearDecorationBackgroundImage(editor, component) {
         return;
     }
 
-    const targetingPage = isPageSurfaceComponent(component, editor)
-        || isTargetingPageSurface(editor);
+    const targetingPage = isPageSurfaceComponent(component, editor);
     const wrapper = targetingPage ? (editor.getWrapper?.() ?? component) : null;
     const target = targetingPage
         ? wrapper
@@ -2981,9 +3041,7 @@ function syncBackgroundImageField(root, component, editor = null) {
     // Skip when empty — do not copy the other theme's URL into this theme's attr.
     if (component && url !== '') {
         persistBackgroundImageSrcAttr(component, url, editor);
-    } else if (component && url === '' && editor && (
-        isPageSurfaceComponent(component, editor) || isTargetingPageSurface(editor)
-    )) {
+    } else if (component && url === '' && editor && isPageSurfaceComponent(component, editor)) {
         // Keep durable empty state for the active theme (Clear / dark with no image).
         persistBackgroundImageSrcAttr(component, '', editor);
     }
@@ -3875,6 +3933,8 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         }, 0);
     });
     editor.on('component:selected', (component) => {
+        rememberStyleSubject(editor, component);
+
         window.setTimeout(() => {
             // Leaving page-background mode: restore Dimension/Typography/… immediately.
             // Without this, sectors stay hidden after “Page background…” then picking an element.
@@ -3940,16 +4000,29 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         }, 0);
     });
 
-    editor.on('component:deselected', () => {
+    editor.on('component:deselected', (component) => {
         stopClassWatch?.();
         stopClassWatch = null;
 
         window.requestAnimationFrame(() => {
+            const subject = editor.__voodbuilderStyleSubject ?? null;
+
+            // Remount (dynamic refresh, media picker) drops selection but the element
+            // still exists under the same id: keep editing it, not the page.
+            if (subject && ! subject.page && component?.isRemoved?.() && resolveElementStyleSubject(editor)) {
+                return;
+            }
+
+            if (! editor.getSelected?.()) {
+                rememberStyleSubject(editor, null);
+            }
+
             syncPageSurfaceStyles();
         });
     });
 
     editor.on(PAGE_SURFACE_FOCUS_EVENT, () => {
+        rememberStyleSubject(editor, null);
         // Synchronous — a rAF here caused CLASSES/Dimension to flash when opening Style
         // with nothing selected (page mode).
         syncPageSurfaceStyles();
