@@ -38,6 +38,33 @@ export function darkIdRuleSelector(id) {
 }
 
 /**
+ * `background-image: none` in the dark companion is an authored override
+ * ("no photo in dark") — it must survive the generic cleared-value filter,
+ * otherwise the light `#id` photo shows through under html.dark.
+ *
+ * @param {string} property
+ * @param {string} value
+ * @returns {boolean}
+ */
+export function isDarkExplicitNoneOverride(property, value) {
+    return String(property ?? '').trim().toLowerCase() === 'background-image'
+        && String(value ?? '').trim().toLowerCase() === 'none';
+}
+
+/**
+ * @param {string} property
+ * @param {string} value
+ * @returns {boolean}
+ */
+function shouldOmitDarkValue(property, value) {
+    if (isDarkExplicitNoneOverride(property, value)) {
+        return false;
+    }
+
+    return value === '' || shouldOmitAuthorStyleValue(property, value);
+}
+
+/**
  * @param {import('grapesjs').Editor | null | undefined} editor
  * @param {string} id
  * @returns {Record<string, string>}
@@ -80,7 +107,7 @@ export function setDarkIdStyles(editor, id, styles) {
             continue;
         }
 
-        if (raw === '' || shouldOmitAuthorStyleValue(prop, raw)) {
+        if (shouldOmitDarkValue(prop, raw)) {
             delete next[prop];
             continue;
         }
@@ -156,7 +183,7 @@ export function darkIdStylesToCssRule(selector, styles) {
         const prop = String(property ?? '').trim();
         const raw = value == null ? '' : String(value).trim();
 
-        if (prop === '' || raw === '' || shouldOmitAuthorStyleValue(prop, raw)) {
+        if (prop === '' || shouldOmitDarkValue(prop, raw)) {
             continue;
         }
 
@@ -288,7 +315,7 @@ export function hydrateDarkIdStylesFromCss(editor, css) {
             const prop = trimmed.slice(0, colon).trim().toLowerCase();
             const value = trimmed.slice(colon + 1).trim();
 
-            if (prop === '' || value === '' || shouldOmitAuthorStyleValue(prop, value)) {
+            if (prop === '' || shouldOmitDarkValue(prop, value)) {
                 continue;
             }
 

@@ -50,6 +50,7 @@ import {
     readPageSurfaceDarkWallpaperStyles,
     readPageSurfaceWallpaperStyles,
     stripStalePageSurfaceWallpaperRules,
+    collectEditorComponentIds,
     withWallpaperLayoutDefaults,
 } from '../page-surface-styles.js';
 import { STYLE_BG_SRC_ATTR, STYLE_BG_SRC_DARK_ATTR } from '../style-background-image.js';
@@ -980,15 +981,19 @@ export function buildPayload(editor, options = {}) {
         // Grapes often holds only the last painted theme on bare `#id`.
         // Element dark companions (`html.dark #id`) come from memory cache next.
         //
-        // Strip EVERY page-wallpaper #id from composer/components first (including
-        // the current wrapper): stale CssComposer rules survived Clear and orphans
-        // kept showing the wallpaper after the Style panel had no image.
+        // Block photos (`#id` / `html.dark #id` of ids in the tree) are never
+        // stripped. Only the wrapper (re-emitted below) and orphan page wallpapers.
+        const wrapperId = String(editor.getWrapper?.()?.getId?.() ?? '').trim();
+        const stripOptions = {
+            knownIds: collectEditorComponentIds(editor),
+            replaceIds: isPageSurfaceMode(editor) && wrapperId !== '' ? [wrapperId] : [],
+        };
         let css = mergeAuthorCssChunks([
             darkIdStylesCss,
             styleManagerCss,
             componentAuthorCss,
         ]);
-        css = stripStalePageSurfaceWallpaperRules(css, '');
+        css = stripStalePageSurfaceWallpaperRules(css, wrapperId, stripOptions);
         css = mergeAuthorCssChunks([
             pageSurfaceCss,
             css,
@@ -1005,7 +1010,7 @@ export function buildPayload(editor, options = {}) {
                 extractBareIdAuthorCss(styleManagerCss),
                 extractBareIdAuthorCss(componentAuthorCss),
             ]);
-            css = stripStalePageSurfaceWallpaperRules(css, '');
+            css = stripStalePageSurfaceWallpaperRules(css, wrapperId, stripOptions);
             css = mergeAuthorCssChunks([
                 extractBareIdAuthorCss(pageSurfaceCss),
                 css,

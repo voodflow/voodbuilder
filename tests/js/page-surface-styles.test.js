@@ -217,6 +217,41 @@ describe('page-surface-styles', () => {
         expect(stripped).toContain('/cta.jpg');
     });
 
+    it('Save strip keeps light and dark photos of blocks that exist in the page', () => {
+        const css = [
+            '#iwrap { background-image:url(/page.jpg); background-attachment:fixed }',
+            'html.dark #iwrap { background-image:url(/page-dark.jpg); background-attachment:fixed }',
+            "#iblock { background-image:url('/block.jpg'); background-color:transparent }",
+            "html.dark #iblock { background-image:url('/block-dark.jpg') }",
+            'html.dark #iother { background-image:none }',
+            '#iorphan { background-image:url(/old-page.jpg) }',
+            '#istolen { background-image:url(/page.jpg); background-attachment:fixed }',
+        ].join('\n');
+
+        const stripped = stripStalePageSurfaceWallpaperRules(css, 'iwrap', {
+            knownIds: new Set(['iwrap', 'iblock', 'iother', 'istolen']),
+            replaceIds: ['iwrap'],
+        });
+
+        expect(stripped).not.toContain('/page.jpg');
+        expect(stripped).not.toContain('/page-dark.jpg');
+        expect(stripped).toContain('/block.jpg');
+        expect(stripped).toContain('/block-dark.jpg');
+        expect(stripped).toContain('html.dark #iother { background-image:none }');
+        expect(stripped).not.toContain('/old-page.jpg');
+    });
+
+    it('Save strip keeps the wrapper wallpaper when not in page-surface mode', () => {
+        const css = '#iwrap { background-image:url(/page.jpg); background-attachment:fixed }';
+
+        const stripped = stripStalePageSurfaceWallpaperRules(css, 'iwrap', {
+            knownIds: new Set(['iwrap']),
+            replaceIds: [],
+        });
+
+        expect(stripped).toContain('/page.jpg');
+    });
+
     it('extractOrphanWallpaperStylesFromCss ignores ids still present in the tree', () => {
         const css = `#i40b { background-image:url(/page.jpg); background-size:cover }`;
         const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['i40b']));

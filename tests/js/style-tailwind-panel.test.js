@@ -47,6 +47,7 @@ import {
     styleWriteTarget,
     resolveBackgroundFadeColor,
     readBackgroundImageUrl,
+    readDisplayedBackgroundImageUrl,
     clearDecorationBackgroundImage,
 } from '../../resources/js/editor/style-tailwind-panel.js';
 import {
@@ -842,14 +843,17 @@ describe('dark element background image panel sync', () => {
             Css: {
                 getIdRule: (id) => (id === 'ixu2pn' ? idRule : null),
                 setIdRule: vi.fn(),
-                remove: vi.fn(),
+                remove: vi.fn(() => {
+                    idRuleStyle = {};
+                    idRule.getStyle = () => ({});
+                }),
             },
         };
 
         return { editor, idRule };
     }
 
-    it('readBackgroundImageUrl surfaces light #id photo while editing dark', () => {
+    it('dark paint read never adopts the light photo, but the UI shows it as inherited', () => {
         const { editor } = makeElementEditor({
             'background-image': "url('/try-today.jpg')",
         });
@@ -862,7 +866,26 @@ describe('dark element background image panel sync', () => {
             isRemoved: () => false,
         };
 
-        expect(readBackgroundImageUrl(component, editor)).toContain('/try-today.jpg');
+        expect(readBackgroundImageUrl(component, editor)).toBe('');
+        expect(readDisplayedBackgroundImageUrl(component, editor)).toContain('/try-today.jpg');
+        expect(editor.__voodbuilderStyleThemeDark).toBe(true);
+    });
+
+    it('dark explicit none hides the inherited light photo in the UI', () => {
+        const { editor } = makeElementEditor({
+            'background-image': "url('/try-today.jpg')",
+        });
+        setDarkIdStyles(editor, 'ixu2pn', { 'background-image': 'none' });
+        const component = {
+            getId: () => 'ixu2pn',
+            get: () => 'div',
+            getAttributes: () => ({}),
+            getStyle: () => ({}),
+            getEl: () => null,
+            isRemoved: () => false,
+        };
+
+        expect(readDisplayedBackgroundImageUrl(component, editor)).toBe('');
     });
 
     it('readBackgroundImageUrl prefers dark companion over light #id', () => {
@@ -884,7 +907,7 @@ describe('dark element background image panel sync', () => {
         expect(readBackgroundImageUrl(component, editor)).toBe('/dark-attr.jpg');
     });
 
-    it('clearDecorationBackgroundImage in dark wipes inherited light #id paint', () => {
+    it('clearDecorationBackgroundImage in dark writes a dark-only none and keeps light', () => {
         const style = { 'background-image': "url('/try-today.jpg')", 'background-size': 'cover' };
         const { editor, idRule } = makeElementEditor(style);
         const attrs = { [STYLE_BG_SRC_ATTR]: '/try-today.jpg' };
@@ -917,10 +940,10 @@ describe('dark element background image panel sync', () => {
 
         clearDecorationBackgroundImage(editor, component);
 
-        expect(attrs[STYLE_BG_SRC_ATTR]).toBeUndefined();
+        expect(attrs[STYLE_BG_SRC_ATTR]).toBe('/try-today.jpg');
         expect(attrs[STYLE_BG_SRC_DARK_ATTR]).toBeUndefined();
-        expect(idRule.getStyle()['background-image']).toBeUndefined();
-        expect(getDarkIdStyles(editor, 'ixu2pn')['background-image']).toBeUndefined();
+        expect(idRule.getStyle()['background-image']).toContain('/try-today.jpg');
+        expect(getDarkIdStyles(editor, 'ixu2pn')['background-image']).toBe('none');
     });
 
     it('clearDecorationBackgroundImage with dark-own photo keeps light #id', () => {
@@ -960,6 +983,39 @@ describe('dark element background image panel sync', () => {
         expect(attrs[STYLE_BG_SRC_DARK_ATTR]).toBeUndefined();
         expect(attrs[STYLE_BG_SRC_ATTR]).toBe('/light.jpg');
         expect(idRule.getStyle()['background-image']).toContain('/light.jpg');
-        expect(getDarkIdStyles(editor, 'ixu2pn')['background-image']).toBeUndefined();
+        expect(getDarkIdStyles(editor, 'ixu2pn')['background-image']).toBe('none');
+    });
+
+    it('light Clear with a dark-own photo leaves the dark photo intact', () => {
+        const style = { 'background-image': "url('/light.jpg')" };
+        const { editor, idRule } = makeElementEditor(style);
+        editor.__voodbuilderStyleThemeDark = false;
+        setDarkIdStyles(editor, 'ixu2pn', { 'background-image': "url('/dark.jpg')" });
+        const attrs = {
+            [STYLE_BG_SRC_ATTR]: '/light.jpg',
+            [STYLE_BG_SRC_DARK_ATTR]: '/dark.jpg',
+        };
+        const component = {
+            getId: () => 'ixu2pn',
+            get: () => 'div',
+            getAttributes: () => ({ ...attrs }),
+            getClasses: () => [],
+            addAttributes: vi.fn((next) => Object.assign(attrs, next)),
+            removeAttributes: vi.fn((key) => {
+                delete attrs[key];
+            }),
+            setAttributes: vi.fn(),
+            getStyle: () => ({}),
+            getEl: () => null,
+            isRemoved: () => false,
+            view: { updateStyle: vi.fn(), updateAttributes: vi.fn(), updateClasses: vi.fn() },
+        };
+
+        clearDecorationBackgroundImage(editor, component);
+
+        expect(attrs[STYLE_BG_SRC_ATTR]).toBeUndefined();
+        expect(attrs[STYLE_BG_SRC_DARK_ATTR]).toBe('/dark.jpg');
+        expect(idRule.getStyle()['background-image']).toBeUndefined();
+        expect(getDarkIdStyles(editor, 'ixu2pn')['background-image']).toContain('/dark.jpg');
     });
 });

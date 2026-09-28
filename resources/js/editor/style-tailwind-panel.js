@@ -2595,16 +2595,9 @@ function readBackgroundImageUrl(component, editor = null) {
             return fromDark;
         }
 
-        // No dark companion: bare `#id` / light `data-vb-style-bg-src` still paint
-        // under html.dark. Surface that effective URL in the Image field so Clear
-        // can target what the canvas shows (do not early-return empty).
-        for (const node of nodes) {
-            const fromLightAttr = String(node?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
-
-            if (fromLightAttr !== '') {
-                return fromLightAttr;
-            }
-        }
+        // Paint paths must never adopt the light photo into dark.
+        // UI display of the inherited light photo: readDisplayedBackgroundImageUrl.
+        return '';
     }
 
     for (const node of nodes) {
@@ -2659,6 +2652,67 @@ function readBackgroundImageUrl(component, editor = null) {
     }
 
     return '';
+}
+
+/**
+ * Dark element with no own photo and no explicit `none`: CSS cascade shows the
+ * light `#id` photo under html.dark.
+ *
+ * @returns {boolean}
+ */
+function darkInheritsLightBackgroundImage(component, editor) {
+    if (! component || ! editor || ! isStyleEditingDark(editor)) {
+        return false;
+    }
+
+    const target = resolveVisualStyleTarget(component) ?? component;
+
+    if (isPageSurfaceComponent(target, editor) || isPageSurfaceComponent(component, editor)) {
+        return false;
+    }
+
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+    const darkImage = String(getDarkIdStyles(editor, id)['background-image'] ?? '').trim();
+
+    return darkImage === '' && readBackgroundImageUrl(component, editor) === '';
+}
+
+/**
+ * Light photo URL for a component regardless of the editing theme.
+ */
+function readLightBackgroundImageUrl(component, editor) {
+    const prev = editor?.__voodbuilderStyleThemeDark;
+
+    if (editor) {
+        editor.__voodbuilderStyleThemeDark = false;
+    }
+
+    try {
+        return readBackgroundImageUrl(component, editor);
+    } finally {
+        if (editor) {
+            if (typeof prev === 'boolean') {
+                editor.__voodbuilderStyleThemeDark = prev;
+            } else {
+                delete editor.__voodbuilderStyleThemeDark;
+            }
+        }
+    }
+}
+
+/**
+ * URL shown in the Style Image field / Background dot: in dark, a block that
+ * inherits the light photo shows it (what the canvas paints). Clear then
+ * writes a dark-only `none` override.
+ */
+function readDisplayedBackgroundImageUrl(component, editor = null) {
+    const own = readBackgroundImageUrl(component, editor);
+
+    if (own !== '' || ! darkInheritsLightBackgroundImage(component, editor)) {
+        return own;
+    }
+
+    return readLightBackgroundImageUrl(component, editor);
 }
 
 function persistBackgroundImageSrcAttr(component, url, editor = null) {
@@ -2756,17 +2810,6 @@ function clearDecorationBackgroundImage(editor, component) {
     const darkTheme = Boolean(editor && isStyleEditingDark(editor));
     const darkPage = pageSurface && darkTheme;
 
-    // Snapshot dark-owned paint BEFORE persist clears the dark src attr.
-    const darkSrcBefore = String(
-        component.getAttributes?.()?.[STYLE_BG_SRC_DARK_ATTR]
-        ?? target?.getAttributes?.()?.[STYLE_BG_SRC_DARK_ATTR]
-        ?? '',
-    ).trim();
-    const darkCacheUrl = extractUrlFromBackgroundImage(
-        String(getDarkIdStyles(editor, id)['background-image'] ?? ''),
-    );
-    const hadDarkOwnImage = darkSrcBefore !== '' || darkCacheUrl !== '';
-
     // Drop durable reference first so reapply / sync cannot resurrect the photo.
     persistBackgroundImageSrcAttr(component, '', editor);
 
@@ -2800,9 +2843,19 @@ function clearDecorationBackgroundImage(editor, component) {
         return;
     }
 
-    // Dark element with its own companion: clear only dark — light `#id` may remain.
-    if (darkTheme && ! pageSurface && hadDarkOwnImage) {
+    // Dark element: touch only the dark companion. When the light `#id` has a
+    // photo, write an explicit dark `none` (or the dark gradient layer) so the
+    // light photo stops showing through under html.dark — light stays intact.
+    if (darkTheme && ! pageSurface) {
         clearDarkIdStyles(editor, id, 'background-image');
+
+        if (readLightBackgroundImageUrl(component, editor) !== '') {
+            const darkGradient = resolveDecorationGradientLayer(component, 1, editor);
+
+            setDarkIdStyles(editor, id, {
+                'background-image': darkGradient !== '' ? darkGradient : 'none',
+            });
+        }
 
         try {
             component.view?.updateStyle?.();
@@ -2812,23 +2865,6 @@ function clearDecorationBackgroundImage(editor, component) {
         }
 
         return;
-    }
-
-    // Dark with no companion (or light theme): wipe shared/light `#id` paint.
-    // In dark this is the inherited light photo still visible on the canvas.
-    if (darkTheme && ! pageSurface) {
-        clearDarkIdStyles(editor, id, 'background-image');
-
-        // Also drop light durable src — persistBackgroundImageSrcAttr only cleared dark.
-        for (const node of [component, target].filter(Boolean)) {
-            try {
-                node.removeAttributes?.(STYLE_BG_SRC_ATTR);
-            } catch {
-                const attrs = { ...(node.getAttributes?.() ?? {}) };
-                delete attrs[STYLE_BG_SRC_ATTR];
-                node.setAttributes?.(attrs);
-            }
-        }
     }
 
     // Wipe image paint from inline + CssComposer #id / private rules.
@@ -3332,7 +3368,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
         const field = createImageUrlField({
             label: labels.classStyleBackgroundImageSrc ?? labels.imageSettingsHeroSrc ?? 'Background image',
             name: 'styleBgImage',
-            value: readBackgroundImageUrl(selected, editor),
+            value: readDisplayedBackgroundImageUrl(selected, editor),
             editor,
             chooseLabel: labels.imageSettingsChoose ?? labels.logoChoose ?? 'Choose',
             clearLabel: labels.imageSettingsClear ?? labels.logoClear ?? 'Clear',
@@ -3386,7 +3422,7 @@ function wireBackgroundImageField(editor, sector, labels = {}) {
 function syncBackgroundImageField(root, component, editor = null) {
     const mount = root.querySelector?.('[data-voodbuilder-deco-bg-image]');
     const input = mount?.__vbBgImageInput ?? mount?.querySelector?.('input');
-    const url = readBackgroundImageUrl(component, editor);
+    const url = readDisplayedBackgroundImageUrl(component, editor);
     const fold = root.querySelector?.('[data-voodbuilder-deco-fold="image"]');
     const opacityMount = root.querySelector?.('[data-voodbuilder-deco-bg-opacity]');
     const opacitySelect = opacityMount?.__vbBgOpacitySelect
@@ -3502,7 +3538,7 @@ function syncDecorationBlocks(root, component, options = {}, editor = null) {
     const shadow = resolveStyleGroup(classes, SHADOW_OPTIONS, editor);
     const shadowColor = resolveStyleGroup(classes, SHADOW_COLOR_OPTIONS, editor);
     const dropShadow = resolveStyleGroup(classes, DROP_SHADOW_OPTIONS, editor);
-    const hasBgImage = Boolean(readBackgroundImageUrl(component, editor));
+    const hasBgImage = Boolean(readDisplayedBackgroundImageUrl(component, editor));
 
     const setDot = (key, on) => {
         const dot = decoRoot.querySelector(`[data-voodbuilder-deco-dot="${key}"]`);
@@ -4834,5 +4870,6 @@ export {
     setSpacingLinkMode,
     resolveBackgroundFadeColor,
     readBackgroundImageUrl,
+    readDisplayedBackgroundImageUrl,
     clearDecorationBackgroundImage,
 };

@@ -60,4 +60,18 @@ describe('dark-id-styles', () => {
         expect(getDarkIdStyles(editor, 'el1')['background-image']).toBe('url(/el.jpg)');
         expect(getDarkIdStyles(editor, 'page')).toEqual({});
     });
+
+    it('keeps an explicit dark background-image none through set, Save and reload', () => {
+        const editor = {};
+
+        setDarkIdStyles(editor, 'cta', { 'background-image': 'none' });
+        const css = collectDarkIdStylesCssForPersist(editor);
+
+        expect(css).toBe('html.dark #cta {background-image:none}');
+
+        const reloaded = {};
+        hydrateDarkIdStylesFromCss(reloaded, css);
+
+        expect(getDarkIdStyles(reloaded, 'cta')['background-image']).toBe('none');
+    });
 });

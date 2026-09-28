@@ -666,16 +666,22 @@ export function extractIdWallpaperStylesFromCss(css, id, options = {}) {
  * Prior Saves leave `#oldWrapper { background-image…; attachment:fixed }` in
  * CssComposer; without stripping them, reload hydrates the wrong photo.
  *
- * Pass an empty `keepId` to remove every page-wallpaper `#id` rule (Save then
- * re-appends only {@link collectPageSurfaceWallpaperCssForPersist}).
+ * With `options.knownIds` (Save path) block photos are never touched: ids that
+ * exist in the component tree keep their light `#id` and dark `html.dark #id`
+ * paint. Only `options.replaceIds` (the wrapper, re-emitted authoritatively)
+ * and orphan ids that look like page wallpaper are removed. A known block only
+ * loses a rule carrying the page signature `background-attachment: fixed`.
  *
  * @param {string} css
  * @param {string} [keepId]
+ * @param {{ knownIds?: Iterable<string>, replaceIds?: Iterable<string> }} [options]
  * @returns {string}
  */
-export function stripStalePageSurfaceWallpaperRules(css, keepId = '') {
+export function stripStalePageSurfaceWallpaperRules(css, keepId = '', options = {}) {
     const source = String(css ?? '');
     const keep = String(keepId ?? '').trim();
+    const known = options?.knownIds ? new Set(options.knownIds) : null;
+    const replace = new Set(options?.replaceIds ?? []);
 
     if (source === '' || ! /background-image\s*:/i.test(source)) {
         return source;
@@ -694,7 +700,25 @@ export function stripStalePageSurfaceWallpaperRules(css, keepId = '') {
         return ! /background-(?:size|position|repeat)\s*:/i.test(body);
     };
 
+    const hasPhoto = (body) => /background-image\s*:/i.test(body) && /url\s*\(/i.test(body);
+
     const keepRule = (id, body) => {
+        if (replace.has(id)) {
+            return ! hasPhoto(body);
+        }
+
+        if (known) {
+            if (keep !== '' && id === keep) {
+                return true;
+            }
+
+            if (known.has(id)) {
+                return ! (hasPhoto(body) && /background-attachment\s*:\s*fixed/i.test(body));
+            }
+
+            return ! isPageWallpaperBody(body);
+        }
+
         if (! isPageWallpaperBody(body)) {
             return true;
         }

@@ -159,11 +159,17 @@ final class EditorPastedComponentNormalizer
             return self::dedupeCssRules($css);
         }
 
+        $rules = self::splitTopLevelCssRules($css);
+
+        if ($rules === []) {
+            return $css;
+        }
+
         $base = [];
         $baseSeen = [];
         $media = [];
 
-        foreach (self::splitTopLevelCssRules($css) as $rule) {
+        foreach ($rules as $rule) {
             $rule = trim($rule);
 
             if ($rule === '') {
@@ -174,7 +180,11 @@ final class EditorPastedComponentNormalizer
                 $query = trim(preg_replace('/\s+/', ' ', $match[1]) ?? $match[1]);
                 $inner = trim($match[2]);
 
-                if ($query === '') {
+                $innerRules = $inner === '' ? [] : self::splitTopLevelCssRules($inner);
+
+                if ($query === '' || ($inner !== '' && $innerRules === [])) {
+                    $base[] = $rule;
+
                     continue;
                 }
 
@@ -182,7 +192,7 @@ final class EditorPastedComponentNormalizer
                     $media[$query] = [];
                 }
 
-                foreach (self::splitTopLevelCssRules($inner) as $innerRule) {
+                foreach ($innerRules as $innerRule) {
                     $innerRule = trim($innerRule);
 
                     if ($innerRule === '') {

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.27] - 2026-09-28
+
+### Fixed
+
+- Save no longer strips block photos: the page-wallpaper cleanup only removes the wrapper (re-emitted) and orphan ids; blocks present in the page keep their light `#id` and dark `html.dark #id` images
+- Light and dark block backgrounds are independent again: Clear in dark writes a dark-only `background-image: none` (kept through Save and reload) and never touches the light photo; Clear in light never touches the dark photo
+- Dark paint paths no longer copy the light photo into dark; the Image field still shows an inherited light photo so it can be cleared for dark only
+- Utility cascade normalization returns the original CSS when parsing fails instead of an empty sheet
+
 ## [1.11.26] - 2026-09-28
 
 ### Fixed
