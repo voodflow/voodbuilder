@@ -45,7 +45,11 @@ import {
     setSpacingLinkMode,
     rememberStyleSubject,
     styleWriteTarget,
+    resolveBackgroundFadeColor,
 } from '../../resources/js/editor/style-tailwind-panel.js';
+import {
+    composeDecorationBackgroundImageCss,
+} from '../../resources/js/editor/style-background-image.js';
 import { STYLE_MANAGER_SECTORS } from '../../resources/js/editor/editor-chrome.js';
 import {
     filterOutConflictingBoxSpacingClasses,
@@ -784,5 +788,36 @@ describe('style write target', () => {
         rememberStyleSubject(editor, null);
 
         expect(styleWriteTarget(editor)).toBe(wrapper);
+    });
+});
+
+describe('photo color scrim uses Style theme Color', () => {
+    it('resolves dark:bg-orange-500 for the fade overlay instead of near-black vp-bg', () => {
+        const editor = { __voodbuilderStyleThemeDark: true };
+        const component = {
+            getClasses: () => ['dark:bg-orange-500', 'relative'],
+            getAttributes: () => ({}),
+            getEl: () => null,
+        };
+
+        const fade = resolveBackgroundFadeColor(editor, component);
+
+        expect(fade.toLowerCase()).toBe('#f97316');
+
+        // Photo visibility 35% → 65% orange scrim over the url (what the canvas should show).
+        expect(composeDecorationBackgroundImageCss('/hero.jpg', 0.35, fade)).toBe(
+            "linear-gradient(rgba(249, 115, 22, 0.65), rgba(249, 115, 22, 0.65)), url('/hero.jpg')",
+        );
+    });
+
+    it('cascades light bg color when dark companion is unset', () => {
+        const editor = { __voodbuilderStyleThemeDark: true };
+        const component = {
+            getClasses: () => ['bg-orange-100'],
+            getAttributes: () => ({}),
+            getEl: () => null,
+        };
+
+        expect(resolveBackgroundFadeColor(editor, component).toLowerCase()).toBe('#ffedd5');
     });
 });

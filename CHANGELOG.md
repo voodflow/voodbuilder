@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.23] - 2026-09-28
+
+### Fixed
+
+- With a decoration photo, Background Color tints the image again: the photo-visibility scrim resolves the active Style theme Color (`dark:bg-*` included) instead of falling back to near-black `--color-vp-bg`
+
 ## [1.11.22] - 2026-09-28
 
 ### Fixed

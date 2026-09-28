@@ -3010,9 +3010,16 @@ function paintDecorationGradientPreview(editor, component) {
 }
 
 function resolveBackgroundFadeColor(editor, component) {
-    // Prefer the authored bg-* utility (survives transparent override used to avoid flash).
-    const bgUtility = resolveGroupValue(componentClassList(component), BACKGROUND_OPTIONS);
-    const fromUtility = cssColorFromBackgroundUtility(bgUtility);
+    // Prefer the authored bg-* for the active Style theme (dark: / dark:lg:
+    // cascade). Bare resolveGroupValue missed dark companions and the photo
+    // scrim fell back to --color-vp-bg (near-black) — Color looked missing.
+    const { color: bgUtility } = resolveBackgroundColorAndOpacity(
+        componentClassList(component),
+        component,
+        currentStyleVariantPrefix(editor),
+    );
+    const fromUtility = resolveSolidBackgroundColorCss(bgUtility)
+        || cssColorFromBackgroundUtility(bgUtility);
 
     if (fromUtility !== '') {
         return fromUtility;
@@ -3160,7 +3167,9 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     const opacity = readBackgroundImageOpacity(component, editor);
     // Pass photo visibility so gradient stops get alpha — opaque TW stops hide the url.
     const gradientLayer = resolveDecorationGradientLayer(component, opacity, editor);
-    const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, target);
+    // Always resolve Color for the photo-visibility scrim — even with a directional
+    // gradient on top. Empty fadeColor used to fall through to near-black vp-bg.
+    const fadeColor = resolveBackgroundFadeColor(editor, target);
     const cssValue = composeDecorationBackgroundImageCss(src, opacity, fadeColor, { gradientLayer });
 
     persistBackgroundImageSrcAttr(component, src, editor);
@@ -4675,9 +4684,7 @@ export function hydrateDecorationBackgroundImages(editor) {
                             opacity,
                             editor,
                         );
-                        const fadeColor = gradientLayer
-                            ? ''
-                            : resolveBackgroundFadeColor(editor, component);
+                        const fadeColor = resolveBackgroundFadeColor(editor, component);
                         const cssValue = composeDecorationBackgroundImageCss(
                             darkSrc,
                             opacity,
@@ -4788,4 +4795,5 @@ export {
     spacingGroupFor,
     applySpacingToken,
     setSpacingLinkMode,
+    resolveBackgroundFadeColor,
 };
