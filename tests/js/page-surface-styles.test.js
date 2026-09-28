@@ -201,6 +201,22 @@ describe('page-surface-styles', () => {
         expect(stripped).toContain('/cta.jpg');
     });
 
+    it('stripStalePageSurfaceWallpaperRules with empty keepId strips every page wallpaper', () => {
+        const css = [
+            '#inew { background-image:url(/new.jpg); background-attachment:fixed }',
+            'html.dark #inew { background-image:url(/dark.jpg); background-attachment:fixed }',
+            '#icta { background-image:url(/stolen.jpg); background-attachment:fixed }',
+            '#hero { background-image:url(/cta.jpg); background-size:cover }',
+        ].join('\n');
+
+        const stripped = stripStalePageSurfaceWallpaperRules(css, '');
+
+        expect(stripped).not.toContain('/new.jpg');
+        expect(stripped).not.toContain('/dark.jpg');
+        expect(stripped).not.toContain('/stolen.jpg');
+        expect(stripped).toContain('/cta.jpg');
+    });
+
     it('extractOrphanWallpaperStylesFromCss ignores ids still present in the tree', () => {
         const css = `#i40b { background-image:url(/page.jpg); background-size:cover }`;
         const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['i40b']));

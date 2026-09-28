@@ -640,6 +640,71 @@ CSS;
         $this->assertSame(".hero { color: red; }\n.other { color: blue; }", $deduped);
     }
 
+    public function test_normalize_utilities_css_cascade_puts_base_before_media(): void
+    {
+        // Concatenated Tailwind sheets: responsive first, then a late base .w-full
+        // that would otherwise override md:w-1/3 and stack pricing columns.
+        $css = <<<'CSS'
+@media (width >= 48rem) {
+    .md\:w-1\/3 {
+        width: calc(1/3 * 100%);
+    }
+}
+.w-full {
+    width: 100%;
+}
+.md\:w-1\/3 {
+    width: calc(1/3 * 100%);
+}
+CSS;
+
+        $normalized = EditorPastedComponentNormalizer::normalizeUtilitiesCssCascade($css);
+
+        $wFullPos = strpos($normalized, '.w-full');
+        $mediaPos = strpos($normalized, '@media');
+
+        $this->assertNotFalse($wFullPos);
+        $this->assertNotFalse($mediaPos);
+        $this->assertLessThan($mediaPos, $wFullPos, 'base .w-full must precede @media so md:w-1/3 wins');
+        $this->assertStringContainsString('.md\\:w-1\\/3', $normalized);
+    }
+
+    public function test_normalize_utilities_css_cascade_keeps_first_base_duplicate(): void
+    {
+        $css = ".w-full{width:100%}\n@media (min-width: 768px){.md\\:w-1\\/3{width:33.333%}}\n.w-full{width:100%}";
+
+        $normalized = EditorPastedComponentNormalizer::normalizeUtilitiesCssCascade($css);
+
+        $this->assertSame(1, substr_count($normalized, '.w-full'));
+        $this->assertLessThan(
+            (int) strpos($normalized, '@media'),
+            (int) strpos($normalized, '.w-full'),
+        );
+    }
+
+    public function test_resolve_published_page_css_reorders_stacked_utility_cascade(): void
+    {
+        $html = '<div class="w-full md:w-1/3">Card</div>';
+        $storedCss = <<<'CSS'
+@media (min-width: 768px) {
+    .md\:w-1\/3 {
+        width: 33.3333%;
+    }
+}
+.w-full {
+    width: 100%;
+}
+CSS;
+
+        $resolved = EditorPastedComponentNormalizer::resolvePublishedPageCss($html, $storedCss);
+
+        $this->assertLessThan(
+            (int) strpos($resolved, '@media'),
+            (int) strpos($resolved, '.w-full'),
+            'stored CSS must be re-ordered on publish without a full Tailwind recompile',
+        );
+    }
+
     public function test_manual_page_css_from_stored_css_strips_theme_header_chrome(): void
     {
         $storedCss = "html[data-voodbuilder-sub-theme] header[role='banner'] .voodbuilder-header-icon-btn { color: red; } #hero { color: blue; }";

@@ -979,17 +979,20 @@ export function buildPayload(editor, options = {}) {
         // Page-surface light+dark from attrs/cache must win over CssComposer #id —
         // Grapes often holds only the last painted theme on bare `#id`.
         // Element dark companions (`html.dark #id`) come from memory cache next.
+        //
+        // Strip EVERY page-wallpaper #id from composer/components first (including
+        // the current wrapper): stale CssComposer rules survived Clear and orphans
+        // kept showing the wallpaper after the Style panel had no image.
         let css = mergeAuthorCssChunks([
-            pageSurfaceCss,
             darkIdStylesCss,
             styleManagerCss,
             componentAuthorCss,
         ]);
-
-        // Drop leftover `#oldWrapper { wallpaper }` rules so reload cannot hydrate
-        // a previous page photo over the one just saved.
-        const wrapperId = String(editor.getWrapper?.()?.getId?.() ?? '').trim();
-        css = stripStalePageSurfaceWallpaperRules(css, wrapperId);
+        css = stripStalePageSurfaceWallpaperRules(css, '');
+        css = mergeAuthorCssChunks([
+            pageSurfaceCss,
+            css,
+        ]);
 
         // Final guard: never ship Grapes comma form `#id, html.dark`.
         css = css.replace(/#[\w-]+\s*,\s*html\.dark\s*\{[^{}]*\}/gi, '').trim();
@@ -998,12 +1001,15 @@ export function buildPayload(editor, options = {}) {
 
         if (css.length > maxCssBytes) {
             css = mergeAuthorCssChunks([
-                extractBareIdAuthorCss(pageSurfaceCss),
                 extractBareIdAuthorCss(darkIdStylesCss),
                 extractBareIdAuthorCss(styleManagerCss),
                 extractBareIdAuthorCss(componentAuthorCss),
             ]);
-            css = stripStalePageSurfaceWallpaperRules(css, wrapperId);
+            css = stripStalePageSurfaceWallpaperRules(css, '');
+            css = mergeAuthorCssChunks([
+                extractBareIdAuthorCss(pageSurfaceCss),
+                css,
+            ]);
         }
 
         if (css.length > maxCssBytes) {

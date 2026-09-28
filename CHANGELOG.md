@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.25] - 2026-09-28
+
+### Fixed
+
+- Public pricing columns: concatenated Tailwind sheets no longer leave `.w-full` after `@media .md:w-1/3` — publish reorders utilities so responsive widths win again
+- Page wallpaper Clear/Save: every stale page-wallpaper `#id` (including stolen block rules) is stripped before Save re-emits only the current light+dark surface CSS — blocks no longer keep a light page photo in dark mode
+
 ## [1.11.24] - 2026-09-28
 
 ### Fixed

@@ -105,6 +105,9 @@ final class EditorPastedComponentNormalizer
 
     /**
      * Collapse identical CSS rules (common after repeated chrome-layout saves).
+     *
+     * Normalization collapses whitespace around `:` so `.w-full {width:100%}` and
+     * `.w-full { width: 100%; }` count as the same rule.
      */
     public static function dedupeCssRules(string $css): string
     {
@@ -124,7 +127,7 @@ final class EditorPastedComponentNormalizer
         $seen = [];
 
         foreach ($rules as $rule) {
-            $normalized = preg_replace('/\s+/', ' ', trim($rule)) ?? trim($rule);
+            $normalized = self::normalizeCssRuleKey($rule);
 
             if ($normalized === '' || isset($seen[$normalized])) {
                 continue;
@@ -135,6 +138,139 @@ final class EditorPastedComponentNormalizer
         }
 
         return trim(implode("\n", $kept));
+    }
+
+    /**
+     * Rebuild utility CSS so base selectors cannot override later responsive
+     * variants after multiple live_css / previous-sheet merges.
+     *
+     * Concatenated Tailwind sheets often look like:
+     *   .md\:w-1\/3 {…}   ← from sheet A (@media)
+     *   .w-full {…}       ← from sheet B (base, later in file)
+     * which stacks pricing columns because both classes are on the same node.
+     *
+     * Output order: :root / base utilities → @media ascending by min-width.
+     */
+    public static function normalizeUtilitiesCssCascade(string $css): string
+    {
+        $css = trim($css);
+
+        if ($css === '' || ! str_contains($css, '@media')) {
+            return self::dedupeCssRules($css);
+        }
+
+        $base = [];
+        $baseSeen = [];
+        $media = [];
+
+        foreach (self::splitTopLevelCssRules($css) as $rule) {
+            $rule = trim($rule);
+
+            if ($rule === '') {
+                continue;
+            }
+
+            if (preg_match('/^@media\s*([^{]+)\{(.*)\}\s*$/s', $rule, $match) === 1) {
+                $query = trim(preg_replace('/\s+/', ' ', $match[1]) ?? $match[1]);
+                $inner = trim($match[2]);
+
+                if ($query === '') {
+                    continue;
+                }
+
+                if (! isset($media[$query])) {
+                    $media[$query] = [];
+                }
+
+                foreach (self::splitTopLevelCssRules($inner) as $innerRule) {
+                    $innerRule = trim($innerRule);
+
+                    if ($innerRule === '') {
+                        continue;
+                    }
+
+                    $key = self::normalizeCssRuleKey($innerRule);
+
+                    if ($key === '') {
+                        continue;
+                    }
+
+                    // Last write wins inside the same breakpoint.
+                    $media[$query][$key] = $innerRule;
+                }
+
+                continue;
+            }
+
+            $key = self::normalizeCssRuleKey($rule);
+
+            if ($key === '' || isset($baseSeen[$key])) {
+                // Prefer the first base rule so early sheets (with paired @media)
+                // are not replaced by a late duplicate that sorts after @media.
+                continue;
+            }
+
+            $baseSeen[$key] = true;
+            $base[] = $rule;
+        }
+
+        uksort($media, static function (string $a, string $b): int {
+            $aw = self::mediaQueryMinWidthPx($a);
+            $bw = self::mediaQueryMinWidthPx($b);
+
+            if ($aw !== $bw) {
+                return $aw <=> $bw;
+            }
+
+            return strcmp($a, $b);
+        });
+
+        $chunks = $base;
+
+        foreach ($media as $query => $rules) {
+            if ($rules === []) {
+                continue;
+            }
+
+            $chunks[] = '@media ' . $query . " {\n    " . implode("\n    ", array_values($rules)) . "\n}";
+        }
+
+        return trim(implode("\n", $chunks));
+    }
+
+    /**
+     * @param  string  $rule
+     */
+    private static function normalizeCssRuleKey(string $rule): string
+    {
+        $normalized = preg_replace('/\s+/', ' ', trim($rule)) ?? trim($rule);
+        $normalized = preg_replace('/\s*:\s*/', ':', $normalized) ?? $normalized;
+        $normalized = preg_replace('/\s*;\s*/', ';', $normalized) ?? $normalized;
+        $normalized = preg_replace('/\s*\{\s*/', '{', $normalized) ?? $normalized;
+        $normalized = preg_replace('/\s*\}\s*/', '}', $normalized) ?? $normalized;
+
+        return rtrim($normalized, ';');
+    }
+
+    private static function mediaQueryMinWidthPx(string $query): int
+    {
+        if (preg_match('/min-width:\s*([\d.]+)rem/i', $query, $match) === 1) {
+            return (int) round((float) $match[1] * 16);
+        }
+
+        if (preg_match('/min-width:\s*([\d.]+)px/i', $query, $match) === 1) {
+            return (int) round((float) $match[1]);
+        }
+
+        if (preg_match('/\(width\s*>=\s*([\d.]+)rem\)/i', $query, $match) === 1) {
+            return (int) round((float) $match[1] * 16);
+        }
+
+        if (preg_match('/\(width\s*>=\s*([\d.]+)px\)/i', $query, $match) === 1) {
+            return (int) round((float) $match[1]);
+        }
+
+        return 0;
     }
 
     /**
@@ -256,11 +392,15 @@ final class EditorPastedComponentNormalizer
             || ($pageHtml !== '' && self::htmlHasTailwindUtilitiesMissingFromCss($pageHtml, $storedCss));
 
         if (! $needsRecompile) {
-            return EditorCssSanitizer::sanitize(
+            $cleaned = EditorCssSanitizer::sanitize(
                 VoodbuilderThemeTokenMigrator::migratePublishedPageCss(
                     self::stripTailwindPreflightFromPageCss($storedCss),
                 ),
             );
+
+            // Re-order utilities so stale concatenated sheets cannot leave
+            // `.w-full` after `.md:w-1/3` (pricing columns stacked on public).
+            return self::normalizeUtilitiesCssCascade($cleaned);
         }
 
         $manualCss = self::manualPageCssFromStoredCss($storedCss);
@@ -320,11 +460,13 @@ final class EditorPastedComponentNormalizer
             $previousAuthor = self::manualPageCssFromStoredCss($previousFullCss);
 
             if ($authorCss === $previousAuthor) {
-                return EditorCssSanitizer::sanitize(
+                $cleaned = EditorCssSanitizer::sanitize(
                     VoodbuilderThemeTokenMigrator::migratePublishedPageCss(
                         self::stripTailwindPreflightFromPageCss($previousFullCss),
                     ),
                 );
+
+                return self::normalizeUtilitiesCssCascade($cleaned);
             }
 
             $utilities = self::utilitiesCssFromPublishedPageCss($previousFullCss);
@@ -471,6 +613,7 @@ final class EditorPastedComponentNormalizer
                 : '';
         }
 
+        $compiledUtilities = self::normalizeUtilitiesCssCascade($compiledUtilities);
         $merged = self::mergeCss($manualCss !== '' ? $manualCss : null, $compiledUtilities);
 
         return EditorCssSanitizer::sanitize(

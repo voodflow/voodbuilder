@@ -666,15 +666,18 @@ export function extractIdWallpaperStylesFromCss(css, id, options = {}) {
  * Prior Saves leave `#oldWrapper { background-image…; attachment:fixed }` in
  * CssComposer; without stripping them, reload hydrates the wrong photo.
  *
+ * Pass an empty `keepId` to remove every page-wallpaper `#id` rule (Save then
+ * re-appends only {@link collectPageSurfaceWallpaperCssForPersist}).
+ *
  * @param {string} css
- * @param {string} keepId
+ * @param {string} [keepId]
  * @returns {string}
  */
-export function stripStalePageSurfaceWallpaperRules(css, keepId) {
+export function stripStalePageSurfaceWallpaperRules(css, keepId = '') {
     const source = String(css ?? '');
     const keep = String(keepId ?? '').trim();
 
-    if (source === '' || keep === '' || ! /background-image\s*:/i.test(source)) {
+    if (source === '' || ! /background-image\s*:/i.test(source)) {
         return source;
     }
 
@@ -691,9 +694,18 @@ export function stripStalePageSurfaceWallpaperRules(css, keepId) {
         return ! /background-(?:size|position|repeat)\s*:/i.test(body);
     };
 
+    const keepRule = (id, body) => {
+        if (! isPageWallpaperBody(body)) {
+            return true;
+        }
+
+        // Empty keep → strip every page wallpaper (authoritative emit follows).
+        return keep !== '' && id === keep;
+    };
+
     let next = source.replace(
         /html\.dark\s+#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/gi,
-        (match, id, body) => (id === keep || ! isPageWallpaperBody(body) ? match : ' '),
+        (match, id, body) => (keepRule(id, body) ? match : ' '),
     );
 
     next = next.replace(
@@ -705,11 +717,7 @@ export function stripStalePageSurfaceWallpaperRules(css, keepId) {
                 return match;
             }
 
-            if (id === keep || ! isPageWallpaperBody(body)) {
-                return match;
-            }
-
-            return ' ';
+            return keepRule(id, body) ? match : ' ';
         },
     );
 
