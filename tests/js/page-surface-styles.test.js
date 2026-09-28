@@ -12,6 +12,7 @@ import {
     remapPageSurfaceCssForPublish,
     resolveStyleTarget,
     selectPageSurface,
+    stripStalePageSurfaceWallpaperRules,
 } from '../../resources/js/editor/page-surface-styles.js';
 
 describe('page-surface-styles', () => {
@@ -184,6 +185,20 @@ describe('page-surface-styles', () => {
         const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['inew']));
 
         expect(orphan['background-image']).toBeUndefined();
+    });
+
+    it('stripStalePageSurfaceWallpaperRules keeps only the current wrapper wallpaper', () => {
+        const css = [
+            '#inew { background-image:url(/new.jpg); background-attachment:fixed }',
+            '#iold { background-image:url(/old.jpg); background-attachment:fixed }',
+            '#hero { background-image:url(/cta.jpg); background-size:cover }',
+        ].join('\n');
+
+        const stripped = stripStalePageSurfaceWallpaperRules(css, 'inew');
+
+        expect(stripped).toContain('/new.jpg');
+        expect(stripped).not.toContain('/old.jpg');
+        expect(stripped).toContain('/cta.jpg');
     });
 
     it('extractOrphanWallpaperStylesFromCss ignores ids still present in the tree', () => {
@@ -385,7 +400,49 @@ describe('page-surface-styles', () => {
         expect(addAttributes).not.toHaveBeenCalled();
     });
 
-    it('hydrate keeps durable page attr when sheet has a different section photo', () => {
+    it('hydratePageSurfaceWallpaperFromCss prefers current #id over stale orphan wallpaper', () => {
+        const setIdRule = vi.fn();
+        const addAttributes = vi.fn();
+        const editor = {
+            getWrapper: () => ({
+                getId: () => 'inew',
+                getAttributes: () => ({}),
+                addAttributes,
+                onAll: (fn) => {
+                    fn({ getId: () => 'inew' });
+                },
+            }),
+            Css: {
+                getIdRule: () => ({ getStyle: () => ({}) }),
+                setIdRule,
+            },
+            __voodbuilderPageLiveCss: [
+                '#inew { background-image:url(/new.jpg); background-size:cover; background-attachment:fixed }',
+                '#iold { background-image:url(/old.jpg); background-size:cover; background-attachment:fixed }',
+            ].join('\n'),
+            Canvas: { getDocument: () => null },
+        };
+
+        expect(hydratePageSurfaceWallpaperFromCss(editor)).toBe(true);
+        expect(setIdRule).toHaveBeenCalledWith('inew', expect.objectContaining({
+            'background-image': expect.stringContaining('/new.jpg'),
+        }));
+        expect(addAttributes).toHaveBeenCalledWith(expect.objectContaining({
+            'data-vb-style-bg-src': expect.stringContaining('/new.jpg'),
+        }));
+    });
+
+    it('extractOrphanWallpaperStylesFromCss keeps the first page wallpaper (Save order)', () => {
+        const css = `
+#ifirst { background-image:url(/new.jpg); background-attachment:fixed }
+#isecond { background-image:url(/old.jpg); background-attachment:fixed }
+`;
+        const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['inew']));
+
+        expect(orphan['background-image']).toContain('/new.jpg');
+    });
+
+    it('hydrate uses durable page attr only when the sheet has no page wallpaper', () => {
         const setIdRule = vi.fn();
         const addAttributes = vi.fn();
         const editor = {
@@ -393,16 +450,13 @@ describe('page-surface-styles', () => {
                 getId: () => 'iwrap',
                 getAttributes: () => ({ 'data-vb-style-bg-src': '/page.jpg' }),
                 addAttributes,
-                onAll: (fn) => {
-                    fn({ getId: () => 'iwrap' });
-                    fn({ getId: () => 'icta' });
-                },
+                onAll: (fn) => fn({ getId: () => 'iwrap' }),
             }),
             Css: {
                 getIdRule: () => ({ getStyle: () => ({}) }),
                 setIdRule,
             },
-            __voodbuilderPageLiveCss: `html, body { background-image:url(/cta.jpg); background-size:cover }`,
+            __voodbuilderPageLiveCss: '',
             Canvas: { getDocument: () => null },
         };
 

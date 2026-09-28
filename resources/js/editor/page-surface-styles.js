@@ -599,6 +599,124 @@ export function collectEditorComponentIds(editor) {
 }
 
 /**
+ * Wallpaper styles for a specific `#id` rule in a stylesheet (light or dark).
+ *
+ * @param {string} css
+ * @param {string} id
+ * @param {{ dark?: boolean }} [options]
+ * @returns {Record<string, string>}
+ */
+export function extractIdWallpaperStylesFromCss(css, id, options = {}) {
+    const source = String(css ?? '');
+    const targetId = String(id ?? '').trim();
+    const dark = Boolean(options.dark);
+
+    if (source === '' || targetId === '' || ! /background-image\s*:/i.test(source)) {
+        return {};
+    }
+
+    const escaped = targetId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const ruleRe = dark
+        ? new RegExp(`html\\.dark\\s+#${escaped}\\s*\\{([^{}]*)\\}`, 'gi')
+        : new RegExp(`#${escaped}\\s*\\{([^{}]*)\\}`, 'gi');
+    let match;
+    let styles = {};
+
+    while ((match = ruleRe.exec(source)) !== null) {
+        const body = String(match[1] ?? '');
+
+        if (! dark) {
+            const start = match.index ?? 0;
+            const before = source.slice(Math.max(0, start - 16), start).toLowerCase();
+
+            if (before.includes('html.dark')) {
+                continue;
+            }
+        }
+
+        if (! /background-image\s*:/i.test(body) || ! /url\s*\(/i.test(body)) {
+            continue;
+        }
+
+        const next = {};
+        const declRe = /([a-z-]+)\s*:\s*([^;]+)/gi;
+        let decl;
+
+        while ((decl = declRe.exec(body)) !== null) {
+            const prop = String(decl[1] ?? '').trim().toLowerCase();
+            const value = String(decl[2] ?? '').replace(/\s*!important\s*$/i, '').trim();
+
+            if (! prop.startsWith('background') || value === '') {
+                continue;
+            }
+
+            next[prop] = value;
+        }
+
+        if (next['background-image']) {
+            styles = next;
+        }
+    }
+
+    return styles['background-image'] ? withWallpaperLayoutDefaults(styles) : {};
+}
+
+/**
+ * Drop leftover page-wallpaper `#id` rules that are not the current wrapper.
+ * Prior Saves leave `#oldWrapper { background-image…; attachment:fixed }` in
+ * CssComposer; without stripping them, reload hydrates the wrong photo.
+ *
+ * @param {string} css
+ * @param {string} keepId
+ * @returns {string}
+ */
+export function stripStalePageSurfaceWallpaperRules(css, keepId) {
+    const source = String(css ?? '');
+    const keep = String(keepId ?? '').trim();
+
+    if (source === '' || keep === '' || ! /background-image\s*:/i.test(source)) {
+        return source;
+    }
+
+    const isPageWallpaperBody = (body) => {
+        if (! /background-image\s*:/i.test(body) || ! /url\s*\(/i.test(body)) {
+            return false;
+        }
+
+        if (/background-attachment\s*:\s*fixed/i.test(body)) {
+            return true;
+        }
+
+        // Legacy image-only page wallpaper (no layout props).
+        return ! /background-(?:size|position|repeat)\s*:/i.test(body);
+    };
+
+    let next = source.replace(
+        /html\.dark\s+#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/gi,
+        (match, id, body) => (id === keep || ! isPageWallpaperBody(body) ? match : ' '),
+    );
+
+    next = next.replace(
+        /#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/g,
+        (match, id, body, offset) => {
+            const before = next.slice(Math.max(0, offset - 16), offset).toLowerCase();
+
+            if (before.includes('html.dark')) {
+                return match;
+            }
+
+            if (id === keep || ! isPageWallpaperBody(body)) {
+                return match;
+            }
+
+            return ' ';
+        },
+    );
+
+    return next.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/**
  * Best page-wallpaper candidate from any `#id` rule.
  * Used when the wrapper is empty but a prior Save left the paint on a content
  * ghost or a regenerated-id orphan that is still "known" in the tree.
@@ -751,8 +869,10 @@ export function extractOrphanWallpaperStylesFromCss(css, knownIds = []) {
             continue;
         }
 
-        // Prefer wallpaper-ish rules (fixed attachment) over bare image-only paints.
-        if (! hasFixedAttachment && Object.keys(styles).length > 0) {
+        // First qualifying orphan wins. Save emits the current page wallpaper
+        // rule before leftover CssComposer #oldWrapperId rules — last-wins was
+        // restoring the previous photo after reload.
+        if (styles['background-image']) {
             continue;
         }
 
@@ -814,7 +934,7 @@ export function extractDarkOrphanWallpaperStylesFromCss(css, knownIds = []) {
             continue;
         }
 
-        if (! hasFixedAttachment && Object.keys(styles).length > 0) {
+        if (styles['background-image']) {
             continue;
         }
 
@@ -878,6 +998,15 @@ export function readPageSurfaceWallpaperStyles(editor, css = '') {
         || editor.getCss?.()
         || '',
     ).replace(/#[\w-]+\s*,\s*html\.dark\s*\{[^{}]*\}/gi, ' ');
+
+    // Current wrapper #id from the saved author sheet wins over stale orphan
+    // wrapper ids left behind after Grapes regenerates the wrapper.
+    const fromCurrentId = extractIdWallpaperStylesFromCss(sheet, id);
+
+    if (fromCurrentId['background-image']) {
+        return fromCurrentId;
+    }
+
     const fromBody = extractPageSurfaceWallpaperStylesFromCss(sheet);
 
     if (fromBody['background-image']) {
@@ -939,6 +1068,12 @@ export function readPageSurfaceDarkWallpaperStyles(editor, css = '') {
         || editor.getCss?.()
         || '',
     );
+    const fromCurrentId = extractIdWallpaperStylesFromCss(sheet, id, { dark: true });
+
+    if (fromCurrentId['background-image']) {
+        return fromCurrentId;
+    }
+
     const known = collectEditorComponentIds(editor);
     const orphan = extractDarkOrphanWallpaperStylesFromCss(sheet, known);
 
@@ -1208,52 +1343,36 @@ export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
         // Drop Grapes broken `#id, html.dark` so light hydrate cannot adopt the dark photo.
         .replace(/#[\w-]+\s*,\s*html\.dark\s*\{[^{}]*\}/gi, ' ');
     const known = collectEditorComponentIds(editor);
-    let fromSheet = extractPageSurfaceWallpaperStylesFromCss(sheet);
 
+    // 1) Current wrapper #id from the author sheet (latest Save) — must beat stale
+    //    orphan #oldWrapperId wallpapers that accumulate across reloads.
+    let fromSheet = extractIdWallpaperStylesFromCss(sheet, id);
+
+    // 2) Legacy remapped body/html rules.
+    if (! fromSheet['background-image']) {
+        fromSheet = extractPageSurfaceWallpaperStylesFromCss(sheet);
+    }
+
+    // 3) Previous wrapper id no longer in the tree.
     if (! fromSheet['background-image']) {
         fromSheet = extractOrphanWallpaperStylesFromCss(sheet, known);
     }
 
-    // Known-id ghost (chrome-shell empty instance that kept the old wrapper id
-    // with background-attachment:fixed) or image-only preferId — reclaim onto
-    // the current wrapper. Never steal section/block decoration photos.
+    // 4) Known-id ghost with attachment:fixed (empty chrome-shell instance).
     if (! fromSheet['background-image']) {
         fromSheet = extractBestPageWallpaperFromCss(sheet, { preferId: id, knownIds: known });
     }
 
     let hydrated = false;
-    const existingAttrUrl = String(wrapper?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim()
-        || String(getPageSurfaceWallpaperUrlCache(editor).light ?? '').trim();
 
     if (fromSheet['background-image']) {
         try {
             const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
-            const next = withWallpaperLayoutDefaults({ ...fromSheet, ...existing });
+            // Sheet candidate is the saved source of truth — do not let a stale
+            // CssComposer / attr photo win over a newer #id or body rule.
+            const next = withWallpaperLayoutDefaults({ ...existing, ...fromSheet });
 
-            for (const prop of [
-                'background-image',
-                'background-size',
-                'background-position',
-                'background-repeat',
-                'background-attachment',
-            ]) {
-                if (! String(existing[prop] ?? '').trim() && fromSheet[prop]) {
-                    next[prop] = fromSheet[prop];
-                }
-            }
-
-            // Durable page attr wins over a sheet candidate (avoids overwriting
-            // the real page photo with a section decoration picked as "best").
-            if (existingAttrUrl !== '') {
-                const sheetUrl = String(next['background-image'] ?? '')
-                    .match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/i)?.[1]?.trim() ?? '';
-
-                if (sheetUrl !== '' && sheetUrl !== existingAttrUrl) {
-                    next['background-image'] = `url("${existingAttrUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`;
-                }
-            }
-
-            editor.Css.setIdRule(id, withWallpaperLayoutDefaults(next));
+            editor.Css.setIdRule(id, next);
 
             const urlMatch = String(next['background-image'] ?? '')
                 .match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/i);
@@ -1274,9 +1393,33 @@ export function hydratePageSurfaceWallpaperFromCss(editor, css = '') {
             // CssComposer may be unavailable.
             debugSwallowed(error);
         }
+    } else {
+        // No sheet wallpaper — keep durable attr if present so Style can hydrate.
+        const existingAttrUrl = String(wrapper?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim()
+            || String(getPageSurfaceWallpaperUrlCache(editor).light ?? '').trim();
+
+        if (existingAttrUrl !== '') {
+            try {
+                const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+                const next = withWallpaperLayoutDefaults({
+                    ...existing,
+                    'background-image': `url("${existingAttrUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`,
+                });
+
+                editor.Css.setIdRule(id, next);
+                setPageSurfaceWallpaperUrlCache(editor, 'light', existingAttrUrl);
+                hydrated = true;
+            } catch (error) {
+                debugSwallowed(error);
+            }
+        }
     }
 
-    let darkFromSheet = extractDarkOrphanWallpaperStylesFromCss(sheet, known);
+    let darkFromSheet = extractIdWallpaperStylesFromCss(sheet, id, { dark: true });
+
+    if (! darkFromSheet['background-image']) {
+        darkFromSheet = extractDarkOrphanWallpaperStylesFromCss(sheet, known);
+    }
 
     if (! darkFromSheet['background-image']) {
         darkFromSheet = extractBestPageWallpaperFromCss(sheet, {

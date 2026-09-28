@@ -49,6 +49,7 @@ import {
     purgeBrokenPageSurfaceDarkCssRules,
     readPageSurfaceDarkWallpaperStyles,
     readPageSurfaceWallpaperStyles,
+    stripStalePageSurfaceWallpaperRules,
     withWallpaperLayoutDefaults,
 } from '../page-surface-styles.js';
 import { STYLE_BG_SRC_ATTR, STYLE_BG_SRC_DARK_ATTR } from '../style-background-image.js';
@@ -981,6 +982,11 @@ export function buildPayload(editor, options = {}) {
             componentAuthorCss,
         ]);
 
+        // Drop leftover `#oldWrapper { wallpaper }` rules so reload cannot hydrate
+        // a previous page photo over the one just saved.
+        const wrapperId = String(editor.getWrapper?.()?.getId?.() ?? '').trim();
+        css = stripStalePageSurfaceWallpaperRules(css, wrapperId);
+
         // Final guard: never ship Grapes comma form `#id, html.dark`.
         css = css.replace(/#[\w-]+\s*,\s*html\.dark\s*\{[^{}]*\}/gi, '').trim();
 
@@ -992,6 +998,7 @@ export function buildPayload(editor, options = {}) {
                 extractBareIdAuthorCss(styleManagerCss),
                 extractBareIdAuthorCss(componentAuthorCss),
             ]);
+            css = stripStalePageSurfaceWallpaperRules(css, wrapperId);
         }
 
         if (css.length > maxCssBytes) {
