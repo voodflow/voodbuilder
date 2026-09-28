@@ -194,6 +194,7 @@ return [
         'class_style_background_repeat' => 'Repeat',
         'class_style_gradient' => 'Gradient',
         'class_style_gradient_dir' => 'Direction',
+        'class_style_gradient_opacity' => 'Opacity',
         'class_style_gradient_from' => 'From',
         'class_style_gradient_via' => 'Via',
         'class_style_gradient_to' => 'To',

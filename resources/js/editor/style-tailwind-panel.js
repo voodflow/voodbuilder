@@ -35,6 +35,7 @@ import {
     STYLE_BG_OPACITY_OPTIONS,
     STYLE_BG_SRC_ATTR,
     STYLE_BG_SRC_DARK_ATTR,
+    GRADIENT_OPACITY_ATTR,
     composeDecorationBackgroundImageCss,
     composePhotoAwareGradientLayer,
     composeTailwindGradientLayer,
@@ -102,6 +103,7 @@ import {
     clearBackgroundColorUtilities,
     componentClassList,
     hasTextGradientClasses,
+    normalizeBgColorOpacityPercent,
     replaceClassGroup,
     resolveBackgroundColorAndOpacity,
     resolveGroupValue,
@@ -1250,6 +1252,10 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
             } else if (group.id === 'background' || group.id === 'background-opacity') {
                 const bg = resolveBackgroundColorAndOpacity(classes, component);
                 el.value = group.id === 'background' ? bg.color : bg.opacity;
+            } else if (group.id === 'gradient-opacity') {
+                el.value = normalizeBgColorOpacityPercent(
+                    component?.getAttributes?.()?.[GRADIENT_OPACITY_ATTR],
+                );
             } else if (isGradientStyleGroupId(group.id)) {
                 // Gradients always live at base — do not mark cascade as inherited.
                 el.value = resolveGroupValueAtBreakpoint(classes, group.options, '');
@@ -1520,6 +1526,12 @@ function applyGroup(editor, component, groupId, value) {
                 for (const set of alsoClear) {
                     replaceClassGroupAllBreakpoints(component, set, null);
                 }
+
+                try {
+                    component.removeAttributes?.(GRADIENT_OPACITY_ATTR);
+                } catch (error) {
+                    debugSwallowed(error);
+                }
             }
 
             const preservedBgUrl = readBackgroundImageUrl(component, editor);
@@ -1540,6 +1552,41 @@ function applyGroup(editor, component, groupId, value) {
             // cannot cover wrapper utilities and only keeps Save in "Compiling…".
             if (! isPageSurfaceComponent(component, editor)) {
                 scheduleClassCompile(editor);
+            }
+
+            editor?.trigger?.('update');
+            editor?.trigger?.('component:update', component);
+        } finally {
+            editor.__voodbuilderTwStyleApplying = false;
+        }
+
+        return;
+    }
+
+    if (groupId === 'gradient-opacity') {
+        editor.__voodbuilderTwStyleApplying = true;
+
+        try {
+            const pct = normalizeBgColorOpacityPercent(value);
+
+            if (pct === '') {
+                try {
+                    component.removeAttributes?.(GRADIENT_OPACITY_ATTR);
+                } catch (error) {
+                    const attrs = { ...(component.getAttributes?.() ?? {}) };
+                    delete attrs[GRADIENT_OPACITY_ATTR];
+                    component.setAttributes?.(attrs);
+                }
+            } else {
+                component.addAttributes?.({ [GRADIENT_OPACITY_ATTR]: pct });
+            }
+
+            paintDecorationGradientPreview(editor, component);
+
+            try {
+                component.view?.updateStyle?.();
+            } catch (error) {
+                debugSwallowed(error);
             }
 
             editor?.trigger?.('update');
@@ -1650,6 +1697,7 @@ function applyGroup(editor, component, groupId, value) {
         // Capture decoration photo before color/gradient writes.
         const isBgPaintGroup = groupId === 'background'
             || groupId === 'gradient-direction'
+            || groupId === 'gradient-opacity'
             || groupId === 'gradient-from'
             || groupId === 'gradient-via'
             || groupId === 'gradient-to'
@@ -1715,6 +1763,14 @@ function applyGroup(editor, component, groupId, value) {
             replaceStyleGroup(component, groupSet, value || null, editor, { alsoClear });
         }
 
+        if (groupId === 'gradient-direction' && (! value || value === 'bg-none')) {
+            try {
+                component.removeAttributes?.(GRADIENT_OPACITY_ATTR);
+            } catch (error) {
+                debugSwallowed(error);
+            }
+        }
+
         // Transparent as From with a high Start % → thin hard band. Reset to 0%.
         if (
             (groupId === 'gradient-from' || groupId === 'text-gradient-from')
@@ -1771,6 +1827,7 @@ function applyGroup(editor, component, groupId, value) {
             reapplyDecorationBackgroundPaint(editor, component);
         } else if (
             groupId === 'gradient-direction'
+            || groupId === 'gradient-opacity'
             || groupId === 'gradient-from'
             || groupId === 'gradient-via'
             || groupId === 'gradient-to'
@@ -2067,6 +2124,11 @@ function buildDecorationsSector(labels) {
                                 label: labels.classStyleGradientDir ?? 'Direction',
                                 groupId: 'gradient-direction',
                                 options: GRADIENT_DIRECTION_OPTIONS,
+                            })}
+                            ${decoLiveFieldHtml({
+                                label: labels.classStyleGradientOpacity ?? labels.classStyleBackgroundColorOpacity ?? 'Opacity',
+                                groupId: 'gradient-opacity',
+                                options: BG_COLOR_OPACITY_OPTIONS,
                             })}
                             ${gradientStopsBlockHtml('gradient', labels, searchPh)}
                         </div>
@@ -2711,6 +2773,10 @@ function resolveDecorationGradientLayer(component, photoVisibility = null) {
     const toPos = gradientStopPositionFromUtility(
         resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_POS_OPTIONS, 'lg:'),
     );
+    const opacityPct = normalizeBgColorOpacityPercent(
+        component?.getAttributes?.()?.[GRADIENT_OPACITY_ATTR],
+    );
+    const layerOpacity = opacityPct === '' ? 1 : Number.parseInt(opacityPct, 10) / 100;
 
     // Bake stops + positions for live canvas (TW from-25% was missing from
     // section-utilities when options were template-built). Same path with/without photo.
@@ -2724,6 +2790,7 @@ function resolveDecorationGradientLayer(component, photoVisibility = null) {
             viaPos,
             toPos,
             photoVisibility: photoVisibility == null ? 1 : photoVisibility,
+            layerOpacity,
         });
     }
 
@@ -3533,6 +3600,7 @@ function wireSectorFields(editor, sector, labels = {}) {
         // Without this, Opacity only updates the select — Color stays opaque.
         'background-opacity',
         'gradient-direction',
+        'gradient-opacity',
         'gradient-from',
         'gradient-via',
         'gradient-to',

@@ -93,6 +93,17 @@ describe('style-background-image', () => {
         })).toBe('linear-gradient(to top, rgba(239, 68, 68, 1) 0%, rgba(29, 78, 216, 1) 100%)');
     });
 
+    it('scales every gradient stop by layerOpacity', () => {
+        expect(composePhotoAwareGradientLayer({
+            directionUtility: 'bg-gradient-to-b',
+            fromUtility: 'from-red-600',
+            toUtility: 'to-lime-400',
+            layerOpacity: 0.4,
+        })).toBe(
+            'linear-gradient(to bottom, rgba(220, 38, 38, 0.4) 0%, rgba(163, 230, 53, 0.4) 100%)',
+        );
+    });
+
     it('supports transparent→black fade over a photo (section blend)', () => {
         const gradient = composePhotoAwareGradientLayer({
             directionUtility: 'bg-gradient-to-b',

@@ -843,7 +843,13 @@ export const STYLE_UTILITY_GROUPS = [
         options: GRADIENT_DIRECTION_OPTIONS,
         // Do not wipe decoration photos — image + gradient compose together.
         inlineProps: [],
-    },    { id: 'gradient-from', options: GRADIENT_FROM_OPTIONS, inlineProps: [] },
+    },
+    {
+        id: 'gradient-opacity',
+        options: BG_COLOR_OPACITY_OPTIONS,
+        inlineProps: [],
+    },
+    { id: 'gradient-from', options: GRADIENT_FROM_OPTIONS, inlineProps: [] },
     { id: 'gradient-via', options: GRADIENT_VIA_OPTIONS, inlineProps: [] },
     { id: 'gradient-to', options: GRADIENT_TO_OPTIONS, inlineProps: [] },
     { id: 'gradient-from-pos', options: GRADIENT_FROM_POS_OPTIONS, inlineProps: [] },

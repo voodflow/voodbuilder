@@ -557,6 +557,7 @@ final class EditorGate
             'classStyleBackgroundRepeat' => __('voodbuilder::pro.editor_ui.class_style_background_repeat'),
             'classStyleGradient' => __('voodbuilder::pro.editor_ui.class_style_gradient'),
             'classStyleGradientDir' => __('voodbuilder::pro.editor_ui.class_style_gradient_dir'),
+            'classStyleGradientOpacity' => __('voodbuilder::pro.editor_ui.class_style_gradient_opacity'),
             'classStyleGradientFrom' => __('voodbuilder::pro.editor_ui.class_style_gradient_from'),
             'classStyleGradientVia' => __('voodbuilder::pro.editor_ui.class_style_gradient_via'),
             'classStyleGradientTo' => __('voodbuilder::pro.editor_ui.class_style_gradient_to'),

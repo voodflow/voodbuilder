@@ -27,6 +27,7 @@ final class EditorDynamicBlockRenderer
         'data-vb-style-bg-src-dark',
         'data-vb-style-bg-opacity',
         'data-vb-bg-color-opacity',
+        'data-vb-gradient-opacity',
     ];
 
     public function __construct(

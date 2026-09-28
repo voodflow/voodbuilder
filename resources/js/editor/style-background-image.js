@@ -18,6 +18,8 @@ export const STYLE_BG_OPACITY_ATTR = 'data-vb-style-bg-opacity';
 export const STYLE_BG_SRC_ATTR = 'data-vb-style-bg-src';
 /** Page wallpaper URL while editing in dark theme (top-bar toggle). */
 export const STYLE_BG_SRC_DARK_ATTR = 'data-vb-style-bg-src-dark';
+/** Overall decoration gradient layer opacity (percent string, '' = 100%). */
+export const GRADIENT_OPACITY_ATTR = 'data-vb-gradient-opacity';
 
 export const STYLE_BG_OPACITY_OPTIONS = [
     { value: '0.25', label: '25%' },
@@ -288,39 +290,50 @@ export function cssColorFromGradientStopUtility(utility) {
 }
 
 /**
- * Gradient overlay above a photo: directional stops keep their own alpha
- * (`from-transparent` → transparent, `to-black` → opaque black) so fades into
- * the next section work. Photo visibility is a separate uniform scrim (see
- * {@link composeDecorationBackgroundImageCss}), not applied to every stop.
+ * Solid color at alpha for gradient stops (hex → rgba; CSS vars → color-mix).
  *
- * Optional stop positions (0–100) map to Tailwind `from-40%` / `via-50%` / `to-90%`.
- *
- * @param {{
- *   directionUtility?: string,
- *   fromUtility?: string,
- *   viaUtility?: string,
- *   toUtility?: string,
- *   fromPos?: number|null,
- *   viaPos?: number|null,
- *   toPos?: number|null,
- *   photoVisibility?: number|string,
- * }} opts
+ * @param {string} color
+ * @param {number} alpha 0–1
  * @returns {string}
  */
+function stopPaintAtAlpha(color, alpha) {
+    const a = Math.min(1, Math.max(0, Number(alpha) || 0));
+
+    if (a < 0.001) {
+        return 'transparent';
+    }
+
+    const rgba = toRgbaWithAlpha(color, a);
+
+    if (rgba) {
+        return rgba;
+    }
+
+    if (a >= 0.999) {
+        return color;
+    }
+
+    const pct = Math.round(a * 1000) / 10;
+
+    return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+}
+
 /**
  * Soft transparent↔opaque ramp: linear CSS looks banded because alpha jumps
  * too fast perceptually. Extra mid stops ease the fade across the span.
  *
  * @param {{ paint: string, pct: number, color: string }} a
  * @param {{ paint: string, pct: number, color: string }} b
+ * @param {number} [layerOpacity=1]
  * @returns {Array<{ paint: string, pct: number }>}
  */
-function softTransparentOpaqueStops(a, b) {
+function softTransparentOpaqueStops(a, b, layerOpacity = 1) {
     const clear = a.color === 'transparent' ? a : b;
     const solid = a.color === 'transparent' ? b : a;
-    const solidRgba = toRgbaWithAlpha(solid.color, 1);
+    const layer = Math.min(1, Math.max(0, Number(layerOpacity) || 0));
+    const solidRgba = stopPaintAtAlpha(solid.color, layer);
 
-    if (! solidRgba || clear.color !== 'transparent') {
+    if (solid.color === 'transparent' || clear.color !== 'transparent') {
         return [a, b];
     }
 
@@ -345,17 +358,43 @@ function softTransparentOpaqueStops(a, b) {
     return ts.map((t, i) => ({
         paint: alphas[i] <= 0
             ? 'transparent'
-            : (toRgbaWithAlpha(solid.color, alphas[i]) ?? solidRgba),
+            : stopPaintAtAlpha(solid.color, alphas[i] * layer),
         pct: at(t),
     }));
 }
 
+/**
+ * Gradient overlay above a photo: directional stops keep their own alpha
+ * (`from-transparent` → transparent, `to-black` → opaque black) so fades into
+ * the next section work. Photo visibility is a separate uniform scrim (see
+ * {@link composeDecorationBackgroundImageCss}), not applied to every stop.
+ *
+ * Optional `layerOpacity` (0–1) scales every stop alpha for the decoration
+ * Gradient Opacity control.
+ *
+ * Optional stop positions (0–100) map to Tailwind `from-40%` / `via-50%` / `to-90%`.
+ *
+ * @param {{
+ *   directionUtility?: string,
+ *   fromUtility?: string,
+ *   viaUtility?: string,
+ *   toUtility?: string,
+ *   fromPos?: number|null,
+ *   viaPos?: number|null,
+ *   toPos?: number|null,
+ *   photoVisibility?: number|string,
+ *   layerOpacity?: number|string,
+ * }} opts
+ * @returns {string}
+ */
 export function composePhotoAwareGradientLayer(opts = {}) {
     const direction = GRADIENT_DIRECTION_CSS[String(opts.directionUtility ?? '').trim()];
 
     if (! direction) {
         return '';
     }
+
+    const layerOpacity = Math.min(1, Math.max(0, Number(opts.layerOpacity ?? 1)));
 
     const stop = (utility, pos, fallbackPos) => {
         const color = cssColorFromGradientStopUtility(utility);
@@ -366,7 +405,7 @@ export function composePhotoAwareGradientLayer(opts = {}) {
 
         const paint = color === 'transparent'
             ? 'transparent'
-            : (toRgbaWithAlpha(color, 1) ?? color);
+            : stopPaintAtAlpha(color, layerOpacity);
         const rawPos = pos != null && Number.isFinite(Number(pos))
             ? Number(pos)
             : fallbackPos;
@@ -396,7 +435,7 @@ export function composePhotoAwareGradientLayer(opts = {}) {
             || (entries[1].color === 'transparent' && entries[0].color !== 'transparent')
         )
     ) {
-        entries = softTransparentOpaqueStops(entries[0], entries[1]);
+        entries = softTransparentOpaqueStops(entries[0], entries[1], layerOpacity);
     }
 
     const parts = entries.map((entry) => `${entry.paint} ${entry.pct}%`);
