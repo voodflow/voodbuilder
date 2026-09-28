@@ -46,40 +46,45 @@ final class PageSurfaceCssPublish
         $darkBodyTarget = self::darkBodyTarget();
 
         // Dark wallpaper first so `#id` remap does not swallow `html.dark #id`.
+        // Match the full rule so we evaluate THIS declaration block (not the first
+        // html.dark #id elsewhere — layout-only companions used to block remap).
         $remapped = preg_replace_callback(
-            '/html\.dark\s+#([A-Za-z][\w-]*)(?=[\s,{.:#[])/',
-            static function (array $match) use ($idsInHtml, $darkBodyTarget, $source): string {
+            '/html\.dark\s+#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/',
+            static function (array $match) use ($idsInHtml, $darkBodyTarget): string {
                 $id = $match[1];
+                $declarations = $match[2];
 
                 if (isset($idsInHtml[$id])) {
                     return $match[0];
                 }
 
-                if (! self::darkIdRuleHasWallpaper($source, $id)) {
+                if (! self::declarationHasPageWallpaper($declarations)) {
                     return $match[0];
                 }
 
-                return $darkBodyTarget;
+                return $darkBodyTarget . ' {' . $declarations . '}';
             },
             $source,
         ) ?? $source;
 
+        // Light orphan #id rules only. Never rewrite `#id` inside `html.dark #id` —
+        // that produced `html.dark html, body… { dark-url }` and leaked the dark
+        // photo onto the light ::before layer on the public front.
         $remapped = preg_replace_callback(
-            '/#([A-Za-z][\w-]*)(?=[\s,{.:#[])/',
-            static function (array $match) use ($idsInHtml, $bodyTarget, $remapped): string {
+            '/(?<!html\.dark )#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/',
+            static function (array $match) use ($idsInHtml, $bodyTarget): string {
                 $id = $match[1];
+                $declarations = $match[2];
 
                 if (isset($idsInHtml[$id])) {
                     return $match[0];
                 }
 
-                // Only remap true page wallpapers (attachment:fixed). Section
-                // decoration photos must not become the public page background.
-                if (! self::idRuleHasPageWallpaper($remapped, $id)) {
+                if (! self::declarationHasPageWallpaper($declarations)) {
                     return $match[0];
                 }
 
-                return $bodyTarget;
+                return $bodyTarget . ' {' . $declarations . '}';
             },
             $remapped,
         ) ?? $remapped;
@@ -357,8 +362,22 @@ final class PageSurfaceCssPublish
 
         $rewritten = preg_replace_callback(
             '/(html\s*,\s*body[^,{]*(?:,[^,{]*)*|body[^,{]*(?:,[^,{]*' . $class . '[^,{]*)*)\{([^{}]*)\}/i',
-            static function (array $match) use (&$layerBlocks, $layerSelector): string {
-                if (str_starts_with(strtolower(trim($match[1])), 'html.dark')) {
+            static function (array $match) use (&$layerBlocks, $layerSelector, $class): string {
+                $selector = trim($match[1]);
+                $selectorLower = strtolower($selector);
+
+                if (str_starts_with($selectorLower, 'html.dark')) {
+                    return $match[0];
+                }
+
+                // PCRE can match the `body.CLASS` suffix inside `html.dark body.CLASS {…}`.
+                // Remapped light wallpaper always uses bodyTarget (`html, body, body.CLASS, …`).
+                // A bare `body.CLASS` (no `html`) is that false substring — never promote it
+                // or the dark photo leaks onto the light ::before and light mode stays dark.
+                if (
+                    ! str_contains($selectorLower, 'html')
+                    && preg_match('/^body\.' . $class . '\b/i', $selector) === 1
+                ) {
                     return $match[0];
                 }
 

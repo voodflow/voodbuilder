@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.24] - 2026-09-28
+
+### Fixed
+
+- Public page wallpaper: light mode no longer keeps the dark photo — publish no longer rewrites `html.dark #id` into the light `body::before` layer when duplicate dark companions exist
+- Element dark-id hydrate no longer imports page-wallpaper layout leftovers from `html.dark #id { attachment:fixed }` rules
+
 ## [1.11.23] - 2026-09-28
 
 ### Fixed

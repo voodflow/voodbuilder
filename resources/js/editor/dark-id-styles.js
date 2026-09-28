@@ -261,6 +261,20 @@ export function hydrateDarkIdStylesFromCss(editor, css) {
     while ((match = ruleRe.exec(sheet)) !== null) {
         const id = match[1];
         const body = match[2] ?? '';
+
+        // Full page-wallpaper companions belong to page-surface cache — never
+        // import size/position leftovers into element dark-id styles (that
+        // re-emitted orphan html.dark #oldWrapper rules on Save).
+        if (
+            /background-attachment\s*:\s*fixed/i.test(body)
+            || (
+                /background-image\s*:[^;]*url\s*\(/i.test(body)
+                && /background-attachment\s*:\s*fixed/i.test(body)
+            )
+        ) {
+            continue;
+        }
+
         const styles = {};
 
         for (const part of body.split(';')) {
@@ -275,14 +289,6 @@ export function hydrateDarkIdStylesFromCss(editor, css) {
             const value = trimmed.slice(colon + 1).trim();
 
             if (prop === '' || value === '' || shouldOmitAuthorStyleValue(prop, value)) {
-                continue;
-            }
-
-            // Page wallpaper companions stay in the page-surface cache.
-            if (
-                prop === 'background-attachment'
-                || (prop === 'background-image' && /url\s*\(/i.test(value) && /fixed/i.test(body))
-            ) {
                 continue;
             }
 

@@ -165,12 +165,63 @@ CSS;
 
         // Light layer must not be wrapped in html.dark — otherwise light mode keeps the dark photo.
         $this->assertMatchesRegularExpression(
-            '/' . preg_quote(PageSurfaceCssPublish::fixedLayerSelector(), '/') . '\s*\{[^}]*url\(\/light\.jpg\)/i',
+            '/(?<!html\.dark\s)' . preg_quote(PageSurfaceCssPublish::fixedLayerSelector(), '/')
+            . '\s*\{[^}]*url\(\/light\.jpg\)/i',
             $overlay,
         );
         $this->assertMatchesRegularExpression(
             '/' . preg_quote(PageSurfaceCssPublish::darkFixedLayerSelector(), '/') . '\s*\{[^}]*url\(\/dark\.jpg\)/i',
             $overlay,
         );
+
+        // Regression: light ::before must NEVER carry the dark URL (PCRE used to
+        // match `body.CLASS` inside `html.dark body.CLASS` and leak dark → light).
+        $this->assertDoesNotMatchRegularExpression(
+            '/(?<!html\.dark\s)' . preg_quote(PageSurfaceCssPublish::fixedLayerSelector(), '/')
+            . '\s*\{[^}]*url\(\/dark\.jpg\)/i',
+            $overlay,
+        );
+    }
+
+    public function test_remap_for_public_does_not_leak_dark_wallpaper_onto_light_before(): void
+    {
+        // Mirrors a real Save sheet: dual wrapper orphans with attachment:fixed,
+        // PLUS a layout-only dark companion that used to block dark remap (first
+        // match) and let light remap corrupt `html.dark #id` into bodyTarget.
+        $css = <<<'CSS'
+#i9a5 {background-image:url('/storage/7/light.webp');background-size:cover;background-position:top;background-repeat:no-repeat;background-attachment:fixed}
+html.dark #i9a5 {background-image:url('/storage/6/dark.webp');background-size:cover;background-position:top;background-repeat:no-repeat;background-attachment:fixed}
+#ispi {background-image:url('/storage/7/light.webp');background-size:cover;background-position:top;background-repeat:no-repeat;background-attachment:fixed}
+html.dark #ispi {background-size:cover;background-position:top;background-repeat:no-repeat}
+html.dark #ispi {background-image:url('/storage/6/dark.webp');background-size:cover;background-position:top;background-repeat:no-repeat;background-attachment:fixed}
+CSS;
+
+        $remapped = PageSurfaceCssPublish::remapForPublic($css, '');
+
+        $this->assertStringNotContainsString('html.dark html, body', $remapped);
+
+        preg_match_all(
+            '/(?<!html\.dark\s)' . preg_quote(PageSurfaceCssPublish::fixedLayerSelector(), '/') . '\s*\{([^}]*)\}/i',
+            $remapped,
+            $lightLayers,
+        );
+        preg_match_all(
+            '/' . preg_quote(PageSurfaceCssPublish::darkFixedLayerSelector(), '/') . '\s*\{([^}]*)\}/i',
+            $remapped,
+            $darkLayers,
+        );
+
+        $this->assertNotEmpty($lightLayers[1]);
+        $this->assertNotEmpty($darkLayers[1]);
+
+        foreach ($lightLayers[1] as $body) {
+            $this->assertStringContainsString('/storage/7/light.webp', $body);
+            $this->assertStringNotContainsString('/storage/6/dark.webp', $body);
+        }
+
+        foreach ($darkLayers[1] as $body) {
+            $this->assertStringContainsString('/storage/6/dark.webp', $body);
+            $this->assertStringNotContainsString('/storage/7/light.webp', $body);
+        }
     }
 }

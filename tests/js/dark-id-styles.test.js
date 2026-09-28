@@ -51,13 +51,13 @@ describe('dark-id-styles', () => {
             editor,
             [
                 'html.dark #el1 {background-color:rgba(0,0,0,0.5);background-image:url(/el.jpg)}',
-                'html.dark #page {background-image:url(/wall.jpg);background-attachment:fixed}',
+                'html.dark #page {background-image:url(/wall.jpg);background-attachment:fixed;background-size:cover}',
             ].join('\n'),
         );
 
-        expect(imported).toBeGreaterThan(0);
+        expect(imported).toBe(1);
         expect(getDarkIdStyles(editor, 'el1')['background-color']).toBe('rgba(0,0,0,0.5)');
         expect(getDarkIdStyles(editor, 'el1')['background-image']).toBe('url(/el.jpg)');
-        expect(getDarkIdStyles(editor, 'page')['background-image']).toBeUndefined();
+        expect(getDarkIdStyles(editor, 'page')).toEqual({});
     });
 });
