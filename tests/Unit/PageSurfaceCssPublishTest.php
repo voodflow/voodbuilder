@@ -46,6 +46,21 @@ class PageSurfaceCssPublishTest extends TestCase
         $this->assertStringNotContainsString('voodbuilder-site-shell', $remapped);
     }
 
+    public function test_remap_for_public_makes_block_dark_companion_beat_light_important(): void
+    {
+        $css = "#card { background-image: url('/light.jpg') !important }\n"
+            . "html.dark #card {background-image:linear-gradient(rgba(0,0,0,.75),rgba(0,0,0,.75)), url('/dark.jpg');background-color:transparent}";
+        $html = '<div id="card" style="background-image:url(/light.jpg)">Card</div>';
+
+        $remapped = PageSurfaceCssPublish::remapForPublic($css, $html);
+
+        $this->assertStringContainsString(
+            "html.dark #card {background-image:linear-gradient(rgba(0,0,0,.75),rgba(0,0,0,.75)), url('/dark.jpg') !important;background-color:transparent !important}",
+            $remapped,
+        );
+        $this->assertStringNotContainsString(PageSurfaceCssPublish::darkFixedLayerSelector(), $remapped);
+    }
+
     public function test_remap_for_public_keeps_author_layout_props_on_fixed_layer(): void
     {
         $css = '#iabc123 { background-image: url(/x.jpg); background-size: contain; background-position: top; background-attachment: fixed; }';

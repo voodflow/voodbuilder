@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.28] - 2026-09-28
+
+### Fixed
+
+- Block dark background images now actually show in dark mode: dark companions (`html.dark #id`) are emitted with `!important` on Save, in the canvas preview and at publish time, so they beat the light inline `style=""` and legacy `#id { … !important }` paints — no re-save needed for existing pages
+
 ## [1.11.27] - 2026-09-28
 
 ### Fixed

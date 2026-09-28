@@ -52,6 +52,14 @@ export function isDarkExplicitNoneOverride(property, value) {
 }
 
 /**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function stripImportant(value) {
+    return String(value ?? '').replace(/\s*!important\s*$/i, '').trim();
+}
+
+/**
  * @param {string} property
  * @param {string} value
  * @returns {boolean}
@@ -101,7 +109,7 @@ export function setDarkIdStyles(editor, id, styles) {
 
     for (const [property, value] of Object.entries(styles)) {
         const prop = String(property ?? '').trim();
-        const raw = value == null ? '' : String(value).trim();
+        const raw = value == null ? '' : stripImportant(value);
 
         if (prop === '') {
             continue;
@@ -181,13 +189,15 @@ export function darkIdStylesToCssRule(selector, styles) {
 
     for (const [property, value] of Object.entries(styles)) {
         const prop = String(property ?? '').trim();
-        const raw = value == null ? '' : String(value).trim();
+        const raw = value == null ? '' : stripImportant(value);
 
         if (prop === '' || shouldOmitDarkValue(prop, raw)) {
             continue;
         }
 
-        decls.push(`${prop}:${raw}`);
+        // Light paint may live in inline style="" or a legacy `#id { … !important }`;
+        // both beat a plain `html.dark #id` rule, so the dark companion must be important.
+        decls.push(`${prop}:${raw} !important`);
     }
 
     return decls.length === 0 ? '' : `${sel} {${decls.join(';')}}`;
@@ -313,7 +323,7 @@ export function hydrateDarkIdStylesFromCss(editor, css) {
 
             const colon = trimmed.indexOf(':');
             const prop = trimmed.slice(0, colon).trim().toLowerCase();
-            const value = trimmed.slice(colon + 1).trim();
+            const value = stripImportant(trimmed.slice(colon + 1));
 
             if (prop === '' || shouldOmitDarkValue(prop, value)) {
                 continue;

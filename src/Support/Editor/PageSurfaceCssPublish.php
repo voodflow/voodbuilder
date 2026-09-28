@@ -55,7 +55,9 @@ final class PageSurfaceCssPublish
                 $declarations = $match[2];
 
                 if (isset($idsInHtml[$id])) {
-                    return $match[0];
+                    // Block dark companion must beat light inline style="" and
+                    // legacy `#id { … !important }` paints.
+                    return 'html.dark #' . $id . ' {' . self::importantDeclarations($declarations) . '}';
                 }
 
                 if (! self::declarationHasPageWallpaper($declarations)) {
@@ -313,6 +315,54 @@ final class PageSurfaceCssPublish
      * or as a legacy image-only #id rule. Section/block decoration photos often share
      * size/position/repeat without fixed — those must not become the public page BG.
      */
+    /**
+     * Append `!important` to every declaration that does not already carry it.
+     * Splits on `;` outside parentheses so `url(data:…;base64,…)` stays intact.
+     */
+    private static function importantDeclarations(string $declarations): string
+    {
+        $parts = [];
+        $buffer = '';
+        $depth = 0;
+        $length = strlen($declarations);
+
+        for ($index = 0; $index < $length; $index++) {
+            $char = $declarations[$index];
+
+            if ($char === '(') {
+                $depth++;
+            } elseif ($char === ')') {
+                $depth = max(0, $depth - 1);
+            }
+
+            if ($char === ';' && $depth === 0) {
+                $parts[] = $buffer;
+                $buffer = '';
+
+                continue;
+            }
+
+            $buffer .= $char;
+        }
+
+        $parts[] = $buffer;
+        $out = [];
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+
+            if ($part === '' || ! str_contains($part, ':')) {
+                continue;
+            }
+
+            $out[] = preg_match('/!important\s*$/i', $part) === 1
+                ? $part
+                : $part . ' !important';
+        }
+
+        return implode(';', $out);
+    }
+
     private static function declarationHasPageWallpaper(string $declarations): bool
     {
         if (! self::declarationHasWallpaper($declarations)) {

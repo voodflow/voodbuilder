@@ -67,11 +67,12 @@ describe('dark-id-styles', () => {
         setDarkIdStyles(editor, 'cta', { 'background-image': 'none' });
         const css = collectDarkIdStylesCssForPersist(editor);
 
-        expect(css).toBe('html.dark #cta {background-image:none}');
+        expect(css).toBe('html.dark #cta {background-image:none !important}');
 
         const reloaded = {};
         hydrateDarkIdStylesFromCss(reloaded, css);
 
         expect(getDarkIdStyles(reloaded, 'cta')['background-image']).toBe('none');
+        expect(collectDarkIdStylesCssForPersist(reloaded)).toBe(css);
     });
 });
