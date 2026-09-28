@@ -46,10 +46,15 @@ import {
     rememberStyleSubject,
     styleWriteTarget,
     resolveBackgroundFadeColor,
+    readBackgroundImageUrl,
+    clearDecorationBackgroundImage,
 } from '../../resources/js/editor/style-tailwind-panel.js';
 import {
     composeDecorationBackgroundImageCss,
+    STYLE_BG_SRC_ATTR,
+    STYLE_BG_SRC_DARK_ATTR,
 } from '../../resources/js/editor/style-background-image.js';
+import { getDarkIdStyles, setDarkIdStyles } from '../../resources/js/editor/dark-id-styles.js';
 import { STYLE_MANAGER_SECTORS } from '../../resources/js/editor/editor-chrome.js';
 import {
     filterOutConflictingBoxSpacingClasses,
@@ -819,5 +824,142 @@ describe('photo color scrim uses Style theme Color', () => {
         };
 
         expect(resolveBackgroundFadeColor(editor, component).toLowerCase()).toBe('#ffedd5');
+    });
+});
+
+describe('dark element background image panel sync', () => {
+    function makeElementEditor(idRuleStyle = {}) {
+        const idRule = {
+            getStyle: () => ({ ...idRuleStyle }),
+            setStyle: vi.fn(function setStyle(next) {
+                idRuleStyle = { ...next };
+                this.getStyle = () => ({ ...idRuleStyle });
+            }),
+        };
+        const editor = {
+            __voodbuilderStyleThemeDark: true,
+            getWrapper: () => ({ getId: () => 'iwrap', get: () => 'wrapper' }),
+            Css: {
+                getIdRule: (id) => (id === 'ixu2pn' ? idRule : null),
+                setIdRule: vi.fn(),
+                remove: vi.fn(),
+            },
+        };
+
+        return { editor, idRule };
+    }
+
+    it('readBackgroundImageUrl surfaces light #id photo while editing dark', () => {
+        const { editor } = makeElementEditor({
+            'background-image': "url('/try-today.jpg')",
+        });
+        const component = {
+            getId: () => 'ixu2pn',
+            get: () => 'div',
+            getAttributes: () => ({}),
+            getStyle: () => ({}),
+            getEl: () => null,
+            isRemoved: () => false,
+        };
+
+        expect(readBackgroundImageUrl(component, editor)).toContain('/try-today.jpg');
+    });
+
+    it('readBackgroundImageUrl prefers dark companion over light #id', () => {
+        const { editor } = makeElementEditor({
+            'background-image': "url('/light.jpg')",
+        });
+        setDarkIdStyles(editor, 'ixu2pn', {
+            'background-image': "url('/dark.jpg')",
+        });
+        const component = {
+            getId: () => 'ixu2pn',
+            get: () => 'div',
+            getAttributes: () => ({ [STYLE_BG_SRC_DARK_ATTR]: '/dark-attr.jpg' }),
+            getStyle: () => ({}),
+            getEl: () => null,
+            isRemoved: () => false,
+        };
+
+        expect(readBackgroundImageUrl(component, editor)).toBe('/dark-attr.jpg');
+    });
+
+    it('clearDecorationBackgroundImage in dark wipes inherited light #id paint', () => {
+        const style = { 'background-image': "url('/try-today.jpg')", 'background-size': 'cover' };
+        const { editor, idRule } = makeElementEditor(style);
+        const attrs = { [STYLE_BG_SRC_ATTR]: '/try-today.jpg' };
+        const component = {
+            getId: () => 'ixu2pn',
+            get: () => 'div',
+            getAttributes: () => ({ ...attrs }),
+            getClasses: () => ['bg-cover', 'bg-top'],
+            set: vi.fn(),
+            setClass: vi.fn(),
+            addAttributes: vi.fn((next) => Object.assign(attrs, next)),
+            removeAttributes: vi.fn((key) => {
+                delete attrs[key];
+            }),
+            setAttributes: vi.fn((next) => {
+                Object.keys(attrs).forEach((k) => delete attrs[k]);
+                Object.assign(attrs, next);
+            }),
+            getStyle: () => ({}),
+            getEl: () => ({ style: { removeProperty: vi.fn(), backgroundImage: "url('/try-today.jpg')" } }),
+            isRemoved: () => false,
+            view: {
+                updateStyle: vi.fn(),
+                updateAttributes: vi.fn(),
+                updateClasses: vi.fn(),
+                updateStyles: vi.fn(),
+                el: null,
+            },
+        };
+
+        clearDecorationBackgroundImage(editor, component);
+
+        expect(attrs[STYLE_BG_SRC_ATTR]).toBeUndefined();
+        expect(attrs[STYLE_BG_SRC_DARK_ATTR]).toBeUndefined();
+        expect(idRule.getStyle()['background-image']).toBeUndefined();
+        expect(getDarkIdStyles(editor, 'ixu2pn')['background-image']).toBeUndefined();
+    });
+
+    it('clearDecorationBackgroundImage with dark-own photo keeps light #id', () => {
+        const style = { 'background-image': "url('/light.jpg')" };
+        const { editor, idRule } = makeElementEditor(style);
+        setDarkIdStyles(editor, 'ixu2pn', {
+            'background-image': "url('/dark.jpg')",
+        });
+        const attrs = {
+            [STYLE_BG_SRC_ATTR]: '/light.jpg',
+            [STYLE_BG_SRC_DARK_ATTR]: '/dark.jpg',
+        };
+        const component = {
+            getId: () => 'ixu2pn',
+            get: () => 'div',
+            getAttributes: () => ({ ...attrs }),
+            getClasses: () => [],
+            addAttributes: vi.fn((next) => Object.assign(attrs, next)),
+            removeAttributes: vi.fn((key) => {
+                delete attrs[key];
+            }),
+            setAttributes: vi.fn((next) => {
+                Object.keys(attrs).forEach((k) => delete attrs[k]);
+                Object.assign(attrs, next);
+            }),
+            getStyle: () => ({}),
+            getEl: () => null,
+            isRemoved: () => false,
+            view: {
+                updateStyle: vi.fn(),
+                updateAttributes: vi.fn(),
+            },
+        };
+
+        clearDecorationBackgroundImage(editor, component);
+
+        expect(attrs[STYLE_BG_SRC_DARK_ATTR]).toBeUndefined();
+        expect(attrs[STYLE_BG_SRC_ATTR]).toBe('/light.jpg');
+        expect(idRule.getStyle()['background-image']).toContain('/light.jpg');
+        expect(getDarkIdStyles(editor, 'ixu2pn')['background-image']).toBeUndefined();
     });
 });

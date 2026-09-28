@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.26] - 2026-09-28
+
+### Fixed
+
+- Dark Style panel: element decoration photos that only live on light `#id` / `data-vb-style-bg-src` now show in the Image field (no empty input while the canvas still paints)
+- Clear in dark removes that inherited light photo from `#id` when there is no dark companion — Clear no longer appears to do nothing
+
 ## [1.11.25] - 2026-09-28
 
 ### Fixed

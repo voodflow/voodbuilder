@@ -2595,7 +2595,16 @@ function readBackgroundImageUrl(component, editor = null) {
             return fromDark;
         }
 
-        return '';
+        // No dark companion: bare `#id` / light `data-vb-style-bg-src` still paint
+        // under html.dark. Surface that effective URL in the Image field so Clear
+        // can target what the canvas shows (do not early-return empty).
+        for (const node of nodes) {
+            const fromLightAttr = String(node?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+
+            if (fromLightAttr !== '') {
+                return fromLightAttr;
+            }
+        }
     }
 
     for (const node of nodes) {
@@ -2747,6 +2756,17 @@ function clearDecorationBackgroundImage(editor, component) {
     const darkTheme = Boolean(editor && isStyleEditingDark(editor));
     const darkPage = pageSurface && darkTheme;
 
+    // Snapshot dark-owned paint BEFORE persist clears the dark src attr.
+    const darkSrcBefore = String(
+        component.getAttributes?.()?.[STYLE_BG_SRC_DARK_ATTR]
+        ?? target?.getAttributes?.()?.[STYLE_BG_SRC_DARK_ATTR]
+        ?? '',
+    ).trim();
+    const darkCacheUrl = extractUrlFromBackgroundImage(
+        String(getDarkIdStyles(editor, id)['background-image'] ?? ''),
+    );
+    const hadDarkOwnImage = darkSrcBefore !== '' || darkCacheUrl !== '';
+
     // Drop durable reference first so reapply / sync cannot resurrect the photo.
     persistBackgroundImageSrcAttr(component, '', editor);
 
@@ -2780,8 +2800,8 @@ function clearDecorationBackgroundImage(editor, component) {
         return;
     }
 
-    // Dark element decoration: clear only the dark companion cache.
-    if (darkTheme && ! pageSurface) {
+    // Dark element with its own companion: clear only dark — light `#id` may remain.
+    if (darkTheme && ! pageSurface && hadDarkOwnImage) {
         clearDarkIdStyles(editor, id, 'background-image');
 
         try {
@@ -2792,6 +2812,23 @@ function clearDecorationBackgroundImage(editor, component) {
         }
 
         return;
+    }
+
+    // Dark with no companion (or light theme): wipe shared/light `#id` paint.
+    // In dark this is the inherited light photo still visible on the canvas.
+    if (darkTheme && ! pageSurface) {
+        clearDarkIdStyles(editor, id, 'background-image');
+
+        // Also drop light durable src — persistBackgroundImageSrcAttr only cleared dark.
+        for (const node of [component, target].filter(Boolean)) {
+            try {
+                node.removeAttributes?.(STYLE_BG_SRC_ATTR);
+            } catch {
+                const attrs = { ...(node.getAttributes?.() ?? {}) };
+                delete attrs[STYLE_BG_SRC_ATTR];
+                node.setAttributes?.(attrs);
+            }
+        }
     }
 
     // Wipe image paint from inline + CssComposer #id / private rules.
@@ -4796,4 +4833,6 @@ export {
     applySpacingToken,
     setSpacingLinkMode,
     resolveBackgroundFadeColor,
+    readBackgroundImageUrl,
+    clearDecorationBackgroundImage,
 };
