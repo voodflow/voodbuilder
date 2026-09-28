@@ -2106,7 +2106,11 @@ function captureDynamicRootAuthorChrome(component) {
         style: { ...(component?.getStyle?.({ inline: true }) ?? {}) },
         bgOpacity: String(attrs['data-vb-style-bg-opacity'] ?? '').trim(),
         bgSrc: String(attrs['data-vb-style-bg-src'] ?? '').trim(),
+        bgSrcDark: String(attrs['data-vb-style-bg-src-dark'] ?? '').trim(),
         bgColorOpacity: String(attrs['data-vb-bg-color-opacity'] ?? '').trim(),
+        bgColorOpacityDark: String(attrs['data-vb-bg-color-opacity-dark'] ?? '').trim(),
+        gradientOpacity: String(attrs['data-vb-gradient-opacity'] ?? '').trim(),
+        gradientOpacityDark: String(attrs['data-vb-gradient-opacity-dark'] ?? '').trim(),
     };
 }
 
@@ -2155,8 +2159,24 @@ function restoreDynamicRootAuthorChrome(component, chrome, fresh = null) {
         attrs['data-vb-style-bg-src'] = chrome.bgSrc;
     }
 
+    if (chrome.bgSrcDark) {
+        attrs['data-vb-style-bg-src-dark'] = chrome.bgSrcDark;
+    }
+
     if (chrome.bgColorOpacity) {
         attrs['data-vb-bg-color-opacity'] = chrome.bgColorOpacity;
+    }
+
+    if (chrome.bgColorOpacityDark) {
+        attrs['data-vb-bg-color-opacity-dark'] = chrome.bgColorOpacityDark;
+    }
+
+    if (chrome.gradientOpacity) {
+        attrs['data-vb-gradient-opacity'] = chrome.gradientOpacity;
+    }
+
+    if (chrome.gradientOpacityDark) {
+        attrs['data-vb-gradient-opacity-dark'] = chrome.gradientOpacityDark;
     }
 
     if (Object.keys(attrs).length > 0) {

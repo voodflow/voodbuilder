@@ -27,7 +27,9 @@ final class EditorDynamicBlockRenderer
         'data-vb-style-bg-src-dark',
         'data-vb-style-bg-opacity',
         'data-vb-bg-color-opacity',
+        'data-vb-bg-color-opacity-dark',
         'data-vb-gradient-opacity',
+        'data-vb-gradient-opacity-dark',
     ];
 
     public function __construct(
@@ -1000,7 +1002,17 @@ final class EditorDynamicBlockRenderer
      * Grapes Style rules (e.g. `#ifmoo4{background-image:…}`) and anchors need the
      * author root `id` to survive Blade remount. Also keep inline style / fade attrs.
      *
-     * @return array{id: string, style: string, data_vb_style_bg_opacity: string, data_vb_style_bg_src: string, data_vb_bg_color_opacity: string}
+     * @return array{
+     *     id: string,
+     *     style: string,
+     *     data_vb_style_bg_opacity: string,
+     *     data_vb_style_bg_src: string,
+     *     data_vb_style_bg_src_dark: string,
+     *     data_vb_bg_color_opacity: string,
+     *     data_vb_bg_color_opacity_dark: string,
+     *     data_vb_gradient_opacity: string,
+     *     data_vb_gradient_opacity_dark: string
+     * }
      */
     protected function captureAuthorRootChrome(DOMElement $node): array
     {
@@ -1009,12 +1021,26 @@ final class EditorDynamicBlockRenderer
             'style' => trim((string) $node->getAttribute('style')),
             'data_vb_style_bg_opacity' => trim((string) $node->getAttribute('data-vb-style-bg-opacity')),
             'data_vb_style_bg_src' => trim((string) $node->getAttribute('data-vb-style-bg-src')),
+            'data_vb_style_bg_src_dark' => trim((string) $node->getAttribute('data-vb-style-bg-src-dark')),
             'data_vb_bg_color_opacity' => trim((string) $node->getAttribute('data-vb-bg-color-opacity')),
+            'data_vb_bg_color_opacity_dark' => trim((string) $node->getAttribute('data-vb-bg-color-opacity-dark')),
+            'data_vb_gradient_opacity' => trim((string) $node->getAttribute('data-vb-gradient-opacity')),
+            'data_vb_gradient_opacity_dark' => trim((string) $node->getAttribute('data-vb-gradient-opacity-dark')),
         ];
     }
 
     /**
-     * @param  array{id: string, style: string, data_vb_style_bg_opacity: string, data_vb_style_bg_src: string, data_vb_bg_color_opacity: string}  $chrome
+     * @param  array{
+     *     id: string,
+     *     style: string,
+     *     data_vb_style_bg_opacity: string,
+     *     data_vb_style_bg_src: string,
+     *     data_vb_style_bg_src_dark: string,
+     *     data_vb_bg_color_opacity: string,
+     *     data_vb_bg_color_opacity_dark: string,
+     *     data_vb_gradient_opacity: string,
+     *     data_vb_gradient_opacity_dark: string
+     * }  $chrome
      */
     protected function restoreAuthorRootChrome(DOMElement $node, array $chrome): void
     {
@@ -1030,8 +1056,24 @@ final class EditorDynamicBlockRenderer
             $node->setAttribute('data-vb-style-bg-src', $chrome['data_vb_style_bg_src']);
         }
 
+        if (($chrome['data_vb_style_bg_src_dark'] ?? '') !== '') {
+            $node->setAttribute('data-vb-style-bg-src-dark', $chrome['data_vb_style_bg_src_dark']);
+        }
+
         if (($chrome['data_vb_bg_color_opacity'] ?? '') !== '') {
             $node->setAttribute('data-vb-bg-color-opacity', $chrome['data_vb_bg_color_opacity']);
+        }
+
+        if (($chrome['data_vb_bg_color_opacity_dark'] ?? '') !== '') {
+            $node->setAttribute('data-vb-bg-color-opacity-dark', $chrome['data_vb_bg_color_opacity_dark']);
+        }
+
+        if (($chrome['data_vb_gradient_opacity'] ?? '') !== '') {
+            $node->setAttribute('data-vb-gradient-opacity', $chrome['data_vb_gradient_opacity']);
+        }
+
+        if (($chrome['data_vb_gradient_opacity_dark'] ?? '') !== '') {
+            $node->setAttribute('data-vb-gradient-opacity-dark', $chrome['data_vb_gradient_opacity_dark']);
         }
 
         $authorStyle = trim((string) ($chrome['style'] ?? ''));
@@ -1073,7 +1115,17 @@ final class EditorDynamicBlockRenderer
     }
 
     /**
-     * @param  array{id: string, style: string, data_vb_style_bg_opacity: string, data_vb_style_bg_src: string}  $chrome
+     * @param  array{
+     *     id: string,
+     *     style: string,
+     *     data_vb_style_bg_opacity: string,
+     *     data_vb_style_bg_src: string,
+     *     data_vb_style_bg_src_dark?: string,
+     *     data_vb_bg_color_opacity?: string,
+     *     data_vb_bg_color_opacity_dark?: string,
+     *     data_vb_gradient_opacity?: string,
+     *     data_vb_gradient_opacity_dark?: string
+     * }  $chrome
      */
     protected function applyAuthorRootChromeToHtml(string $html, array $chrome): string
     {
@@ -1084,6 +1136,11 @@ final class EditorDynamicBlockRenderer
                 && ($chrome['style'] ?? '') === ''
                 && ($chrome['data_vb_style_bg_opacity'] ?? '') === ''
                 && ($chrome['data_vb_style_bg_src'] ?? '') === ''
+                && ($chrome['data_vb_style_bg_src_dark'] ?? '') === ''
+                && ($chrome['data_vb_bg_color_opacity'] ?? '') === ''
+                && ($chrome['data_vb_bg_color_opacity_dark'] ?? '') === ''
+                && ($chrome['data_vb_gradient_opacity'] ?? '') === ''
+                && ($chrome['data_vb_gradient_opacity_dark'] ?? '') === ''
             )
         ) {
             return $html;

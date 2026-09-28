@@ -20,6 +20,8 @@ export const STYLE_BG_SRC_ATTR = 'data-vb-style-bg-src';
 export const STYLE_BG_SRC_DARK_ATTR = 'data-vb-style-bg-src-dark';
 /** Overall decoration gradient layer opacity (percent string, '' = 100%). */
 export const GRADIENT_OPACITY_ATTR = 'data-vb-gradient-opacity';
+/** Dark-theme companion for {@link GRADIENT_OPACITY_ATTR}. */
+export const GRADIENT_OPACITY_DARK_ATTR = 'data-vb-gradient-opacity-dark';
 
 export const STYLE_BG_OPACITY_OPTIONS = [
     { value: '0.25', label: '25%' },

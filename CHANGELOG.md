@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.22] - 2026-09-28
+
+### Fixed
+
+- Element Decorations backgrounds (solid color / opacity, gradient, photo) now author independently for Light and Dark via `dark:` utilities, dual data attrs, and Save-emitted `html.dark #id` companions — light edits no longer stick when the top-bar theme is Dark
+
 ## [1.11.15] - 2026-09-26
 
 ### Fixed

@@ -4,6 +4,12 @@
  */
 
 import { tailwindColorOptions } from './tailwind-color-palette.js';
+import {
+    normalizeVariantPrefix,
+    prefixedUtility,
+    resolveGroupValueAtBreakpoint,
+    stripVariantPrefixes,
+} from './style-tailwind-breakpoints.js';
 
 const NONE = { value: '', label: '—' };
 
@@ -122,10 +128,12 @@ export const BACKGROUND_OPTIONS = withNone([
 /**
  * Color opacity for solid Background.
  * GrapesJS cannot reliably store Tailwind slash classes (`bg-black/60`) as
- * selectors — we keep plain `bg-*` and paint alpha via inline + data attr.
+ * selectors — we keep plain/prefixed `bg-*` and paint alpha via inline + data attr.
  * Value '' = 100%.
  */
 export const BG_COLOR_OPACITY_ATTR = 'data-vb-bg-color-opacity';
+/** Dark-theme companion for {@link BG_COLOR_OPACITY_ATTR} (empty string = explicit 100%). */
+export const BG_COLOR_OPACITY_DARK_ATTR = 'data-vb-bg-color-opacity-dark';
 
 export const BG_COLOR_OPACITY_OPTIONS = [
     { value: '', label: '100%' },
@@ -211,35 +219,67 @@ export function normalizeBgColorOpacityPercent(value) {
 }
 
 /**
+ * Opacity attr for the active Style theme (light vs dark companion).
+ *
+ * @param {string|null|undefined} prefix
+ * @returns {string}
+ */
+export function bgColorOpacityAttrForPrefix(prefix = '') {
+    return normalizeVariantPrefix(prefix).startsWith('dark:')
+        ? BG_COLOR_OPACITY_DARK_ATTR
+        : BG_COLOR_OPACITY_ATTR;
+}
+
+/**
  * Read solid bg color + opacity from classes / data attr / legacy forms.
+ * When `prefix` is dark:*, prefers dark color utilities and dark opacity attr,
+ * cascading to light when dark is unset.
  *
  * @param {Iterable<string>|string[]} classes
  * @param {object|null} [component]
+ * @param {string|null|undefined} [prefix]
  * @returns {{ color: string, opacity: string, legacyOpacity: boolean }}
  */
-export function resolveBackgroundColorAndOpacity(classes, component = null) {
+export function resolveBackgroundColorAndOpacity(classes, component = null, prefix = '') {
     const names = [...(classes ?? [])].map((name) => String(name ?? '').trim()).filter(Boolean);
+    const variant = normalizeVariantPrefix(prefix);
+    const dark = variant.startsWith('dark:');
     let color = '';
     let opacity = '';
     let legacyOpacity = false;
 
-    const fromAttr = normalizeBgColorOpacityPercent(
-        component?.getAttributes?.()?.[BG_COLOR_OPACITY_ATTR],
-    );
+    // Legacy slash / bg-opacity-* only on bare (light) utilities.
+    if (! dark) {
+        for (const name of names) {
+            const slash = name.match(/^(bg-.+)\/(\d{1,3})$/);
 
-    for (const name of names) {
-        const slash = name.match(/^(bg-.+)\/(\d{1,3})$/);
+            if (slash && isSolidBackgroundColorUtility(slash[1])) {
+                color = slash[1];
+                opacity = normalizeBgColorOpacityPercent(slash[2]);
+                legacyOpacity = true;
 
-        if (slash && isSolidBackgroundColorUtility(slash[1])) {
-            color = slash[1];
-            opacity = normalizeBgColorOpacityPercent(slash[2]);
-            legacyOpacity = true; // migrate slash → attr + plain class (Grapes-safe)
-
-            return { color, opacity, legacyOpacity };
+                return { color, opacity, legacyOpacity };
+            }
         }
     }
 
-    color = resolveGroupValue(names, BACKGROUND_OPTIONS);
+    color = resolveGroupValueAtBreakpoint(names, BACKGROUND_OPTIONS, variant);
+
+    const attrs = component?.getAttributes?.() ?? {};
+
+    if (dark) {
+        if (Object.prototype.hasOwnProperty.call(attrs, BG_COLOR_OPACITY_DARK_ATTR)) {
+            opacity = normalizeBgColorOpacityPercent(attrs[BG_COLOR_OPACITY_DARK_ATTR]);
+
+            return { color, opacity, legacyOpacity: false };
+        }
+
+        opacity = normalizeBgColorOpacityPercent(attrs[BG_COLOR_OPACITY_ATTR]);
+
+        return { color, opacity, legacyOpacity: false };
+    }
+
+    const fromAttr = normalizeBgColorOpacityPercent(attrs[BG_COLOR_OPACITY_ATTR]);
 
     if (fromAttr !== '') {
         return { color, opacity: fromAttr, legacyOpacity: false };
@@ -271,65 +311,90 @@ export function composeBackgroundColorClass(color) {
 }
 
 /**
- * Drop solid bg colors, slash variants, and legacy bg-opacity-* from the component.
+ * Drop solid bg colors for one Style variant only (keeps the other theme).
  *
  * @param {object} component
+ * @param {string|null|undefined} [prefix]
  */
-export function clearBackgroundColorUtilities(component) {
+export function clearBackgroundColorUtilities(component, prefix = '') {
     if (! component) {
         return;
     }
 
+    const bp = normalizeVariantPrefix(prefix);
+    const dark = bp.startsWith('dark:');
+
     for (const name of componentClassList(component)) {
-        if (name.match(/^bg-opacity-\d+$/)) {
+        if (! dark && name.match(/^bg-opacity-\d+$/)) {
             component.removeClass?.(name);
             continue;
         }
 
-        const slash = name.match(/^(bg-.+)\/\d+$/);
+        if (! dark) {
+            const slash = name.match(/^(bg-.+)\/\d+$/);
 
-        if (slash && isSolidBackgroundColorUtility(slash[1])) {
-            component.removeClass?.(name);
+            if (slash && isSolidBackgroundColorUtility(slash[1])) {
+                component.removeClass?.(name);
+                continue;
+            }
+        }
+
+        const bare = stripVariantPrefixes(name);
+
+        if (name !== `${bp}${bare}`) {
             continue;
         }
 
-        if (isSolidBackgroundColorUtility(name)) {
+        if (isSolidBackgroundColorUtility(bare)) {
             component.removeClass?.(name);
         }
     }
 
+    const attr = bgColorOpacityAttrForPrefix(bp);
+
     try {
-        component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);
+        component.removeAttributes?.(attr);
     } catch {
         const attrs = { ...(component.getAttributes?.() ?? {}) };
-        delete attrs[BG_COLOR_OPACITY_ATTR];
+        delete attrs[attr];
         component.setAttributes?.(attrs);
     }
 }
 
 /**
- * Apply solid background color class (plain) + durable opacity attr.
- * Does not paint CSS — caller applies inline rgba via the Style panel.
+ * Apply solid background color class at the active Style variant + opacity attr.
+ * Does not paint CSS — caller applies inline / html.dark #id via the Style panel.
  *
  * @param {object} component
  * @param {string} color
  * @param {string|number} opacity
+ * @param {string|null|undefined} [prefix]
  */
-export function applyBackgroundColorWithOpacity(component, color, opacity = '') {
+export function applyBackgroundColorWithOpacity(component, color, opacity = '', prefix = '') {
     if (! component) {
         return;
     }
 
-    clearBackgroundColorUtilities(component);
-    const next = composeBackgroundColorClass(color);
+    const bp = normalizeVariantPrefix(prefix);
+    clearBackgroundColorUtilities(component, bp);
+    const nextBare = composeBackgroundColorClass(color);
     const pct = normalizeBgColorOpacityPercent(opacity);
+    const attr = bgColorOpacityAttrForPrefix(bp);
 
-    if (next !== '') {
-        component.addClass?.(next);
+    if (nextBare !== '') {
+        const next = prefixedUtility(nextBare, bp);
+
+        if (next !== '' && ! componentClassList(component).includes(next)) {
+            component.addClass?.(next);
+        }
     }
 
-    if (pct !== '') {
-        component.addAttributes?.({ [BG_COLOR_OPACITY_ATTR]: pct });
+    // Dark theme: always set the companion attr when a color is authored so
+    // explicit 100% (empty) does not cascade back to a light translucent paint.
+    if (bp.startsWith('dark:') && nextBare !== '') {
+        component.addAttributes?.({ [attr]: pct });
+    } else if (pct !== '') {
+        component.addAttributes?.({ [attr]: pct });
     }
 }
 export const GRADIENT_DIRECTION_OPTIONS = withNone([

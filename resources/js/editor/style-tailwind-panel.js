@@ -36,6 +36,7 @@ import {
     STYLE_BG_SRC_ATTR,
     STYLE_BG_SRC_DARK_ATTR,
     GRADIENT_OPACITY_ATTR,
+    GRADIENT_OPACITY_DARK_ATTR,
     composeDecorationBackgroundImageCss,
     composePhotoAwareGradientLayer,
     composeTailwindGradientLayer,
@@ -46,7 +47,16 @@ import {
     toRgbaWithAlpha,
 } from './style-background-image.js';
 import {
+    clearDarkIdStyles,
+    getDarkIdStyles,
+    hydrateDarkIdStylesFromCss,
+    setDarkIdStyles,
+    syncDarkIdStylesCanvasPreview,
+} from './dark-id-styles.js';
+import {
     BACKGROUND_OPTIONS,
+    BG_COLOR_OPACITY_ATTR,
+    BG_COLOR_OPACITY_DARK_ATTR,
     BG_COLOR_OPACITY_OPTIONS,
     BG_POSITION_OPTIONS,
     BG_REPEAT_OPTIONS,
@@ -243,7 +253,8 @@ function persistSurfacePaint(editor, component, styles) {
         : (resolveVisualStyleTarget(component) ?? component);
     const pageSurface = Boolean(targetingPage && target);
     const id = String(target?.getId?.() ?? component.getId?.() ?? '').trim();
-    const darkPage = pageSurface && isStyleEditingDark(editor);
+    const darkTheme = Boolean(editor && isStyleEditingDark(editor));
+    const darkPage = pageSurface && darkTheme;
 
     if (id && editor.Css) {
         try {
@@ -252,6 +263,9 @@ function persistSurfacePaint(editor, component, styles) {
                     ...getPageSurfaceDarkWallpaperRuleStyles(editor, id),
                     ...styles,
                 });
+            } else if (darkTheme && ! pageSurface) {
+                // Element dark paints must not overwrite light `#id` / inline.
+                setDarkIdStyles(editor, id, styles);
             } else if (editor.Css.setIdRule) {
                 // Ensure a prior broken `#id, html.dark` rule cannot override light.
                 purgeBrokenPageSurfaceDarkCssRules(editor, id);
@@ -266,6 +280,11 @@ function persistSurfacePaint(editor, component, styles) {
             // CssComposer may be unavailable during boot.
             debugSwallowed(error);
         }
+    }
+
+    if (darkTheme && ! pageSurface) {
+        // Canvas preview comes from the html.dark #id style tag.
+        return;
     }
 
     if (pageSurface) {
@@ -634,16 +653,33 @@ function replaceStyleGroup(component, groupSet, nextClass, editor = null, option
 }
 
 /**
- * Gradients (bg + text) always author at base — md:/lg: from-/to- force JIT
- * rebuilds and drop --tw-gradient-stops until Save.
+ * Background gradients follow the active Style variant. Pass
+ * `options.forceBase = true` for text-gradient groups (JIT / stops).
  *
  * @param {object|null|undefined} component
  * @param {Set<string>} groupSet
  * @param {string|null|undefined} nextClass
- * @param {{ alsoClear?: Iterable<Set<string>> }} [options]
+ * @param {object|null|undefined} editor
+ * @param {{ alsoClear?: Iterable<Set<string>>, forceBase?: boolean }} [options]
  */
-function replaceGradientStyleGroup(component, groupSet, nextClass, options = {}) {
-    replaceClassGroupAllBreakpoints(component, groupSet, nextClass, options);
+function replaceGradientStyleGroup(component, groupSet, nextClass, editor = null, options = {}) {
+    if (options.forceBase) {
+        replaceClassGroupAllBreakpoints(component, groupSet, nextClass, options);
+
+        return;
+    }
+
+    replaceStyleGroup(component, groupSet, nextClass, editor, options);
+}
+
+/**
+ * Opacity data-attr for the active Style theme.
+ *
+ * @param {object|null|undefined} editor
+ * @returns {string}
+ */
+function gradientOpacityAttrForEditor(editor = null) {
+    return isStyleEditingDark(editor) ? GRADIENT_OPACITY_DARK_ATTR : GRADIENT_OPACITY_ATTR;
 }
 const GROUP_SETS = Object.fromEntries(
     STYLE_UTILITY_GROUPS.map((group) => [group.id, classSetFromOptions(group.options)]),
@@ -717,6 +753,14 @@ function ensureTextGradientBase(component) {
  */
 function ensureTextGradientPaint(editor, component) {
     if (! editor || ! component || ! hasTextGradientClasses(componentClassList(component))) {
+        return;
+    }
+
+    // Remounting inline transparent fill while the author is typing resets the
+    // caret to index 0 (Chromium + bg-clip-text). Skip until RTE exits.
+    const editing = editor.getEditing?.();
+
+    if (editing && (editing === component || editing.parent?.() === component)) {
         return;
     }
 
@@ -1250,17 +1294,33 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
                         || resolveSolidTextColor(classes)
                     );
             } else if (group.id === 'background' || group.id === 'background-opacity') {
-                const bg = resolveBackgroundColorAndOpacity(classes, component);
+                const bg = resolveBackgroundColorAndOpacity(classes, component, bp);
                 el.value = group.id === 'background' ? bg.color : bg.opacity;
             } else if (group.id === 'gradient-opacity') {
-                el.value = normalizeBgColorOpacityPercent(
-                    component?.getAttributes?.()?.[GRADIENT_OPACITY_ATTR],
-                );
-            } else if (isGradientStyleGroupId(group.id)) {
-                // Gradients always live at base — do not mark cascade as inherited.
+                const attrs = component?.getAttributes?.() ?? {};
+                const dark = isStyleEditingDark(editor);
+
+                if (dark && Object.prototype.hasOwnProperty.call(attrs, GRADIENT_OPACITY_DARK_ATTR)) {
+                    el.value = normalizeBgColorOpacityPercent(attrs[GRADIENT_OPACITY_DARK_ATTR]);
+                } else {
+                    el.value = normalizeBgColorOpacityPercent(attrs[GRADIENT_OPACITY_ATTR]);
+                }
+            } else if (TEXT_GRADIENT_GROUP_IDS.includes(group.id)) {
+                // Text gradients stay at base — do not mark cascade as inherited.
                 el.value = resolveGroupValueAtBreakpoint(classes, group.options, '');
                 el.classList?.toggle?.('is-inherited', false);
                 el.removeAttribute?.('title');
+            } else if (SHARED_GRADIENT_GROUP_IDS.includes(group.id)) {
+                const exact = resolveGroupValueExact(classes, group.options, bp);
+                const cascaded = resolveGroupValueAtBreakpoint(classes, group.options, bp);
+                el.value = cascaded;
+                const inherited = Boolean(cascaded) && exact !== cascaded;
+                el.classList?.toggle?.('is-inherited', inherited);
+                if (inherited && options.inheritedHint) {
+                    el.title = options.inheritedHint;
+                } else if (! inherited && el.removeAttribute) {
+                    el.removeAttribute('title');
+                }
             } else if (group.id === 'bg-size' || group.id === 'bg-position' || group.id === 'bg-repeat') {
                 el.value = resolveBackgroundLayoutGroupValue(classes, group, component, editor, bp);
                 el.classList?.toggle?.('is-inherited', false);
@@ -1338,7 +1398,11 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
 
     // Migrate legacy bg-opacity-* / slash classes (Grapes-unsafe) → attr + inline paint.
     try {
-        const bg = resolveBackgroundColorAndOpacity(componentClassList(component), component);
+        const bg = resolveBackgroundColorAndOpacity(
+            componentClassList(component),
+            component,
+            currentStyleVariantPrefix(editor),
+        );
         const needsPaint = Boolean(bg.color && bg.opacity);
         const needsMigrate = bg.legacyOpacity && bg.color;
 
@@ -1351,7 +1415,12 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
 
             try {
                 if (needsMigrate || needsPaint) {
-                    applyBackgroundColorWithOpacity(component, bg.color, bg.opacity);
+                    applyBackgroundColorWithOpacity(
+                        component,
+                        bg.color,
+                        bg.opacity,
+                        currentStyleVariantPrefix(editor),
+                    );
                     paintBackgroundColorOpacity(editor, component, bg.color, bg.opacity);
                     component.view?.updateClasses?.();
                     component.view?.updateStyle?.();
@@ -1465,15 +1534,19 @@ function composeTranslucentBackgroundColor(color, opacityPercent) {
  * @param {object|null|undefined} component
  * @returns {string}
  */
-function translucentBackgroundColorPaint(component) {
-    const { color, opacity } = resolveBackgroundColorAndOpacity(componentClassList(component), component);
+function translucentBackgroundColorPaint(component, editor = null) {
+    const { color, opacity } = resolveBackgroundColorAndOpacity(
+        componentClassList(component),
+        component,
+        currentStyleVariantPrefix(editor),
+    );
 
     return composeTranslucentBackgroundColor(color, opacity);
 }
 
 /**
- * Paint solid Color opacity via inline/#id (Grapes cannot store `bg-black/60`).
- * Plain `bg-*` stays for the Color field; alpha lives in data-vb-bg-color-opacity.
+ * Paint solid Color opacity via inline/#id (light) or html.dark #id cache (dark).
+ * Plain/prefixed `bg-*` stays for the Color field; alpha lives in data attrs.
  */
 function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     if (! editor || ! component) {
@@ -1482,9 +1555,34 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
 
     const target = resolveVisualStyleTarget(component) ?? component;
     const painted = composeTranslucentBackgroundColor(color, opacityPercent);
+    const dark = isStyleEditingDark(editor);
+    const pageSurface = isPageSurfaceComponent(component, editor)
+        || isPageSurfaceComponent(target, editor);
+    const id = String(target?.getId?.() ?? component.getId?.() ?? '').trim();
 
     if (painted === '') {
-        clearStyleProperty(editor, target, 'background-color', { family: false });
+        if (dark && ! pageSurface) {
+            clearDarkIdStyles(editor, id, 'background-color');
+        } else if (dark && pageSurface) {
+            clearPageSurfaceDarkWallpaperRule(editor, id, 'background-color');
+        } else {
+            clearStyleProperty(editor, target, 'background-color', { family: false });
+        }
+
+        return;
+    }
+
+    if (dark && pageSurface) {
+        setPageSurfaceDarkWallpaperRule(editor, id, {
+            ...getPageSurfaceDarkWallpaperRuleStyles(editor, id),
+            'background-color': painted,
+        });
+
+        return;
+    }
+
+    if (dark) {
+        setDarkIdStyles(editor, id, { 'background-color': painted });
 
         return;
     }
@@ -1505,15 +1603,20 @@ function applyGroup(editor, component, groupId, value) {
         editor.__voodbuilderTwStyleApplying = true;
 
         try {
-            const current = resolveBackgroundColorAndOpacity(componentClassList(component), component);
+            const variant = currentStyleVariantPrefix(editor);
+            const current = resolveBackgroundColorAndOpacity(
+                componentClassList(component),
+                component,
+                variant,
+            );
             const nextColor = groupId === 'background' ? (value || '') : current.color;
             const nextOpacity = groupId === 'background-opacity' ? (value || '') : current.opacity;
 
             if (nextColor === '') {
-                clearBackgroundColorUtilities(component);
+                clearBackgroundColorUtilities(component, variant);
                 paintBackgroundColorOpacity(editor, component, '', '');
             } else {
-                applyBackgroundColorWithOpacity(component, nextColor, nextOpacity);
+                applyBackgroundColorWithOpacity(component, nextColor, nextOpacity, variant);
                 paintBackgroundColorOpacity(editor, component, nextColor, nextOpacity);
             }
 
@@ -1524,11 +1627,15 @@ function applyGroup(editor, component, groupId, value) {
                     .filter(Boolean);
 
                 for (const set of alsoClear) {
-                    replaceClassGroupAllBreakpoints(component, set, null);
+                    replaceClassGroupAtBreakpoint(component, set, null, variant);
                 }
 
                 try {
-                    component.removeAttributes?.(GRADIENT_OPACITY_ATTR);
+                    component.removeAttributes?.(
+                        variant.startsWith('dark:')
+                            ? GRADIENT_OPACITY_DARK_ATTR
+                            : GRADIENT_OPACITY_ATTR,
+                    );
                 } catch (error) {
                     debugSwallowed(error);
                 }
@@ -1568,17 +1675,18 @@ function applyGroup(editor, component, groupId, value) {
 
         try {
             const pct = normalizeBgColorOpacityPercent(value);
+            const opacityAttr = gradientOpacityAttrForEditor(editor);
 
             if (pct === '') {
                 try {
-                    component.removeAttributes?.(GRADIENT_OPACITY_ATTR);
+                    component.removeAttributes?.(opacityAttr);
                 } catch (error) {
                     const attrs = { ...(component.getAttributes?.() ?? {}) };
-                    delete attrs[GRADIENT_OPACITY_ATTR];
+                    delete attrs[opacityAttr];
                     component.setAttributes?.(attrs);
                 }
             } else {
-                component.addAttributes?.({ [GRADIENT_OPACITY_ATTR]: pct });
+                component.addAttributes?.({ [opacityAttr]: pct });
             }
 
             paintDecorationGradientPreview(editor, component);
@@ -1660,7 +1768,7 @@ function applyGroup(editor, component, groupId, value) {
                 clearStyleProperty(editor, component, 'background-image');
             }
 
-            replaceGradientStyleGroup(component, groupSet, value || null);
+            replaceGradientStyleGroup(component, groupSet, value || null, editor, { forceBase: true });
             clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             ensureTextGradientPaint(editor, component);
 
@@ -1758,14 +1866,15 @@ function applyGroup(editor, component, groupId, value) {
             .filter(Boolean);
 
         if (isGradientStyleGroupId(groupId)) {
-            replaceGradientStyleGroup(component, groupSet, value || null, { alsoClear });
+            const forceBase = TEXT_GRADIENT_GROUP_IDS.includes(groupId);
+            replaceGradientStyleGroup(component, groupSet, value || null, editor, { alsoClear, forceBase });
         } else {
             replaceStyleGroup(component, groupSet, value || null, editor, { alsoClear });
         }
 
         if (groupId === 'gradient-direction' && (! value || value === 'bg-none')) {
             try {
-                component.removeAttributes?.(GRADIENT_OPACITY_ATTR);
+                component.removeAttributes?.(gradientOpacityAttrForEditor(editor));
             } catch (error) {
                 debugSwallowed(error);
             }
@@ -1782,12 +1891,18 @@ function applyGroup(editor, component, groupId, value) {
                 resolveGroupValueAtBreakpoint(
                     componentClassList(component),
                     GRADIENT_FROM_POS_OPTIONS,
-                    'lg:',
+                    groupId.startsWith('text-') ? '' : currentStyleVariantPrefix(editor),
                 ),
             );
 
             if (posSet && (currentPos == null || currentPos > 20)) {
-                replaceGradientStyleGroup(component, posSet, 'from-0%');
+                replaceGradientStyleGroup(
+                    component,
+                    posSet,
+                    'from-0%',
+                    editor,
+                    { forceBase: groupId.startsWith('text-') },
+                );
             }
         }
         clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
@@ -1813,7 +1928,7 @@ function applyGroup(editor, component, groupId, value) {
 
         // Color / gradient changed: keep photo and recompose layers (gradient + fade + url).
         if (isBgPaintGroup && preservedBgUrl !== '') {
-            const srcAttr = isPageSurfaceComponent(component, editor) && isStyleEditingDark(editor)
+            const srcAttr = isStyleEditingDark(editor)
                 ? STYLE_BG_SRC_DARK_ATTR
                 : STYLE_BG_SRC_ATTR;
             component.addAttributes?.({
@@ -2429,8 +2544,8 @@ function readBackgroundImageUrl(component, editor = null) {
     const nodes = target === component ? [component] : [component, target];
     const pageSurface = isPageSurfaceComponent(target, editor)
         || isPageSurfaceComponent(component, editor);
-    const darkPage = pageSurface && isStyleEditingDark(editor);
-    const srcAttr = darkPage ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
+    const darkTheme = Boolean(editor && isStyleEditingDark(editor));
+    const srcAttr = darkTheme ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
 
     // Durable UI reference — must win over stale composed CSS (old photo under Clear / reselect).
     for (const node of nodes) {
@@ -2443,16 +2558,16 @@ function readBackgroundImageUrl(component, editor = null) {
 
     if (pageSurface && editor) {
         const cache = getPageSurfaceWallpaperUrlCache(editor);
-        const fromCache = String(darkPage ? cache.dark : cache.light ?? '').trim();
+        const fromCache = String(darkTheme ? cache.dark : cache.light ?? '').trim();
 
         if (fromCache !== '') {
             return fromCache;
         }
     }
 
-    if (darkPage) {
+    if (darkTheme && pageSurface) {
         const id = String(
-            (pageSurface ? editor?.getWrapper?.()?.getId?.() : null)
+            editor?.getWrapper?.()?.getId?.()
             ?? target.getId?.()
             ?? component.getId?.()
             ?? '',
@@ -2467,6 +2582,19 @@ function readBackgroundImageUrl(component, editor = null) {
 
         // Do NOT fall back to the light wallpaper — that copied light into dark
         // attrs on theme switch and made Save emit only one (shared) image.
+        return '';
+    }
+
+    if (darkTheme) {
+        const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+        const fromDark = extractUrlFromBackgroundImage(
+            String(getDarkIdStyles(editor, id)['background-image'] ?? ''),
+        );
+
+        if (fromDark !== '') {
+            return fromDark;
+        }
+
         return '';
     }
 
@@ -2539,11 +2667,11 @@ function persistBackgroundImageSrcAttr(component, url, editor = null) {
         ? [wrapper].filter(Boolean)
         : (target === component ? [component] : [component, target].filter(Boolean));
     const pageSurface = Boolean(targetingPage);
-    const darkPage = pageSurface && isStyleEditingDark(editor);
-    const srcAttr = darkPage ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
+    const darkTheme = Boolean(editor && isStyleEditingDark(editor));
+    const srcAttr = darkTheme ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
 
     if (pageSurface && editor) {
-        setPageSurfaceWallpaperUrlCache(editor, darkPage ? 'dark' : 'light', src);
+        setPageSurfaceWallpaperUrlCache(editor, darkTheme ? 'dark' : 'light', src);
     }
 
     for (const node of nodes) {
@@ -2616,7 +2744,8 @@ function clearDecorationBackgroundImage(editor, component) {
         : (resolveVisualStyleTarget(component) ?? component);
     const id = String(target?.getId?.() ?? component.getId?.() ?? '').trim();
     const pageSurface = Boolean(targetingPage);
-    const darkPage = pageSurface && isStyleEditingDark(editor);
+    const darkTheme = Boolean(editor && isStyleEditingDark(editor));
+    const darkPage = pageSurface && darkTheme;
 
     // Drop durable reference first so reapply / sync cannot resurrect the photo.
     persistBackgroundImageSrcAttr(component, '', editor);
@@ -2645,6 +2774,20 @@ function clearDecorationBackgroundImage(editor, component) {
             component.view?.updateAttributes?.();
         } catch (error) {
             // View may be unavailable.
+            debugSwallowed(error);
+        }
+
+        return;
+    }
+
+    // Dark element decoration: clear only the dark companion cache.
+    if (darkTheme && ! pageSurface) {
+        clearDarkIdStyles(editor, id, 'background-image');
+
+        try {
+            component.view?.updateStyle?.();
+            component.view?.updateAttributes?.();
+        } catch (error) {
             debugSwallowed(error);
         }
 
@@ -2752,30 +2895,40 @@ function readBackgroundImageOpacity(component, editor = null) {
     return inferred == null ? 1 : inferred;
 }
 
-function resolveDecorationGradientLayer(component, photoVisibility = null) {
+function resolveDecorationGradientLayer(component, photoVisibility = null, editor = null) {
     const classes = componentClassList(component);
-    // Cascade lg→md→base so leftover responsive stops (pre-fix) still resolve.
-    const direction = resolveGroupValueAtBreakpoint(classes, GRADIENT_DIRECTION_OPTIONS, 'lg:');
+    const variant = currentStyleVariantPrefix(editor);
+    // Cascade dark→light and lg→md→base so leftover responsive stops still resolve.
+    const direction = resolveGroupValueAtBreakpoint(classes, GRADIENT_DIRECTION_OPTIONS, variant);
 
     if (! direction || direction === 'bg-none') {
         return '';
     }
 
-    const fromUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_OPTIONS, 'lg:');
-    const viaUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_OPTIONS, 'lg:');
-    const toUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_OPTIONS, 'lg:');
+    const fromUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_OPTIONS, variant);
+    const viaUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_OPTIONS, variant);
+    const toUtility = resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_OPTIONS, variant);
     const fromPos = gradientStopPositionFromUtility(
-        resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_POS_OPTIONS, 'lg:'),
+        resolveGroupValueAtBreakpoint(classes, GRADIENT_FROM_POS_OPTIONS, variant),
     );
     const viaPos = gradientStopPositionFromUtility(
-        resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_POS_OPTIONS, 'lg:'),
+        resolveGroupValueAtBreakpoint(classes, GRADIENT_VIA_POS_OPTIONS, variant),
     );
     const toPos = gradientStopPositionFromUtility(
-        resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_POS_OPTIONS, 'lg:'),
+        resolveGroupValueAtBreakpoint(classes, GRADIENT_TO_POS_OPTIONS, variant),
     );
-    const opacityPct = normalizeBgColorOpacityPercent(
-        component?.getAttributes?.()?.[GRADIENT_OPACITY_ATTR],
-    );
+    const attrs = component?.getAttributes?.() ?? {};
+    let opacityPct = '';
+
+    if (
+        isStyleEditingDark(editor)
+        && Object.prototype.hasOwnProperty.call(attrs, GRADIENT_OPACITY_DARK_ATTR)
+    ) {
+        opacityPct = normalizeBgColorOpacityPercent(attrs[GRADIENT_OPACITY_DARK_ATTR]);
+    } else {
+        opacityPct = normalizeBgColorOpacityPercent(attrs[GRADIENT_OPACITY_ATTR]);
+    }
+
     const layerOpacity = opacityPct === '' ? 1 : Number.parseInt(opacityPct, 10) / 100;
 
     // Bake stops + positions for live canvas (TW from-25% was missing from
@@ -2814,7 +2967,7 @@ function paintDecorationGradientPreview(editor, component) {
         return;
     }
 
-    const layer = resolveDecorationGradientLayer(component, 1);
+    const layer = resolveDecorationGradientLayer(component, 1, editor);
 
     if (! layer) {
         releaseAuthorBackgroundImageForUtilities(editor, component);
@@ -2823,11 +2976,24 @@ function paintDecorationGradientPreview(editor, component) {
     }
 
     const target = resolveVisualStyleTarget(component) ?? component;
+    const darkTheme = isStyleEditingDark(editor);
+    const pageSurface = isPageSurfaceComponent(target, editor)
+        || isPageSurfaceComponent(component, editor);
+    const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
 
-    persistSurfacePaint(editor, component, { 'background-image': layer });
+    if (darkTheme && pageSurface) {
+        setPageSurfaceDarkWallpaperRule(editor, id, {
+            ...getPageSurfaceDarkWallpaperRuleStyles(editor, id),
+            'background-image': layer,
+        });
+    } else if (darkTheme) {
+        setDarkIdStyles(editor, id, { 'background-image': layer });
+    } else {
+        persistSurfacePaint(editor, component, { 'background-image': layer });
+    }
 
     try {
-        if (! isPageSurfaceComponent(target, editor)) {
+        if (! pageSurface && ! darkTheme) {
             const el = target?.getEl?.() ?? target?.view?.el;
 
             if (el?.style) {
@@ -2915,6 +3081,23 @@ function releaseAuthorBackgroundImageForUtilities(editor, component) {
 
     const target = resolveVisualStyleTarget(component) ?? component;
     const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
+    const darkTheme = isStyleEditingDark(editor);
+    const pageSurface = isPageSurfaceComponent(target, editor)
+        || isPageSurfaceComponent(component, editor);
+
+    if (darkTheme && pageSurface) {
+        clearPageSurfaceDarkWallpaperRule(editor, id, 'background-image');
+        restoreSolidBackgroundColorAfterImageClear(editor, component);
+
+        return;
+    }
+
+    if (darkTheme) {
+        clearDarkIdStyles(editor, id, 'background-image');
+        restoreSolidBackgroundColorAfterImageClear(editor, component);
+
+        return;
+    }
 
     clearStyleProperty(editor, target, 'background-image', { family: false });
 
@@ -2976,7 +3159,7 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     const target = resolveVisualStyleTarget(component) ?? component;
     const opacity = readBackgroundImageOpacity(component, editor);
     // Pass photo visibility so gradient stops get alpha — opaque TW stops hide the url.
-    const gradientLayer = resolveDecorationGradientLayer(component, opacity);
+    const gradientLayer = resolveDecorationGradientLayer(component, opacity, editor);
     const fadeColor = gradientLayer ? '' : resolveBackgroundFadeColor(editor, target);
     const cssValue = composeDecorationBackgroundImageCss(src, opacity, fadeColor, { gradientLayer });
 
@@ -2993,13 +3176,15 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
 
     const pageSurface = isPageSurfaceComponent(target, editor)
         || isPageSurfaceComponent(component, editor);
-    const darkPage = pageSurface && isStyleEditingDark(editor);
+    const darkTheme = isStyleEditingDark(editor);
+    const darkPage = pageSurface && darkTheme;
     const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
 
-    // Page dark wallpaper must NOT clearStyleProperty on the wrapper — that wipes
-    // the light `#id` rule and leaves only the dark photo after Save/reload.
+    // Dark paints must NOT clearStyleProperty on the light `#id` rule.
     if (darkPage) {
         clearPageSurfaceDarkWallpaperRule(editor, id, 'background-image');
+    } else if (darkTheme) {
+        clearDarkIdStyles(editor, id, 'background-image');
     } else {
         clearStyleProperty(editor, target, 'background-image', { family: false });
     }
@@ -3010,7 +3195,7 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
         'background-image': cssValue,
         // Opaque Color would flash before the photo loads (tint lives in overlay
         // layers). A Color with explicit Opacity keeps its alpha paint instead.
-        'background-color': translucentBackgroundColorPaint(component) || 'transparent',
+        'background-color': translucentBackgroundColorPaint(component, editor) || 'transparent',
     }));
 
     // Do NOT scrub live page CSS here — Save / reload need #id{url} as a
@@ -3035,7 +3220,7 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
                 ? readBackgroundImageOpacity(component, editor)
                 : normalizeBackgroundImageOpacity(opacity);
             const pageSurface = isPageSurfaceComponent(component, editor);
-            const srcAttr = pageSurface && isStyleEditingDark(editor)
+            const srcAttr = isStyleEditingDark(editor)
                 ? STYLE_BG_SRC_DARK_ATTR
                 : STYLE_BG_SRC_ATTR;
 
@@ -3229,7 +3414,11 @@ function syncDecorationBlocks(root, component, options = {}, editor = null) {
         return;
     }
 
-    const bgParsed = resolveBackgroundColorAndOpacity(classes, component);
+    const bgParsed = resolveBackgroundColorAndOpacity(
+        classes,
+        component,
+        currentStyleVariantPrefix(editor),
+    );
     const bg = bgParsed.color;
     const gradDir = resolveStyleGroup(classes, GRADIENT_DIRECTION_OPTIONS, editor);
     const gradFrom = resolveStyleGroup(classes, GRADIENT_FROM_OPTIONS, editor);
@@ -4063,6 +4252,12 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         rememberStyleSubject(editor, component);
 
         window.setTimeout(() => {
+            // Style remounts (hydrate / gradient paint) while RTE is active yank the
+            // caret back to the start of the node.
+            if (editor.getEditing?.()) {
+                return;
+            }
+
             // Leaving page-background mode: restore Dimension/Typography/… immediately.
             // Without this, sectors stay hidden after “Page background…” then picking an element.
             if (editor.__voodbuilderForcePageSurfaceStyle
@@ -4225,9 +4420,35 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
         try {
             syncPageSurfaceCanvasWallpaperPreview(editor);
+            syncDarkIdStylesCanvasPreview(editor);
         } catch (error) {
             // Optional canvas preview.
             debugSwallowed(error);
+        }
+
+        // Re-paint the active Style target for the new theme (color / gradient / photo).
+        if (selected && ! editor.__voodbuilderTwStyleApplying) {
+            try {
+                const bg = resolveBackgroundColorAndOpacity(
+                    componentClassList(selected),
+                    selected,
+                    currentStyleVariantPrefix(editor),
+                );
+
+                if (bg.color) {
+                    paintBackgroundColorOpacity(editor, selected, bg.color, bg.opacity);
+                }
+
+                const src = readBackgroundImageUrl(selected, editor);
+
+                if (src !== '') {
+                    reapplyDecorationBackgroundPaint(editor, selected, src);
+                } else {
+                    paintDecorationGradientPreview(editor, selected);
+                }
+            } catch (error) {
+                debugSwallowed(error);
+            }
         }
     };
 
@@ -4330,6 +4551,13 @@ export function hydrateDecorationBackgroundImages(editor) {
     // Size/Position/Repeat selects hydrate (image was already visible via body CSS).
     hydratePageSurfaceWallpaperFromCss(editor, authorCss);
 
+    // Element dark companions (background-color / image) from saved `html.dark #id`.
+    try {
+        hydrateDarkIdStylesFromCss(editor, authorCss);
+    } catch (error) {
+        debugSwallowed(error);
+    }
+
     // Last-resort map from live/saved CSS: #id { background-image: url(...) }
     const liveCss = String(authorCss || editor.__voodbuilderPageLiveCss || '');
     const cssUrlById = new Map();
@@ -4398,6 +4626,9 @@ export function hydrateDecorationBackgroundImages(editor) {
 
             const id = String(component?.getId?.() ?? '').trim();
             let src = String(component.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+            const darkSrc = String(
+                component.getAttributes?.()?.[STYLE_BG_SRC_DARK_ATTR] ?? '',
+            ).trim();
 
             if (src === '') {
                 const target = resolveVisualStyleTarget(component) ?? component;
@@ -4427,11 +4658,61 @@ export function hydrateDecorationBackgroundImages(editor) {
                 return;
             }
 
+            // Seed dark companion from durable dark src when Save CSS lacked it.
+            if (darkSrc !== '' && id !== '') {
+                const existingDark = String(
+                    getDarkIdStyles(editor, id)['background-image'] ?? '',
+                ).trim();
+
+                if (existingDark === '' || ! /url\s*\(/i.test(existingDark)) {
+                    const opacity = readBackgroundImageOpacity(component, editor);
+                    const prevDark = editor.__voodbuilderStyleThemeDark;
+                    editor.__voodbuilderStyleThemeDark = true;
+
+                    try {
+                        const gradientLayer = resolveDecorationGradientLayer(
+                            component,
+                            opacity,
+                            editor,
+                        );
+                        const fadeColor = gradientLayer
+                            ? ''
+                            : resolveBackgroundFadeColor(editor, component);
+                        const cssValue = composeDecorationBackgroundImageCss(
+                            darkSrc,
+                            opacity,
+                            fadeColor,
+                            { gradientLayer },
+                        );
+                        setDarkIdStyles(editor, id, { 'background-image': cssValue });
+                    } finally {
+                        if (typeof prevDark === 'boolean') {
+                            editor.__voodbuilderStyleThemeDark = prevDark;
+                        } else {
+                            delete editor.__voodbuilderStyleThemeDark;
+                        }
+                    }
+                }
+            }
+
             if (src === '') {
                 return;
             }
 
-            reapplyDecorationBackgroundPaint(editor, component, src);
+            // Always paint light `#id` from light src — do not follow the chrome theme
+            // here or a dark editor session would wipe the light companion.
+            const wasDarkFlag = editor.__voodbuilderStyleThemeDark;
+            editor.__voodbuilderStyleThemeDark = false;
+
+            try {
+                reapplyDecorationBackgroundPaint(editor, component, src);
+            } finally {
+                if (typeof wasDarkFlag === 'boolean') {
+                    editor.__voodbuilderStyleThemeDark = wasDarkFlag;
+                } else {
+                    delete editor.__voodbuilderStyleThemeDark;
+                }
+            }
             updated += 1;
         });
     } finally {

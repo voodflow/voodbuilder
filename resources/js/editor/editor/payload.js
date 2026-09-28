@@ -53,6 +53,7 @@ import {
     withWallpaperLayoutDefaults,
 } from '../page-surface-styles.js';
 import { STYLE_BG_SRC_ATTR, STYLE_BG_SRC_DARK_ATTR } from '../style-background-image.js';
+import { collectDarkIdStylesCssForPersist } from '../dark-id-styles.js';
 
 /**
  * Emit page-surface light + dark wallpaper rules for Save.
@@ -974,10 +975,13 @@ export function buildPayload(editor, options = {}) {
         // Chrome-shell Save skips the wrapper in HTML — emit light + dark page
         // wallpaper #id rules explicitly so refresh can reclaim both themes.
         const pageSurfaceCss = collectPageSurfaceWallpaperCssForPersist(editor);
+        const darkIdStylesCss = collectDarkIdStylesCssForPersist(editor);
         // Page-surface light+dark from attrs/cache must win over CssComposer #id —
         // Grapes often holds only the last painted theme on bare `#id`.
+        // Element dark companions (`html.dark #id`) come from memory cache next.
         let css = mergeAuthorCssChunks([
             pageSurfaceCss,
+            darkIdStylesCss,
             styleManagerCss,
             componentAuthorCss,
         ]);
@@ -995,6 +999,7 @@ export function buildPayload(editor, options = {}) {
         if (css.length > maxCssBytes) {
             css = mergeAuthorCssChunks([
                 extractBareIdAuthorCss(pageSurfaceCss),
+                extractBareIdAuthorCss(darkIdStylesCss),
                 extractBareIdAuthorCss(styleManagerCss),
                 extractBareIdAuthorCss(componentAuthorCss),
             ]);

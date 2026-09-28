@@ -2,9 +2,31 @@ import { describe, expect, it } from 'vitest';
 import {
     applyBackgroundColorWithOpacity,
     BG_COLOR_OPACITY_ATTR,
+    BG_COLOR_OPACITY_DARK_ATTR,
+    clearBackgroundColorUtilities,
     composeBackgroundColorClass,
     resolveBackgroundColorAndOpacity,
 } from '../../resources/js/editor/style-tailwind-class-groups.js';
+
+function mockComponent(initialClasses = [], initialAttrs = {}) {
+    const classes = new Set(initialClasses);
+    const attrs = { ...initialAttrs };
+
+    return {
+        classes,
+        attrs,
+        getClasses: () => [...classes],
+        addClass: (name) => { classes.add(name); },
+        removeClass: (name) => { classes.delete(name); },
+        getAttributes: () => ({ ...attrs }),
+        addAttributes: (next) => { Object.assign(attrs, next); },
+        removeAttributes: (key) => { delete attrs[key]; },
+        setAttributes: (next) => {
+            Object.keys(attrs).forEach((k) => delete attrs[k]);
+            Object.assign(attrs, next);
+        },
+    };
+}
 
 describe('background color opacity', () => {
     it('parses slash, legacy, and data-attr forms', () => {
@@ -40,23 +62,77 @@ describe('background color opacity', () => {
     });
 
     it('applies color + opacity attr and clears legacy opacity', () => {
-        const classes = new Set(['bg-black', 'bg-opacity-65', 'relative']);
-        const attrs = {};
-        const component = {
-            getClasses: () => [...classes],
-            addClass: (name) => { classes.add(name); },
-            removeClass: (name) => { classes.delete(name); },
-            getAttributes: () => ({ ...attrs }),
-            addAttributes: (next) => { Object.assign(attrs, next); },
-            removeAttributes: (key) => { delete attrs[key]; },
-            setAttributes: (next) => {
-                Object.keys(attrs).forEach((k) => delete attrs[k]);
-                Object.assign(attrs, next);
-            },
-        };
+        const component = mockComponent(['bg-black', 'bg-opacity-65', 'relative']);
 
         applyBackgroundColorWithOpacity(component, 'bg-black', '65');
-        expect([...classes].sort()).toEqual(['bg-black', 'relative'].sort());
-        expect(attrs[BG_COLOR_OPACITY_ATTR]).toBe('65');
+        expect([...component.classes].sort()).toEqual(['bg-black', 'relative'].sort());
+        expect(component.attrs[BG_COLOR_OPACITY_ATTR]).toBe('65');
+    });
+
+    it('authors dark color + opacity without clearing light', () => {
+        const component = mockComponent(
+            ['bg-slate-200', 'relative'],
+            { [BG_COLOR_OPACITY_ATTR]: '40' },
+        );
+
+        applyBackgroundColorWithOpacity(component, 'bg-slate-900', '80', 'dark:');
+
+        expect(component.classes.has('bg-slate-200')).toBe(true);
+        expect(component.classes.has('dark:bg-slate-900')).toBe(true);
+        expect(component.attrs[BG_COLOR_OPACITY_ATTR]).toBe('40');
+        expect(component.attrs[BG_COLOR_OPACITY_DARK_ATTR]).toBe('80');
+
+        expect(resolveBackgroundColorAndOpacity(
+            [...component.classes],
+            component,
+            'dark:',
+        )).toEqual({
+            color: 'bg-slate-900',
+            opacity: '80',
+            legacyOpacity: false,
+        });
+
+        expect(resolveBackgroundColorAndOpacity(
+            [...component.classes],
+            component,
+            '',
+        )).toEqual({
+            color: 'bg-slate-200',
+            opacity: '40',
+            legacyOpacity: false,
+        });
+    });
+
+    it('clears only the dark variant utilities and opacity attr', () => {
+        const component = mockComponent(
+            ['bg-white', 'dark:bg-black'],
+            {
+                [BG_COLOR_OPACITY_ATTR]: '50',
+                [BG_COLOR_OPACITY_DARK_ATTR]: '70',
+            },
+        );
+
+        clearBackgroundColorUtilities(component, 'dark:');
+
+        expect(component.classes.has('bg-white')).toBe(true);
+        expect(component.classes.has('dark:bg-black')).toBe(false);
+        expect(component.attrs[BG_COLOR_OPACITY_ATTR]).toBe('50');
+        expect(component.attrs[BG_COLOR_OPACITY_DARK_ATTR]).toBeUndefined();
+    });
+
+    it('cascades dark opacity to light when dark attr is unset', () => {
+        const component = {
+            getAttributes: () => ({ [BG_COLOR_OPACITY_ATTR]: '55' }),
+        };
+
+        expect(resolveBackgroundColorAndOpacity(
+            ['bg-red-500', 'dark:bg-red-900'],
+            component,
+            'dark:',
+        )).toEqual({
+            color: 'bg-red-900',
+            opacity: '55',
+            legacyOpacity: false,
+        });
     });
 });
