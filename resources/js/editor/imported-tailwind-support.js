@@ -69,23 +69,64 @@ export function migrateImportedTailwindHtml(html) {
         }
     }
 
-    if (/\bdark:[A-Za-z0-9_\-!/\[\]#%.]+/i.test(migrated)
-        && ! /\bvoodbuilder-pasted-component\b[^"'>]*\bdark\b/.test(migrated)) {
-        migrated = migrated.replace(
-            /\bclass=(["'])([^"']*\bvoodbuilder-pasted-component\b[^"']*)\1/i,
-            (match, quote, classes) => {
-                const tokens = classes.split(/\s+/).filter(Boolean);
+    return stripForcedDarkScopeHtml(ensureEditorLayoutShell(migrated));
+}
 
-                if (tokens.includes('dark')) {
-                    return match;
-                }
+/**
+ * Remove the `dark` class older imports forced onto pasted-component roots:
+ * it pinned the block to dark tokens and `dark:` variants in light mode.
+ * Mirrors PHP EditorImportedTailwindSupport::stripForcedDarkScope().
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+export function stripForcedDarkScopeHtml(html) {
+    const source = String(html ?? '');
 
-                return `class=${quote}dark ${classes}${quote}`;
-            },
-        );
+    if (! source.includes('voodbuilder-pasted-component')) {
+        return source;
     }
 
-    return ensureEditorLayoutShell(migrated);
+    return source.replace(
+        /\bclass=(["'])([^"']*\bvoodbuilder-pasted-component\b[^"']*)\1/gi,
+        (match, quote, classes) => {
+            const tokens = classes.split(/\s+/).filter(Boolean);
+
+            if (! tokens.includes('dark')) {
+                return match;
+            }
+
+            return `class=${quote}${tokens.filter((token) => token !== 'dark').join(' ')}${quote}`;
+        },
+    );
+}
+
+/**
+ * Same cleanup on the live GrapesJS tree (pages saved before the fix).
+ *
+ * @param {import('grapesjs').Editor | null | undefined} editor
+ * @returns {number} components cleaned
+ */
+export function stripForcedDarkScopeFromComponents(editor) {
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper?.onAll) {
+        return 0;
+    }
+
+    let cleaned = 0;
+
+    wrapper.onAll((component) => {
+        const classes = component?.getClasses?.() ?? [];
+        const names = classes.map((entry) => (typeof entry === 'string' ? entry : String(entry?.get?.('name') ?? entry?.name ?? '')));
+
+        if (names.includes('voodbuilder-pasted-component') && names.includes('dark')) {
+            component.removeClass?.('dark');
+            cleaned += 1;
+        }
+    });
+
+    return cleaned;
 }
 
 /**

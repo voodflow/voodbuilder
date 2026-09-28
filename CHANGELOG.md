@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.29] - 2026-09-28
+
+### Fixed
+
+- Blocks no longer get pinned to dark: paste/import normalization stopped adding a `dark` class to pasted-component roots that contain `dark:` utilities (which every block gets once you style it in Dark). The forced class made the whole block use dark tokens (e.g. code blocks, text colors) and `dark:` variants even in light mode
+- Existing pages are cleaned automatically on editor load, on Save and on public render (pages and site chrome)
+
+### Tests
+
+- `tailwind-plugin-defer` window stub now provides `setInterval` / `clearInterval` used by the build-status elapsed timer
+
 ## [1.11.28] - 2026-09-28
 
 ### Fixed

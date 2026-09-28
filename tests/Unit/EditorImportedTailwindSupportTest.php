@@ -26,6 +26,30 @@ class EditorImportedTailwindSupportTest extends TestCase
         $this->assertStringContainsString('class="flex', $normalized);
     }
 
+    public function test_prepare_html_does_not_pin_blocks_with_dark_variants_to_dark(): void
+    {
+        $prepared = EditorImportedTailwindSupport::prepareHtml(
+            '<section class="bg-white dark:bg-black"><div class="vp-code-block">x</div></section>',
+        );
+
+        $this->assertStringContainsString('voodbuilder-pasted-component', $prepared);
+        $this->assertDoesNotMatchRegularExpression('/class="[^"]*(?<![\w:-])dark(?![\w:-])/', $prepared);
+        $this->assertStringContainsString('dark:bg-black', $prepared);
+    }
+
+    public function test_strip_forced_dark_scope_cleans_every_pasted_root_and_keeps_variants(): void
+    {
+        $html = '<section class="dark voodbuilder-editor-section dark:lg:bg-top voodbuilder-pasted-component relative">A</section>'
+            . '<section class="voodbuilder-pasted-component dark relative">B</section>'
+            . '<div class="dark">untouched</div>';
+
+        $cleaned = EditorImportedTailwindSupport::stripForcedDarkScope($html);
+
+        $this->assertStringContainsString('class="voodbuilder-editor-section dark:lg:bg-top voodbuilder-pasted-component relative"', $cleaned);
+        $this->assertStringContainsString('class="voodbuilder-pasted-component relative"', $cleaned);
+        $this->assertStringContainsString('<div class="dark">untouched</div>', $cleaned);
+    }
+
     public function test_prepare_html_inlines_background_images_before_marking_root(): void
     {
         $url = 'https://images.unsplash.com/photo-1629666451094-8908989cae90';

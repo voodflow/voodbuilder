@@ -37,6 +37,7 @@ final class EditorChromeHtmlPipeline
             : app(EditorBindingRenderer::class)->render($html, null);
 
         $html = app(EditorDynamicBlockRenderer::class)->render($html, null, $canvasPreview);
+        $html = EditorImportedTailwindSupport::stripForcedDarkScope($html);
 
         $html = GlobalTextTags::replaceInHtml($html);
 

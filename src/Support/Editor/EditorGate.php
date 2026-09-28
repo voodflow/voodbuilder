@@ -1234,6 +1234,7 @@ final class EditorGate
         // unquoted handlers, `<svg/onload=…>` or entity-encoded schemes.
         $html = EditorHtmlSecuritySanitizer::sanitize($html);
         $html = EditorCodeBlockNormalizer::normalize($html);
+        $html = EditorImportedTailwindSupport::stripForcedDarkScope($html);
         $css = (string) ($payload['css'] ?? '');
         // Withheld at write time as well as at render: an installation that may not run
         // author scripts should not be storing them either.

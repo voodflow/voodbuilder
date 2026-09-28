@@ -129,6 +129,7 @@ final class EditorRenderer
         $html = ComponentRuntimeBridge::renderComponentHtml($html, $page);
         $html = app(EditorBindingRenderer::class)->render($html, $page);
         $html = app(EditorDynamicBlockRenderer::class)->render($html, $page);
+        $html = EditorImportedTailwindSupport::stripForcedDarkScope($html);
         $html = GlobalTextTags::replaceInHtml($html);
 
         // Last gate before `{!! !!}`. The save path sanitizes too, but the render must never

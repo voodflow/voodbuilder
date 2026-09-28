@@ -49,7 +49,7 @@ final class EditorImportedTailwindSupport
         $html = self::markPastedComponentRoot($html);
         $html = self::ensureEditorLayoutShell($html);
 
-        return self::ensureDarkVariantScope($html);
+        return self::stripForcedDarkScope($html);
     }
 
     public static function stripSpuriousSvgBakedPaint(string $html): string
@@ -616,9 +616,16 @@ final class EditorImportedTailwindSupport
         return $parsed;
     }
 
-    public static function ensureDarkVariantScope(string $html): string
+    /**
+     * Remove the `dark` class that older imports forced onto pasted-component roots.
+     *
+     * `dark:` utilities and `.dark { --color-vp-* }` tokens must follow the site theme
+     * (`html.dark`); a `dark` class on a block pins its whole subtree to dark tokens and
+     * `dark:` variants even in light mode.
+     */
+    public static function stripForcedDarkScope(string $html): string
     {
-        if ($html === '' || ! preg_match('/\bdark:[A-Za-z0-9_\-!\/\[\]#%.]+/', $html)) {
+        if ($html === '' || ! str_contains($html, 'voodbuilder-pasted-component')) {
             return $html;
         }
 
@@ -627,14 +634,15 @@ final class EditorImportedTailwindSupport
             static function (array $matches): string {
                 $classes = preg_split('/\s+/', trim($matches[2])) ?: [];
 
-                if (in_array('dark', $classes, true)) {
+                if (! in_array('dark', $classes, true)) {
                     return $matches[0];
                 }
 
-                return 'class=' . $matches[1] . 'dark ' . $matches[2] . $matches[1];
+                $kept = array_values(array_filter($classes, static fn (string $class): bool => $class !== 'dark'));
+
+                return 'class=' . $matches[1] . implode(' ', $kept) . $matches[1];
             },
             $html,
-            1,
         ) ?? $html;
     }
 

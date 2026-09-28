@@ -134,6 +134,7 @@ import { registerLayerVisibilityPersistence, restoreLayerVisibilityFromAttribute
 import { registerTailwindClassSuggestions } from '../tailwind-class-suggestions.js';
 import { registerStyleAnimationSector } from '../style-animation-sector.js';
 import { registerStyleTailwindPanel, hydrateDecorationBackgroundImages } from '../style-tailwind-panel.js';
+import { stripForcedDarkScopeFromComponents } from '../imported-tailwind-support.js';
 import { registerCanvasClassHoverPopover } from '../canvas-class-hover-popover.js';
 import { syncAllLayerDisplayNames, registerLayerDisplayNamePersistence } from '../layer-display-name.js';
 import { registerBlocksContextMenu } from '../blocks-context-menu.js';
@@ -257,6 +258,7 @@ function applyInitialContent(editor, initial, options = {}) {
     // including when pageManager already filled the canvas (hasCanvas=true).
     try {
         bakeAuthorStylesToComposerForExport(editor);
+        stripForcedDarkScopeFromComponents(editor);
         hydrateAuthorStylesFromIdRules(editor);
         hydrateDecorationBackgroundImages(editor);
         restoreLayerVisibilityFromAttributes(editor);
@@ -1487,6 +1489,7 @@ export function initVoodbuilderEditor(container, options = {}) {
             // Layers hide may exist only as #id {display:none} from older saves —
             // re-apply marker + inline so eyes/canvas stay in sync after reload.
             restoreLayerVisibilityFromAttributes(editor);
+            stripForcedDarkScopeFromComponents(editor);
             hydrateDecorationBackgroundImages(editor);
             void editor.__voodbuilderHydrateCanvasFonts?.(editor.getCss?.() ?? '');
             window.requestAnimationFrame(() => {

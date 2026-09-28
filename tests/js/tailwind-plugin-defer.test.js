@@ -12,6 +12,8 @@ import registerEditorTailwindPlugin from '../../resources/js/editor/editor-tailw
 globalThis.window = globalThis.window ?? {
     setTimeout: (...args) => setTimeout(...args).unref?.(),
     clearTimeout: (...args) => clearTimeout(...args),
+    setInterval: (...args) => setInterval(...args).unref?.(),
+    clearInterval: (...args) => clearInterval(...args),
     requestAnimationFrame: (fn) => setTimeout(fn, 0).unref?.(),
     addEventListener() {},
 };
