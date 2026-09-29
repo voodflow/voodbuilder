@@ -261,6 +261,20 @@ class EditorBindingRendererTest extends TestCase
         $this->assertStringContainsString('>Hello world<', $rendered);
         $this->assertStringNotContainsString('[Latest item: Title]', $rendered);
     }
+
+    public function test_html_binding_injects_sanitized_markup_not_escaped_text(): void
+    {
+        $registry = new BindingRegistry;
+        $registry->register(new FakeLatestBindingSource);
+
+        $html = '<div data-voodbuilder-bind="demo.latest.body">Placeholder</div>';
+
+        $rendered = (new EditorBindingRenderer($registry))->render($html);
+
+        $this->assertStringContainsString('<p>Hello <strong>world</strong></p>', $rendered);
+        $this->assertStringNotContainsString('&lt;p&gt;', $rendered);
+        $this->assertStringNotContainsString('<script>', $rendered);
+    }
 }
 
 final class FakeLatestBindingSource implements EditorBindingSource
@@ -291,6 +305,7 @@ final class FakeLatestBindingSource implements EditorBindingSource
             new BindingField('title', 'Title', BindingField::TYPE_TEXT),
             new BindingField('url', 'URL', BindingField::TYPE_URL),
             new BindingField('image', 'Cover', BindingField::TYPE_IMAGE),
+            new BindingField('body', 'Body', BindingField::TYPE_HTML),
             new BindingField('read_count', 'Read count', BindingField::TYPE_TEXT),
             // Declared but never resolvable — stands in for `*.current.*` off its page.
             new BindingField('subtitle', 'Subtitle', BindingField::TYPE_TEXT),
@@ -303,6 +318,7 @@ final class FakeLatestBindingSource implements EditorBindingSource
             'title' => 'Hello world',
             'url' => 'https://example.test/tutorial',
             'image' => 'https://example.test/cover.jpg',
+            'body' => '<p>Hello <strong>world</strong></p><script>alert(1)</script>',
             'read_count' => '22',
             default => null,
         };

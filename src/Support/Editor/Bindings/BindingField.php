@@ -15,6 +15,9 @@ final readonly class BindingField
 
     public const TYPE_IMAGE = 'image';
 
+    /** Trusted HTML from companion packages (e.g. publication body). Sanitized on apply. */
+    public const TYPE_HTML = 'html';
+
     public function __construct(
         public string $id,
         public string $label,

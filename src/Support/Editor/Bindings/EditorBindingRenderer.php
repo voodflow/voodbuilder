@@ -9,6 +9,7 @@ use DOMElement;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\Editor\DynamicDataCollectionsBridge;
 use Voodflow\Voodbuilder\Support\Editor\EditorHtmlSanitizer;
+use Voodflow\Voodbuilder\Support\Editor\EditorHtmlSecuritySanitizer;
 
 /**
  * Editor Binding Renderer.
@@ -148,6 +149,7 @@ final class EditorBindingRenderer
                         match ($field->type) {
                             BindingField::TYPE_IMAGE => $this->applyImageBinding($element, $escaped, $bindingKey, $context),
                             BindingField::TYPE_URL => $element = $this->applyUrlBinding($element, $escaped),
+                            BindingField::TYPE_HTML => $this->applyHtmlBinding($element, $value),
                             default => $this->applyTextBinding($element, $escaped, $tag),
                         };
                         $contentResolved = true;
@@ -422,6 +424,47 @@ final class EditorBindingRenderer
 
         if ($tag === 'button' || $element->getAttribute('data-voodbuilder-cta') === 'true') {
             $element->setAttribute('data-voodbuilder-cta-label', $decoded);
+        }
+    }
+
+    /**
+     * Inject sanitized HTML into the bound element (publication body, etc.).
+     */
+    protected function applyHtmlBinding(DOMElement $element, string $html): void
+    {
+        while ($element->firstChild !== null) {
+            $element->removeChild($element->firstChild);
+        }
+
+        $sanitized = EditorHtmlSecuritySanitizer::sanitize($html);
+
+        if (trim($sanitized) === '') {
+            return;
+        }
+
+        $fragment = new DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+
+        try {
+            $wrapped = '<?xml encoding="UTF-8"><div id="__vb_html_bind">'.$sanitized.'</div>';
+            $fragment->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+
+        $container = $fragment->getElementById('__vb_html_bind');
+
+        if (! $container instanceof DOMElement) {
+            $element->appendChild(
+                $element->ownerDocument->createTextNode(strip_tags($sanitized)),
+            );
+
+            return;
+        }
+
+        foreach (iterator_to_array($container->childNodes) as $child) {
+            $element->appendChild($element->ownerDocument->importNode($child, true));
         }
     }
 

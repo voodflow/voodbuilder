@@ -1059,6 +1059,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         entitlements: options.entitlements ?? {},
         vevents: options.vevents ?? null,
         voodpricing: options.voodpricing ?? null,
+        voodnews: options.voodnews ?? null,
         urls: {
             components: options.componentsUrl ?? null,
             popups: options.popupsUrl ?? null,
@@ -1082,6 +1083,7 @@ export function initVoodbuilderEditor(container, options = {}) {
 
     editor.__voodbuilderVevents = options.vevents ?? null;
     editor.__voodbuilderVoodpricing = options.voodpricing ?? null;
+    editor.__voodbuilderVoodnews = options.voodnews ?? null;
 
     editor.__voodbuilderGlobalTextTags = options.globalTextTags ?? {};
     editor.__voodbuilderLinkTargets = { pages: [], menuItems: [], routes: [], popups: [] };
@@ -2583,6 +2585,7 @@ function mountFrontendEditor() {
         newsletterLists: config.newsletterLists ?? {},
         vevents: config.vevents ?? null,
         voodpricing: config.voodpricing ?? null,
+        voodnews: config.voodnews ?? null,
         dynamicPage: config.dynamicPage ?? null,
     });
 
