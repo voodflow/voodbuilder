@@ -21,4 +21,17 @@ class EditorChromeHtmlPipelineTest extends TestCase
         $this->assertStringNotContainsString('<script', $rendered);
         $this->assertStringContainsString('data-voodbuilder-chrome-shell-part="nav"', $rendered);
     }
+
+    public function test_theme_toggle_cta_anchors_are_restored_to_buttons(): void
+    {
+        $html = '<header><a type="button" data-theme-toggle href="#" data-voodbuilder-cta="true" data-voodbuilder-cta-label="Dark mode">'
+            . '<span data-theme-toggle-label>Dark mode</span></a></header>';
+
+        $rendered = EditorChromeHtmlPipeline::render($html);
+
+        $this->assertStringNotContainsString('href="#"', $rendered);
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $rendered);
+        $this->assertStringContainsString('<button', $rendered);
+        $this->assertStringContainsString('data-theme-toggle', $rendered);
+    }
 }

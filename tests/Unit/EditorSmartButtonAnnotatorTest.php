@@ -153,6 +153,38 @@ HTML;
     }
 
     #[Test]
+    public function it_keeps_theme_toggle_buttons_native(): void
+    {
+        $html = '<button type="button" data-theme-toggle data-theme-label-dark="Dark mode" data-theme-label-light="Light mode" aria-label="Dark mode">'
+            . '<svg data-theme-icon="moon"></svg>'
+            . '<span data-theme-toggle-label>Dark mode</span>'
+            . '</button>';
+        $out = EditorSmartButtonAnnotator::annotate($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringNotContainsString('<a ', $out);
+        $this->assertStringContainsString('<button', $out);
+        $this->assertStringContainsString('data-theme-toggle', $out);
+        $this->assertStringContainsString('Dark mode', $out);
+    }
+
+    #[Test]
+    public function it_demotes_theme_toggle_cta_anchors_back_to_buttons(): void
+    {
+        $html = '<a type="button" role="button" data-theme-toggle href="#" data-voodbuilder-cta="true" data-voodbuilder-cta-label="Dark mode" data-vb-link-type="url">'
+            . '<span data-theme-toggle-label>Dark mode</span>'
+            . '</a>';
+        $out = EditorSmartButtonAnnotator::restoreChromeControlElements($html);
+
+        $this->assertStringNotContainsString('<a ', $out);
+        $this->assertStringNotContainsString('href="#"', $out);
+        $this->assertStringNotContainsString('data-voodbuilder-cta', $out);
+        $this->assertStringContainsString('<button', $out);
+        $this->assertStringContainsString('type="button"', $out);
+        $this->assertStringContainsString('data-theme-toggle', $out);
+    }
+
+    #[Test]
     public function it_keeps_slider_chevron_buttons_native(): void
     {
         $html = '<button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-lg">‹</button>';

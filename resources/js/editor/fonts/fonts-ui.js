@@ -418,6 +418,11 @@ function watchFontFamilyChanges(editor) {
             return;
         }
 
+        // Writing font styles while RTE is active resets the caret to index 0.
+        if (editor.getEditing?.()) {
+            return;
+        }
+
         // Bring #id paints into the model so every SM field (font, color, …) shows.
         hydrateComponentFromIdRule(editor, component);
 

@@ -12,7 +12,7 @@
 
 @if ($languageSwitcherAvailable)
     @if ($variant === 'mobile-tool')
-        <div {{ $attributes->class(['voodbuilder-mobile-nav__tool']) }}>
+        <div {{ $attributes->class(['voodbuilder-mobile-nav__tool', 'voodbuilder-mobile-nav__tool--languages']) }}>
             @include('vtuts::components.language-switcher', ['variant' => 'inline'])
         </div>
     @elseif ($labeled)

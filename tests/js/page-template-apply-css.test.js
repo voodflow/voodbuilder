@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     applyTemplatePayload,
+    composerCssFromTemplateSheet,
     cssLooksLikeCompiledUtilitySheet,
     forceTemplatePageCssRebuild,
     notifyPageCssReadyFromTemplate,
@@ -47,6 +48,25 @@ describe('cssLooksLikeCompiledUtilitySheet', () => {
         const utilities = Array.from({ length: 20 }, (_, i) => `.util-${i}{display:flex}`).join('');
 
         expect(cssLooksLikeCompiledUtilitySheet(utilities)).toBe(true);
+    });
+});
+
+describe('composerCssFromTemplateSheet', () => {
+    it('passes author-only sheets through unchanged', () => {
+        const author = '#wrap{background:red} .hero{color:blue}';
+
+        expect(composerCssFromTemplateSheet(author)).toBe(author);
+    });
+
+    it('strips utility selectors before CssComposer setStyle', () => {
+        const utilities = Array.from({ length: 20 }, (_, i) => `.flex-${i}{display:flex}`).join('');
+        const sheet = `#hero{background:red}${utilities}`;
+
+        const composer = composerCssFromTemplateSheet(sheet);
+
+        expect(composer).toContain('#hero');
+        expect(composer).not.toContain('.flex-0');
+        expect(composer.length).toBeLessThan(sheet.length);
     });
 });
 
@@ -129,5 +149,42 @@ describe('applyTemplatePayload wallpaper hydrate', () => {
         expect(hydrate).toHaveBeenCalledWith(
             expect.stringContaining('background-image:url'),
         );
+    });
+
+    it('feeds CssComposer author rules only when the template ships a utility sheet', () => {
+        vi.stubGlobal('requestAnimationFrame', (cb) => {
+            cb(0);
+
+            return 1;
+        });
+        vi.stubGlobal('window', {
+            requestAnimationFrame: (cb) => {
+                cb(0);
+
+                return 1;
+            },
+        });
+
+        const utilities = Array.from({ length: 20 }, (_, i) => `.p-${i}{padding:${i}px}`).join('');
+        const sheet = `#hero{color:red}${utilities}`;
+        const applyLive = vi.fn();
+        const editor = {
+            __voodbuilderChromeShellMode: false,
+            setComponents: vi.fn(),
+            setStyle: vi.fn(),
+            __voodbuilderApplyPageLiveCss: applyLive,
+            trigger: vi.fn(),
+            getWrapper: () => ({ components: () => [] }),
+        };
+
+        applyTemplatePayload(editor, {
+            html: '<section class="p-0">Hero</section>',
+            css: sheet,
+        });
+
+        expect(applyLive).toHaveBeenCalledWith(sheet);
+        expect(editor.setStyle).toHaveBeenCalledWith(expect.stringContaining('#hero'));
+        expect(editor.setStyle.mock.calls[0][0]).not.toContain('.p-0');
+        expect(editor.__voodbuilderAuthorPageCss).toContain('#hero');
     });
 });

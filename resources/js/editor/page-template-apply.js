@@ -19,6 +19,7 @@ import {
     endEditorBuild,
     setEditorBuildLabel,
 } from './editor-build-status.js';
+import { extractGrapesComposerCss } from './editor/payload.js';
 
 const CHROME_PLACEHOLDER_BLOCK_RE = /data-voodbuilder-block="(?:site_nav_simple|site_footer_columns_simple|site_header|site_footer[^"]*)"/i;
 const TEMPLATE_APPLY_SCOPE = 'page-template';
@@ -324,6 +325,28 @@ function waitForPageCssCompiled(editor, timeoutMs = 20_000) {
 }
 
 /**
+ * CssComposer only needs author `#id` / BEM rules. Dumping a full JIT utility sheet
+ * into `setStyle` forces Grapes to parse thousands of selectors (multi-second lag)
+ * even when the iframe already paints via `__voodbuilderApplyPageLiveCss`.
+ *
+ * @param {string} css
+ * @returns {string}
+ */
+export function composerCssFromTemplateSheet(css) {
+    const normalized = String(css ?? '').trim();
+
+    if (normalized === '') {
+        return '';
+    }
+
+    if (! cssLooksLikeCompiledUtilitySheet(normalized)) {
+        return normalized;
+    }
+
+    return extractGrapesComposerCss(normalized);
+}
+
+/**
  * Apply stored template CSS without wiping live utilities when the payload has none.
  * Starter templates often ship `css: null` and rely entirely on canvas JIT.
  *
@@ -336,7 +359,11 @@ function applyTemplateCssPayload(editor, css, options = {}) {
     const replace = options.replace === true;
 
     if (normalized !== '') {
-        editor.setStyle(normalized);
+        // Live sheet → iframe (fast). Composer → author paints only when utilities
+        // are already compiled into the template (Save with live_css).
+        const composerCss = composerCssFromTemplateSheet(normalized);
+        editor.setStyle(composerCss);
+        editor.__voodbuilderAuthorPageCss = String(composerCss || normalized);
         editor.__voodbuilderApplyPageLiveCss?.(normalized);
 
         try {
@@ -358,6 +385,7 @@ function applyTemplateCssPayload(editor, css, options = {}) {
         // Clear Style Manager / composer rules from the previous page, but keep
         // the live utility sheet until forceTemplatePageCssRebuild replaces it.
         editor.setStyle('');
+        editor.__voodbuilderAuthorPageCss = '';
     }
 }
 
@@ -464,10 +492,18 @@ export function appendTemplatePayload(editor, template) {
     }, { rebuildCss: false });
 
     if (String(payload.css ?? '').trim() !== '') {
-        const existingCss = String(editor.getCss?.() ?? '').trim();
-        const mergedCss = [existingCss, payload.css].filter((chunk) => chunk !== '').join('\n');
-        editor.setStyle(mergedCss);
-        editor.__voodbuilderApplyPageLiveCss?.(mergedCss);
+        const incoming = String(payload.css).trim();
+        const existingComposer = composerCssFromTemplateSheet(String(editor.getCss?.() ?? ''));
+        const incomingComposer = composerCssFromTemplateSheet(incoming);
+        const mergedComposer = [existingComposer, incomingComposer]
+            .filter((chunk) => chunk !== '')
+            .join('\n');
+        editor.setStyle(mergedComposer);
+        editor.__voodbuilderAuthorPageCss = mergedComposer;
+
+        const existingLive = String(editor.__voodbuilderPageLiveCss ?? '').trim();
+        const mergedLive = [existingLive, incoming].filter((chunk) => chunk !== '').join('\n');
+        editor.__voodbuilderApplyPageLiveCss?.(mergedLive);
     }
 
     if (typeof payload.js === 'string' && payload.js.trim() !== '') {

@@ -89,7 +89,7 @@ import { registerPageTailwindAutobuild } from '../page-tailwind-autobuild.js';
 import { registerPageSurfaceStyles } from '../page-surface-styles.js';
 import { registerRevisionsUi } from '../revisions-ui.js';
 import { registerPageTemplatesSidebar } from '../page-templates-sidebar.js';
-import { registerPopupCanvasSettings, registerPopupsUi } from '../popups-ui.js';
+import { registerPopupsUi } from '../popups-ui.js';
 import { pruneRedundantSpacingZeros, pruneRedundantSpacingZerosForExport, purgeDesyncedBackgroundCssRules, registerVisualStyleInspector, registerVisualStyleTarget, bakeAuthorStylesToComposerForExport, bakeSvgPaintForExport, syncPaintStylesForExport, syncSpacingStylesForExport, hydrateSvgPaintFromAttributes, purgeDesyncedPaintCssRules, restoreSvgPaintInspectorStyle, restoreSvgPaintInspectorStyles, safeFindComponents, promotePrivateStyleClassesToIdRules, hydrateAuthorStylesFromIdRules } from '../tailwind-visual-style.js';
 import { configureEditorChrome, editorChromeInitOptions } from '../editor-chrome.js';
 import { registerPopupPreviewThemeSelect } from '../popup-preview-theme.js';
@@ -1196,13 +1196,15 @@ export function initVoodbuilderEditor(container, options = {}) {
         configureEditorLayout(editor, shell, labels);
 
         if (options.popupMode) {
-            registerPopupCanvasSettings(editor, {
+            registerPopupsUi(editor, {
                 popupsUrl: options.popupsUrl,
                 popupsPagePathsUrl: options.popupsPagePathsUrl ?? null,
                 csrf: options.csrf,
                 labels,
+                popupMode: true,
                 popupId: options.popupId ?? null,
                 popupInitial: options.popupInitial ?? null,
+                popupPresets: options.popupPresets ?? [],
                 mount: shell?.mounts?.popupSettings ?? null,
             });
         }
@@ -2540,6 +2542,7 @@ function mountFrontendEditor() {
         popupId: config.popupId ?? null,
         popupName: config.popupName ?? null,
         popupInitial: config.popupInitial ?? null,
+        popupPresets: config.popupPresets ?? [],
         popupDisplayWidth: config.popupDisplayWidth ?? null,
         previewThemeArea: config.previewThemeArea ?? null,
         previewThemeOptions: config.previewThemeOptions ?? [],

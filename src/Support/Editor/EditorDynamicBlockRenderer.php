@@ -11,7 +11,13 @@ use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Voodbuilder\Models\SitePage;
 
 /**
- * Editor Dynamic Block Renderer.
+ * Re-renders `data-voodbuilder-block` nodes from Blade + config on canvas /
+ * public remount, then restores author chrome on the shell and on anchored
+ * nodes (`data-voodbuilder-dropzone` / `data-voodbuilder-layer-name`).
+ *
+ * Regenerated titles, plan cards, and other Blade-owned markup do not keep
+ * free-form Style Manager / class edits. Documented limit:
+ * docs/dynamic-blocks.md
  */
 final class EditorDynamicBlockRenderer
 {

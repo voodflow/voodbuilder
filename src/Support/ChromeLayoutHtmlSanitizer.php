@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support;
 
 use DOMDocument;
 use DOMElement;
+use Voodflow\Voodbuilder\Support\Editor\EditorSmartButtonAnnotator;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
 
@@ -19,6 +20,7 @@ final class ChromeLayoutHtmlSanitizer
         $html = ChromeLayoutEditorPreview::unwrapShellPreview(trim($html));
         $html = self::unwrapDropZones($html);
         $html = self::hoistMisplacedChromeBlocks($html);
+        $html = EditorSmartButtonAnnotator::restoreChromeControlElements($html);
 
         if ($html === '') {
             return $html;

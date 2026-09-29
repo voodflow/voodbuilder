@@ -19,7 +19,9 @@ import {
     isGrapesComponent,
     safeFindComponents,
     safeRenderEditorLayers,
+    walkComponentTree,
 } from './tailwind-visual-style.js';
+import { forceReleaseCanvasRte } from './text-elements.js';
 import {
     patchChromeZoneLayerIcons,
     registerChromeLayerIconPatch,
@@ -144,7 +146,17 @@ function setLayerLocked(editor, component, locked = true) {
 }
 
 function unlockPageContentChildren(editor, slot) {
-    forEachGrapesComponent(slot, (child) => {
+    if (! slot) {
+        return;
+    }
+
+    // Deep walk — template apply adds nested headings/text under sections while
+    // BulkStructureUpdate skips per-node unlock on component:add.
+    walkComponentTree(slot, (child) => {
+        if (child === slot) {
+            return;
+        }
+
         ensurePageContentBlockEditable(editor, child);
     });
 }
@@ -1095,6 +1107,14 @@ export function registerChromeShellEditor(editor, options = {}) {
         }
     });
     editor.on('voodbuilder:site-chrome-updated', scheduleRefresh);
+
+    // Template apply / bulk remounts skip component:add unlock — recover here.
+    editor.__voodbuilderAfterBulkStructureUpdate = () => {
+        const slot = findPageContentSlot(editor);
+
+        unlockPageContentChildren(editor, slot);
+        forceReleaseCanvasRte(editor);
+    };
 
     window.requestAnimationFrame(() => {
         if (editor.getWrapper?.()) {

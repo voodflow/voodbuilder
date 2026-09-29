@@ -217,6 +217,69 @@ export function shouldHideCanvasRteToolbar(component) {
 }
 
 /**
+ * Exit canvas Grapes RTE and scrub leftover contenteditable nodes.
+ *
+ * Clicks inside an active contenteditable often never change Grapes selection, so
+ * `component:selected` never runs and other texts look unselectable until Save
+ * (blur / remount). Call this on pointer-down outside the editing node.
+ *
+ * @param {object} editor
+ * @param {Element|null} [keepEl] leave this node editable (optional)
+ */
+export function forceReleaseCanvasRte(editor, keepEl = null) {
+    if (! editor || editor.__voodbuilderReleasingCanvasRte) {
+        return;
+    }
+
+    editor.__voodbuilderReleasingCanvasRte = true;
+
+    try {
+        const editing = editor.getEditing?.();
+
+        if (editing) {
+            try {
+                editing.view?.disableEditing?.();
+            } catch (error) {
+                debugSwallowed(error);
+            }
+        }
+
+        try {
+            editor.RichTextEditor?.disable?.();
+        } catch (error) {
+            debugSwallowed(error);
+        }
+
+        const doc = editor.Canvas?.getDocument?.();
+
+        if (! doc?.querySelectorAll) {
+            return;
+        }
+
+        doc.querySelectorAll('[contenteditable="true"]').forEach((node) => {
+            if (
+                keepEl
+                && (
+                    node === keepEl
+                    || (typeof keepEl.contains === 'function' && keepEl.contains(node))
+                    || (typeof node.contains === 'function' && node.contains(keepEl))
+                )
+            ) {
+                return;
+            }
+
+            node.removeAttribute('contenteditable');
+
+            if (node.getAttribute?.('dir') === 'ltr') {
+                node.removeAttribute('dir');
+            }
+        });
+    } finally {
+        editor.__voodbuilderReleasingCanvasRte = false;
+    }
+}
+
+/**
  * Hide Editor canvas RTE toolbar for Basic Text / plain text.
  * Formatting belongs on Rich Text; Basic Text uses Tailwind + inline styles.
  *
@@ -317,13 +380,47 @@ export function configurePlainTextRte(editor) {
         }, true);
     };
 
+    const onCanvasPointerDown = (event) => {
+        const editing = editor.getEditing?.();
+
+        if (! editing) {
+            return;
+        }
+
+        const editingEl = editing.getEl?.() ?? editing.view?.el ?? null;
+        const target = event.target;
+
+        if (! editingEl || ! target) {
+            return;
+        }
+
+        // Stay in RTE when interacting inside the active node.
+        if (editingEl === target || editingEl.contains?.(target)) {
+            return;
+        }
+
+        forceReleaseCanvasRte(editor);
+    };
+
+    const bindCanvasRteRelease = () => {
+        const doc = editor.Canvas?.getDocument?.();
+
+        if (! doc || doc.__vbCanvasRteReleaseBound) {
+            return;
+        }
+
+        doc.__vbCanvasRteReleaseBound = true;
+        doc.addEventListener('mousedown', onCanvasPointerDown, true);
+    };
+
     editor.on('rte:enable', (view) => {
         const model = view?.model ?? editor.getSelected?.() ?? null;
         const el = view?.el ?? model?.getEl?.();
 
         // Grapes/contenteditable can inherit a stale dir=rtl (or dir=auto that
-        // flips after caret reset). Force LTR for Latin authoring sessions.
-        if (el?.setAttribute) {
+        // flips after caret reset). Only write when needed — setAttribute always
+        // can reset the caret to index 0 after a click inside the text.
+        if (el?.getAttribute && el.getAttribute('dir') !== 'ltr') {
             el.setAttribute('dir', 'ltr');
         }
 
@@ -357,6 +454,7 @@ export function configurePlainTextRte(editor) {
 
     editor.on('component:deselected', () => {
         showToolbar();
+        forceReleaseCanvasRte(editor);
     });
 
     // If selection moves while a text view still thinks it is editing, force
@@ -368,11 +466,10 @@ export function configurePlainTextRte(editor) {
             return;
         }
 
-        try {
-            editing.view?.disableEditing?.();
-        } catch (error) {
-            // Ignore races during remount.
-            debugSwallowed(error);
-        }
+        forceReleaseCanvasRte(editor);
     });
+
+    // Frame reloads replace the iframe document — rebind capture listener.
+    editor.on('canvas:frame:load', bindCanvasRteRelease);
+    bindCanvasRteRelease();
 }

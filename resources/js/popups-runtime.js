@@ -23,3 +23,11 @@ export function initPopups() {
 export function previewPopup(...args) {
     return popupRuntimeModule?.previewPopup?.(...args);
 }
+
+export function openPopup(...args) {
+    return popupRuntimeModule?.openPopup?.(...args);
+}
+
+export function closePopup(...args) {
+    return popupRuntimeModule?.closePopup?.(...args);
+}

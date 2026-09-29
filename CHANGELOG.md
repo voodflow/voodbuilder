@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.30] - 2026-09-29
+
+### Added
+
+- Popup editor: pass `popupPresets` into the editor shell and register them via `registerPopupsUi({ popupMode: true })` (catalog owned by `voodflow/vpopups`)
+- Blocks sidebar category order for localized “Popup templates” labels (pinned near the top in popup mode)
+
+### Docs
+
+- Documented dynamic-block styling limits (shell / anchored dropzones vs Blade-owned markup): [docs/dynamic-blocks.md](docs/dynamic-blocks.md)
+
+### Fixed
+
+- Theme (and other chrome) toggles no longer append `#` to the URL or scroll the page to the top: CTA annotation no longer morphs them into `<a href="#">`, public chrome render restores any already-morphed controls to `<button type="button">`, and the click handler calls `preventDefault`
+- Canvas RTE: force-release contenteditable on outside pointer-down so other texts stay selectable without Save
+- Page template apply: strip compiled utility sheets before `CssComposer.setStyle` to avoid multi-second Grapes parse lag
+- Language switcher chips stay compact in nav dropdowns (5-column chip grid, not full-width menu rows)
+
 ## [1.11.29] - 2026-09-28
 
 ### Fixed

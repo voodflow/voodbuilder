@@ -39,6 +39,9 @@ class PopupEditorThemeAlignmentTest extends TestCase
         $this->assertNotSame('', (string) ($config['themePaletteCss'] ?? ''));
         $this->assertNotEmpty($config['previewThemeOptions']);
         $this->assertArrayHasKey($expected['areaId'], $config['previewThemePalettes']);
+        $this->assertArrayHasKey('popupPresets', $config);
+        $this->assertCount(10, $config['popupPresets']);
+        $this->assertStringStartsWith('vpopups-preset-', (string) ($config['popupPresets'][0]['id'] ?? ''));
     }
 
     public function test_popup_editor_honors_preview_theme_query(): void

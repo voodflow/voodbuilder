@@ -34,13 +34,19 @@ final class EditorSmartButtonAnnotator
         }
 
         $xpath = new \DOMXPath($document);
+        $chromeAnchors = [];
 
         foreach ($xpath->query('.//button', $body) ?: [] as $button) {
             if (! $button instanceof \DOMElement) {
                 continue;
             }
 
-            if (self::shouldSkipButton($button) || self::isIconOrEmptyButton($button) || self::isNonCtaControlButton($button)) {
+            if (
+                self::isChromeControl($button)
+                || self::shouldSkipButton($button)
+                || self::isIconOrEmptyButton($button)
+                || self::isNonCtaControlButton($button)
+            ) {
                 continue;
             }
 
@@ -49,6 +55,14 @@ final class EditorSmartButtonAnnotator
 
         foreach ($xpath->query('.//a', $body) ?: [] as $anchor) {
             if (! $anchor instanceof \DOMElement) {
+                continue;
+            }
+
+            // Theme / nav chrome controls must stay <button type="button"> —
+            // promoting them to <a href="#"> appends "#" and scrolls the page up.
+            if (self::isChromeControl($anchor)) {
+                $chromeAnchors[] = $anchor;
+
                 continue;
             }
 
@@ -69,6 +83,10 @@ final class EditorSmartButtonAnnotator
             self::promoteTextLink($anchor);
         }
 
+        foreach ($chromeAnchors as $anchor) {
+            self::demoteChromeControlToButton($anchor);
+        }
+
         $inner = '';
 
         foreach ($body->childNodes as $child) {
@@ -76,6 +94,165 @@ final class EditorSmartButtonAnnotator
         }
 
         return trim($inner);
+    }
+
+    /**
+     * Interactive chrome controls that must stay native <button>s.
+     *
+     * @return list<string>
+     */
+    public static function chromeControlAttributes(): array
+    {
+        return [
+            'data-theme-toggle',
+            'data-mobile-nav-toggle',
+            'data-mobile-nav-close',
+            'data-voodbuilder-nav-dropdown-toggle',
+            'data-voodbuilder-nav-mobile-toggle',
+            'data-voodbuilder-search-open',
+            'data-voodbuilder-profile-menu-toggle',
+            'data-voodbuilder-notification-bell-preview',
+        ];
+    }
+
+    /**
+     * Heal chrome controls previously morphed to <a href="#"> (e.g. theme toggle
+     * with a "Dark mode" label was CTA-promoted and scrolled the page to the top).
+     */
+    public static function restoreChromeControlElements(string $html): string
+    {
+        $html = trim($html);
+
+        if ($html === '' || ! str_contains($html, '<a')) {
+            return $html;
+        }
+
+        $needsHeal = false;
+
+        foreach (self::chromeControlAttributes() as $attribute) {
+            if (str_contains($html, $attribute)) {
+                $needsHeal = true;
+
+                break;
+            }
+        }
+
+        if (! $needsHeal && ! str_contains($html, 'voodbuilder-chrome-button')) {
+            return $html;
+        }
+
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+        $document->loadHTML(
+            '<?xml encoding="UTF-8"><body>' . $html . '</body>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if (! $body instanceof \DOMElement) {
+            return $html;
+        }
+
+        $xpath = new \DOMXPath($document);
+        $anchors = [];
+
+        foreach (self::chromeControlAttributes() as $attribute) {
+            foreach ($xpath->query('.//a[@'.$attribute.']', $body) ?: [] as $anchor) {
+                if ($anchor instanceof \DOMElement) {
+                    $anchors[spl_object_id($anchor)] = $anchor;
+                }
+            }
+        }
+
+        foreach ($xpath->query('.//a[@data-gjs-type="voodbuilder-chrome-button"]', $body) ?: [] as $anchor) {
+            if ($anchor instanceof \DOMElement) {
+                $anchors[spl_object_id($anchor)] = $anchor;
+            }
+        }
+
+        if ($anchors === []) {
+            return $html;
+        }
+
+        foreach ($anchors as $anchor) {
+            self::demoteChromeControlToButton($anchor);
+        }
+
+        $inner = '';
+
+        foreach ($body->childNodes as $child) {
+            $inner .= $document->saveHTML($child);
+        }
+
+        return trim($inner);
+    }
+
+    private static function isChromeControl(\DOMElement $element): bool
+    {
+        if ($element->getAttribute('data-gjs-type') === 'voodbuilder-chrome-button') {
+            return true;
+        }
+
+        foreach (self::chromeControlAttributes() as $attribute) {
+            if ($element->hasAttribute($attribute)) {
+                return true;
+            }
+        }
+
+        $class = ' ' . $element->getAttribute('class') . ' ';
+
+        return str_contains($class, ' voodbuilder-header-icon-btn ');
+    }
+
+    private static function demoteChromeControlToButton(\DOMElement $anchor): void
+    {
+        if (strcasecmp($anchor->tagName, 'a') !== 0) {
+            return;
+        }
+
+        $button = $anchor->ownerDocument?->createElement('button');
+
+        if (! $button instanceof \DOMElement) {
+            return;
+        }
+
+        foreach (iterator_to_array($anchor->attributes ?? []) as $attr) {
+            if (! $attr instanceof \DOMAttr) {
+                continue;
+            }
+
+            $name = strtolower($attr->name);
+
+            if (in_array($name, [
+                'href',
+                'target',
+                'rel',
+                'data-voodbuilder-cta',
+                'data-voodbuilder-cta-label',
+                'data-vb-link-type',
+                'data-vb-link',
+            ], true)) {
+                continue;
+            }
+
+            $button->setAttribute($attr->name, $attr->value);
+        }
+
+        $button->setAttribute('type', 'button');
+
+        // Drop redundant role="button"; keep role="menuitem" for profile-menu toggle.
+        if ($button->getAttribute('role') === 'button') {
+            $button->removeAttribute('role');
+        }
+
+        while ($anchor->firstChild) {
+            $button->appendChild($anchor->firstChild);
+        }
+
+        $anchor->parentNode?->replaceChild($button, $anchor);
     }
 
     private static function shouldSkipButton(\DOMElement $button): bool

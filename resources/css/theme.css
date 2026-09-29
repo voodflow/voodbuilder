@@ -1829,6 +1829,41 @@ html.dark [data-voodbuilder-nav-dropdown-panel] {
     outline: none;
 }
 
+/*
+ * Language chips must stay compact in a row (wrap after 5), not full-width menu rows.
+ */
+.voodbuilder-dropdown-panel [data-voodbuilder-language-switcher],
+.voodbuilder-nav-profile-menu__dropdown [data-voodbuilder-language-switcher],
+[data-voodbuilder-nav-dropdown-panel] [data-voodbuilder-language-switcher] {
+    display: grid;
+    grid-template-columns: repeat(5, max-content);
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.voodbuilder-dropdown-panel [data-voodbuilder-language-switcher] :is(a, button, [role='menuitem']),
+.voodbuilder-nav-profile-menu__dropdown [data-voodbuilder-language-switcher] :is(a, button, [role='menuitem']),
+[data-voodbuilder-nav-dropdown-panel] [data-voodbuilder-language-switcher] :is(a, button, [role='menuitem']) {
+    display: inline-flex;
+    width: auto;
+    align-items: center;
+    gap: 0;
+    margin-inline: 0;
+    padding: 0.25rem 0.625rem !important;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    color: var(--color-vp-text-2);
+    background-color: transparent;
+}
+
+.voodbuilder-dropdown-panel [data-voodbuilder-language-switcher] :is(a, button, [role='menuitem']):is(:hover, :focus-visible),
+.voodbuilder-nav-profile-menu__dropdown [data-voodbuilder-language-switcher] :is(a, button, [role='menuitem']):is(:hover, :focus-visible),
+[data-voodbuilder-nav-dropdown-panel] [data-voodbuilder-language-switcher] :is(a, button, [role='menuitem']):is(:hover, :focus-visible) {
+    background-color: var(--color-vp-gray-soft) !important;
+    color: var(--color-vp-brand-1) !important;
+}
+
 .voodbuilder-dropdown-separator,
 .voodbuilder-dropdown-panel > .h-px,
 .voodbuilder-nav-profile-menu__dropdown > .h-px,
@@ -2335,5 +2370,25 @@ html.dark .vb-search-page__form {
 .bg-clip-text.text-transparent {
     color: transparent !important;
     -webkit-text-fill-color: transparent !important;
+}
+
+/* Transparent fill breaks click→caret in Chromium — solid fill while editing. */
+.bg-clip-text.text-transparent[contenteditable="true"],
+[contenteditable="true"].bg-clip-text.text-transparent {
+    color: var(--color-vp-text-1, #e2e8f0) !important;
+    -webkit-text-fill-color: var(--color-vp-text-1, #e2e8f0) !important;
+    background-image: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+}
+
+/* Transparent fill hides the caret while editing — keep it visible on canvas. */
+[contenteditable="true"] {
+    caret-color: var(--color-vp-brand-1, #6366f1);
+}
+
+.bg-clip-text.text-transparent[contenteditable="true"],
+[contenteditable="true"].bg-clip-text.text-transparent {
+    caret-color: var(--color-vp-brand-1, #6366f1) !important;
 }
 

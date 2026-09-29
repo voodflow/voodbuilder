@@ -248,6 +248,18 @@ html:not(.dark) .voodbuilder-mobile-nav__link--secondary.is-active {
     color: var(--voodbuilder-mobile-text);
 }
 
+/* Language chips: one row, wrap after 5 locales. */
+.voodbuilder-mobile-nav__tool--languages {
+    @apply h-auto min-h-10 max-w-full items-start py-1.5;
+}
+
+.voodbuilder-mobile-nav__tool--languages [data-voodbuilder-language-switcher] ul {
+    display: grid;
+    grid-template-columns: repeat(5, max-content);
+    gap: 0.25rem;
+    align-items: center;
+}
+
 /* Language / brand tokens designed for green header must stay readable on drawer. */
 .voodbuilder-mobile-nav .text-vp-brand-1,
 .voodbuilder-mobile-nav [aria-current='true'] {

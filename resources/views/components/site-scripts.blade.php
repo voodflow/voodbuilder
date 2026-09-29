@@ -123,7 +123,11 @@
         }
 
         document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (event) => {
+                // Chrome save may have morphed <button> → <a href="#">; never let that
+                // append "#" and jump the page to the top.
+                event.preventDefault();
+                event.stopPropagation();
                 toggleTheme();
             });
         });

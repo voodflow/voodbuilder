@@ -229,6 +229,8 @@ Per page you can combine:
 - Media picker via vmedia  
 - Utilities such as reading progress and social share (specialized settings)
 
+**Dynamic blocks** (pricing, companion data blocks, …) are re-rendered from Blade: Style Manager can persist backgrounds/borders on the block shell and on **anchored** nodes (`data-voodbuilder-dropzone` / `data-voodbuilder-layer-name`). Regenerated titles, plan cards, and unanchored markup are wiped on remount. See [docs/dynamic-blocks.md](docs/dynamic-blocks.md).
+
 ---
 
 ## Documentation
@@ -237,6 +239,7 @@ Per page you can combine:
 |-------|------|
 | **[demo.voodflow.com](https://demo.voodflow.com)** | Live demo — try VoodBuilder in the browser |
 | **[voodflow.com](https://voodflow.com)** | Product site, guides, and ecosystem |
+| [docs/dynamic-blocks.md](docs/dynamic-blocks.md) | Dynamic block styling limits (shell vs Blade-owned) |
 | Package `CHANGELOG.md` | Release notes |
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting |
 

@@ -9,6 +9,11 @@ export const CODE_BLOCK_CATEGORY = 'Code';
 
 export const CATEGORY_ORDER = {
     Pinned: -200,
+    'Popup templates': -195,
+    'Modelli popup': -195,
+    'Plantillas de popup': -195,
+    'Popup-Vorlagen': -195,
+    'Modèles de popup': -195,
     Layout: -190,
     Basic: -180,
     Media: -170,

@@ -30,6 +30,9 @@ final class EditorChromeHtmlPipeline
             ),
         );
 
+        // CTA annotator used to morph theme/nav chrome <button>s into <a href="#">.
+        $html = EditorSmartButtonAnnotator::restoreChromeControlElements($html);
+
         $html = app(EditorElementConditionRenderer::class)->render($html, null);
         $html = ComponentRuntimeBridge::renderComponentHtml($html, null);
         $html = $canvasPreview

@@ -6524,6 +6524,27 @@ body.voodbuilder-canvas-ready .vb-animated-cta [data-vb-anim-child] {
     -webkit-text-fill-color: transparent !important;
 }
 
+/* Transparent fill breaks click→caret placement in Chromium (caret sticks at index 0).
+   While editing, use a solid fill so the caret follows the click. */
+.bg-clip-text.text-transparent[contenteditable="true"],
+[contenteditable="true"].bg-clip-text.text-transparent {
+    color: var(--color-vp-text-1, #e2e8f0) !important;
+    -webkit-text-fill-color: var(--color-vp-text-1, #e2e8f0) !important;
+    background-image: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+}
+
+/* Transparent fill hides the caret in WebKit/Blink — keep editing visible. */
+[contenteditable="true"] {
+    caret-color: var(--color-vp-brand-1, #6366f1);
+}
+
+.bg-clip-text.text-transparent[contenteditable="true"],
+[contenteditable="true"].bg-clip-text.text-transparent {
+    caret-color: var(--color-vp-brand-1, #6366f1) !important;
+}
+
 .vb-animated-counter {
     font-variant-numeric: tabular-nums;
 }
