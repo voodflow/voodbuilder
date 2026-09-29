@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.32] - 2026-09-29
+
+### Added
+
+- Editor Save shortcut: **Ctrl+S** (Windows/Linux) and **Cmd+S** (macOS), including while focus is in inspector fields or the canvas
+
 ## [1.11.31] - 2026-09-29
 
 ### Added

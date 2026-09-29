@@ -520,6 +520,7 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         type="button"
                         class="voodbuilder-editor-topbar__btn voodbuilder-editor-topbar__btn--primary"
                         data-voodbuilder-editor-save
+                        title="${escapeHtml(labels.save ?? 'Save')} (Ctrl/Cmd+S)"
                     >
                         <span data-voodbuilder-editor-save-label>${escapeHtml(labels.save ?? 'Save')}</span>
                     </button>

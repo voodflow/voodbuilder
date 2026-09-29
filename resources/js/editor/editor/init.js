@@ -114,6 +114,7 @@ import {
 } from '../editor-build-status.js';
 import { isEditorBooting } from '../editor-lifecycle.js';
 import { registerEditorAutosave } from '../editor-autosave.js';
+import { registerEditorSaveHotkey } from '../editor-save-hotkey.js';
 import { createSaveStatus } from '../editor-save-status.js';
 import { registerUndoCommands, resetUndoHistory, undoManagerInitOptions } from '../editor-undo.js';
 import { applyLightBlockPreviews } from '../editor-block-previews.js';
@@ -2910,8 +2911,14 @@ function mountFrontendEditor() {
 
     editor.__voodbuilderRequestPageSave = requestPageSave;
 
+    saveButton.title = `${config.labels?.save ?? 'Save'} (Ctrl/Cmd+S)`;
+
     saveButton.addEventListener('click', async () => {
         await requestPageSave({ showErrorDialog: true });
+    });
+
+    registerEditorSaveHotkey(() => {
+        void requestPageSave({ showErrorDialog: true });
     });
 }
 
