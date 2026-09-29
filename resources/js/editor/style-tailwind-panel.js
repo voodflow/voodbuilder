@@ -388,6 +388,36 @@ function withImportantCssValue(value) {
 }
 
 /**
+ * Element decoration photos: stamp size/position/repeat onto the #id rule.
+ *
+ * Layout utilities (`bg-cover` …) alone leave an image-only `#id` rule that the
+ * page-wallpaper orphan/publish heuristics treat as a legacy page photo — the
+ * block image then becomes `body::before` and the block stays on its solid color.
+ * Never emit `background-attachment: fixed` here (that is the page signature).
+ *
+ * @param {Record<string, string>} paint
+ * @returns {Record<string, string>}
+ */
+function withElementDecorationImageLayout(paint) {
+    const next = paint && typeof paint === 'object' ? { ...paint } : {};
+    const image = String(next['background-image'] ?? '').trim();
+
+    if (image === '' || image === 'none' || ! /url\s*\(/i.test(image)) {
+        return next;
+    }
+
+    next['background-size'] = String(next['background-size'] ?? '').trim() || 'cover';
+    next['background-position'] = String(next['background-position'] ?? '').trim() || 'center';
+    next['background-repeat'] = String(next['background-repeat'] ?? '').trim() || 'no-repeat';
+
+    if (/^fixed$/i.test(String(next['background-attachment'] ?? '').trim())) {
+        delete next['background-attachment'];
+    }
+
+    return next;
+}
+
+/**
  * Page wallpaper defaults: cover the viewport and stay put while scrolling.
  * Always emit size/position/repeat on the paint object so CssComposer + Save
  * keep them (image-only #id rules tile in the canvas).
@@ -401,7 +431,7 @@ function withPageSurfaceWallpaperDefaults(editor, component, paint) {
     const target = resolveVisualStyleTarget(component) ?? component;
 
     if (! isPageSurfaceComponent(target, editor)) {
-        return paint;
+        return withElementDecorationImageLayout(paint);
     }
 
     const id = String(target.getId?.() ?? component.getId?.() ?? '').trim();
@@ -3273,6 +3303,8 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
 
     // Page wrapper: CssComposer + DOM only — Grapes addStyle on body/wrapper
     // re-enters chrome-shell refresh and freezes Save.
+    // Elements: also stamp size/position/repeat on #id so Save/publish never
+    // mistakes an image-only rule for legacy page wallpaper.
     persistSurfacePaint(editor, component, withPageSurfaceWallpaperDefaults(editor, component, {
         'background-image': cssValue,
         // Opaque Color would flash before the photo loads (tint lives in overlay
@@ -4404,23 +4436,28 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         }, 0);
     });
 
-    editor.on('component:deselected', (component) => {
+    editor.on('component:deselected', () => {
         stopClassWatch?.();
         stopClassWatch = null;
 
         window.requestAnimationFrame(() => {
-            const subject = editor.__voodbuilderStyleSubject ?? null;
+            const selected = editor.getSelected?.();
 
-            // Remount (dynamic refresh, media picker) drops selection but the element
-            // still exists under the same id: keep editing it, not the page.
-            if (subject && ! subject.page && component?.isRemoved?.() && resolveElementStyleSubject(editor)) {
+            // A new selection already landed — component:selected owns the subject.
+            if (selected && ! selected.isRemoved?.()) {
                 return;
             }
 
-            if (! editor.getSelected?.()) {
-                rememberStyleSubject(editor, null);
+            const subject = editor.__voodbuilderStyleSubject ?? null;
+
+            // Transient deselect (media picker Choose, dynamic remount): the element
+            // subject still resolves by id. Never fall back to page wallpaper here —
+            // that made Choose write the block photo onto body::before.
+            if (subject && ! subject.page && resolveElementStyleSubject(editor)) {
+                return;
             }
 
+            rememberStyleSubject(editor, null);
             syncPageSurfaceStyles();
         });
     });

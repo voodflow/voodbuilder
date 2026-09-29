@@ -228,6 +228,7 @@ HTML;
             'show_search' => true,
             'show_notifications' => true,
             'show_profile_menu' => true,
+            'uppercase_first_level' => true,
         ];
         $encoded = htmlspecialchars(
             json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
@@ -249,8 +250,13 @@ HTML;
         $preview = $renderer->render($saved, null, canvasPreview: true);
         $published = $renderer->render($saved, null, canvasPreview: false);
 
-        $this->assertChromeMenuSlotHasClass($preview, 'data-voodbuilder-desktop-nav', 'uppercase');
-        $this->assertChromeMenuSlotHasClass($published, 'data-voodbuilder-desktop-nav', 'uppercase');
+        // Text-transform utilities are owned by uppercase_first_level — do not restore Tailwind uppercase.
+        $this->assertChromeMenuSlotMissingClass($preview, 'data-voodbuilder-desktop-nav', 'uppercase');
+        $this->assertChromeMenuSlotMissingClass($published, 'data-voodbuilder-desktop-nav', 'uppercase');
+        $this->assertChromeMenuSlotHasClass($preview, 'data-voodbuilder-desktop-nav', 'hover:text-vp-brand-1');
+        $this->assertChromeMenuSlotHasClass($published, 'data-voodbuilder-desktop-nav', 'hover:text-vp-brand-1');
+        $this->assertChromeMenuSlotHasClass($preview, 'data-voodbuilder-desktop-nav', 'voodbuilder-nav-menu--uppercase-first');
+        $this->assertChromeMenuSlotHasClass($published, 'data-voodbuilder-desktop-nav', 'voodbuilder-nav-menu--uppercase-first');
     }
 
     protected function assertChromeMenuSlotHasClass(string $html, string $attribute, string $class): void
@@ -278,6 +284,25 @@ HTML;
         }
 
         $this->assertTrue($found, "Expected [{$attribute}] to include class {$class}");
+    }
+
+    protected function assertChromeMenuSlotMissingClass(string $html, string $attribute, string $class): void
+    {
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8"><body>' . $html . '</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        foreach ($document->getElementsByTagName('*') as $element) {
+            if (! $element instanceof \DOMElement || ! $element->hasAttribute($attribute)) {
+                continue;
+            }
+
+            $classes = preg_split('/\s+/', trim((string) $element->getAttribute('class'))) ?: [];
+
+            $this->assertNotContains($class, $classes, "Expected [{$attribute}] not to include class {$class}");
+        }
     }
 
     public function test_preserves_author_hidden_layer_cards_after_dynamic_remount(): void

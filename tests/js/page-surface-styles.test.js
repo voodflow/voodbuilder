@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     PAGE_SURFACE_CLASS,
     buildPageSurfaceCanvasWallpaperCss,
+    extractBestPageWallpaperFromCss,
     extractOrphanWallpaperStylesFromCss,
     extractPageSurfaceWallpaperStylesFromCss,
     hydratePageSurfaceWallpaperFromCss,
@@ -185,6 +186,29 @@ describe('page-surface-styles', () => {
         const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['inew']));
 
         expect(orphan['background-image']).toBeUndefined();
+    });
+
+    it('extractOrphanWallpaperStylesFromCss ignores image-only block photos without fixed', () => {
+        // Style panel stores size/position as TW classes — #id is image-only.
+        const css = `#icta { background-image:url(/cta.jpg); background-color:transparent }`;
+        const orphan = extractOrphanWallpaperStylesFromCss(css, new Set(['inew']));
+
+        expect(orphan['background-image']).toBeUndefined();
+    });
+
+    it('extractBestPageWallpaperFromCss ignores image-only block photos', () => {
+        const css = [
+            '#icta { background-image:url(/cta.jpg); background-color:transparent }',
+            '#iwrap { background-image:url(/page.jpg); background-attachment:fixed; background-size:cover }',
+        ].join('\n');
+
+        const best = extractBestPageWallpaperFromCss(css, {
+            preferId: 'iwrap',
+            knownIds: new Set(['iwrap', 'icta']),
+        });
+
+        expect(best['background-image']).toContain('/page.jpg');
+        expect(best['background-image']).not.toContain('/cta.jpg');
     });
 
     it('stripStalePageSurfaceWallpaperRules keeps only the current wrapper wallpaper', () => {

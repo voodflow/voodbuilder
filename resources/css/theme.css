@@ -1697,6 +1697,25 @@ html[data-voodbuilder-editor-scope='page'] header[role='banner'] {
     text-transform: none;
 }
 
+/*
+ * Optional first-level uppercase (Navbar settings). Targets top-level links and
+ * dropdown toggles only — panels keep authored casing via text-transform: none above.
+ * !important beats UA button text-transform: none so toggles match leaf links.
+ */
+[data-voodbuilder-desktop-nav].voodbuilder-nav-menu--uppercase-first > a,
+[data-voodbuilder-desktop-nav].voodbuilder-nav-menu--uppercase-first > [data-voodbuilder-nav-dropdown] > [data-voodbuilder-nav-dropdown-toggle],
+[data-voodbuilder-desktop-nav].voodbuilder-nav-menu--uppercase-first > .flex > a,
+[data-voodbuilder-desktop-nav].voodbuilder-nav-menu--uppercase-first > .flex > [data-voodbuilder-nav-dropdown] > [data-voodbuilder-nav-dropdown-toggle],
+[data-voodbuilder-desktop-nav].voodbuilder-nav-menu--uppercase-first > nav > a,
+[data-voodbuilder-desktop-nav].voodbuilder-nav-menu--uppercase-first > nav > [data-voodbuilder-nav-dropdown] > [data-voodbuilder-nav-dropdown-toggle] {
+    text-transform: uppercase !important;
+}
+
+[data-mobile-nav].voodbuilder-nav-menu--uppercase-first .voodbuilder-mobile-nav__links > li > :is(a, button),
+[data-mobile-nav].voodbuilder-nav-menu--uppercase-first .voodbuilder-mobile-nav__links > li > :is(a, button) .voodbuilder-nav-menu-item__label {
+    text-transform: uppercase !important;
+}
+
 html.dark .voodbuilder-dropdown-panel,
 html.dark .voodbuilder-nav-profile-menu__dropdown,
 html.dark [data-voodbuilder-nav-dropdown-panel] {

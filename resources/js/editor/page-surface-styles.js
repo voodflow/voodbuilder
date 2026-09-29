@@ -798,13 +798,21 @@ export function extractBestPageWallpaperFromCss(css, options = {}) {
             continue;
         }
 
+        const hasFixedAttachment = /background-attachment\s*:\s*fixed/i.test(body);
         const isPreferId = preferId !== '' && id === preferId;
         const isKnownContent = knownIds.size > 0 && knownIds.has(id) && ! isPreferId;
-        const hasFixedAttachment = /background-attachment\s*:\s*fixed/i.test(body);
 
         // Live content blocks (CTA, pricing, …) share the same layout props as
         // page wallpaper. Never promote those decoration photos onto the page.
         if (isKnownContent && ! hasFixedAttachment) {
+            continue;
+        }
+
+        // Page wallpaper signature is attachment:fixed. Image-only `#id` rules are
+        // element decorations (Style stores size/position as TW classes) or stale
+        // orphans after a remount — promoting them made block photos become the
+        // public body::before wallpaper. PreferId may still reclaim the wrapper.
+        if (! hasFixedAttachment && ! isPreferId) {
             continue;
         }
 
@@ -893,11 +901,10 @@ export function extractOrphanWallpaperStylesFromCss(css, knownIds = []) {
         }
 
         const hasFixedAttachment = /background-attachment\s*:\s*fixed/i.test(body);
-        const hasLayout = /background-(?:size|position|repeat)\s*:/i.test(body);
 
-        // Page wallpaper: attachment:fixed, or legacy image-only #id.
-        // Section decorations often have size/position/repeat without fixed — skip those.
-        if (! hasFixedAttachment && hasLayout) {
+        // Only attachment:fixed is page wallpaper. Image-only orphans are stolen
+        // block photos after id remount (Style layout lives in TW classes).
+        if (! hasFixedAttachment) {
             continue;
         }
 
@@ -960,9 +967,8 @@ export function extractDarkOrphanWallpaperStylesFromCss(css, knownIds = []) {
         }
 
         const hasFixedAttachment = /background-attachment\s*:\s*fixed/i.test(body);
-        const hasLayout = /background-(?:size|position|repeat)\s*:/i.test(body);
 
-        if (! hasFixedAttachment && hasLayout) {
+        if (! hasFixedAttachment) {
             continue;
         }
 

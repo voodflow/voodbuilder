@@ -11,7 +11,7 @@ class PageSurfaceCssPublishTest extends TestCase
 {
     public function test_remap_for_public_rewrites_orphan_wallpaper_id_to_fixed_layer(): void
     {
-        $css = '#iabc123 { background-image: url(/x.jpg); } .keep { color: red; }';
+        $css = '#iabc123 { background-image: url(/x.jpg); background-attachment: fixed; } .keep { color: red; }';
         $html = '<section class="hero">Hello</section>';
 
         $remapped = PageSurfaceCssPublish::remapForPublic($css, $html);
@@ -29,6 +29,21 @@ class PageSurfaceCssPublishTest extends TestCase
         $this->assertStringContainsString('background-color: transparent !important', $remapped);
         $this->assertStringContainsString('.voodbuilder-site-shell', $remapped);
         $this->assertStringContainsString('background-image: none', $remapped);
+    }
+
+    public function test_remap_for_public_does_not_promote_image_only_block_orphans(): void
+    {
+        // Element Style photos are often image-only on `#id` (layout via TW classes).
+        $css = '#icta { background-image: url(/cta.jpg); background-color: transparent; }';
+        $html = '<section class="hero">Hello</section>';
+
+        $remapped = PageSurfaceCssPublish::remapForPublic($css, $html);
+
+        $this->assertStringContainsString('#icta', $remapped);
+        $this->assertStringContainsString('url(/cta.jpg)', $remapped);
+        $this->assertStringNotContainsString(PageSurfaceCssPublish::bodyTarget(), $remapped);
+        $this->assertStringNotContainsString(PageSurfaceCssPublish::fixedLayerSelector(), $remapped);
+        $this->assertStringNotContainsString('voodbuilder-site-shell', $remapped);
     }
 
     public function test_remap_for_public_keeps_ids_present_in_html(): void
@@ -125,8 +140,8 @@ CSS;
     public function test_remap_for_public_rewrites_dark_orphan_wallpaper_to_dark_fixed_layer(): void
     {
         $css = <<<'CSS'
-#iwrap { background-image: url(/light.jpg); }
-html.dark #iwrap { background-image: url(/dark.jpg); }
+#iwrap { background-image: url(/light.jpg); background-attachment: fixed; }
+html.dark #iwrap { background-image: url(/dark.jpg); background-attachment: fixed; }
 CSS;
 
         $remapped = PageSurfaceCssPublish::remapForPublic($css, '');

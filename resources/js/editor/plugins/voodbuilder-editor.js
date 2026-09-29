@@ -798,6 +798,12 @@ function siteHeaderTraitOptions() {
             name: 'voodbuilderShowProfileMenu',
             changeProp: true,
         },
+        {
+            type: 'checkbox',
+            label: 'Uppercase first level',
+            name: 'voodbuilderUppercaseFirstLevel',
+            changeProp: true,
+        },
     ];
 }
 
@@ -814,6 +820,7 @@ function syncSiteHeaderConfig(component) {
         show_search: component.get('voodbuilderShowSearch') === true,
         show_notifications: component.get('voodbuilderShowNotifications') === true,
         show_profile_menu: component.get('voodbuilderShowProfileMenu') === true,
+        uppercase_first_level: component.get('voodbuilderUppercaseFirstLevel') === true,
     };
 
     component.set('voodbuilderConfig', config, { silent: true });
@@ -942,6 +949,7 @@ function applySiteNavSettingsPreview(root, editor = null) {
     const showSearch = root.get('voodbuilderShowSearch') === true;
     const showNotifications = root.get('voodbuilderShowNotifications') === true;
     const showProfile = root.get('voodbuilderShowProfileMenu') === true;
+    const uppercaseFirstLevel = root.get('voodbuilderUppercaseFirstLevel') === true;
     const alignCenter = root.get('voodbuilderMainNavAlign') === 'center';
     const stickyMode = root.get('voodbuilderStickyNav') ?? 'inherit';
     const { pinned, spacer } = resolveSiteNavStickyState(stickyMode, editor);
@@ -983,6 +991,13 @@ function applySiteNavSettingsPreview(root, editor = null) {
             setNavChromeVisible(node, showProfile);
         }
     });
+
+    const TEXT_TRANSFORM_UTILS = ['uppercase', 'lowercase', 'capitalize', 'normal-case'];
+
+    scope.querySelectorAll('[data-voodbuilder-desktop-nav], [data-mobile-nav]').forEach((node) => {
+        node.classList.toggle('voodbuilder-nav-menu--uppercase-first', uppercaseFirstLevel === true);
+        TEXT_TRANSFORM_UTILS.forEach((name) => node.classList.remove(name));
+    });
 }
 
 function applySiteNavSettingChange(editor, root, name, value) {
@@ -1022,6 +1037,7 @@ function configureSiteNavTraits(component, editor) {
     component.set('voodbuilderShowSearch', config.show_search === true, { silent: true });
     component.set('voodbuilderShowNotifications', config.show_notifications === true, { silent: true });
     component.set('voodbuilderShowProfileMenu', config.show_profile_menu === true, { silent: true });
+    component.set('voodbuilderUppercaseFirstLevel', config.uppercase_first_level === true, { silent: true });
 
     // Never set('traits', plainObjects, { silent: true }) — that leaves a raw array and
     // TraitManager crashes with "e.get is not a function" on select/render.

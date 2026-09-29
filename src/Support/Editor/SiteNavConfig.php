@@ -21,7 +21,7 @@ final class SiteNavConfig
             'variant' => 'simple',
         ]);
 
-        foreach (['show_search', 'show_notifications', 'show_profile_menu', 'show_logo', 'show_site_name', 'show_logo_desktop', 'show_logo_mobile', 'show_site_name_desktop', 'show_site_name_mobile'] as $flag) {
+        foreach (['show_search', 'show_notifications', 'show_profile_menu', 'show_logo', 'show_site_name', 'show_logo_desktop', 'show_logo_mobile', 'show_site_name_desktop', 'show_site_name_mobile', 'uppercase_first_level'] as $flag) {
             if (array_key_exists($flag, $config)) {
                 $normalized[$flag] = (bool) $config[$flag];
             }
@@ -76,6 +76,7 @@ final class SiteNavConfig
             'show_search' => true,
             'show_notifications' => true,
             'show_profile_menu' => true,
+            'uppercase_first_level' => false,
             'show_logo' => true,
             'show_site_name' => true,
             'show_logo_desktop' => true,

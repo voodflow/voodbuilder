@@ -105,6 +105,12 @@ export function registerNavSettings(editor) {
                     checked: root.get('voodbuilderShowProfileMenu') === true,
                     onChange: (checked) => applyChange('voodbuilderShowProfileMenu', checked),
                 }),
+                createCheckboxField({
+                    label: label('navUppercaseFirstLevel', 'Uppercase first level'),
+                    name: 'voodbuilderUppercaseFirstLevel',
+                    checked: root.get('voodbuilderUppercaseFirstLevel') === true,
+                    onChange: (checked) => applyChange('voodbuilderUppercaseFirstLevel', checked),
+                }),
             );
 
             panels.brand.append(

@@ -739,7 +739,11 @@ final class EditorDynamicBlockRenderer
 
     /**
      * Stable keys matching JS captureChromeMenuSlotAuthorClasses so typography
-     * utilities (e.g. uppercase) survive Blade remount of site_nav_* blocks.
+     * utilities survive Blade remount of site_nav_* blocks.
+     *
+     * Text-transform utilities (uppercase / …) are intentionally dropped: first-level
+     * uppercase is controlled by Navbar settings (`uppercase_first_level`) so it
+     * applies to both links and dropdown toggles without affecting panel labels.
      *
      * @return array<string, array{class: string, style: string}>
      */
@@ -845,9 +849,10 @@ final class EditorDynamicBlockRenderer
     {
         $merged = [];
         $seen = [];
+        $skipTextTransform = ['uppercase' => true, 'lowercase' => true, 'capitalize' => true, 'normal-case' => true];
 
         foreach ([...preg_split('/\s+/', trim($author)) ?: [], ...preg_split('/\s+/', trim($fresh)) ?: []] as $token) {
-            if ($token === '' || isset($seen[$token])) {
+            if ($token === '' || isset($seen[$token]) || isset($skipTextTransform[$token])) {
                 continue;
             }
 

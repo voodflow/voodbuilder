@@ -1032,6 +1032,8 @@ final class EditorGate
             'navShowSearch' => __('voodbuilder::pro.editor.nav_settings.show_search'),
             'navShowNotifications' => __('voodbuilder::pro.editor.nav_settings.show_notifications'),
             'navShowProfile' => __('voodbuilder::pro.editor.nav_settings.show_profile'),
+            'navUppercaseFirstLevel' => __('voodbuilder::pro.editor.nav_settings.uppercase_first_level'),
+            'navUppercaseFirstLevelHelp' => __('voodbuilder::pro.editor.nav_settings.uppercase_first_level_help'),
             'newsletterList' => __('voodbuilder::pro.editor.newsletter_settings.list'),
             'newsletterTitle' => __('voodbuilder::pro.editor.newsletter_settings.title'),
             'newsletterHint' => __('voodbuilder::pro.editor.newsletter_settings.hint'),

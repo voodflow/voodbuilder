@@ -30,6 +30,22 @@ class SiteNavConfigTest extends TestCase
         $this->assertSame('center', $normalized['main_nav_align']);
     }
 
+    public function test_uppercase_first_level_defaults_to_false(): void
+    {
+        $normalized = SiteNavConfig::normalize([]);
+
+        $this->assertFalse($normalized['uppercase_first_level']);
+    }
+
+    public function test_uppercase_first_level_can_be_enabled(): void
+    {
+        $normalized = SiteNavConfig::normalize([
+            'uppercase_first_level' => true,
+        ]);
+
+        $this->assertTrue($normalized['uppercase_first_level']);
+    }
+
     public function test_preview_html_uses_icon_buttons_without_search_form(): void
     {
         $html = SiteNavSimpleBlock::toPreviewHtml(SiteNavSimpleBlock::defaultConfig(), []);
@@ -46,5 +62,15 @@ class SiteNavConfigTest extends TestCase
             400,
         ) ?: '');
         $this->assertStringNotContainsString('data-voodbuilder-search-form', $html);
+    }
+
+    public function test_preview_html_applies_uppercase_first_level_class(): void
+    {
+        $html = SiteNavSimpleBlock::toPreviewHtml(array_merge(SiteNavSimpleBlock::defaultConfig(), [
+            'uppercase_first_level' => true,
+        ]), []);
+
+        $this->assertStringContainsString('voodbuilder-nav-menu--uppercase-first', $html);
+        $this->assertStringContainsString('data-voodbuilder-desktop-nav', $html);
     }
 }

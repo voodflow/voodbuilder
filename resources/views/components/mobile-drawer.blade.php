@@ -3,6 +3,7 @@
     'enableNotifications' => true,
     'canvasPreview' => false,
     'brandConfig' => [],
+    'uppercaseFirstLevel' => false,
 ])
 
 @php
@@ -33,6 +34,7 @@
     $user = auth()->user();
     $avatarUrl = $user ? UserAvatar::url($user) : null;
     $brandConfig = is_array($brandConfig) ? $brandConfig : [];
+    $uppercaseFirstLevel = (bool) $uppercaseFirstLevel;
     $cookiePolicyPage = \Voodflow\Voodbuilder\Models\SitePage::query()
         ->where('slug', 'cookie-policy')
         ->where('published', true)
@@ -41,7 +43,10 @@
 @endphp
 
 <div
-    class="voodbuilder-mobile-nav"
+    @class([
+        'voodbuilder-mobile-nav',
+        'voodbuilder-nav-menu--uppercase-first' => $uppercaseFirstLevel,
+    ])
     data-mobile-nav
     data-gjs-selectable="false"
     data-gjs-editable="false"

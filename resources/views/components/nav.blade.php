@@ -9,6 +9,7 @@
     'showSearch' => true,
     'showNotifications' => true,
     'showProfileMenu' => true,
+    'uppercaseFirstLevel' => false,
     'brandConfig' => [],
 ])
 
@@ -34,6 +35,7 @@
     $inlineBrandClass = $hasDocSidebar
         ? ($canvasPreview ? 'inline-flex md:hidden' : 'hidden max-vp:flex max-vp:items-center')
         : 'flex shrink-0 items-center';
+    $uppercaseFirstLevel = (bool) $uppercaseFirstLevel;
 @endphp
 
 <header @class([
@@ -72,7 +74,14 @@
                         <x-voodbuilder::nav-title :config="$brandConfig" :preview="$canvasPreview" />
                     </div>
 
-                    <div @class(['hidden min-w-0 flex-1 items-center justify-center gap-1', $desktopFlexClass]) data-voodbuilder-desktop-nav>
+                    <div
+                        @class([
+                            'hidden min-w-0 flex-1 items-center justify-center gap-1',
+                            $desktopFlexClass,
+                            'voodbuilder-nav-menu--uppercase-first' => $uppercaseFirstLevel,
+                        ])
+                        data-voodbuilder-desktop-nav
+                    >
                         <x-voodbuilder::menu menu="main" :wrapped="false" :link-class="$menuLinkClass" :canvas-preview="$canvasPreview" />
                         <x-voodbuilder::docs-menu />
                     </div>
@@ -82,7 +91,14 @@
                             <x-voodbuilder::nav-title :config="$brandConfig" :preview="$canvasPreview" />
                         </div>
 
-                        <div @class(['hidden min-w-0 items-center gap-1', $desktopFlexClass]) data-voodbuilder-desktop-nav>
+                        <div
+                            @class([
+                                'hidden min-w-0 items-center gap-1',
+                                $desktopFlexClass,
+                                'voodbuilder-nav-menu--uppercase-first' => $uppercaseFirstLevel,
+                            ])
+                            data-voodbuilder-desktop-nav
+                        >
                             <x-voodbuilder::menu menu="main" :wrapped="false" :link-class="$menuLinkClass" :canvas-preview="$canvasPreview" />
                             <x-voodbuilder::docs-menu />
                         </div>
@@ -125,6 +141,7 @@
             :enable-notifications="$showNotifications"
             :canvas-preview="$canvasPreview"
             :brand-config="$brandConfig"
+            :uppercase-first-level="$uppercaseFirstLevel"
         />
     @endunless
 </header>

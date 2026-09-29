@@ -104,6 +104,12 @@ function siteHeaderTraitOptions(editor = null) {
             name: 'voodbuilderShowProfileMenu',
             changeProp: true,
         },
+        {
+            type: 'checkbox',
+            label: label('navUppercaseFirstLevel', 'Uppercase first level'),
+            name: 'voodbuilderUppercaseFirstLevel',
+            changeProp: true,
+        },
     ];
 }
 
@@ -287,6 +293,7 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
     const showSearch = root.get('voodbuilderShowSearch') === true;
     const showNotifications = root.get('voodbuilderShowNotifications') === true;
     const showProfile = root.get('voodbuilderShowProfileMenu') === true;
+    const uppercaseFirstLevel = root.get('voodbuilderUppercaseFirstLevel') === true;
     const showLogoDesktop = root.get('voodbuilderShowLogoDesktop') !== false;
     const showLogoMobile = root.get('voodbuilderShowLogoMobile') !== false;
     const showNameDesktop = root.get('voodbuilderShowSiteNameDesktop') !== false;
@@ -357,9 +364,26 @@ export function applySiteNavSettingsPreview(root, editor = null, options = {}) {
     });
     applyChromeLogoUrlsPreview(scope, root);
 
+    applyNavUppercaseFirstLevelPreview(scope, uppercaseFirstLevel);
+
     if (options.invalidateCss && editor?.__voodbuilderChromeLayoutMode) {
         editor.trigger?.('voodbuilder:page-css-invalidate');
     }
+}
+
+/**
+ * Toggle first-level uppercase class and drop leftover Style Manager text-transform utilities.
+ *
+ * @param {ParentNode} scope
+ * @param {boolean} enabled
+ */
+function applyNavUppercaseFirstLevelPreview(scope, enabled) {
+    const TEXT_TRANSFORM_UTILS = ['uppercase', 'lowercase', 'capitalize', 'normal-case'];
+
+    scope.querySelectorAll('[data-voodbuilder-desktop-nav], [data-mobile-nav]').forEach((node) => {
+        node.classList.toggle('voodbuilder-nav-menu--uppercase-first', enabled === true);
+        TEXT_TRANSFORM_UTILS.forEach((name) => node.classList.remove(name));
+    });
 }
 
 function scheduleSiteNavBlockRefresh(editor, root) {
@@ -394,6 +418,7 @@ export function syncSiteHeaderConfig(component) {
         show_search: component.get('voodbuilderShowSearch') === true,
         show_notifications: component.get('voodbuilderShowNotifications') === true,
         show_profile_menu: component.get('voodbuilderShowProfileMenu') === true,
+        uppercase_first_level: component.get('voodbuilderUppercaseFirstLevel') === true,
         show_logo_desktop: showLogoDesktop,
         show_logo_mobile: showLogoMobile,
         show_site_name_desktop: showNameDesktop,
@@ -482,6 +507,7 @@ export function configureSiteNavTraits(component, editor) {
     component.set('voodbuilderShowSearch', config.show_search === true, { silent: true });
     component.set('voodbuilderShowNotifications', config.show_notifications === true, { silent: true });
     component.set('voodbuilderShowProfileMenu', config.show_profile_menu === true, { silent: true });
+    component.set('voodbuilderUppercaseFirstLevel', config.uppercase_first_level === true, { silent: true });
     component.set('voodbuilderShowLogoDesktop', showLogoDesktop, { silent: true });
     component.set('voodbuilderShowLogoMobile', showLogoMobile, { silent: true });
     component.set('voodbuilderShowSiteNameDesktop', showNameDesktop, { silent: true });

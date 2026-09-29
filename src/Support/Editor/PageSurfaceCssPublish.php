@@ -311,11 +311,6 @@ final class PageSurfaceCssPublish
     }
 
     /**
-     * Page-surface wallpaper (wrapper #id) is saved with background-attachment:fixed,
-     * or as a legacy image-only #id rule. Section/block decoration photos often share
-     * size/position/repeat without fixed — those must not become the public page BG.
-     */
-    /**
      * Append `!important` to every declaration that does not already carry it.
      * Splits on `;` outside parentheses so `url(data:…;base64,…)` stays intact.
      */
@@ -357,26 +352,24 @@ final class PageSurfaceCssPublish
 
             $out[] = preg_match('/!important\s*$/i', $part) === 1
                 ? $part
-                : $part . ' !important';
+                : $part.' !important';
         }
 
         return implode(';', $out);
     }
 
+    /**
+     * Page-surface wallpaper (wrapper #id) is saved with background-attachment:fixed.
+     * Element Style photos often store only background-image on `#id` (size/position
+     * live as Tailwind utilities) — those must not become the public page BG.
+     */
     private static function declarationHasPageWallpaper(string $declarations): bool
     {
         if (! self::declarationHasWallpaper($declarations)) {
             return false;
         }
 
-        if (preg_match('/background-attachment\s*:\s*fixed/i', $declarations) === 1) {
-            return true;
-        }
-
-        // Legacy page wallpaper: image only (layout defaults applied at publish).
-        $hasLayout = preg_match('/background-(?:size|position|repeat)\s*:/i', $declarations) === 1;
-
-        return ! $hasLayout;
+        return preg_match('/background-attachment\s*:\s*fixed/i', $declarations) === 1;
     }
 
     /**

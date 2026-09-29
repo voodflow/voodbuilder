@@ -831,6 +831,8 @@ return [
             'show_search' => 'Mostra ricerca',
             'show_notifications' => 'Mostra notifiche',
             'show_profile' => 'Mostra menu account',
+            'uppercase_first_level' => 'Maiuscolo primo livello',
+            'uppercase_first_level_help' => 'Applica maiuscolo solo alle voci di primo livello (non ai dropdown).',
             'logo_desktop_light' => 'Logo desktop light',
             'logo_desktop_dark' => 'Logo desktop dark',
             'logo_mobile_light' => 'Logo mobile light',

@@ -831,6 +831,8 @@ return [
             'show_search' => 'Show search',
             'show_notifications' => 'Show notifications',
             'show_profile' => 'Show account menu',
+            'uppercase_first_level' => 'Uppercase first level',
+            'uppercase_first_level_help' => 'Uppercase top-level items only (not dropdown contents).',
             'logo_desktop_light' => 'Logo desktop light',
             'logo_desktop_dark' => 'Logo desktop dark',
             'logo_mobile_light' => 'Logo mobile light',
