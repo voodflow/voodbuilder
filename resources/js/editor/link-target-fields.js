@@ -1,5 +1,5 @@
 /**
- * Shared link target controls (type · URL · page · menu · mail · route + params · target)
+ * Shared link target controls (type · URL · page · menu · mail · route + params · popup · target)
  * for the Button and Text link settings panels and the link picker dialog.
  *
  * Text inputs are returned so each caller keeps its own commit timing
@@ -7,7 +7,7 @@
  */
 
 import { createSelectField, createTextField } from './editor-form-ui.js';
-import { buildMailtoHref, linkTypeSelectOptions } from './editor-link-resolve.js';
+import { buildMailtoHref, hasPopupLinkTargets, linkTypeSelectOptions } from './editor-link-resolve.js';
 
 /**
  * @typedef {{ linkType: string, linkRef: string, href: string, target: string, mailSubject: string, routeParams: Record<string, string> }} LinkTargetState
@@ -16,8 +16,8 @@ import { buildMailtoHref, linkTypeSelectOptions } from './editor-link-resolve.js
 /**
  * @param {{
  *   labels?: Record<string, string>,
- *   targets?: { pages?: Array<{ id: unknown, label: string }>, menuItems?: Array<{ id: unknown, label: string }>, routes?: Array<{ id: unknown, label: string, requiredParams?: string[] }> },
- *   names: { type: string, href: string, page: string, menu: string, mail: string, subject: string, route: string, target: string, routeParamPrefix: string },
+ *   targets?: { pages?: Array<{ id: unknown, label: string }>, menuItems?: Array<{ id: unknown, label: string }>, routes?: Array<{ id: unknown, label: string, requiredParams?: string[] }>, popups?: Array<{ id: unknown, label: string }> },
+ *   names: { type: string, href: string, page: string, menu: string, mail: string, subject: string, route: string, target: string, routeParamPrefix: string, popup?: string },
  *   initial: LinkTargetState,
  *   urlValue?: string,
  *   urlPlaceholder?: string,
@@ -44,6 +44,8 @@ export function createLinkTargetFields({
     let linkType = initial.linkType;
     let linkRef = initial.linkRef;
     let routeParams = { ...(initial.routeParams ?? {}) };
+    const popups = Array.isArray(targets.popups) ? targets.popups : [];
+    const popupOptionEnabled = hasPopupLinkTargets(targets);
 
     const refOptions = (items) => [
         { value: '', label: '—' },
@@ -57,7 +59,11 @@ export function createLinkTargetFields({
         label: typeLabel ?? labels.buttonLinkType ?? 'Link type',
         name: names.type,
         value: linkType,
-        options: linkTypeSelectOptions(labels, { includeNone }),
+        options: linkTypeSelectOptions(labels, {
+            includeNone,
+            targets,
+            includePopup: popupOptionEnabled,
+        }),
         onChange: (value) => {
             linkType = value;
             syncVisibility();
@@ -121,6 +127,21 @@ export function createLinkTargetFields({
         },
     });
 
+    const popupField = createSelectField({
+        label: labels.buttonLinkPopup ?? 'Popup',
+        name: names.popup ?? 'linkPopup',
+        value: linkType === 'popup' ? linkRef : '',
+        options: refOptions(popups),
+        onChange: (value) => {
+            linkRef = value;
+            onChange();
+        },
+    });
+
+    if (! popupOptionEnabled) {
+        popupField.hidden = true;
+    }
+
     const routeParamsMount = document.createElement('div');
     routeParamsMount.className = 'voodbuilder-editor-form-route-params';
     routeParamsMount.setAttribute('data-voodbuilder-route-params', '');
@@ -176,7 +197,8 @@ export function createLinkTargetFields({
         subjectField.hidden = linkType !== 'mail';
         routeField.hidden = linkType !== 'route';
         routeParamsMount.hidden = linkType !== 'route';
-        targetField.hidden = linkType === 'mail' || linkType === 'none';
+        popupField.hidden = ! popupOptionEnabled || linkType !== 'popup';
+        targetField.hidden = linkType === 'mail' || linkType === 'none' || linkType === 'popup';
         rebuildRouteParamFields();
     }
 
@@ -198,6 +220,9 @@ export function createLinkTargetFields({
             href = buildMailtoHref(linkRef, mailSubject);
         } else if (linkType === 'route') {
             linkRef = selectValue(routeField);
+        } else if (linkType === 'popup') {
+            linkRef = selectValue(popupField);
+            href = '#';
         } else {
             linkRef = '';
         }
@@ -206,24 +231,37 @@ export function createLinkTargetFields({
             linkType,
             linkRef,
             href,
-            target: linkType === 'mail' || linkType === 'none' ? '' : selectValue(targetField),
+            target: linkType === 'mail' || linkType === 'none' || linkType === 'popup'
+                ? ''
+                : selectValue(targetField),
             mailSubject,
             routeParams,
         };
     }
 
     /**
-     * Field holding the reference for page / menu / route types (focus on validation).
+     * Field holding the reference for page / menu / route / popup types (focus on validation).
      *
      * @param {string} type
      * @returns {HTMLElement|null}
      */
     function referenceField(type) {
-        return { page: pageField, menu: menuField, route: routeField }[type] ?? null;
+        return { page: pageField, menu: menuField, route: routeField, popup: popupField }[type] ?? null;
     }
 
     return {
-        fields: [typeField, urlField, pageField, menuField, mailField, subjectField, routeField, routeParamsMount, targetField],
+        fields: [
+            typeField,
+            urlField,
+            pageField,
+            menuField,
+            mailField,
+            subjectField,
+            routeField,
+            routeParamsMount,
+            popupField,
+            targetField,
+        ],
         urlInput,
         mailInput,
         subjectInput,

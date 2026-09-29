@@ -26,6 +26,15 @@ export function registerPopupsUi(editor, options) {
 
 /**
  * @param {object} editor
+ * @param {string} popupsUrl
+ * @returns {Promise<void>}
+ */
+export function syncPopupLinkTargets(editor, popupsUrl) {
+    return popupUiModule?.syncPopupLinkTargets?.(editor, popupsUrl) ?? Promise.resolve();
+}
+
+/**
+ * @param {object} editor
  * @param {object} [options]
  */
 export function registerPopupCanvasSettings(editor, options) {

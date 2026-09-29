@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.31] - 2026-09-29
+
+### Added
+
+- Button / text link / icon / RTE link type **Popup** when vpopups has loaded popup targets — selecting a popup writes `data-vpopups-open="{id}"` (same bind as Copy bind)
+
 ## [1.11.30] - 2026-09-29
 
 ### Added

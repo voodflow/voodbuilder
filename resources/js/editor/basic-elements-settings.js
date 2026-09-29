@@ -37,8 +37,11 @@ import {
 } from './tabler-icons-catalog.js';
 import {
     MAIL_SUBJECT_ATTR,
+    POPUP_OPEN_ATTR,
     ROUTE_PARAMS_ATTR,
     parseMailtoHref,
+    popupOpenAttrValue,
+    readPopupAwareLinkType,
     readRouteParamsFromAttrs,
     resolveAppRouteHref,
     resolveEditorLinkHref,
@@ -809,9 +812,10 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
 
     const linkMatches = String(attrs['data-vb-link-type'] ?? 'none') === String(type)
         && String(attrs['data-vb-link'] ?? '') === String(type === 'url' || type === 'none' ? '' : (linkRef || ''))
-        && String(attrs.target ?? '') === String(type === 'mail' ? '' : (target || ''))
+        && String(attrs.target ?? '') === String(type === 'mail' || type === 'popup' ? '' : (target || ''))
         && String(attrs[MAIL_SUBJECT_ATTR] ?? '') === String(type === 'mail' ? (mailSubject || '') : '')
-        && String(attrs[ROUTE_PARAMS_ATTR] ?? '') === String(type === 'route' ? (serializeRouteParams(routeParams) || '') : '');
+        && String(attrs[ROUTE_PARAMS_ATTR] ?? '') === String(type === 'route' ? (serializeRouteParams(routeParams) || '') : '')
+        && String(attrs[POPUP_OPEN_ATTR] ?? '') === String(popupOpenAttrValue(type, linkRef) ?? '');
 
     if (
         sameGlyph
@@ -887,7 +891,7 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
             linkType: type,
             linkRef: type === 'url' || type === 'none' ? '' : (linkRef || ''),
             href: resolvedHref || '#',
-            target: type === 'mail' ? '' : (target || ''),
+            target: type === 'mail' || type === 'popup' ? '' : (target || ''),
             mailSubject: type === 'mail' ? (mailSubject || '') : '',
         });
         component.addAttributes({
@@ -900,10 +904,11 @@ export function applyIconToComponent(component, editorOrOptions, maybeOptions) {
             'data-vb-link-type': type,
             'data-vb-link': type === 'url' || type === 'none' ? null : (linkRef || null),
             href: type === 'none' ? null : (resolvedHref || '#'),
-            target: type === 'none' || type === 'mail' || ! target ? null : target,
-            rel: type !== 'none' && type !== 'mail' && target === '_blank' ? 'noopener noreferrer' : null,
+            target: type === 'none' || type === 'mail' || type === 'popup' || ! target ? null : target,
+            rel: type !== 'none' && type !== 'mail' && type !== 'popup' && target === '_blank' ? 'noopener noreferrer' : null,
             [MAIL_SUBJECT_ATTR]: type === 'mail' && mailSubject ? mailSubject : null,
             [ROUTE_PARAMS_ATTR]: type === 'route' ? serializeRouteParams(routeParams) : null,
+            [POPUP_OPEN_ATTR]: popupOpenAttrValue(type, linkRef),
         });
 
         if (type === 'route' && linkRef) {
@@ -1338,15 +1343,19 @@ export function renderIconSettings({ mount, traitsMount = null, component, edito
         return true;
     }
 
-    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [] };
+    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [], popups: [] };
     const attrs = host.getAttributes?.() ?? {};
     let iconName = resolveTablerIconName(attrs['data-vb-icon'] ?? DEFAULT_TABLER_ICON);
     let sizeClass = attrs['data-vb-icon-size'] || readIconSize(host);
     let iconStyle = resolveTablerIconStyle(attrs['data-vb-icon-style'] ?? DEFAULT_TABLER_ICON_STYLE);
     let iconStroke = resolveTablerIconStroke(attrs['data-vb-icon-stroke'] ?? DEFAULT_TABLER_ICON_STROKE);
     let iconColor = resolveIconColorSelectValue(readIconColor(host));
-    let linkType = String(host.get('linkType') ?? attrs['data-vb-link-type'] ?? 'none') || 'none';
-    let linkRef = String(host.get('linkRef') ?? attrs['data-vb-link'] ?? '');
+    const fromAttrs = readPopupAwareLinkType(
+        attrs,
+        String(host.get('linkType') ?? attrs['data-vb-link-type'] ?? 'none') || 'none',
+    );
+    let linkType = fromAttrs.linkType;
+    let linkRef = fromAttrs.linkRef || String(host.get('linkRef') ?? attrs['data-vb-link'] ?? '');
     let href = String(host.get('href') ?? attrs.href ?? '');
     let target = String(host.get('target') ?? attrs.target ?? '');
     let mailSubject = String(host.get('mailSubject') ?? attrs[MAIL_SUBJECT_ATTR] ?? '');
@@ -1541,7 +1550,7 @@ function applyTextLinkToComponent(component, editor, {
     runWithSettingsChangeGuard(editor, () => {
         component.set({
             href: resolvedHref,
-            target: linkType === 'mail' ? '' : (target || ''),
+            target: linkType === 'mail' || linkType === 'popup' ? '' : (target || ''),
             'data-vb-link-type': linkType,
             linkType,
             linkRef: linkType === 'url' ? '' : linkRef,
@@ -1550,12 +1559,13 @@ function applyTextLinkToComponent(component, editor, {
 
         component.addAttributes({
             href: resolvedHref,
-            target: linkType === 'mail' || ! target ? null : target,
-            rel: linkType !== 'mail' && target === '_blank' ? 'noopener noreferrer' : null,
+            target: linkType === 'mail' || linkType === 'popup' || ! target ? null : target,
+            rel: linkType !== 'mail' && linkType !== 'popup' && target === '_blank' ? 'noopener noreferrer' : null,
             'data-vb-link-type': linkType,
             'data-vb-link': linkType === 'url' ? null : (linkRef || null),
             [MAIL_SUBJECT_ATTR]: linkType === 'mail' && mailSubject ? mailSubject : null,
             [ROUTE_PARAMS_ATTR]: linkType === 'route' ? serializeRouteParams(routeParams) : null,
+            [POPUP_OPEN_ATTR]: popupOpenAttrValue(linkType, linkRef),
         });
 
         const children = [...(component.components?.() ?? [])];
@@ -1602,10 +1612,14 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         return true;
     }
 
-    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [] };
+    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [], popups: [] };
     const attrs = component.getAttributes?.() ?? {};
-    let linkType = String(component.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url') || 'url';
-    let linkRef = String(component.get('linkRef') ?? attrs['data-vb-link'] ?? '');
+    const fromAttrs = readPopupAwareLinkType(
+        attrs,
+        String(component.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url') || 'url',
+    );
+    let linkType = fromAttrs.linkType;
+    let linkRef = fromAttrs.linkRef || String(component.get('linkRef') ?? attrs['data-vb-link'] ?? '');
     let href = String(component.get('href') ?? attrs.href ?? '#');
     let target = String(component.get('target') ?? attrs.target ?? '');
     let label = readTextLinkLabel(component);

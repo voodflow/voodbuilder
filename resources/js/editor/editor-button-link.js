@@ -11,7 +11,7 @@
 
 import { debugSwallowed } from './debug-swallowed.js';
 import { isInsideChromeShellPartComponent } from './chrome-content-slot-utils.js';
-import { resolveEditorLinkHref as resolveSharedLinkHref } from './editor-link-resolve.js';
+import { popupOpenAttrValue, resolveEditorLinkHref as resolveSharedLinkHref, POPUP_OPEN_ATTR } from './editor-link-resolve.js';
 
 export const CTA_LABEL_ATTR = 'data-voodbuilder-cta-label';
 
@@ -850,6 +850,7 @@ function applyCtaButtonLink(component, editor = null) {
         [CTA_LABEL_ATTR]: label,
         'data-vb-link-type': linkType || 'url',
         'data-vb-link': linkType === 'url' ? null : (linkRef || null),
+        [POPUP_OPEN_ATTR]: popupOpenAttrValue(linkType, linkRef),
     };
     const attrsChanged = Object.entries(nextAttrs).some(([key, value]) => {
         const current = attrs[key] ?? null;

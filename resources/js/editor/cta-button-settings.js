@@ -8,8 +8,11 @@ import { createLinkTargetFields } from './link-target-fields.js';
 import { extractButtonLabel, persistCtaLabel } from './editor-button-link.js';
 import {
     MAIL_SUBJECT_ATTR,
+    POPUP_OPEN_ATTR,
     ROUTE_PARAMS_ATTR,
     parseMailtoHref,
+    popupOpenAttrValue,
+    readPopupAwareLinkType,
     readRouteParamsFromAttrs,
     resolveAppRouteHref,
     resolveEditorLinkHref,
@@ -77,14 +80,14 @@ function applyLinkToComponent(component, editor, {
             linkType,
             linkRef: linkType === 'url' ? '' : linkRef,
             href: resolvedHref,
-            target: linkType === 'mail' ? '' : (target || ''),
+            target: linkType === 'mail' || linkType === 'popup' ? '' : (target || ''),
             mailSubject: linkType === 'mail' ? mailSubject : '',
         });
 
         const nextAttrs = {
             href: resolvedHref,
-            target: linkType === 'mail' || ! target ? null : target,
-            rel: linkType !== 'mail' && target === '_blank' ? 'noopener noreferrer' : null,
+            target: linkType === 'mail' || linkType === 'popup' || ! target ? null : target,
+            rel: linkType !== 'mail' && linkType !== 'popup' && target === '_blank' ? 'noopener noreferrer' : null,
             role: 'button',
             'data-voodbuilder-cta': 'true',
             'data-voodbuilder-cta-label': label,
@@ -92,6 +95,7 @@ function applyLinkToComponent(component, editor, {
             'data-vb-link': linkType === 'url' ? null : (linkRef || null),
             [MAIL_SUBJECT_ATTR]: linkType === 'mail' && mailSubject ? mailSubject : null,
             [ROUTE_PARAMS_ATTR]: linkType === 'route' ? serializeRouteParams(routeParams) : null,
+            [POPUP_OPEN_ATTR]: popupOpenAttrValue(linkType, linkRef),
         };
 
         if (linkType === 'mail') {
@@ -134,10 +138,11 @@ export function renderCtaButtonSettings({ mount, traitsMount = null, component, 
         return true;
     }
 
-    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [] };
+    const targets = editor.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [], popups: [] };
     const attrs = component.getAttributes?.() ?? {};
-    const linkType = String(component.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url') || 'url';
-    let linkRef = String(component.get('linkRef') ?? attrs['data-vb-link'] ?? '');
+    const fromAttrs = readPopupAwareLinkType(attrs, String(component.get('linkType') ?? attrs['data-vb-link-type'] ?? 'url') || 'url');
+    const linkType = fromAttrs.linkType;
+    let linkRef = fromAttrs.linkRef || String(component.get('linkRef') ?? attrs['data-vb-link'] ?? '');
     const href = String(component.get('href') ?? attrs.href ?? '#');
     const target = String(component.get('target') ?? attrs.target ?? '');
     let label = extractButtonLabel(component);

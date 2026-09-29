@@ -7,8 +7,11 @@ import { createLinkTargetFields } from './link-target-fields.js';
 import { enhanceInspectorSelects } from './inspector-select-ui.js';
 import {
     MAIL_SUBJECT_ATTR,
+    POPUP_OPEN_ATTR,
     ROUTE_PARAMS_ATTR,
     parseMailtoHref,
+    popupOpenAttrValue,
+    readPopupAwareLinkType,
     resolveAppRouteHref,
     resolveEditorLinkHref,
     serializeRouteParams,
@@ -90,11 +93,17 @@ export function buildAnchorOpenTag(link, extraAttrs = '') {
         parts.push(`${ROUTE_PARAMS_ATTR}="${escapeAttr(routeParamsJson)}"`);
     }
 
-    if (target && linkType !== 'mail') {
+    const popupId = popupOpenAttrValue(linkType, linkRef);
+
+    if (popupId) {
+        parts.push(`${POPUP_OPEN_ATTR}="${escapeAttr(popupId)}"`);
+    }
+
+    if (target && linkType !== 'mail' && linkType !== 'popup') {
         parts.push(`target="${escapeAttr(target)}"`);
     }
 
-    if (target === '_blank' && linkType !== 'mail') {
+    if (target === '_blank' && linkType !== 'mail' && linkType !== 'popup') {
         parts.push('rel="noopener noreferrer"');
     }
 
@@ -141,13 +150,21 @@ export function applyRichTextLinkAttrs(anchor, link) {
         anchor.removeAttribute(ROUTE_PARAMS_ATTR);
     }
 
-    if (link.target && linkType !== 'mail') {
+    const popupId = popupOpenAttrValue(linkType, link.linkRef);
+
+    if (popupId) {
+        anchor.setAttribute(POPUP_OPEN_ATTR, popupId);
+    } else {
+        anchor.removeAttribute(POPUP_OPEN_ATTR);
+    }
+
+    if (link.target && linkType !== 'mail' && linkType !== 'popup') {
         anchor.setAttribute('target', link.target);
     } else {
         anchor.removeAttribute('target');
     }
 
-    if (link.target === '_blank' && linkType !== 'mail') {
+    if (link.target === '_blank' && linkType !== 'mail' && linkType !== 'popup') {
         anchor.setAttribute('rel', 'noopener noreferrer');
     } else {
         anchor.removeAttribute('rel');
@@ -185,6 +202,13 @@ export function readAnchorLinkState(anchor) {
     let linkType = String(anchor.getAttribute('data-vb-link-type') ?? 'url').trim() || 'url';
     let linkRef = String(anchor.getAttribute('data-vb-link') ?? '').trim();
     let mailSubject = String(anchor.getAttribute(MAIL_SUBJECT_ATTR) ?? '').trim();
+    const fromPopup = readPopupAwareLinkType({
+        'data-vb-link-type': linkType,
+        'data-vb-link': linkRef,
+        [POPUP_OPEN_ATTR]: anchor.getAttribute(POPUP_OPEN_ATTR),
+    }, linkType);
+    linkType = fromPopup.linkType;
+    linkRef = fromPopup.linkRef || linkRef;
 
     if (linkType === 'mail' || href.toLowerCase().startsWith('mailto:')) {
         linkType = 'mail';
@@ -366,7 +390,7 @@ export function linkPickerDialog(options = {}) {
                 return;
             }
 
-            if ((linkType === 'page' || linkType === 'menu' || linkType === 'route') && linkRef === '') {
+            if ((linkType === 'page' || linkType === 'menu' || linkType === 'route' || linkType === 'popup') && linkRef === '') {
                 linkFields.referenceField(linkType)?.querySelector('select')?.focus();
 
                 return;

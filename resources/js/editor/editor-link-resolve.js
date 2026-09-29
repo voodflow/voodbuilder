@@ -1,14 +1,29 @@
 /**
  * Shared link-type resolution for CTA / text link / icon / RTE picker.
- * Types: url | page | menu | mail | route (+ optional none for icons).
+ * Types: url | page | menu | mail | route | popup (+ optional none for icons).
+ *
+ * `popup` appears only when {@see hasPopupLinkTargets} — populated by vpopups.
  */
 
 export const MAIL_SUBJECT_ATTR = 'data-vb-mail-subject';
 export const ROUTE_PARAMS_ATTR = 'data-vb-route-params';
+export const POPUP_OPEN_ATTR = 'data-vpopups-open';
+
+/**
+ * @param {{ popups?: unknown, popupsEnabled?: boolean }|null|undefined} targets
+ * @returns {boolean}
+ */
+export function hasPopupLinkTargets(targets) {
+    if (targets?.popupsEnabled === true) {
+        return true;
+    }
+
+    return Array.isArray(targets?.popups) && targets.popups.length > 0;
+}
 
 /**
  * @param {Record<string, string>} [labels]
- * @param {{ includeNone?: boolean }} [options]
+ * @param {{ includeNone?: boolean, includePopup?: boolean, targets?: { popups?: unknown } }} [options]
  * @returns {list<{ value: string, label: string }>}
  */
 export function linkTypeSelectOptions(labels = {}, options = {}) {
@@ -26,7 +41,46 @@ export function linkTypeSelectOptions(labels = {}, options = {}) {
         { value: 'route', label: labels.buttonLinkTypeRoute ?? 'App route' },
     );
 
+    if (options.includePopup === true || hasPopupLinkTargets(options.targets)) {
+        items.push({ value: 'popup', label: labels.buttonLinkTypePopup ?? 'Popup' });
+    }
+
     return items;
+}
+
+/**
+ * Prefer an explicit `data-vpopups-open` bind (Copy bind / prior saves) as link type popup.
+ *
+ * @param {Record<string, unknown>} [attrs]
+ * @param {string} [fallbackType]
+ * @returns {{ linkType: string, linkRef: string }}
+ */
+export function readPopupAwareLinkType(attrs = {}, fallbackType = 'url') {
+    const openId = String(attrs?.[POPUP_OPEN_ATTR] ?? '').trim();
+    let linkType = String(attrs?.['data-vb-link-type'] ?? fallbackType).trim() || fallbackType;
+    let linkRef = String(attrs?.['data-vb-link'] ?? '').trim();
+
+    if (openId !== '') {
+        linkType = 'popup';
+        linkRef = openId;
+    }
+
+    return { linkType, linkRef };
+}
+
+/**
+ * @param {string} linkType
+ * @param {string} linkRef
+ * @returns {string|null}
+ */
+export function popupOpenAttrValue(linkType, linkRef) {
+    if (String(linkType ?? '').trim() !== 'popup') {
+        return null;
+    }
+
+    const id = String(linkRef ?? '').trim();
+
+    return id !== '' ? id : null;
 }
 
 /**
@@ -85,9 +139,9 @@ export function buildMailtoHref(email, subject = '') {
  */
 export function resolveEditorLinkHref(editor, linkType, linkRef, href, extra = {}) {
     const type = String(linkType ?? 'url').trim() || 'url';
-    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [] };
+    const targets = editor?.__voodbuilderLinkTargets ?? { pages: [], menuItems: [], routes: [], popups: [] };
 
-    if (type === 'none') {
+    if (type === 'none' || type === 'popup') {
         return '#';
     }
 
@@ -142,6 +196,7 @@ export function resolveEditorLinkHref(editor, linkType, linkRef, href, extra = {
 
     return String(href ?? '#').trim() || '#';
 }
+
 
 /**
  * Resolve a named app route (with params) via the link-targets endpoint and cache the URL.
