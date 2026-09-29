@@ -39,6 +39,14 @@ return [
     ],
 
     /*
+    | Optional Voodflow automation (Site Visit trigger nodes, etc.).
+    | Requires voodflow/voodflow installed on the host application.
+    */
+    'features' => [
+        'voodflow' => env('VOODBUILDER_FEATURE_VOODFLOW', true),
+    ],
+
+    /*
     | Internal module enablement (same package; physical splits come later).
     */
     'modules' => [

@@ -1,0 +1,37 @@
+{
+    "name": "site-visit-trigger-node",
+    "display_name": "Site Visit",
+    "type": "site_visit_trigger_node",
+    "version": "1.0.0",
+    "author": "VoodBuilder",
+    "description": "Start when a visitor lands on a page, menu link, or path",
+    "category": "integration",
+    "tier": "PLUGIN",
+    "display": {
+        "iconType": "heroicon",
+        "icon": "heroicon-o-map-pin",
+        "color": "sky",
+        "logo": null
+    },
+    "php": {
+        "class": "SiteVisitTriggerNode",
+        "namespace": "Voodflow\\Voodbuilder\\Nodes\\SiteVisitTriggerNode"
+    },
+    "javascript": {
+        "component": "VoodflowNode_SiteVisitTriggerNode",
+        "bundle": "dist/site-visit-trigger-node.js"
+    },
+    "weaver": {
+        "summary": "Start when a visitor lands on a site page, menu URL, or custom path",
+        "connections": {
+            "accepts_input": false,
+            "provides_output": true
+        },
+        "notes": [
+            "Payload includes visitor_key (vpopups_vid), path, page_id, and user_id when logged in.",
+            "Chain into Trigger Popup with visitor_key = {{visitor_key}} and Bypass page targeting as needed.",
+            "Menu item match uses the resolved URL path — works for non-VoodBuilder pages too."
+        ]
+    },
+    "function": "trigger"
+}

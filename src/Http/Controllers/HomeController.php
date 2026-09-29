@@ -16,6 +16,7 @@ use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageAccess;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
+use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitRecorder;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
@@ -48,6 +49,8 @@ class HomeController extends Controller
 
             if ($gate !== null) {
                 session()->put('url.intended', $request->url());
+            } else {
+                SiteVisitRecorder::recordCurrentRequest($page);
             }
 
             return view('voodbuilder::pages.site-page', SitePageViewData::make($page, [

@@ -2,6 +2,7 @@ import { initVideoFacades } from './editor/video-runtime.js';
 import { initHeroBackgroundVideos } from './editor/hero-video-runtime.js';
 import { initVbRuntime } from './editor/vb-runtime.js';
 import { initSiteChrome } from './editor/site-chrome-runtime.js';
+import { bootSiteVisitBeacon } from './site-visit-beacon.js';
 
 /** Shared promise so DOMContentLoaded + livewire:navigated cannot double-fetch the chunk. */
 let popupsRuntimeImport = null;
@@ -44,6 +45,7 @@ function bootSiteRuntime() {
     }
 
     bootPopupsIfConfigured();
+    bootSiteVisitBeacon();
 }
 
 if (document.readyState === 'loading') {

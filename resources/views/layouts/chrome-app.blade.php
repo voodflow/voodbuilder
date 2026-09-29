@@ -186,6 +186,7 @@
 
     <x-voodbuilder::monitoring-scripts />
     <x-voodbuilder::popups-boot />
+    <x-voodbuilder::site-visit-boot :page="$page ?? null" />
 
     @stack('scripts-before-livewire')
     {{-- Livewire JS/CSS auto-inject when a component is rendered; avoid shipping 500KB+ on static pages. --}}

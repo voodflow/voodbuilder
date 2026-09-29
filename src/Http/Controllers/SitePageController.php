@@ -13,6 +13,7 @@ use Voodflow\Voodbuilder\Support\SitePageAccess;
 use Voodflow\Voodbuilder\Support\SitePageMenuPath;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageViewData;
+use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitRecorder;
 
 /**
  * HTTP controller: Site Page.
@@ -66,6 +67,10 @@ class SitePageController extends Controller
         if (filled($page->section)) {
             $data['sectionHome'] = SitePage::sectionHomePage($page->section);
             $data['sectionPosts'] = SitePage::sectionArticles($page->section);
+        }
+
+        if ($gate === null) {
+            SiteVisitRecorder::recordCurrentRequest($page);
         }
 
         if ($page->isSectionHome() && $gate === null) {

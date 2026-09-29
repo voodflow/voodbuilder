@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -37,6 +38,7 @@ use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\ProductPromoBlock;
+use Voodflow\Voodbuilder\Http\Controllers\SiteVisitPublicController;
 use Voodflow\Voodbuilder\Http\Controllers\Admin\LicenseStatusController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsPreviewController;
@@ -100,6 +102,7 @@ use Voodflow\Voodbuilder\Support\ReservedPathRegistry;
 use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
 use Voodflow\Voodbuilder\Support\SitePageRoutes;
+use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitWorkflowRunner;
 use Voodflow\Voodbuilder\Support\SubThemeRegistry;
 use Voodflow\Voodbuilder\Support\VoodbuilderLandingBlocks;
 use Voodflow\Voodbuilder\Support\VoodbuilderSeo;
@@ -173,6 +176,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
+        // Same visitor cookie used by popups + site-visit beacons (must be JS-readable).
+        EncryptCookies::except([SiteVisitWorkflowRunner::VISITOR_COOKIE]);
+
         Relation::morphMap([
             'site_page' => SitePage::class,
         ]);
@@ -224,8 +230,13 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         }
 
         $this->registerAdminRoutes();
+        $this->registerSiteVisitRoutes();
         $this->registerInternalModules();
         $this->app->make(ModuleRegistry::class)->boot();
+
+        if (class_exists(VoodbuilderVoodflowServiceProvider::class)) {
+            $this->app->register(VoodbuilderVoodflowServiceProvider::class);
+        }
 
         SEOManager::SEODataTransformer(static function ($seoData) {
             return VoodbuilderSeo::applyDefaults($seoData);
@@ -344,6 +355,25 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                     ->by((string) ($request->user()?->getAuthIdentifier() ?: $request->ip()));
             },
         );
+    }
+
+    protected function registerSiteVisitRoutes(): void
+    {
+        RateLimiter::for(
+            'voodbuilder-site-visits',
+            static function (Request $request): Limit {
+                return Limit::perMinute(60)->by((string) $request->ip());
+            },
+        );
+
+        Route::middleware(['web', 'throttle:voodbuilder-site-visits'])
+            ->prefix('voodbuilder')
+            ->name('voodbuilder.')
+            ->group(function (): void {
+                Route::post('visits', [SiteVisitPublicController::class, 'store'])
+                    ->name('visits.store')
+                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+            });
     }
 
     protected function registerAdminRoutes(): void

@@ -1,7 +1,7 @@
 {
     "name": "voodflow/voodbuilder",
     "description": "VoodBuilder \u2014 Filament page builder and public site shell for Laravel.",
-    "version": "1.11.32",
+    "version": "1.11.34",
     "type": "library",
     "license": "proprietary",
     "keywords": [
@@ -86,6 +86,7 @@
         }
     },
     "suggest": {
+        "voodflow/voodflow": "Optional Site Visit workflow trigger and other automation nodes.",
         "voodflow/vpopups": "Popup builder for VoodBuilder (same GrapesJS editor, targeting, analytics).",
         "voodflow/vforms": "Managed forms and submissions with optional VoodBuilder blocks.",
         "voodflow/voodbuilder-elements": "Remote Elements library for the section catalog.",

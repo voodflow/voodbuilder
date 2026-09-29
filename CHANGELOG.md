@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.34] - 2026-09-29
+
+### Added
+
+- **Site Visit** Voodflow trigger: start workflows when a visitor lands on a site page, menu item URL, or custom path (beacon + `POST /voodbuilder/visits`, payload includes `visitor_key` for Trigger Popup)
+
+### Changed
+
+- **Site Visit** (recorder + beacon + public endpoint) waits for vcookiebar **marketing** consent before setting `vpopups_vid` or queuing workflows
+
 ## [1.11.32] - 2026-09-29
 
 ### Added
