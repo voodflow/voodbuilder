@@ -234,6 +234,7 @@ class NavigationMenuResource extends Resource
     protected static function menuItemFields(bool $isChild, ?string $menuSlug = null, ?string $menuLocale = null): array
     {
         $isSocialMenu = $menuSlug === 'social';
+        $isListMenu = $menuSlug !== null && NavigationMenuPlacements::usesListPresentation($menuSlug);
 
         return [
             TextInput::make('label')
@@ -243,7 +244,7 @@ class NavigationMenuResource extends Resource
                 ->label(__('voodbuilder::admin.fields.menu_description'))
                 ->rows(2)
                 ->maxLength(255)
-                ->visible(! $isSocialMenu)
+                ->visible(! $isSocialMenu && ! $isListMenu)
                 ->helperText(__('voodbuilder::admin.helpers.menu_description')),
             Select::make('icon')
                 ->label(__('voodbuilder::admin.fields.menu_icon'))
@@ -262,7 +263,7 @@ class NavigationMenuResource extends Resource
                 ->options(MenuDropdownLayout::class)
                 ->default(MenuDropdownLayout::Auto->value)
                 ->native(false)
-                ->visible(! $isChild && ! $isSocialMenu)
+                ->visible(! $isChild && ! $isSocialMenu && ! $isListMenu)
                 ->helperText(__('voodbuilder::admin.helpers.menu_dropdown_layout')),
             Select::make('type')
                 ->options(static::menuItemTypeOptions($isChild))

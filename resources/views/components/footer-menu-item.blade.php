@@ -7,15 +7,24 @@
         1 => 'text-sm text-vp-text-2 transition-colors hover:text-vp-brand-1',
         default => 'text-sm text-vp-text-3 transition-colors hover:text-vp-brand-1',
     };
+    $icon = $item->resolvedIcon();
 @endphp
 
 <li>
     <a
         href="{{ $item->resolveUrl() }}"
-        class="{{ $linkClass }}"
+        @class([
+            'inline-flex items-center gap-2',
+            $linkClass,
+        ])
         @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
     >
-        {{ __($item->label) }}
+        @if ($icon)
+            <span class="voodbuilder-footer-menu-item__icon shrink-0 text-vp-brand-1" aria-hidden="true">
+                <x-voodbuilder::tabler-icon :name="$icon" class="h-4 w-4" />
+            </span>
+        @endif
+        <span>{{ __($item->label) }}</span>
     </a>
     @if ($item->hasChildren())
         <ul @class([

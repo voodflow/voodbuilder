@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.37] - 2026-09-30
+
+### Fixed
+
+- Footer column menus render Tabler icons beside links again (list layout, no mega panel)
+- Admin menu editor hides mega-menu description / dropdown layout fields on footer placements
+
 ## [1.11.34] - 2026-09-29
 
 ### Added

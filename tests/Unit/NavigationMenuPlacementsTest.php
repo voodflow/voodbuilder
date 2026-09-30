@@ -12,6 +12,18 @@ use Voodflow\Voodbuilder\Tests\TestCase;
 class NavigationMenuPlacementsTest extends TestCase
 {
     #[Test]
+    public function test_footer_placements_use_list_presentation_without_mega_menu(): void
+    {
+        $this->assertTrue(NavigationMenuPlacements::usesListPresentation('footer'));
+        $this->assertTrue(NavigationMenuPlacements::usesListPresentation('footer_col_1'));
+        $this->assertTrue(NavigationMenuPlacements::usesListPresentation('footer_col_4'));
+        $this->assertTrue(NavigationMenuPlacements::usesListPresentation('social'));
+        $this->assertTrue(NavigationMenuPlacements::usesListPresentation('landing_footer_col_2'));
+        $this->assertFalse(NavigationMenuPlacements::usesListPresentation('main'));
+        $this->assertFalse(NavigationMenuPlacements::usesListPresentation('header_extra'));
+    }
+
+    #[Test]
     public function test_it_exposes_site_header_and_footer_placements_only(): void
     {
         $options = NavigationMenuPlacements::flatOptions();

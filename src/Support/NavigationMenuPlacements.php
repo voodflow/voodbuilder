@@ -111,6 +111,22 @@ final class NavigationMenuPlacements
             || str_starts_with($slug, 'landing_footer_col_');
     }
 
+    /**
+     * Footer placements render flat / nested lists — not mega dropdown panels.
+     */
+    public static function usesListPresentation(string $slug): bool
+    {
+        if ($slug === 'footer' || $slug === 'social') {
+            return true;
+        }
+
+        if (in_array($slug, SiteFooterColumnPlacements::columnSlugs(), true)) {
+            return true;
+        }
+
+        return str_starts_with($slug, 'landing_footer');
+    }
+
     public static function label(string $slug): string
     {
         return self::catalog()[$slug]['label']
