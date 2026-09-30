@@ -6,7 +6,7 @@
  *
  * Markers:
  * - data-vb-field="key" — required field id
- * - data-vb-field-type="text|textarea|icon|number" — default text
+ * - data-vb-field-type="text|textarea|icon|number|rich" — default text
  * - data-vb-field-label="Title" — optional panel label
  *
  * Repeating cards: data-vb-items-root + data-vb-item (see section-item-count.js).
@@ -28,6 +28,11 @@ import {
     createTextareaField,
 } from './editor-form-ui.js';
 import {
+    createLightRichTextEditor,
+    readComponentHtml,
+    writeComponentHtml,
+} from './rich-text-content-settings.js';
+import {
     DEFAULT_TABLER_ICON,
     DEFAULT_TABLER_ICON_STROKE,
     DEFAULT_TABLER_ICON_STYLE,
@@ -35,6 +40,7 @@ import {
     resolveTablerIconStroke,
     resolveTablerIconStyle,
 } from './tabler-icons-catalog.js';
+import { findRichTextHost, lockRichTextChildren } from './text-elements.js';
 
 const FIELD_ATTR = 'data-vb-field';
 const FIELD_TYPE_ATTR = 'data-vb-field-type';
@@ -212,12 +218,16 @@ function describeField(component) {
 function normalizeFieldType(raw, component) {
     const value = String(raw ?? '').trim().toLowerCase();
 
-    if (['text', 'textarea', 'icon', 'number'].includes(value)) {
-        return value;
+    if (['text', 'textarea', 'icon', 'number', 'rich', 'richeditor', 'html'].includes(value)) {
+        return value === 'richeditor' || value === 'html' ? 'rich' : value;
     }
 
     if (isIconComponent(component) || findIconHost(component)) {
         return 'icon';
+    }
+
+    if (findRichTextHost(component)) {
+        return 'rich';
     }
 
     return 'text';
@@ -512,6 +522,10 @@ function renderFieldControl(field, editor) {
         return renderIconField(field, editor);
     }
 
+    if (field.type === 'rich') {
+        return renderRichField(field, editor);
+    }
+
     if (field.type === 'textarea') {
         const { field: wrap, input } = createTextareaField({
             label: field.label,
@@ -533,6 +547,60 @@ function renderFieldControl(field, editor) {
     });
 
     input.addEventListener('input', () => writeFieldText(field.component, input.value, editor));
+
+    return wrap;
+}
+
+/**
+ * @param {{ key: string, label: string, component: object }} field
+ * @param {object} editor
+ * @returns {HTMLElement}
+ */
+function renderRichField(field, editor) {
+    const host = findRichTextHost(field.component) ?? field.component;
+    const wrap = document.createElement('div');
+    wrap.className = 'voodbuilder-editor-form-field';
+    wrap.setAttribute('data-vb-rich-field', field.key);
+
+    const label = document.createElement('label');
+    label.className = 'voodbuilder-editor-form-label';
+    label.textContent = field.label;
+    wrap.appendChild(label);
+
+    let writeTimer = 0;
+    const flushHtml = (html) => {
+        if (writeTimer) {
+            window.clearTimeout(writeTimer);
+            writeTimer = 0;
+        }
+
+        writeComponentHtml(host, html, editor);
+    };
+
+    const editorUi = createLightRichTextEditor({
+        value: readComponentHtml(host),
+        labels: {},
+        editor,
+        component: host,
+        onChange: (html) => {
+            if (writeTimer) {
+                window.clearTimeout(writeTimer);
+            }
+
+            writeTimer = window.setTimeout(() => {
+                writeTimer = 0;
+                writeComponentHtml(host, html, editor);
+            }, 120);
+        },
+    });
+
+    editorUi.root.querySelector('.voodbuilder-editor-rte__visual')
+        ?.addEventListener('blur', () => flushHtml(editorUi.getHtml()), true);
+    editorUi.root.querySelector('.voodbuilder-editor-rte__code')
+        ?.addEventListener('blur', () => flushHtml(editorUi.getHtml()), true);
+
+    wrap.appendChild(editorUi.root);
+    lockRichTextChildren(host);
 
     return wrap;
 }

@@ -77,7 +77,6 @@ final class EditorCommunityBlockCatalog
         'vb-team-1',
         'vb-step-1',
         'vb-cta-1',
-        'vb-landing02-faq',
         // Lightweight JS tiles kept local for Community demos
         'voodbuilder-animated-cta',
         'voodbuilder-animated-stats',
@@ -132,7 +131,7 @@ final class EditorCommunityBlockCatalog
         // Content extras
         'vb-content-1', 'vb-content-2', 'vb-content-3', 'vb-content-4',
         'vb-content-6', 'vb-content-7', 'vb-content-8',
-        'vb-landing01-solution', 'vb-landing02-trust', 'vb-landing02-impact',
+        'vb-landing01-solution', 'vb-landing02-trust', 'vb-landing02-impact', 'vb-landing02-faq',
         'vb-content-teaser-card', 'vb-content-spotlight-split',
         // Features extras
         'vb-feature-3', 'vb-feature-4', 'vb-feature-5', 'vb-feature-6',

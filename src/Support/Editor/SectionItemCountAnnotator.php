@@ -94,6 +94,12 @@ final class SectionItemCountAnnotator
             'min' => 1,
             'max' => 8,
         ],
+        'vb-landing02-faq' => [
+            'root' => './/*[@data-vb-items-root]',
+            'item' => './details[@data-vb-item]',
+            'min' => 1,
+            'max' => 12,
+        ],
         'vb-ecommerce-1' => [
             'root' => ".//*[contains(@class, 'flex-wrap') and contains(@class, '-m-4')]",
             'item' => './div[contains(@class, "p-4")]',

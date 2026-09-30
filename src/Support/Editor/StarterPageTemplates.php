@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\PageTemplate;
 
 /**
- * Curated starter page templates (Landing 01–02 community thinners).
+ * Curated starter page templates (Landing 01 community thinner).
  * Nav/footer are omitted — chrome-shell page editors already provide them.
- * Landing 03 (cinematic kit) lives in the Elements companion.
+ * Landing 02 FAQ + Landing 03 cinematic kit live in the Elements companion.
  */
 class StarterPageTemplates
 {
@@ -21,7 +21,6 @@ class StarterPageTemplates
     {
         return [
             VoodbuilderLanding01Sections::TEMPLATE_NAME,
-            VoodbuilderLanding02Sections::TEMPLATE_NAME,
         ];
     }
 
@@ -52,6 +51,7 @@ class StarterPageTemplates
             'VoodBuilder landing 01',
             'VoodBuilder landing 02',
             'VoodBuilder cinematic',
+            'Landing 02',
             'Landing 03',
         ];
     }
@@ -67,14 +67,6 @@ class StarterPageTemplates
                 'category' => 'Landing pages',
                 'description' => 'Community starter: article cards and CTA.',
                 'html' => EditorSmartButtonAnnotator::annotate(VoodbuilderLanding01Sections::pageHtml()),
-                'css' => null,
-                'js' => null,
-            ],
-            [
-                'name' => VoodbuilderLanding02Sections::TEMPLATE_NAME,
-                'category' => 'Landing pages',
-                'description' => 'Community starter: FAQ accordion.',
-                'html' => EditorSmartButtonAnnotator::annotate(VoodbuilderLanding02Sections::pageHtml()),
                 'css' => null,
                 'js' => null,
             ],

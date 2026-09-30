@@ -55,7 +55,7 @@ save/load is the page HTML (no extra PHP config required for static sections).
     <div data-vb-item>
       <span data-voodbuilder-icon data-vb-icon="star" data-vb-field="icon" data-vb-field-type="icon" data-vb-field-label="Icon"></span>
       <h4 data-vb-field="title" data-vb-field-type="text" data-vb-field-label="Title">Card</h4>
-      <p data-vb-field="text" data-vb-field-type="textarea" data-vb-field-label="Text">Body</p>
+      <div class="vb-rich-text" data-voodbuilder-rich-text data-vb-field="body" data-vb-field-type="rich" data-vb-field-label="Body"><p>Body</p></div>
     </div>
   </div>
 </section>
@@ -64,7 +64,7 @@ save/load is the page HTML (no extra PHP config required for static sections).
 | Attribute | Purpose |
 | --- | --- |
 | `data-vb-field` | Field key (required) |
-| `data-vb-field-type` | `text` \| `textarea` \| `icon` \| `number` (default `text`; icons auto-detect) |
+| `data-vb-field-type` | `text` \| `textarea` \| `icon` \| `number` \| `rich` (aliases: `richeditor`, `html`; default `text`; icons / rich hosts auto-detect) |
 | `data-vb-field-label` | Label in the Content panel |
 | `data-vb-items-root` / `data-vb-item` | Repeating cards (item count in Layout items) |
 | `data-vb-items-layout="preserve"` | Clone/remove items without rewriting grid/`p-4` classes |

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.38] - 2026-09-30
+
+### Added
+
+- Declarative Content fields support `data-vb-field-type="rich"` (aliases `richeditor` / `html`) via the light RTE, for repeating items such as FAQ answers
+- Elements companion FAQ accordion (`vb-landing02-faq`): item count, Tabler icon picker (same as toolkit pills), question text, rich answer
+
+### Changed
+
+- Moved `vb-landing02-faq` from Community core to the Elements companion catalog; removed local `VoodbuilderLanding02Sections` registration and Landing 02 starter seed
+
 ## [1.11.37] - 2026-09-30
 
 ### Fixed

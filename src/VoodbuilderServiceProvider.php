@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
@@ -38,7 +39,6 @@ use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\HeroBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PackagePromosBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\PartnerBannerBlock;
 use Voodflow\Voodbuilder\Filament\RichContent\CustomBlocks\ProductPromoBlock;
-use Voodflow\Voodbuilder\Http\Controllers\SiteVisitPublicController;
 use Voodflow\Voodbuilder\Http\Controllers\Admin\LicenseStatusController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorBindingsPreviewController;
@@ -48,6 +48,7 @@ use Voodflow\Voodbuilder\Http\Controllers\EditorCodeHighlightController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorCompileCssController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorLinkTargetsController;
 use Voodflow\Voodbuilder\Http\Controllers\EditorMediaPreviewController;
+use Voodflow\Voodbuilder\Http\Controllers\SiteVisitPublicController;
 use Voodflow\Voodbuilder\Http\Middleware\ApplyVoodbuilderSiteConfig;
 use Voodflow\Voodbuilder\Http\Middleware\EnsurePageBuilderAccess;
 use Voodflow\Voodbuilder\Licensing\EntitlementManager;
@@ -88,7 +89,6 @@ use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderEditorBlockConfigs;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding01Sections;
-use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLanding02Sections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderLandingEditorBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderMediaSections;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
@@ -372,7 +372,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->group(function (): void {
                 Route::post('visits', [SiteVisitPublicController::class, 'store'])
                     ->name('visits.store')
-                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+                    ->withoutMiddleware([ValidateCsrfToken::class]);
             });
     }
 
@@ -414,7 +414,6 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             }
 
             VoodbuilderLanding01Sections::registerBlocks();
-            VoodbuilderLanding02Sections::registerBlocks();
             VoodbuilderMediaSections::registerBlocks();
 
             if (config('voodbuilder.editor.sections.enabled', true) && ! $this->app->runningInConsole()) {

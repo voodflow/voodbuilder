@@ -123,6 +123,7 @@ export const SECTION_BLOCK_LABELS = {
     'vb-content-teaser-card': 'Content · teaser with card',
     'vb-content-spotlight-split': 'Content · spotlight split',
     'vb-landing01-solution': 'Content · solution split',
+    'vb-landing02-faq': 'Content · FAQ accordion',
     'vb-landing02-impact': 'Content · impact split',
     'vb-landing02-trust': 'Content · trust logos',
     // Features
