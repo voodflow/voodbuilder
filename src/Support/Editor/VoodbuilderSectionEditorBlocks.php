@@ -11,6 +11,20 @@ use Voodflow\Voodbuilder\Support\VoodbuilderPaths;
  */
 final class VoodbuilderSectionEditorBlocks
 {
+    /**
+     * Block IDs that only differed by item count (use a sibling + data-vb-item-count).
+     *
+     * @var list<string>
+     */
+    public const REDUNDANT_BLOCK_IDS = [
+        'vb-content-7', // Media · 2 cards → use vb-content-8 + item count
+    ];
+
+    public static function isRedundant(string $blockId): bool
+    {
+        return in_array($blockId, self::REDUNDANT_BLOCK_IDS, true);
+    }
+
     public static function register(EditorBlockRegistry $registry, ?string $theme = null): void
     {
         $catalogPath = self::catalogPath();
@@ -80,7 +94,7 @@ final class VoodbuilderSectionEditorBlocks
             return false;
         }
 
-        if ($id !== '' && SectionItemCountAnnotator::isRedundant($id)) {
+        if ($id !== '' && self::isRedundant($id)) {
             return false;
         }
 
@@ -137,9 +151,8 @@ final class VoodbuilderSectionEditorBlocks
             $html = (string) preg_replace('/<section\b/i', '<section' . $attribute, $html, 1);
         }
 
-        if ($blockId !== '') {
-            $html = SectionItemCountAnnotator::annotate($html, $blockId);
-        }
+        // Repeating items are declared in catalog HTML (data-vb-items-root / data-vb-item).
+        // No per-block PHP annotation — third-party elements stay standalone.
 
         return $html;
     }

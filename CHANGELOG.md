@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.39] - 2026-10-01
+
+### Changed
+
+- Repeating section items (item count / Content panel) are **declarative only**: catalogs must ship `data-vb-items-root`, `data-vb-item`, and `data-vb-item-count`. Removed `SectionItemCountAnnotator` per-block PHP rules so third-party element libraries need no VoodBuilder changes.
+- Nested FAQ categories/questions use the same declarative item-count UX as toolkit pills (select on canvas to edit).
+
 ## [1.11.38] - 2026-09-30
 
 ### Added

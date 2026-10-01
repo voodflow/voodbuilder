@@ -458,7 +458,7 @@ return [
         | Block IDs to hide from the Editor sidebar (runtime rendering still works).
         | Example: latest_vtuts — use Dynamic bindings in the inspector instead.
         | Redundant section layouts (item-count siblings) are also filtered in
-        | SectionItemCountAnnotator::REDUNDANT_BLOCK_IDS.
+        | VoodbuilderSectionEditorBlocks::REDUNDANT_BLOCK_IDS.
         */
         'excluded_editor_blocks' => [
             'latest_vtuts',

@@ -6,7 +6,9 @@ import { registerBlockSettings } from './blocks/settings/index.js';
 import {
     appendDeclarativeFields,
     appendDeclarativeItemEditors,
+    findClosestItem,
     findDeclarativeFields,
+    findItemDeclarativeFields,
     resolveFocusedItem,
     scopeHasDeclarativeFields,
 } from './declarative-fields.js';
@@ -184,9 +186,48 @@ function markedItems(root) {
  * @param {object} section
  * @returns {object|null}
  */
+function hasItemAttr(component) {
+    return Object.prototype.hasOwnProperty.call(component?.getAttributes?.() ?? {}, 'data-vb-item');
+}
+
+/**
+ * Prefer the items-root owned by `section`, not one nested inside a child item
+ * (FAQ: categories root vs questions root inside a category).
+ *
+ * @param {object} section
+ * @returns {object|null}
+ */
 function findItemsRoot(section) {
     try {
-        return section.find?.('[data-vb-items-root]')?.[0] ?? null;
+        const roots = [...(section.find?.('[data-vb-items-root]') ?? [])];
+
+        if (roots.length === 0) {
+            return null;
+        }
+
+        if (hasItemAttr(section)) {
+            return roots[0] ?? null;
+        }
+
+        for (const root of roots) {
+            let parent = root.parent?.();
+            let insideChildItem = false;
+
+            while (parent && parent !== section) {
+                if (hasItemAttr(parent)) {
+                    insideChildItem = true;
+                    break;
+                }
+
+                parent = parent.parent?.();
+            }
+
+            if (! insideChildItem) {
+                return root;
+            }
+        }
+
+        return roots[0] ?? null;
     } catch {
         return null;
     }
@@ -386,9 +427,14 @@ export function registerSectionItemCountSettings(editor) {
                 ? resolveFocusedItem(items, selection)
                 : null;
 
+            const itemSingular = String(attrs['data-vb-item-singular'] || 'Item').trim() || 'Item';
+
             // Selecting a repeating card/pill: only that item's Content fields.
             if (focused) {
-                appendDeclarativeItemEditors(mount, items, editor, { selected: selection });
+                appendDeclarativeItemEditors(mount, items, editor, {
+                    selected: selection,
+                    itemSingular,
+                });
 
                 return;
             }
@@ -402,7 +448,8 @@ export function registerSectionItemCountSettings(editor) {
                 Math.min(6, Number.parseInt(attrs['data-vb-item-columns'] ?? String(columns), 10) || columns),
             );
 
-            const { section, fields } = createFormSection('Layout items');
+            const itemsLabel = String(attrs['data-vb-items-label'] || 'Number of items').trim() || 'Number of items';
+            const { section, fields } = createFormSection(itemsLabel);
             const itemOptions = [];
 
             for (let value = min; value <= max; value += 1) {
@@ -417,7 +464,7 @@ export function registerSectionItemCountSettings(editor) {
 
             fields.append(
                 createSelectField({
-                    label: 'Number of items',
+                    label: itemsLabel,
                     name: 'vbItemCount',
                     value: String(current),
                     options: itemOptions,
@@ -448,9 +495,27 @@ export function registerSectionItemCountSettings(editor) {
             mount.appendChild(section);
 
             if (scopeHasDeclarativeFields(root)) {
-                const sectionFields = findDeclarativeFields(root);
-                appendDeclarativeFields(mount, sectionFields, editor, { heading: 'Content' });
-                appendDeclarativeItemEditors(mount, items, editor, { selected: selection });
+                // Section → heading/intro. Category item → its title only (not questions).
+                const ownFields = hasItemAttr(root)
+                    ? findItemDeclarativeFields(root)
+                    : findDeclarativeFields(root).filter((field) => {
+                        const owner = findClosestItem(field.component);
+
+                        return ! owner || owner === root;
+                    });
+
+                if (ownFields.length > 0) {
+                    appendDeclarativeFields(mount, ownFields, editor, {
+                        heading: hasItemAttr(root) ? itemSingular : 'Content',
+                    });
+                }
+
+                appendDeclarativeItemEditors(mount, items, editor, {
+                    selected: selection,
+                    itemSingular,
+                    selectHint: attrs['data-vb-items-select-hint']
+                        || 'Select an item on the canvas to edit its content.',
+                });
             }
 
             if (! isAnimatedStatsRoot(root)) {

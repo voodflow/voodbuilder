@@ -89,7 +89,9 @@ function walkComponents(root, visit) {
  * @returns {object[]}
  */
 export function findDeclarativeFields(scope) {
-    return collectFields(scope, { stopAtNestedItems: ! hasItemAttr(scope) });
+    // Always stop at nested data-vb-item trees so section/category panels
+    // never dump child item fields (e.g. FAQ questions inside a category).
+    return collectFields(scope, { stopAtNestedItems: true });
 }
 
 /**
@@ -669,12 +671,16 @@ export function appendDeclarativeItemEditors(mount, items, editor, options = {})
             return;
         }
 
+        const singular = String(options.itemSingular || 'Item').trim() || 'Item';
+
         appendDeclarativeFields(mount, fields, editor, {
-            heading: `Item ${focused.index + 1}`,
+            heading: `${singular} ${focused.index + 1}`,
         });
 
         return;
     }
+
+    const singular = String(options.itemSingular || 'Item').trim() || 'Item';
 
     items.forEach((item, index) => {
         const fields = findItemDeclarativeFields(item);
@@ -684,7 +690,7 @@ export function appendDeclarativeItemEditors(mount, items, editor, options = {})
         }
 
         appendDeclarativeFields(mount, fields, editor, {
-            heading: `Item ${index + 1}`,
+            heading: `${singular} ${index + 1}`,
         });
     });
 }
