@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.40] - 2026-10-06
+
+### Fixed
+
+- Nested repeating items (FAQ question inside a category): selecting a question now opens Question fields in Content — `resolveFocusedItem` walks ancestor `data-vb-item` nodes so an outer categories list still resolves the parent category, then drills into the question
+- Canvas toolbar Delete on a nested FAQ field removes the whole repeating item (question/category), not only the inner text node
+
+### Changed
+
+- FAQ accordion catalog layout uses full container width (header + categories stack); width follows section normal/full content-width
+
 ## [1.11.39] - 2026-10-01
 
 ### Changed

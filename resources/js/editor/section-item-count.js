@@ -163,11 +163,24 @@ function applyItemsRootLayout(root, columns) {
  * @returns {object[]}
  */
 function markedItems(root) {
-    return [...(root.components?.() ?? [])].filter((child) => {
-        const attrs = child.getAttributes?.() ?? {};
+    const direct = [...(root.components?.() ?? [])].filter((child) => hasItemAttr(child));
 
-        return Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item');
-    });
+    if (direct.length > 0) {
+        return direct;
+    }
+
+    // GrapesJS may insert a wrapper between items-root and data-vb-item children.
+    const unwrapped = [];
+
+    for (const child of [...(root.components?.() ?? [])]) {
+        for (const grand of [...(child.components?.() ?? [])]) {
+            if (hasItemAttr(grand)) {
+                unwrapped.push(grand);
+            }
+        }
+    }
+
+    return unwrapped;
 }
 
 /**
@@ -191,21 +204,81 @@ function hasItemAttr(component) {
 }
 
 /**
- * Prefer the items-root owned by `section`, not one nested inside a child item
+ * Prefer the items-root owned by `scope`, not one nested inside a child item
  * (FAQ: categories root vs questions root inside a category).
  *
- * @param {object} section
+ * Prefer a component-tree walk over `find()` — GrapesJS `find()` needs a rendered
+ * view and can miss roots inside `<details>` while the inspector resolves.
+ *
+ * @param {object} scope
  * @returns {object|null}
  */
-function findItemsRoot(section) {
+function findItemsRoot(scope) {
+    if (! scope) {
+        return null;
+    }
+
+    let found = null;
+
+    const visit = (component, insideNestedItem) => {
+        if (! component || found) {
+            return;
+        }
+
+        if (component !== scope) {
+            const attrs = component.getAttributes?.() ?? {};
+
+            if (Object.prototype.hasOwnProperty.call(attrs, 'data-vb-items-root') && ! insideNestedItem) {
+                found = component;
+
+                return;
+            }
+        }
+
+        const nextInside = insideNestedItem || (component !== scope && hasItemAttr(component));
+
+        for (const child of [...(component.components?.() ?? [])]) {
+            visit(child, nextInside);
+        }
+    };
+
     try {
-        const roots = [...(section.find?.('[data-vb-items-root]') ?? [])];
+        visit(scope, false);
+    } catch {
+        return null;
+    }
+
+    if (found) {
+        return found;
+    }
+
+    // Fallback for still-unparsed trees: CSS find on the rendered view.
+    try {
+        const roots = [...(scope.find?.('[data-vb-items-root]') ?? [])];
 
         if (roots.length === 0) {
             return null;
         }
 
-        if (hasItemAttr(section)) {
+        if (hasItemAttr(scope)) {
+            for (const root of roots) {
+                let parent = root.parent?.();
+                let insideChildItem = false;
+
+                while (parent && parent !== scope) {
+                    if (hasItemAttr(parent)) {
+                        insideChildItem = true;
+                        break;
+                    }
+
+                    parent = parent.parent?.();
+                }
+
+                if (! insideChildItem) {
+                    return root;
+                }
+            }
+
             return roots[0] ?? null;
         }
 
@@ -213,7 +286,7 @@ function findItemsRoot(section) {
             let parent = root.parent?.();
             let insideChildItem = false;
 
-            while (parent && parent !== section) {
+            while (parent && parent !== scope) {
                 if (hasItemAttr(parent)) {
                     insideChildItem = true;
                     break;
@@ -389,6 +462,62 @@ function findItemCountSection(component) {
 }
 
 /**
+ * Keep data-vb-item-count in sync when an author deletes a repeating item from the
+ * canvas (pill / FAQ category / question), including middle items.
+ *
+ * @param {object} editor
+ */
+function registerRepeatingItemCountSync(editor) {
+    if (editor.__voodbuilderRepeatingItemCountSyncRegistered) {
+        return;
+    }
+
+    editor.__voodbuilderRepeatingItemCountSyncRegistered = true;
+
+    editor.on('component:remove:before', (component) => {
+        if (! hasItemAttr(component)) {
+            return;
+        }
+
+        const parent = component.parent?.();
+        const parentAttrs = parent?.getAttributes?.() ?? {};
+
+        if (! Object.prototype.hasOwnProperty.call(parentAttrs, 'data-vb-items-root')) {
+            return;
+        }
+
+        let owner = parent;
+
+        while (owner) {
+            const attrs = owner.getAttributes?.() ?? {};
+
+            if (Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count')) {
+                component.__vbItemCountOwner = owner;
+                break;
+            }
+
+            owner = owner.parent?.();
+        }
+    });
+
+    editor.on('component:remove', (component) => {
+        const owner = component?.__vbItemCountOwner;
+
+        if (! owner || owner.isRemoved?.()) {
+            return;
+        }
+
+        const { items, min, max } = findSectionItems(owner);
+        const next = Math.max(min, Math.min(max, items.length));
+
+        owner.addAttributes?.({
+            'data-vb-item-count': String(next),
+        });
+        owner.set?.({ 'data-vb-item-count': next }, { silent: true });
+    });
+}
+
+/**
  * @param {object} editor
  */
 export function registerSectionItemCountSettings(editor) {
@@ -397,6 +526,8 @@ export function registerSectionItemCountSettings(editor) {
     }
 
     editor.__voodbuilderSectionItemCountSettingsRegistered = true;
+
+    registerRepeatingItemCountSync(editor);
 
     registerBlockSettings({
         id: 'section_item_count',
@@ -429,8 +560,26 @@ export function registerSectionItemCountSettings(editor) {
 
             const itemSingular = String(attrs['data-vb-item-singular'] || 'Item').trim() || 'Item';
 
-            // Selecting a repeating card/pill: only that item's Content fields.
+            // Selecting a repeating item that is itself an item-count group (FAQ category):
+            // open that group's Questions UI instead of only the category title fields.
             if (focused) {
+                const nestedAttrs = focused.item.getAttributes?.() ?? {};
+
+                if (Object.prototype.hasOwnProperty.call(nestedAttrs, 'data-vb-item-count')) {
+                    const nested = findSectionItems(focused.item);
+
+                    if (nested.items.length > 0) {
+                        renderSectionItemCountPanel({
+                            mount,
+                            root: focused.item,
+                            editor,
+                            selected: selection,
+                        });
+
+                        return;
+                    }
+                }
+
                 appendDeclarativeItemEditors(mount, items, editor, {
                     selected: selection,
                     itemSingular,
@@ -438,6 +587,85 @@ export function registerSectionItemCountSettings(editor) {
 
                 return;
             }
+
+            renderSectionItemCountPanel({
+                mount,
+                root,
+                editor,
+                selected: selection,
+                items,
+                min,
+                max,
+                columns,
+                preserveLayout,
+                attrs,
+                itemSingular,
+            });
+        },
+    });
+}
+
+/**
+ * Render item-count + Content for one item-count root (section or nested group).
+ *
+ * @param {{
+ *   mount: HTMLElement,
+ *   root: object,
+ *   editor: object,
+ *   selected?: object|null,
+ *   items?: object[],
+ *   min?: number,
+ *   max?: number,
+ *   columns?: number,
+ *   preserveLayout?: boolean,
+ *   attrs?: Record<string, string>,
+ *   itemSingular?: string,
+ * }} params
+ */
+function renderSectionItemCountPanel({
+    mount,
+    root,
+    editor,
+    selected = null,
+    items: itemsArg,
+    min: minArg,
+    max: maxArg,
+    columns: columnsArg,
+    preserveLayout: preserveArg,
+    attrs: attrsArg,
+    itemSingular: singularArg,
+}) {
+    const attrs = attrsArg ?? root.getAttributes?.() ?? {};
+    const resolved = (itemsArg && minArg != null && maxArg != null)
+        ? {
+            items: itemsArg,
+            min: minArg,
+            max: maxArg,
+            columns: columnsArg ?? 1,
+        }
+        : findSectionItems(root);
+    const items = resolved.items;
+    const min = resolved.min;
+    const max = resolved.max;
+    const columns = resolved.columns;
+    const preserveLayout = preserveArg ?? shouldPreserveItemsLayout(root);
+    const selection = selected ?? editor?.getSelected?.() ?? null;
+    const itemSingular = singularArg
+        ?? (String(attrs['data-vb-item-singular'] || 'Item').trim() || 'Item');
+
+    const nestedFocused = scopeHasDeclarativeFields(root)
+        ? resolveFocusedItem(items, selection)
+        : null;
+
+    // Nested root (category): a selected question → only that question's fields.
+    if (nestedFocused) {
+        appendDeclarativeItemEditors(mount, items, editor, {
+            selected: selection,
+            itemSingular,
+        });
+
+        return;
+    }
 
             const current = Math.max(
                 min,
@@ -522,85 +750,81 @@ export function registerSectionItemCountSettings(editor) {
                 return;
             }
 
-            {
-                const sampleCounter = root.findType?.('voodbuilder-animated-counter')?.[0]
-                    ?? root.find?.('[data-voodbuilder-animated-counter], [data-vb-count-to], .vb-animated-counter')?.[0]
-                    ?? null;
-                const sample = sampleCounter ? readCounterConfig(sampleCounter) : {
-                    trigger: 'visible',
-                    duration: 1600,
-                    easing: 'ease-out',
-                    delay: 0,
-                };
+            const sampleCounter = root.findType?.('voodbuilder-animated-counter')?.[0]
+                ?? root.find?.('[data-voodbuilder-animated-counter], [data-vb-count-to], .vb-animated-counter')?.[0]
+                ?? null;
+            const sample = sampleCounter ? readCounterConfig(sampleCounter) : {
+                trigger: 'visible',
+                duration: 1600,
+                easing: 'ease-out',
+                delay: 0,
+            };
 
-                const { section: animSection, fields: animFields } = createFormSection('Counter animation');
+            const { section: animSection, fields: animFields } = createFormSection('Counter animation');
 
-                animFields.append(createSelectField({
-                    label: 'Start when',
-                    name: 'vbStatsCountTrigger',
-                    value: normalizeCounterTrigger(sample.trigger),
-                    options: [
-                        { value: 'always', label: 'Always' },
-                        { value: 'visible', label: 'On visible' },
-                        { value: 'hover', label: 'On hover' },
-                        { value: 'click', label: 'On click' },
-                    ],
-                    onChange: (value) => applyAnimatedStatsCounterDefaults(root, { trigger: value }),
-                }));
+            animFields.append(createSelectField({
+                label: 'Start when',
+                name: 'vbStatsCountTrigger',
+                value: normalizeCounterTrigger(sample.trigger),
+                options: [
+                    { value: 'always', label: 'Always' },
+                    { value: 'visible', label: 'On visible' },
+                    { value: 'hover', label: 'On hover' },
+                    { value: 'click', label: 'On click' },
+                ],
+                onChange: (value) => applyAnimatedStatsCounterDefaults(root, { trigger: value }),
+            }));
 
-                const { field: durationField, input: durationInput } = createTextField({
-                    label: 'Duration (ms)',
-                    name: 'vbStatsCountDuration',
-                    type: 'number',
-                    value: String(sample.duration),
-                    min: 200,
-                    max: 8000,
+            const { field: durationField, input: durationInput } = createTextField({
+                label: 'Duration (ms)',
+                name: 'vbStatsCountDuration',
+                type: 'number',
+                value: String(sample.duration),
+                min: 200,
+                max: 8000,
+            });
+            const commitDuration = () => applyAnimatedStatsCounterDefaults(root, {
+                duration: Math.max(200, Math.min(8000, Number(durationInput.value) || 1600)),
+            });
+            durationInput.addEventListener('change', commitDuration);
+            durationInput.addEventListener('blur', commitDuration);
+            animFields.appendChild(durationField);
+
+            animFields.append(createSelectField({
+                label: 'Easing',
+                name: 'vbStatsCountEasing',
+                value: sample.easing || 'ease-out',
+                options: [
+                    { value: 'ease-out', label: 'Ease out' },
+                    { value: 'linear', label: 'Linear' },
+                    { value: 'ease-in-out', label: 'Ease in-out' },
+                ],
+                onChange: (value) => applyAnimatedStatsCounterDefaults(root, { easing: value }),
+            }));
+
+            const { field: staggerField, input: staggerInput } = createTextField({
+                label: 'Stagger delay (ms)',
+                name: 'vbStatsCountStagger',
+                type: 'number',
+                value: '120',
+                min: 0,
+                max: 1000,
+            });
+            const commitStagger = () => {
+                const step = Math.max(0, Math.min(1000, Number(staggerInput.value) || 0));
+                const counters = typeof root.findType === 'function'
+                    ? root.findType('voodbuilder-animated-counter')
+                    : [];
+                const fallback = [...(root.find?.('[data-voodbuilder-animated-counter], [data-vb-count-to], .vb-animated-counter') ?? [])];
+                const unique = [...new Set([...counters, ...fallback])];
+
+                unique.forEach((counter, index) => {
+                    applyCounterConfig(counter, { delay: index * step });
                 });
-                const commitDuration = () => applyAnimatedStatsCounterDefaults(root, {
-                    duration: Math.max(200, Math.min(8000, Number(durationInput.value) || 1600)),
-                });
-                durationInput.addEventListener('change', commitDuration);
-                durationInput.addEventListener('blur', commitDuration);
-                animFields.appendChild(durationField);
+            };
+            staggerInput.addEventListener('change', commitStagger);
+            staggerInput.addEventListener('blur', commitStagger);
+            animFields.appendChild(staggerField);
 
-                animFields.append(createSelectField({
-                    label: 'Easing',
-                    name: 'vbStatsCountEasing',
-                    value: sample.easing || 'ease-out',
-                    options: [
-                        { value: 'ease-out', label: 'Ease out' },
-                        { value: 'linear', label: 'Linear' },
-                        { value: 'ease-in-out', label: 'Ease in-out' },
-                    ],
-                    onChange: (value) => applyAnimatedStatsCounterDefaults(root, { easing: value }),
-                }));
-
-                const { field: staggerField, input: staggerInput } = createTextField({
-                    label: 'Stagger delay (ms)',
-                    name: 'vbStatsCountStagger',
-                    type: 'number',
-                    value: '120',
-                    min: 0,
-                    max: 1000,
-                });
-                const commitStagger = () => {
-                    const step = Math.max(0, Math.min(1000, Number(staggerInput.value) || 0));
-                    const counters = typeof root.findType === 'function'
-                        ? root.findType('voodbuilder-animated-counter')
-                        : [];
-                    const fallback = [...(root.find?.('[data-voodbuilder-animated-counter], [data-vb-count-to], .vb-animated-counter') ?? [])];
-                    const unique = [...new Set([...counters, ...fallback])];
-
-                    unique.forEach((counter, index) => {
-                        applyCounterConfig(counter, { delay: index * step });
-                    });
-                };
-                staggerInput.addEventListener('change', commitStagger);
-                staggerInput.addEventListener('blur', commitStagger);
-                animFields.appendChild(staggerField);
-
-                mount.appendChild(animSection);
-            }
-        },
-    });
+            mount.appendChild(animSection);
 }

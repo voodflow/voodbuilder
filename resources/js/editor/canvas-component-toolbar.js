@@ -24,6 +24,7 @@ import {
     restoreContentWidthFromAttributes,
 } from './content-width-toolbar.js';
 import { buildLayoutPickerToolbarButton } from './layout-blocks.js';
+import { findClosestItem } from './declarative-fields.js';
 import { findRichTextHost, isRichTextComponent } from './text-elements.js';
 
 export const CMD_MAKE_DYNAMIC = 'voodbuilder-make-dynamic';
@@ -33,6 +34,33 @@ export const CMD_COPY_COMPONENT_CODE = 'voodbuilder:copy-component-code';
 export const CMD_CLONE_COMPONENT = 'voodbuilder:clone-component';
 export const CMD_EDIT_RICH_TEXT = 'voodbuilder:edit-rich-text';
 export { CMD_EDIT_IMAGE };
+
+/**
+ * Repeating catalog item (pill / FAQ category / question) under data-vb-items-root.
+ *
+ * @param {object|null|undefined} component
+ * @returns {object|null}
+ */
+function findRemovableRepeatingItem(component) {
+    const item = findClosestItem(component);
+
+    if (! item) {
+        return null;
+    }
+
+    const parent = item.parent?.();
+    const parentAttrs = parent?.getAttributes?.() ?? {};
+
+    if (! Object.prototype.hasOwnProperty.call(parentAttrs, 'data-vb-items-root')) {
+        return null;
+    }
+
+    if (item.get?.('removable') === false) {
+        return null;
+    }
+
+    return item;
+}
 
 /**
  * Edit/Copy code require the Components plugin (not available on free).
@@ -398,7 +426,14 @@ function buildComponentToolbar(editor, component, labels = {}) {
         }
     }
 
-    if (component.get('removable') && ! isChromeEditorProtectedComponent(component, editor)) {
+    const repeatingItem = findRemovableRepeatingItem(component);
+    const canDelete = ! isChromeEditorProtectedComponent(component, editor)
+        && (
+            (component.get('removable') && ! repeatingItem)
+            || (repeatingItem && repeatingItem.get?.('removable') !== false)
+        );
+
+    if (canDelete) {
         toolbar.push({
             attributes: {
                 class: 'voodbuilder-editor-toolbar-item--danger',
@@ -406,7 +441,14 @@ function buildComponentToolbar(editor, component, labels = {}) {
                 'aria-label': labels.delete ?? 'Delete',
             },
             label: lucideIcon('trash-2', 16),
-            command: 'tlb-delete',
+            // Inside a repeating item (FAQ question/category, toolkit pill): delete the
+            // whole item — same UX as selecting the pill card — not an inner field.
+            command: repeatingItem && repeatingItem !== component
+                ? (ed) => {
+                    ed?.select?.(repeatingItem);
+                    repeatingItem.remove?.();
+                }
+                : 'tlb-delete',
         });
     }
 

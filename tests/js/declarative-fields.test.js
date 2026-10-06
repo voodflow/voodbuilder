@@ -74,6 +74,41 @@ describe('declarative-fields', () => {
         expect(resolveFocusedItem([itemA, itemB], null)).toBeNull();
     });
 
+    it('resolves an outer item when selection is inside a nested item (FAQ question → category)', () => {
+        const questionField = mockComponent({
+            attrs: { 'data-vb-field': 'question' },
+            content: 'How does pricing work?',
+        });
+        const question = mockComponent({
+            attrs: { 'data-vb-item': '1' },
+            children: [questionField],
+            cid: 'q1',
+        });
+        questionField.parent = () => question;
+
+        const category = mockComponent({
+            attrs: { 'data-vb-item': '', 'data-vb-item-count': '2' },
+            children: [question],
+            cid: 'cat1',
+        });
+        question.parent = () => category;
+
+        const otherCategory = mockComponent({
+            attrs: { 'data-vb-item': '', 'data-vb-item-count': '1' },
+            cid: 'cat2',
+        });
+
+        expect(findClosestItem(questionField)).toBe(question);
+        expect(resolveFocusedItem([category, otherCategory], questionField)).toEqual({
+            item: category,
+            index: 0,
+        });
+        expect(resolveFocusedItem([question], questionField)).toEqual({
+            item: question,
+            index: 0,
+        });
+    });
+
     it('reads and writes text field content', () => {
         const node = mockComponent({
             attrs: { 'data-vb-field': 'title' },

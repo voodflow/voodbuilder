@@ -156,6 +156,10 @@ export function findClosestItem(component) {
 /**
  * Resolve which repeating item the current canvas selection belongs to.
  *
+ * Walks ancestor `data-vb-item` nodes until one is in `items`. Nested lists
+ * (FAQ question inside category) otherwise match the innermost item, which is
+ * not in the outer categories list — so the Content panel never drills in.
+ *
  * @param {object[]} items
  * @param {object|null|undefined} selected
  * @returns {{ item: object, index: number }|null}
@@ -165,20 +169,22 @@ export function resolveFocusedItem(items, selected) {
         return null;
     }
 
-    const focused = findClosestItem(selected);
+    let current = selected;
 
-    if (! focused) {
-        return null;
+    while (current) {
+        if (hasItemAttr(current)) {
+            const index = items.findIndex((item) => item === current
+                || (item?.cid != null && item.cid === current.cid));
+
+            if (index >= 0) {
+                return { item: items[index], index };
+            }
+        }
+
+        current = current.parent?.();
     }
 
-    const index = items.findIndex((item) => item === focused
-        || (item?.cid != null && item.cid === focused.cid));
-
-    if (index < 0) {
-        return null;
-    }
-
-    return { item: items[index], index };
+    return null;
 }
 
 /**
