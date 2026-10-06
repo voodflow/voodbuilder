@@ -405,6 +405,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
 
                 // Check console first: Schema::hasTable() connects to DB and fails on host builds (DB_HOST=mysql).
                 if (! $this->app->runningInConsole() && $this->schemaHasTable('voodbuilder_settings')) {
+                    // Nested booted callbacks can run before sibling package route
+                    // name lookups are refreshed (visible under php-fpm).
+                    $this->app->make('router')->getRoutes()->refreshNameLookups();
                     $serverRegistry->registerEditorBlocks($registry);
                 }
             }
