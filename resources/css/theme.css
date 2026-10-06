@@ -2401,6 +2401,29 @@ html.dark .vb-search-page__form {
     background-clip: border-box !important;
 }
 
+/*
+ * FAQ accordion: the list follows the section container (normal / full), not an
+ * inner reading measure (max-w-3xl) leftover from older catalog markup.
+ */
+[data-voodbuilder-section-block="vb-landing02-faq"] .voodbuilder-editor-container > :has([data-vb-items-root]) {
+    max-width: none;
+    width: 100%;
+    margin-inline: 0;
+}
+
+[data-voodbuilder-section-block="vb-landing02-faq"] .voodbuilder-editor-container [data-vb-items-root] {
+    width: 100%;
+    max-width: none;
+}
+
+[data-voodbuilder-section-block="vb-landing02-faq"] .voodbuilder-editor-container .lg\:grid-cols-3 {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+[data-voodbuilder-section-block="vb-landing02-faq"] .voodbuilder-editor-container .lg\:col-span-2 {
+    grid-column: auto;
+}
+
 /* Transparent fill hides the caret while editing — keep it visible on canvas. */
 [contenteditable="true"] {
     caret-color: var(--color-vp-brand-1, #6366f1);

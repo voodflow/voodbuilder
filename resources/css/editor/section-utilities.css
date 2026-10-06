@@ -172,6 +172,17 @@
     }
 
     /* Hero media + media frames + sliders: defined in theme.css (public + canvas). */
+
+    [data-voodbuilder-section-block="vb-landing02-faq"] .voodbuilder-editor-container > :has([data-vb-items-root]) {
+        max-width: none;
+        width: 100%;
+        margin-inline: 0;
+    }
+
+    [data-voodbuilder-section-block="vb-landing02-faq"] .voodbuilder-editor-container [data-vb-items-root] {
+        width: 100%;
+        max-width: none;
+    }
 }
 
 @keyframes voodbuilder-brand-pulse {

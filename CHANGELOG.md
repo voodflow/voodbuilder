@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.41] - 2026-10-06
+
+### Fixed
+
+- FAQ accordion on already-saved pages stayed `max-w-3xl` inside the container; categories now fill the section measure (normal / full), and the editor strips that inner cap on load
+
 ## [1.11.40] - 2026-10-06
 
 ### Fixed

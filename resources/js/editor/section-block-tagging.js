@@ -91,11 +91,83 @@ function buildSectionBlockCatalog(editor) {
     return catalog;
 }
 
+const FAQ_INNER_MEASURE_CLASSES = new Set([
+    'max-w-xs',
+    'max-w-sm',
+    'max-w-md',
+    'max-w-lg',
+    'max-w-xl',
+    'max-w-2xl',
+    'max-w-3xl',
+    'max-w-4xl',
+    'mx-auto',
+    'lg:grid-cols-3',
+    'lg:col-span-2',
+]);
+
+/**
+ * Saved FAQ pages still wrap categories in max-w-3xl. Drop that measure so the
+ * list fills the section container (normal / full content-width).
+ *
+ * @param {object} editor
+ */
+function expandFaqInnerMeasure(editor) {
+    const wrapper = editor.getWrapper?.();
+
+    if (! wrapper) {
+        return;
+    }
+
+    safeFindComponents(wrapper, '[data-voodbuilder-section-block="vb-landing02-faq"]').forEach((section) => {
+        const containers = [
+            ...safeFindComponents(section, '.voodbuilder-editor-container'),
+        ];
+
+        if (containers.length === 0) {
+            [...(section.components?.() ?? [])].forEach((child) => {
+                if ((child.getClasses?.() ?? []).includes('voodbuilder-editor-container')) {
+                    containers.push(child);
+                }
+            });
+        }
+
+        containers.forEach((container) => {
+            [...(container.components?.() ?? [])].forEach((child) => {
+                const hasItemsRoot = Object.prototype.hasOwnProperty.call(child.getAttributes?.() ?? {}, 'data-vb-items-root')
+                    || (child.find?.('[data-vb-items-root]')?.length ?? 0) > 0;
+
+                if (! hasItemsRoot) {
+                    return;
+                }
+
+                const classes = [...(child.getClasses?.() ?? [])];
+                const next = classes.filter((name) => ! FAQ_INNER_MEASURE_CLASSES.has(String(name)));
+
+                if (next.length === classes.length) {
+                    return;
+                }
+
+                child.setClass(next);
+
+                if (! next.includes('w-full')) {
+                    child.addClass('w-full');
+                }
+            });
+        });
+    });
+}
+
 function migrateLegacySectionBlocks(editor) {
     const catalog = buildSectionBlockCatalog(editor);
     const wrapper = editor.getWrapper?.();
 
-    if (! catalog.length || ! wrapper) {
+    if (! wrapper) {
+        return;
+    }
+
+    expandFaqInnerMeasure(editor);
+
+    if (! catalog.length) {
         return;
     }
 
