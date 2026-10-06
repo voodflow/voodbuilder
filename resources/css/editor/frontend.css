@@ -734,6 +734,7 @@ body.voodbuilder-editor-is-resizing-panel iframe {
 .voodbuilder-editor-build-overlay--canvas {
     z-index: 20;
     pointer-events: auto;
+    cursor: wait;
     background: color-mix(in srgb, var(--color-vp-bg, #eef2f6) 72%, transparent);
 }
 

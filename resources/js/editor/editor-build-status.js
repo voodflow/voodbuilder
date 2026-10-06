@@ -482,6 +482,49 @@ export function endEditorBuild(editor, scope = 'default') {
     }
 }
 
+/**
+ * Give the browser a paint between showing the overlay and a blocking canvas swap.
+ */
+export function yieldEditorOverlayPaint() {
+    return new Promise((resolve) => {
+        const frame = globalThis.requestAnimationFrame
+            ?? ((callback) => globalThis.setTimeout(callback, 16));
+
+        frame.call(globalThis, () => {
+            frame.call(globalThis, resolve);
+        });
+    });
+}
+
+/**
+ * Show the canvas / classes compile overlay, yield so it can paint, then run work.
+ *
+ * Revision preview, restore and draft recovery parse large Grapes trees on the main
+ * thread. Without this, the editor looks frozen with no indication that anything started.
+ *
+ * @param {object|null|undefined} editor
+ * @param {{ scope?: string, label?: string, work: () => (void|Promise<unknown>) }} options
+ */
+export async function runEditorBusyWork(editor, options = {}) {
+    const scope = options.scope ?? 'default';
+    const work = options.work;
+
+    beginEditorBuild(editor, scope);
+    setEditorBuildLabel(editor, options.label);
+
+    try {
+        await yieldEditorOverlayPaint();
+
+        if (typeof work === 'function') {
+            return await work();
+        }
+
+        return undefined;
+    } finally {
+        endEditorBuild(editor, scope);
+    }
+}
+
 /** Clear stuck compile overlays (e.g. after a failed/aborted build storm). */
 export function resetEditorBuildStatus(editor) {
     BUILD_SCOPES.clear();

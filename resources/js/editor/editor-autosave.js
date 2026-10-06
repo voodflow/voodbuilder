@@ -166,7 +166,7 @@ async function offerRecovery({ editor, labels, draft, applyPayload }) {
         return false;
     }
 
-    applyPayload(editor, draft.payload);
+    await applyPayload(editor, draft.payload);
 
     return true;
 }

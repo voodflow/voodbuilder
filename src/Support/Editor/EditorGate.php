@@ -138,7 +138,7 @@ final class EditorGate
         return [
             'pageId' => $page->getKey(),
             'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.pages.update', $page)
-                ?? '/voodbuilder/editor/pages/' . $page->getKey(),
+                ?? '/voodbuilder/editor/pages/'.$page->getKey(),
             'csrf' => csrf_token(),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
@@ -252,7 +252,7 @@ final class EditorGate
                 ...$appTypography['stylesheetUrls'],
             ]))),
             'canvasScripts' => EditorCanvas::scriptTags(),
-            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme) . "\n" . $appTypography['editorCanvasCss'],
+            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)."\n".$appTypography['editorCanvasCss'],
             'appTypography' => [
                 'bodyFont' => $appTypography['bodyFont'],
                 'headingFont' => $appTypography['headingFont'],
@@ -725,6 +725,7 @@ final class EditorGate
             'autosaveRecoverMessage' => __('voodbuilder::pro.autosave.recover_message'),
             'autosaveRecoverConfirm' => __('voodbuilder::pro.autosave.recover_confirm'),
             'autosaveRecoverDiscard' => __('voodbuilder::pro.autosave.recover_discard'),
+            'autosaveRecovering' => __('voodbuilder::pro.autosave.recovering'),
             'autosaveAgeMinutes' => __('voodbuilder::pro.autosave.age_minutes'),
             'autosaveAgeHours' => __('voodbuilder::pro.autosave.age_hours'),
             'toggleLibraryPanel' => __('voodbuilder::pro.editor_ui.toggle_library_panel'),
@@ -736,6 +737,8 @@ final class EditorGate
             'revisionsRestore' => __('voodbuilder::pro.revisions.restore'),
             'revisionsRestoreConfirm' => __('voodbuilder::pro.revisions.restore_confirm'),
             'revisionsRestoreError' => __('voodbuilder::pro.revisions.restore_error'),
+            'revisionsLoading' => __('voodbuilder::pro.revisions.loading'),
+            'revisionsRestoring' => __('voodbuilder::pro.revisions.restoring'),
             'revisionsPreview' => __('voodbuilder::pro.revisions.preview'),
             'revisionsEmpty' => __('voodbuilder::pro.revisions.empty'),
             'revisionsKindManual' => __('voodbuilder::pro.revisions.kind_manual'),

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.42] - 2026-10-06
+
+### Fixed
+
+- Previewing or restoring a page revision (and recovering an unsaved draft) froze the editor with no progress UI; the compile overlay now paints first, with elapsed time, before the canvas swap
+
 ## [1.11.41] - 2026-10-06
 
 ### Fixed

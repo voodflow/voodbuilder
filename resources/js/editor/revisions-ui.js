@@ -5,6 +5,7 @@
 import { alertDialog, confirmDialog } from './editor-dialog.js';
 import { lucideIcon } from './editor-icons.js';
 import { mountTopbarAction } from './editor-layout.js';
+import { runEditorBusyWork } from './editor-build-status.js';
 
 export function registerRevisionsUi(editor, options = {}) {
     const {
@@ -24,15 +25,15 @@ export function registerRevisionsUi(editor, options = {}) {
      * hydration) before it is canvas content. setComponents() alone brings the page back
      * unstyled with an empty Style Manager.
      */
-    const loadPayload = (payload = {}) => {
+    const loadPayload = (payload = {}, options = {}) => {
         if (typeof editor.__voodbuilderApplyPayload === 'function') {
-            editor.__voodbuilderApplyPayload(payload);
-
-            return;
+            return editor.__voodbuilderApplyPayload(payload, options);
         }
 
         editor.setComponents(payload.html ?? '');
         editor.setStyle(payload.css ?? '');
+
+        return undefined;
     };
 
     const button = document.createElement('button');
@@ -130,9 +131,11 @@ export function registerRevisionsUi(editor, options = {}) {
             previewBtn.type = 'button';
             previewBtn.className = 'voodbuilder-editor-btn voodbuilder-editor-btn--ghost';
             previewBtn.textContent = labels.revisionsPreview ?? 'Preview';
-            previewBtn.addEventListener('click', () => {
-                loadPayload(revision.builder_payload ?? {});
+            previewBtn.addEventListener('click', async () => {
                 closeModal();
+                await loadPayload(revision.builder_payload ?? {}, {
+                    label: labels.revisionsLoading ?? 'Loading revision…',
+                });
             });
 
             const restoreBtn = document.createElement('button');
@@ -151,30 +154,47 @@ export function registerRevisionsUi(editor, options = {}) {
                     return;
                 }
 
-                const url = revisionsRestoreUrl.replace('__REVISION__', String(revision.id));
+                closeModal();
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': csrf,
+                let restoreFailed = false;
+
+                await runEditorBusyWork(editor, {
+                    scope: 'revision-restore',
+                    label: labels.revisionsRestoring ?? 'Restoring revision…',
+                    work: async () => {
+                        const url = revisionsRestoreUrl.replace('__REVISION__', String(revision.id));
+
+                        try {
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    Accept: 'application/json',
+                                    'X-CSRF-TOKEN': csrf,
+                                },
+                            });
+
+                            if (! response.ok) {
+                                throw new Error('Failed');
+                            }
+
+                            const payload = await response.json();
+
+                            await loadPayload(payload.builder_payload ?? {}, {
+                                label: labels.revisionsLoading ?? 'Loading revision…',
+                            });
+                        } catch {
+                            restoreFailed = true;
+                        }
                     },
                 });
 
-                if (! response.ok) {
+                if (restoreFailed) {
                     await alertDialog({
                         message: labels.revisionsRestoreError ?? 'Could not restore revision.',
                         labels,
                     });
-
-                    return;
                 }
-
-                const payload = await response.json();
-
-                loadPayload(payload.builder_payload ?? {});
-                closeModal();
             });
 
             actions.append(previewBtn, restoreBtn);

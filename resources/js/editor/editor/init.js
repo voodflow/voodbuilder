@@ -108,6 +108,7 @@ import { ensureReadingInspectorTab, registerReadingTypographyUi } from '../readi
 import {
     finishEditorBoot,
     registerEditorBuildStatus,
+    runEditorBusyWork,
     setEditorBootPhase,
     startEditorBoot,
     waitForEditorBootTasks,
@@ -2616,24 +2617,42 @@ function mountFrontendEditor() {
     // Loading a stored payload back into the canvas is not just setComponents(): the
     // markup needs sanitizing, the live stylesheet needs seeding and the Style Manager
     // needs rehydrating. Draft recovery and revision restore share this one applier.
-    editor.__voodbuilderApplyPayload = (payload = {}) => {
-        applyInitialContent(
-            editor,
-            { html: payload.html ?? '', css: payload.css ?? '' },
-            { replaceCanvas: true },
-        );
+    editor.__voodbuilderApplyPayload = async (payload = {}, options = {}) => {
+        const apply = () => {
+            applyInitialContent(
+                editor,
+                { html: payload.html ?? '', css: payload.css ?? '' },
+                { replaceCanvas: true },
+            );
 
-        if (
-            payload.readingTypography
-            && typeof editor.__voodbuilderApplyReadingTypography === 'function'
-        ) {
-            editor.__voodbuilderApplyReadingTypography(payload.readingTypography);
+            if (
+                payload.readingTypography
+                && typeof editor.__voodbuilderApplyReadingTypography === 'function'
+            ) {
+                editor.__voodbuilderApplyReadingTypography(payload.readingTypography);
+            }
+
+            // The whole canvas was swapped. Stepping back across that boundary would
+            // interleave the new tree with the old one, so the restored state becomes the
+            // new floor of the history.
+            resetUndoHistory(editor);
+        };
+
+        if (options.skipBusy === true) {
+            apply();
+
+            return;
         }
 
-        // The whole canvas was swapped. Stepping back across that boundary would
-        // interleave the new tree with the old one, so the restored state becomes the
-        // new floor of the history.
-        resetUndoHistory(editor);
+        const labels = config.labels ?? {};
+
+        await runEditorBusyWork(editor, {
+            scope: 'payload-apply',
+            label: options.label
+                ?? labels.revisionsLoading
+                ?? 'Loading revision…',
+            work: apply,
+        });
     };
 
     const saveStatus = createSaveStatus(
@@ -2653,7 +2672,9 @@ function mountFrontendEditor() {
         // Read-only snapshot: the save path bakes styles and purges components, and doing
         // that on a timer would let a background task rewrite the canvas under the author.
         buildPayload: (target) => buildPayload(target, { mutate: false }),
-        applyPayload: (target, payload) => target.__voodbuilderApplyPayload(payload),
+        applyPayload: (target, payload) => target.__voodbuilderApplyPayload(payload, {
+            label: config.labels?.autosaveRecovering ?? 'Restoring unsaved changes…',
+        }),
         onStatus: ({ kind, at }) => {
             if (kind === 'draft-parked') {
                 saveStatus.draftParked(at);
@@ -2674,6 +2695,20 @@ function mountFrontendEditor() {
     // or an unchanged Save after refresh still walks the heavy mutate path (~2s).
     editor.__voodbuilderTrackSaveDirty = false;
     editor.on('update', () => {
+        if (editor.__voodbuilderTrackSaveDirty === false) {
+            return;
+        }
+
+        editor.__voodbuilderPageSaveClean = false;
+    });
+    editor.on('component:add', () => {
+        if (editor.__voodbuilderTrackSaveDirty === false) {
+            return;
+        }
+
+        editor.__voodbuilderPageSaveClean = false;
+    });
+    editor.on('component:remove', () => {
         if (editor.__voodbuilderTrackSaveDirty === false) {
             return;
         }
