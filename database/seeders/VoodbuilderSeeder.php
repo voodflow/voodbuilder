@@ -68,6 +68,30 @@ class VoodbuilderSeeder extends Seeder
             ],
         );
 
+        SitePage::query()->updateOrCreate(
+            ['slug' => 'license-agreement'],
+            [
+                'title' => 'License Agreement',
+                'layout' => 'page',
+                'builder' => PageBuilder::Visual,
+                'published' => true,
+                'published_at' => now(),
+                'is_home' => false,
+            ],
+        );
+
+        SitePage::query()->updateOrCreate(
+            ['slug' => 'legal'],
+            [
+                'title' => 'Trademark Notice',
+                'layout' => 'page',
+                'builder' => PageBuilder::Visual,
+                'published' => true,
+                'published_at' => now(),
+                'is_home' => false,
+            ],
+        );
+
         $this->seedHomePage();
         $this->seedThemeDemoPages();
         $this->seedSamplePageMenus();
@@ -291,6 +315,18 @@ class VoodbuilderSeeder extends Seeder
                 'link' => 'cookie-policy',
                 'sort_order' => 1,
             ],
+            [
+                'label' => 'License Agreement',
+                'type' => MenuItemType::Page,
+                'link' => 'license-agreement',
+                'sort_order' => 2,
+            ],
+            [
+                'label' => 'Legal',
+                'type' => MenuItemType::Page,
+                'link' => 'legal',
+                'sort_order' => 3,
+            ],
         ]);
 
         $columns = [
@@ -318,6 +354,18 @@ class VoodbuilderSeeder extends Seeder
                     'type' => MenuItemType::Page,
                     'link' => 'cookie-policy',
                     'sort_order' => 1,
+                ],
+                [
+                    'label' => 'License Agreement',
+                    'type' => MenuItemType::Page,
+                    'link' => 'license-agreement',
+                    'sort_order' => 2,
+                ],
+                [
+                    'label' => 'Legal',
+                    'type' => MenuItemType::Page,
+                    'link' => 'legal',
+                    'sort_order' => 3,
                 ],
             ],
         ];

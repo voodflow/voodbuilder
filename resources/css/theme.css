@@ -27,6 +27,8 @@
 @source '../../../../../packages/voodflow/vtuts/resources/views/**/*.blade.php';
 @source '../../../../../vendor/voodflow/vdocs/resources/views/**/*.blade.php';
 @source '../../../../../packages/voodflow/vdocs/resources/views/**/*.blade.php';
+@source '../../../../../vendor/voodflow/vcontent/resources/views/**/*.blade.php';
+@source '../../../../../packages/voodflow/vcontent/resources/views/**/*.blade.php';
 @source '../views/blocks/**/*.blade.php';
 @source '../../../../../resources/views/blog/**/*.blade.php';
 @source '../views/themes/**/*.blade.php';
@@ -2433,4 +2435,47 @@ html.dark .vb-search-page__form {
 [contenteditable="true"].bg-clip-text.text-transparent {
     caret-color: var(--color-vp-brand-1, #6366f1) !important;
 }
+
+/* vcontent live pills/cards: hover fill + white copy on public and canvas. */
+[data-vcontent-root] [data-voodbuilder-layer-name="Pill"],
+[data-vcontent-root] [data-voodbuilder-layer-name="Card"] {
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+[data-vcontent-root] [data-voodbuilder-layer-name="Pill"]:hover,
+[data-vcontent-root] [data-voodbuilder-layer-name="Card"]:hover {
+    background-color: var(--color-vp-brand-1) !important;
+    border-color: var(--color-vp-brand-1) !important;
+    color: #fff !important;
+}
+
+[data-vcontent-root] [data-voodbuilder-layer-name="Pill"]:hover :is(h3, h4, small, p, span, svg, .text-vp-text-1, .text-vp-text-2, .text-vp-text-3, .text-vp-brand-1),
+[data-vcontent-root] [data-voodbuilder-layer-name="Card"]:hover :is(h3, h4, small, p, span, svg, .text-vp-text-1, .text-vp-text-2, .text-vp-text-3, .text-vp-brand-1) {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;
+}
+
+[data-vcontent-root] [data-voodbuilder-layer-name="Pill"]:hover svg,
+[data-vcontent-root] [data-voodbuilder-layer-name="Card"]:hover svg {
+    stroke: #fff;
+}
+
+[data-vcontent-root] [data-voodbuilder-layer-name="Pill"]:hover .bg-vp-bg-elv,
+[data-vcontent-root] [data-voodbuilder-layer-name="Card"]:hover .bg-vp-bg-elv {
+    background-color: color-mix(in srgb, #ffffff 22%, transparent) !important;
+    color: #fff !important;
+}
+
+/**
+ * Comparison / pricing table card — light stays on bg-vp-bg-elv (white).
+ * Dark lifts the surface so text and ✓/✕ stay readable over wallpapers.
+ */
+html.dark [data-vb-table-surface] {
+    background-color: color-mix(in srgb, var(--color-vp-bg-elv, #202127) 82%, #ffffff 18%) !important;
+}
+
+html.dark [data-vb-table-surface] .text-vp-text-3 {
+    color: var(--color-vp-text-2, #98989f);
+}
+
 

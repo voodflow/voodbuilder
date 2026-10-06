@@ -69,6 +69,25 @@ class EditorServerBlockRendererTest extends TestCase
         $this->assertStringContainsString('id="iplain"', $html);
         $this->assertStringContainsString('class="plan-fresh"', $html);
     }
+
+    public function test_published_render_keeps_author_font_on_anchored_heading(): void
+    {
+        $serverRegistry = new EditorServerBlockRegistry;
+        $serverRegistry->register('Test', AnchoredCardTestBlock::class);
+
+        $saved = '<section data-voodbuilder-block="test_anchored_card" data-voodbuilder-config="{}" class="voodbuilder-editor-dynamic" data-vb-font="Fraunces, serif" style="font-family:Fraunces, serif;">'
+            . '<div data-voodbuilder-dropzone="copy" class="copy-fresh">'
+            . '<h2 data-voodbuilder-layer-name="Heading" data-vb-font="Fraunces, serif" class="text-3xl font-bold" style="font-family:Fraunces, serif;">Old title</h2></div>'
+            . '<div data-voodbuilder-dropzone="plan" class="plan-fresh"><p>Plan</p></div>'
+            . '</section>';
+
+        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $serverRegistry);
+        $html = $renderer->render($saved);
+
+        $this->assertStringContainsString('data-vb-font="Fraunces, serif"', $html);
+        $this->assertStringContainsString('font-family: Fraunces, serif', $html);
+        $this->assertStringContainsString('Fresh title', $html);
+    }
 }
 
 final class AnchoredCardTestBlock implements EditorServerBlock
@@ -91,7 +110,7 @@ final class AnchoredCardTestBlock implements EditorServerBlock
     public static function toHtml(array $config, array $context): string
     {
         return '<section class="voodbuilder-editor-section">'
-            . '<div data-voodbuilder-dropzone="copy" class="rounded-2xl bg-vp-bg-elv p-8 copy-fresh"><h2>Fresh title</h2></div>'
+            . '<div data-voodbuilder-dropzone="copy" class="rounded-2xl bg-vp-bg-elv p-8 copy-fresh"><h2 data-voodbuilder-layer-name="Heading">Fresh title</h2></div>'
             . '<div data-voodbuilder-dropzone="plan" class="plan-fresh"><p>Plan</p></div>'
             . '</section>';
     }

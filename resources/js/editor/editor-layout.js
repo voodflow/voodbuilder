@@ -1206,10 +1206,17 @@ function setupStyleInspector(editor, mounts) {
             syncChromeLayoutStylePanel(editor, mounts);
         }
     });
+    let stylePanelRemoveTimer = 0;
+
     editor.on('component:remove', () => {
-        window.requestAnimationFrame(() => {
+        if (editor.__voodbuilderBulkStructureUpdate) {
+            return;
+        }
+
+        window.clearTimeout(stylePanelRemoveTimer);
+        stylePanelRemoveTimer = window.setTimeout(() => {
             syncChromeLayoutStylePanel(editor, mounts);
-        });
+        }, 80);
     });
     editor.on('selector:add', dedupe);
     editor.on('selector:remove', dedupe);

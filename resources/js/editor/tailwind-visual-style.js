@@ -21,6 +21,7 @@ import {
     styleHasAuthorBackgroundPaint,
     enforceStyleManagerColorOverUtilities,
 } from './theme-tokens.js';
+import { authorLayerHideIsActive } from './layer-visibility.js';
 
 const BACKGROUND_STYLE_PROPERTIES = [
     'background',
@@ -995,6 +996,18 @@ export function bakeAuthorStylesToComposerForExport(editor, options = {}) {
             merged[property] = value;
         }
 
+        // Layers eye-open: leftover `#id { display:none }` is not author paint.
+        // Baking it back onto inline made hero / install cards vanish on Save.
+        if (
+            String(merged.display ?? '').trim().toLowerCase().indexOf('none') === 0
+            && ! authorLayerHideIsActive(editor, component)
+        ) {
+            delete merged.display;
+            delete live.display;
+            component.removeStyle?.('display');
+            existingRule?.removeStyle?.('display');
+        }
+
         // Inline explicitly cleared a key that still exists only on the #id rule.
         for (const property of Object.keys(inline)) {
             if (shouldOmitAuthorStyleValue(property, inline[property])) {
@@ -1132,6 +1145,14 @@ export function hydrateAuthorStylesFromIdRules(editor, onlyComponent = null) {
                     .replace(/"([^"]+)"/g, "'$1'")
                     .replace(/\s*!important\s*$/i, '')
                     .trim();
+            }
+
+            if (
+                property === 'display'
+                && cleaned.toLowerCase().indexOf('none') === 0
+                && ! authorLayerHideIsActive(editor, component)
+            ) {
+                continue;
             }
 
             // Prefer existing inline when already set (author just edited).

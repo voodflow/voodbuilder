@@ -6,8 +6,9 @@
  *
  * Markers:
  * - data-vb-field="key" — required field id
- * - data-vb-field-type="text|textarea|icon|number|rich" — default text
+ * - data-vb-field-type="text|textarea|icon|number|rich|status" — default text
  * - data-vb-field-label="Title" — optional panel label
+ * - data-vb-status="yes|no" — with type=status (✓ / ✕ toggle in the inspector)
  *
  * Repeating cards: data-vb-items-root + data-vb-item (see section-item-count.js).
  * Optional data-vb-items-layout="preserve" keeps author grid/card classes intact.
@@ -45,22 +46,92 @@ import { findRichTextHost, lockRichTextChildren } from './text-elements.js';
 const FIELD_ATTR = 'data-vb-field';
 const FIELD_TYPE_ATTR = 'data-vb-field-type';
 const FIELD_LABEL_ATTR = 'data-vb-field-label';
+const STATUS_ATTR = 'data-vb-status';
 const ITEM_ATTR = 'data-vb-item';
+
+// Fixed semantic colors — never follow site brand (✓ green / ✕ red).
+const STATUS_YES_HTML = '<span class="inline-flex items-center justify-center text-emerald-500" aria-label="Yes"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>';
+const STATUS_NO_HTML = '<span class="inline-flex items-center justify-center text-red-500" aria-label="No"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>';
 
 /**
  * @param {object} component
  * @returns {boolean}
  */
 function hasFieldAttr(component) {
-    return Object.prototype.hasOwnProperty.call(component?.getAttributes?.() ?? {}, FIELD_ATTR);
+    const attrs = {
+        ...(component?.get?.('attributes') ?? {}),
+        ...(component?.getAttributes?.() ?? {}),
+    };
+
+    return Object.prototype.hasOwnProperty.call(attrs, FIELD_ATTR);
 }
 
-/**
- * @param {object} component
- * @returns {boolean}
- */
 function hasItemAttr(component) {
-    return Object.prototype.hasOwnProperty.call(component?.getAttributes?.() ?? {}, ITEM_ATTR);
+    const attrs = {
+        ...(component?.get?.('attributes') ?? {}),
+        ...(component?.getAttributes?.() ?? {}),
+    };
+
+    return Object.prototype.hasOwnProperty.call(attrs, ITEM_ATTR);
+}
+
+function isTableRowComponent(component) {
+    const tag = String(component?.get?.('tagName') ?? '').toLowerCase();
+    const type = String(component?.get?.('type') ?? '');
+
+    return tag === 'tr' || type === 'row';
+}
+
+function isInsideThead(component) {
+    let current = component;
+
+    while (current) {
+        const tag = String(current.get?.('tagName') ?? '').toLowerCase();
+        const type = String(current.get?.('type') ?? '');
+
+        if (tag === 'thead' || type === 'thead') {
+            return true;
+        }
+
+        if (tag === 'table' || type === 'table' || tag === 'section') {
+            return false;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+function isTableBodyRow(component) {
+    return isTableRowComponent(component) && ! isInsideThead(component);
+}
+
+function isTableCellComponent(component) {
+    const tag = String(component?.get?.('tagName') ?? '').toLowerCase();
+    const type = String(component?.get?.('type') ?? '');
+
+    return tag === 'td' || tag === 'th' || type === 'cell';
+}
+
+function isActionTableCell(component) {
+    const attrs = {
+        ...(component?.get?.('attributes') ?? {}),
+        ...(component?.getAttributes?.() ?? {}),
+    };
+
+    if (attrs['data-vb-table-col'] === 'action' || attrs['data-vb-optional'] === 'select') {
+        return true;
+    }
+
+    const tag = String(component?.get?.('tagName') ?? '').toLowerCase();
+    const children = [...(component?.components?.() ?? [])];
+
+    if (children.some((child) => String(child.get?.('tagName') ?? '').toLowerCase() === 'input')) {
+        return true;
+    }
+
+    return tag === 'th' && children.length === 0 && readFieldText(component) === '';
 }
 
 /**
@@ -119,10 +190,24 @@ function collectFields(scope, { stopAtNestedItems = false } = {}) {
 
         if (hasFieldAttr(component)) {
             fields.push(describeField(component));
+        } else if (isTableCellComponent(component) && ! isActionTableCell(component)) {
+            const childHasField = [...(component.components?.() ?? [])].some((child) => hasFieldAttr(child));
+
+            if (! childHasField) {
+                const tag = String(component.get?.('tagName') ?? '').toLowerCase();
+
+                fields.push({
+                    key: String(component.getAttributes?.()?.[FIELD_ATTR] ?? '').trim()
+                        || `cell-${component.cid ?? fields.length}`,
+                    type: 'text',
+                    label: tag === 'th' ? 'Column' : 'Cell',
+                    component,
+                });
+            }
         }
 
         for (const child of [...(component.components?.() ?? [])]) {
-            if (stopAtNestedItems && hasItemAttr(child) && child !== scope) {
+            if (stopAtNestedItems && child !== scope && (hasItemAttr(child) || isTableBodyRow(child))) {
                 continue;
             }
 
@@ -143,7 +228,7 @@ export function findClosestItem(component) {
     let current = component;
 
     while (current) {
-        if (hasItemAttr(current)) {
+        if (hasItemAttr(current) || isTableBodyRow(current)) {
             return current;
         }
 
@@ -172,16 +257,43 @@ export function resolveFocusedItem(items, selected) {
     let current = selected;
 
     while (current) {
-        if (hasItemAttr(current)) {
-            const index = items.findIndex((item) => item === current
-                || (item?.cid != null && item.cid === current.cid));
+        const index = items.findIndex((item) => item === current
+            || (item?.cid != null && item.cid === current.cid));
 
-            if (index >= 0) {
-                return { item: items[index], index };
-            }
+        if (index >= 0) {
+            return { item: items[index], index };
         }
 
         current = current.parent?.();
+    }
+
+    // After Content writes Grapes may remount inner text nodes; match by containment.
+    for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+
+        if (item && isUnderComponent(selected, item)) {
+            return { item, index };
+        }
+    }
+
+    // Remounted / detached models: fall back to live DOM ancestry.
+    const selectedEl = selected.getEl?.() ?? selected.getView?.()?.el ?? selected.view?.el ?? null;
+
+    if (selectedEl?.nodeType === 1 || selectedEl?.nodeType === 3) {
+        const el = selectedEl.nodeType === 3 ? selectedEl.parentElement : selectedEl;
+
+        if (el) {
+            for (let index = 0; index < items.length; index += 1) {
+                const itemEl = items[index]?.getEl?.()
+                    ?? items[index]?.getView?.()?.el
+                    ?? items[index]?.view?.el
+                    ?? null;
+
+                if (itemEl && (itemEl === el || itemEl.contains?.(el))) {
+                    return { item: items[index], index };
+                }
+            }
+        }
     }
 
     return null;
@@ -226,8 +338,18 @@ function describeField(component) {
 function normalizeFieldType(raw, component) {
     const value = String(raw ?? '').trim().toLowerCase();
 
+    if (['status', 'check', 'boolean', 'yesno'].includes(value)) {
+        return 'status';
+    }
+
     if (['text', 'textarea', 'icon', 'number', 'rich', 'richeditor', 'html'].includes(value)) {
         return value === 'richeditor' || value === 'html' ? 'rich' : value;
+    }
+
+    const attrs = component?.getAttributes?.() ?? {};
+
+    if (Object.prototype.hasOwnProperty.call(attrs, STATUS_ATTR)) {
+        return 'status';
     }
 
     if (isIconComponent(component) || findIconHost(component)) {
@@ -239,6 +361,93 @@ function normalizeFieldType(raw, component) {
     }
 
     return 'text';
+}
+
+/**
+ * @param {object} component
+ * @returns {'yes'|'no'}
+ */
+export function readStatusValue(component) {
+    const attrs = component?.getAttributes?.() ?? {};
+    const raw = String(attrs[STATUS_ATTR] ?? '').trim().toLowerCase();
+
+    if (raw === 'yes' || raw === 'no') {
+        return raw;
+    }
+
+    const el = component?.getEl?.() ?? component?.getView?.()?.el ?? component?.view?.el;
+    const labeled = el?.querySelector?.('[aria-label]')?.getAttribute?.('aria-label')
+        ?? el?.getAttribute?.('aria-label');
+    const label = String(labeled ?? '').trim().toLowerCase();
+
+    if (label === 'yes' || label === 'no') {
+        return label;
+    }
+
+    const html = String(el?.innerHTML ?? component?.get?.('content') ?? '');
+
+    if (html.includes('aria-label="Yes"') || html.includes("aria-label='Yes'")) {
+        return 'yes';
+    }
+
+    return 'no';
+}
+
+/**
+ * @param {object} component
+ * @param {'yes'|'no'|string} value
+ * @param {object|null} [editor]
+ */
+export function writeStatusValue(component, value, editor = null) {
+    if (! component) {
+        return;
+    }
+
+    const status = String(value ?? '').trim().toLowerCase() === 'yes' ? 'yes' : 'no';
+    const html = status === 'yes' ? STATUS_YES_HTML : STATUS_NO_HTML;
+
+    const apply = () => {
+        releaseCanvasRteIfEditing(editor, component);
+
+        const attrs = {
+            ...(component.getAttributes?.() ?? {}),
+            [STATUS_ATTR]: status,
+        };
+
+        component.setAttributes?.(attrs);
+        component.addAttributes?.({ [STATUS_ATTR]: status });
+        component.components?.(html);
+    };
+
+    if (! editor) {
+        apply();
+
+        return;
+    }
+
+    const depth = Number(editor.__voodbuilderSettingsChangeDepth ?? 0);
+    editor.__voodbuilderSettingsChangeDepth = depth + 1;
+    editor.__voodbuilderSettingsChange = true;
+    editor.__voodbuilderBulkStructureUpdate = true;
+
+    try {
+        apply();
+    } finally {
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                const next = Number(editor.__voodbuilderSettingsChangeDepth ?? 1) - 1;
+                editor.__voodbuilderSettingsChangeDepth = next;
+
+                if (next <= 0) {
+                    editor.__voodbuilderSettingsChange = false;
+                    delete editor.__voodbuilderSettingsChangeDepth;
+                    editor.__voodbuilderFlushBlockSettingsRender?.();
+                }
+
+                editor.__voodbuilderBulkStructureUpdate = false;
+            });
+        });
+    }
 }
 
 /**
@@ -494,6 +703,8 @@ export function writeFieldText(component, value, editor = null) {
                 if (next <= 0) {
                     editor.__voodbuilderSettingsChange = false;
                     delete editor.__voodbuilderSettingsChangeDepth;
+                    // Replay selection / updates that were deferred while writing.
+                    editor.__voodbuilderFlushBlockSettingsRender?.();
                 }
             });
         });
@@ -530,6 +741,10 @@ function renderFieldControl(field, editor) {
         return renderIconField(field, editor);
     }
 
+    if (field.type === 'status') {
+        return renderStatusField(field, editor);
+    }
+
     if (field.type === 'rich') {
         return renderRichField(field, editor);
     }
@@ -555,6 +770,64 @@ function renderFieldControl(field, editor) {
     });
 
     input.addEventListener('input', () => writeFieldText(field.component, input.value, editor));
+
+    return wrap;
+}
+
+/**
+ * @param {{ key: string, label: string, component: object }} field
+ * @param {object} editor
+ * @returns {HTMLElement}
+ */
+function renderStatusField(field, editor) {
+    const current = readStatusValue(field.component);
+    const wrap = document.createElement('div');
+    wrap.className = 'voodbuilder-editor-form-field';
+    wrap.setAttribute('data-vb-status-field', field.key);
+
+    const label = document.createElement('div');
+    label.className = 'voodbuilder-editor-form-label';
+    label.textContent = field.label;
+    wrap.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'voodbuilder-editor-segmented';
+    row.setAttribute('role', 'radiogroup');
+    row.setAttribute('aria-label', field.label);
+
+    /** @type {HTMLButtonElement[]} */
+    const buttons = [];
+
+    for (const option of [
+        { value: 'yes', label: '✓ Yes' },
+        { value: 'no', label: '✕ No' },
+    ]) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'voodbuilder-editor-segmented__btn';
+        btn.textContent = option.label;
+        btn.dataset.value = option.value;
+        btn.setAttribute('role', 'radio');
+        btn.setAttribute('aria-checked', option.value === current ? 'true' : 'false');
+
+        if (option.value === current) {
+            btn.classList.add('is-active');
+        }
+
+        btn.addEventListener('click', () => {
+            buttons.forEach((node) => {
+                const active = node.dataset.value === option.value;
+                node.classList.toggle('is-active', active);
+                node.setAttribute('aria-checked', active ? 'true' : 'false');
+            });
+            writeStatusValue(field.component, option.value, editor);
+        });
+
+        buttons.push(btn);
+        row.appendChild(btn);
+    }
+
+    wrap.appendChild(row);
 
     return wrap;
 }
@@ -655,6 +928,84 @@ function renderIconField(field, editor) {
  * @param {object} editor
  * @param {{ selected?: object|null, focusOnly?: boolean, selectHint?: string }} [options]
  */
+function headerLabelsForRow(row) {
+    let table = row;
+
+    while (table) {
+        const tag = String(table.get?.('tagName') ?? '').toLowerCase();
+        const type = String(table.get?.('type') ?? '');
+
+        if (tag === 'table' || type === 'table') {
+            break;
+        }
+
+        table = table.parent?.();
+    }
+
+    if (! table) {
+        return [];
+    }
+
+    const labels = [];
+
+    walkComponents(table, (component) => {
+        if (! isTableCellComponent(component) || isActionTableCell(component) || ! isInsideThead(component)) {
+            return;
+        }
+
+        const attrs = component.getAttributes?.() ?? {};
+        labels.push(
+            String(attrs[FIELD_LABEL_ATTR] ?? '').trim()
+            || readFieldText(component)
+            || 'Cell',
+        );
+    });
+
+    return labels;
+}
+
+function withTableColumnLabels(fields, item) {
+    if (! isTableBodyRow(item)) {
+        return fields;
+    }
+
+    const headers = headerLabelsForRow(item);
+
+    if (headers.length === 0) {
+        return fields;
+    }
+
+    let cellIndex = 0;
+
+    return fields.map((field) => {
+        if (! isTableCellComponent(field.component) && ! hasFieldAttr(field.component)) {
+            return field;
+        }
+
+        if (isTableCellComponent(field.component) && isActionTableCell(field.component)) {
+            return field;
+        }
+
+        const isCell = isTableCellComponent(field.component)
+            || isTableCellComponent(field.component.parent?.());
+
+        if (! isCell) {
+            return field;
+        }
+
+        const label = headers[cellIndex] || field.label;
+        cellIndex += 1;
+
+        return { ...field, label };
+    });
+}
+
+/**
+ * @param {HTMLElement} mount
+ * @param {object[]} items
+ * @param {object} editor
+ * @param {{ selected?: object|null, focusOnly?: boolean, selectHint?: string, itemSingular?: string }} [options]
+ */
 export function appendDeclarativeItemEditors(mount, items, editor, options = {}) {
     if (! mount || items.length === 0) {
         return;
@@ -671,7 +1022,7 @@ export function appendDeclarativeItemEditors(mount, items, editor, options = {})
             return;
         }
 
-        const fields = findItemDeclarativeFields(focused.item);
+        const fields = withTableColumnLabels(findItemDeclarativeFields(focused.item), focused.item);
 
         if (fields.length === 0) {
             return;
@@ -689,7 +1040,7 @@ export function appendDeclarativeItemEditors(mount, items, editor, options = {})
     const singular = String(options.itemSingular || 'Item').trim() || 'Item';
 
     items.forEach((item, index) => {
-        const fields = findItemDeclarativeFields(item);
+        const fields = withTableColumnLabels(findItemDeclarativeFields(item), item);
 
         if (fields.length === 0) {
             return;
@@ -715,7 +1066,10 @@ export function scopeHasDeclarativeFields(root) {
             return;
         }
 
-        if (hasFieldAttr(component)) {
+        if (
+            hasFieldAttr(component)
+            || (isTableCellComponent(component) && ! isActionTableCell(component))
+        ) {
             found = true;
         }
     });
@@ -736,6 +1090,34 @@ export function registerDeclarativeFieldSettings(editor) {
     }
 
     editor.__voodbuilderDeclarativeFieldSettingsRegistered = true;
+
+    const unlockDeclarativeHost = (component) => {
+        if (
+            ! component?.set
+            || (
+                ! hasFieldAttr(component)
+                && ! (isTableCellComponent(component) && ! isActionTableCell(component))
+            )
+        ) {
+            return;
+        }
+
+        component.set({
+            editable: true,
+            selectable: true,
+            hoverable: true,
+            highlightable: true,
+        }, { silent: true });
+    };
+
+    editor.on?.('component:add', unlockDeclarativeHost);
+    editor.on?.('load', () => {
+        const wrapper = editor.getWrapper?.();
+
+        if (wrapper) {
+            walkComponents(wrapper, unlockDeclarativeHost);
+        }
+    });
 
     registerBlockSettings({
         id: 'declarative_fields',

@@ -47,6 +47,18 @@ class EditorHtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('<span>Field</span>', $repaired);
     }
 
+    public function test_repairs_broken_raw_json_dynamic_block_config_attributes(): void
+    {
+        $html = '<section data-voodbuilder-block="vcontent_faq_accordion" data-voodbuilder-config="{"collection_id":4,"mode":"live"}">'
+            . '<h2>Everything you need to know.</h2></section>';
+
+        $repaired = EditorHtmlSanitizer::sanitize($html);
+
+        $this->assertStringNotContainsString('data-voodbuilder-config="{"', $repaired);
+        $this->assertStringContainsString('&quot;collection_id&quot;', $repaired);
+        $this->assertStringContainsString('<h2>Everything you need to know.</h2>', $repaired);
+    }
+
     public function test_preserves_valid_percent_encoding(): void
     {
         $value = 'https://example.test/path?q=%C4%B0zmir';

@@ -29,6 +29,7 @@ final class EditorDynamicBlockRenderer
         'id',
         'class',
         'style',
+        'data-vb-font',
         'data-vb-style-bg-src',
         'data-vb-style-bg-src-dark',
         'data-vb-style-bg-opacity',
@@ -1016,6 +1017,7 @@ final class EditorDynamicBlockRenderer
      * @return array{
      *     id: string,
      *     style: string,
+     *     data_vb_font: string,
      *     data_vb_style_bg_opacity: string,
      *     data_vb_style_bg_src: string,
      *     data_vb_style_bg_src_dark: string,
@@ -1030,6 +1032,7 @@ final class EditorDynamicBlockRenderer
         return [
             'id' => trim((string) $node->getAttribute('id')),
             'style' => trim((string) $node->getAttribute('style')),
+            'data_vb_font' => trim((string) $node->getAttribute('data-vb-font')),
             'data_vb_style_bg_opacity' => trim((string) $node->getAttribute('data-vb-style-bg-opacity')),
             'data_vb_style_bg_src' => trim((string) $node->getAttribute('data-vb-style-bg-src')),
             'data_vb_style_bg_src_dark' => trim((string) $node->getAttribute('data-vb-style-bg-src-dark')),
@@ -1044,6 +1047,7 @@ final class EditorDynamicBlockRenderer
      * @param  array{
      *     id: string,
      *     style: string,
+     *     data_vb_font?: string,
      *     data_vb_style_bg_opacity: string,
      *     data_vb_style_bg_src: string,
      *     data_vb_style_bg_src_dark: string,
@@ -1057,6 +1061,10 @@ final class EditorDynamicBlockRenderer
     {
         if (($chrome['id'] ?? '') !== '') {
             $node->setAttribute('id', $chrome['id']);
+        }
+
+        if (($chrome['data_vb_font'] ?? '') !== '') {
+            $node->setAttribute('data-vb-font', $chrome['data_vb_font']);
         }
 
         if (($chrome['data_vb_style_bg_opacity'] ?? '') !== '') {
@@ -1145,6 +1153,7 @@ final class EditorDynamicBlockRenderer
             || (
                 ($chrome['id'] ?? '') === ''
                 && ($chrome['style'] ?? '') === ''
+                && ($chrome['data_vb_font'] ?? '') === ''
                 && ($chrome['data_vb_style_bg_opacity'] ?? '') === ''
                 && ($chrome['data_vb_style_bg_src'] ?? '') === ''
                 && ($chrome['data_vb_style_bg_src_dark'] ?? '') === ''

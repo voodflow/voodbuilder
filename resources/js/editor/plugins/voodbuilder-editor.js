@@ -1233,18 +1233,90 @@ function registerDynamicBlockRefreshOnDrop(editor) {
     });
 }
 
+/**
+ * Roots whose delete walks hundreds of Grapes leaves (tables, catalog sections,
+ * dynamic shells). Mark them before the child:remove storm so listeners can bail.
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function isHeavyRemovableRoot(component) {
+    if (! component) {
+        return false;
+    }
+
+    const type = String(component.get?.('type') ?? '');
+    const attrs = component.getAttributes?.() ?? {};
+
+    // Do not key off data-vb-item-count alone — FAQ categories use it for nested
+    // questions; deleting one category must still sync the parent item count.
+    return type === 'voodbuilder-dynamic'
+        || type === 'voodbuilder-section'
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-section-block')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-block')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-vb-table');
+}
+
+/**
+ * @param {object} editor
+ * @param {boolean} busy
+ */
+function setStructureBusy(editor, busy) {
+    const root = editor?.getContainer?.()?.closest?.('.voodbuilder-editor-root')
+        ?? document.querySelector('.voodbuilder-editor-root');
+
+    if (! root) {
+        return;
+    }
+
+    root.classList.toggle('is-structure-busy', Boolean(busy));
+    root.setAttribute('aria-busy', busy ? 'true' : 'false');
+
+    if (busy) {
+        root.setAttribute('data-voodbuilder-structure-busy', '1');
+    } else {
+        root.removeAttribute('data-voodbuilder-structure-busy');
+    }
+}
+
 function registerDynamicBlockGuards(editor) {
     // Mark intentional root deletes before Grapes walks children. Without this,
-    // each child:remove runs findDynamicBlockAncestor + queueMicrotask (core-nodes
-    // has hundreds of leaves) and delete feels multi-second.
+    // each child:remove runs findDynamicBlockAncestor + queueMicrotask (core-nodes /
+    // compare tables have hundreds of leaves) and delete feels multi-second with
+    // no UI feedback.
     editor.on('component:remove:before', (component) => {
-        if (component?.get?.('type') === 'voodbuilder-dynamic') {
-            component.__voodbuilderRemoving = true;
+        if (! isHeavyRemovableRoot(component)) {
+            return;
         }
+
+        component.__voodbuilderRemoving = true;
+        editor.__voodbuilderBulkStructureUpdate = true;
+        editor.__voodbuilderStructureRemoveDepth = Number(editor.__voodbuilderStructureRemoveDepth ?? 0) + 1;
+        setStructureBusy(editor, true);
     });
 
     editor.on('component:remove', (removed) => {
-        if (removed.get('type') === 'voodbuilder-dynamic') {
+        if (removed?.__voodbuilderRemoving) {
+            const depth = Number(editor.__voodbuilderStructureRemoveDepth ?? 1) - 1;
+            editor.__voodbuilderStructureRemoveDepth = Math.max(0, depth);
+
+            if (depth <= 0) {
+                editor.__voodbuilderStructureRemoveDepth = 0;
+                window.requestAnimationFrame(() => {
+                    window.requestAnimationFrame(() => {
+                        if (Number(editor.__voodbuilderStructureRemoveDepth ?? 0) > 0) {
+                            return;
+                        }
+
+                        editor.__voodbuilderBulkStructureUpdate = false;
+                        setStructureBusy(editor, false);
+                        editor.__voodbuilderAfterBulkStructureUpdate?.();
+                    });
+                });
+            }
+        }
+
+        if (removed.get('type') === 'voodbuilder-dynamic' || removed?.__voodbuilderRemoving) {
             return;
         }
 
@@ -1252,6 +1324,10 @@ function registerDynamicBlockGuards(editor) {
         // Without this guard the first child:remove cascade-deletes the whole block
         // (Voodflow Core nodes grid appeared for ~1s then vanished on drop).
         if ((editor.__voodbuilderDynamicBlockRefreshing ?? 0) > 0) {
+            return;
+        }
+
+        if (editor.__voodbuilderBulkStructureUpdate) {
             return;
         }
 

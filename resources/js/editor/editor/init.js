@@ -2860,6 +2860,7 @@ function mountFrontendEditor() {
             if (
                 payloadHash
                 && payloadHash === editor.__voodbuilderLastSavePayloadHash
+                && editor.__voodbuilderPageSaveClean === true
                 && ! config.popupMode
             ) {
                 autosave?.markSaved();

@@ -101,18 +101,18 @@ function spacingBlockHtml(kind, label, labels) {
     const scaleLabel = labels.classStyleSpacingScale ?? 'Tailwind scale';
 
     return `
-        <div class="voodbuilder-editor-spacing-block" data-voodbuilder-spacing-box="${kind}" data-link="all">
+        <div class="voodbuilder-editor-spacing-block" data-voodbuilder-spacing-box="${kind}" data-link="independent">
             <div class="voodbuilder-editor-spacing-block__head">
                 <span class="voodbuilder-editor-spacing-block__label">${escapeHtml(label)}</span>
                 <span class="voodbuilder-editor-spacing-block__dot" data-voodbuilder-spacing-dot hidden title="${escapeAttr(labels.classStyleAuthoredHint ?? 'Value set')}" aria-hidden="true"></span>
                 <div class="voodbuilder-editor-spacing-block__links" role="group" aria-label="${escapeAttr(linkGroup)}">
-                    <button type="button" class="voodbuilder-editor-spacing-block__link" data-voodbuilder-spacing-link="independent" title="${escapeAttr(linkIndependent)}" aria-pressed="false">
+                    <button type="button" class="voodbuilder-editor-spacing-block__link is-active" data-voodbuilder-spacing-link="independent" title="${escapeAttr(linkIndependent)}" aria-pressed="true">
                         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M4.5 3.5a2 2 0 0 1 2.8 0l.7.7-.7.7-.7-.7a1 1 0 1 0-1.4 1.4l.7.7-.7.7-.7-.7a2 2 0 0 1 0-2.8zm7 7a2 2 0 0 1-2.8 0l-.7-.7.7-.7.7.7a1 1 0 1 0 1.4-1.4l-.7-.7.7-.7.7.7a2 2 0 0 1 0 2.8zM6.2 8.5l1.3-1.3.7.7-1.3 1.3-.7-.7zm2.6-2.6l1.3-1.3.7.7-1.3 1.3-.7-.7z"/></svg>
                     </button>
                     <button type="button" class="voodbuilder-editor-spacing-block__link" data-voodbuilder-spacing-link="opposites" title="${escapeAttr(linkOpposites)}" aria-pressed="false">
                         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M4 2h8v2H4V2zm0 10h8v2H4v-2zM2.5 6.5h3v3h-3v-3zm8 0h3v3h-3v-3z"/></svg>
                     </button>
-                    <button type="button" class="voodbuilder-editor-spacing-block__link is-active" data-voodbuilder-spacing-link="all" title="${escapeAttr(linkAll)}" aria-pressed="true">
+                    <button type="button" class="voodbuilder-editor-spacing-block__link" data-voodbuilder-spacing-link="all" title="${escapeAttr(linkAll)}" aria-pressed="false">
                         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M4.5 2.5a2.5 2.5 0 0 1 3.5 0l.7.7-.7.7a1.5 1.5 0 1 0 0 2.1l.7.7-.7.7a2.5 2.5 0 1 1-3.5-3.5l.7-.7-.7-.7zm7 7a2.5 2.5 0 0 1-3.5 0l-.7-.7.7-.7a1.5 1.5 0 1 0 0-2.1l-.7-.7.7-.7a2.5 2.5 0 1 1 3.5 3.5l-.7.7.7.7z"/></svg>
                     </button>
                 </div>
@@ -516,7 +516,7 @@ function onSpacingPopoverKeydown(event) {
 
 function openSpacingScalePopover(editor, sector, anchor, kind, side, labels = {}) {
     const block = sector.querySelector(`[data-voodbuilder-spacing-box="${kind}"]`);
-    const linkMode = block?.dataset.link || 'all';
+    const linkMode = block?.dataset.link || 'independent';
     const target = spacingGroupFor(kind, side, linkMode);
 
     if (! target || ! (anchor instanceof HTMLElement)) {
@@ -630,7 +630,7 @@ export function wireSpacingBoxes(editor, sector, labels = {}) {
                 event.stopPropagation();
 
                 const component = editor.getSelected();
-                const nextLink = button.getAttribute('data-voodbuilder-spacing-link') || 'all';
+                const nextLink = button.getAttribute('data-voodbuilder-spacing-link') || 'independent';
 
                 if (! component) {
                     return;
@@ -652,7 +652,7 @@ export function wireSpacingBoxes(editor, sector, labels = {}) {
 
                 const component = editor.getSelected();
                 const side = input.getAttribute('data-voodbuilder-spacing-side');
-                const linkMode = block.dataset.link || 'all';
+                const linkMode = block.dataset.link || 'independent';
 
                 if (! component || ! side) {
                     return;

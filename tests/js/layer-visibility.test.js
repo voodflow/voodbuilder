@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     LAYER_HIDDEN_ATTR,
+    authorLayerHideIsActive,
     captureHiddenLayerNames,
     componentHasLayerHiddenMarker,
     isLayerHidden,
@@ -16,11 +17,22 @@ function makeComponent(initial = {}) {
     const em = initial.em ?? {
         Css: {
             rules: {},
-            getIdRule(id) {
-                return this.rules[id] ? { getStyle: () => ({ ...this.rules[id] }) } : null;
-            },
             setIdRule(id, next) {
                 this.rules[id] = { ...next };
+            },
+            getIdRule(id) {
+                const stored = this.rules[id];
+
+                if (! stored) {
+                    return null;
+                }
+
+                return {
+                    getStyle: () => ({ ...stored }),
+                    removeStyle: (prop) => {
+                        delete this.rules[id][prop];
+                    },
+                };
             },
         },
     };
@@ -66,6 +78,40 @@ describe('layer visibility persistence', () => {
         expect(component.getAttributes()[LAYER_HIDDEN_ATTR]).toBe('1');
         expect(component.getStyle({ inline: true }).display).toBe('none');
         expect(component.em.Css.rules.cmp1.display).toBe('none');
+    });
+
+    it('unhiding clears the marker, inline display, and leftover #id CSS', () => {
+        const component = makeComponent();
+
+        persistLayerHiddenMarker(component, true);
+        persistLayerHiddenMarker(component, false);
+
+        expect(componentHasLayerHiddenMarker(component)).toBe(false);
+        expect(component.getStyle().display).toBeUndefined();
+        expect(component.em.Css.rules.cmp1.display).toBeUndefined();
+        expect(authorLayerHideIsActive({}, component)).toBe(false);
+        expect(isLayerHidden({ Css: component.em.Css, LayerManager: { isVisible: () => true } }, component)).toBe(false);
+    });
+
+    it('syncLayerVisibilityForExport does not re-hide after the layer eye is opened', () => {
+        const component = makeComponent();
+        persistLayerHiddenMarker(component, true);
+        persistLayerHiddenMarker(component, false);
+
+        const editor = {
+            getWrapper: () => ({
+                onAll: (fn) => fn(component),
+            }),
+            Css: component.em.Css,
+            LayerManager: {
+                isVisible: () => true,
+            },
+        };
+
+        syncLayerVisibilityForExport(editor);
+
+        expect(componentHasLayerHiddenMarker(component)).toBe(false);
+        expect(component.getStyle().display).toBeUndefined();
     });
 
     it('syncLayerVisibilityForExport forces marker when only #id CSS hides the node', () => {

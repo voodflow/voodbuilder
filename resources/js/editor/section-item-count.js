@@ -18,13 +18,326 @@ import {
     normalizeCounterTrigger,
     readCounterConfig,
 } from './editor-animated-blocks.js';
-import { createFormSection, createSelectField, createTextField } from './editor-form-ui.js';
+import { createCheckboxField, createCheckboxGrid, createFormSection, createSelectField, createTextField } from './editor-form-ui.js';
+
+function componentTag(component) {
+    return String(component?.get?.('tagName') ?? '').toLowerCase();
+}
+
+function readAttrs(component) {
+    return {
+        ...(component?.get?.('attributes') ?? {}),
+        ...(component?.getAttributes?.() ?? {}),
+    };
+}
 
 function isAnimatedStatsRoot(root) {
-    const attrs = root?.getAttributes?.() ?? {};
+    const attrs = readAttrs(root);
 
     return Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-animated-stats')
         || root?.get?.('type') === 'voodbuilder-animated-stats';
+}
+
+function isTableRowComponent(component) {
+    return componentTag(component) === 'tr' || component?.get?.('type') === 'row';
+}
+
+function isTableCellComponent(component) {
+    const tag = componentTag(component);
+    const type = String(component?.get?.('type') ?? '');
+
+    return tag === 'td' || tag === 'th' || type === 'cell';
+}
+
+function isTheadAncestor(component, stop) {
+    let current = component;
+
+    while (current && current !== stop) {
+        const tag = componentTag(current);
+        const type = String(current.get?.('type') ?? '');
+
+        if (tag === 'thead' || type === 'thead') {
+            return true;
+        }
+
+        current = current.parent?.();
+    }
+
+    return false;
+}
+
+function isTabularRoot(root) {
+    const tag = componentTag(root);
+    const type = String(root?.get?.('type') ?? '');
+
+    return tag === 'table' || tag === 'tbody' || tag === 'thead'
+        || type === 'table' || type === 'tbody' || type === 'thead';
+}
+
+export function isTableSection(section) {
+    const attrs = readAttrs(section);
+
+    if (Object.prototype.hasOwnProperty.call(attrs, 'data-vb-table')) {
+        return true;
+    }
+
+    const root = findItemsRoot(section);
+
+    if (root && isTabularRoot(root)) {
+        return true;
+    }
+
+    let tabular = false;
+
+    walkComponents(section, (component) => {
+        if (tabular) {
+            return;
+        }
+
+        if (isTableRowComponent(component) || isTabularRoot(component)) {
+            tabular = true;
+        }
+    });
+
+    return tabular;
+}
+
+function tableColRole(component) {
+    if (! isTableCellComponent(component) && ! Object.prototype.hasOwnProperty.call(readAttrs(component), 'data-vb-table-col')) {
+        return null;
+    }
+
+    const value = readAttrs(component)['data-vb-table-col'];
+
+    if (value === 'action' || value === 'label') {
+        return value;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(readAttrs(component), 'data-vb-table-col')) {
+        return 'data';
+    }
+
+    const row = component.parent?.();
+    const cells = [...(row?.components?.() ?? [])].filter((child) => isTableCellComponent(child));
+    const index = cells.indexOf(component);
+
+    if (index === 0) {
+        return 'label';
+    }
+
+    if (index === cells.length - 1 && readAttrs(component)['data-vb-optional'] === 'select') {
+        return 'action';
+    }
+
+    return 'data';
+}
+
+function tableRowCells(row) {
+    return [...(row?.components?.() ?? [])].filter((child) => tableColRole(child) !== null || isTableCellComponent(child));
+}
+
+function tableDataCells(row) {
+    return tableRowCells(row).filter((child) => tableColRole(child) === 'data');
+}
+
+function walkComponents(component, visit) {
+    if (! component) {
+        return;
+    }
+
+    visit(component);
+
+    for (const child of [...(component.components?.() ?? [])]) {
+        walkComponents(child, visit);
+    }
+}
+
+function findTableHeadRow(section) {
+    let found = null;
+
+    walkComponents(section, (component) => {
+        if (found) {
+            return;
+        }
+
+        const tag = componentTag(component);
+        const type = String(component.get?.('type') ?? '');
+        const cells = tableRowCells(component);
+
+        if (
+            (tag === 'tr' || type === 'row')
+            && cells.length > 0
+            && ! hasItemAttr(component)
+            && (isTheadAncestor(component, section) || tableColRole(cells[0]) === 'label')
+        ) {
+            found = component;
+        }
+    });
+
+    return found;
+}
+
+function clearTableCellCopy(cell, placeholder) {
+    let wrote = false;
+
+    walkComponents(cell, (component) => {
+        if (! Object.prototype.hasOwnProperty.call(component.getAttributes?.() ?? {}, 'data-vb-field')) {
+            return;
+        }
+
+        if (typeof component.components === 'function') {
+            component.components(placeholder);
+        }
+
+        component.set?.('content', placeholder);
+        wrote = true;
+    });
+
+    if (! wrote && typeof cell.components === 'function') {
+        cell.components(placeholder);
+    }
+}
+
+function setComponentHidden(component, hidden) {
+    if (hidden) {
+        component.addAttributes?.({ hidden: '' });
+        component.addClass?.('hidden');
+    } else {
+        component.removeAttributes?.('hidden');
+        component.removeClass?.('hidden');
+    }
+}
+
+const TABLE_COUNT_SAFETY_MAX = 99;
+
+export function tableColumnBounds(section) {
+    const attrs = readAttrs(section);
+    const min = Math.max(1, Number.parseInt(attrs['data-vb-table-min-columns'] ?? '1', 10) || 1);
+
+    return { min, max: Math.max(min, TABLE_COUNT_SAFETY_MAX) };
+}
+
+function currentTableColumnCount(section, headRow) {
+    const attrs = section?.getAttributes?.() ?? {};
+    const { min, max } = tableColumnBounds(section);
+    const fromAttr = Number.parseInt(attrs['data-vb-table-columns'] ?? '0', 10) || 0;
+    const fromHead = headRow ? tableRowCells(headRow).filter((cell) => tableColRole(cell) !== 'action').length : 0;
+    const value = fromAttr > 0 ? fromAttr : fromHead;
+
+    return Math.max(min, Math.min(max, value || min));
+}
+
+function syncRowColumnCount(row, target, { header = false } = {}) {
+    const action = tableRowCells(row).find((cell) => tableColRole(cell) === 'action') ?? null;
+    let dataCells = tableDataCells(row);
+
+    while (dataCells.length > Math.max(0, target - 1)) {
+        dataCells.pop()?.remove?.();
+        dataCells = tableDataCells(row);
+    }
+
+    while (dataCells.length < Math.max(0, target - 1)) {
+        const before = dataCells.length;
+        const template = dataCells[dataCells.length - 1];
+
+        if (! template?.clone) {
+            break;
+        }
+
+        const clone = template.clone();
+        const siblings = [...(row.components?.() ?? [])];
+        const insertAt = action ? siblings.indexOf(action) : siblings.length;
+
+        if (typeof row.append === 'function') {
+            if (insertAt >= 0) {
+                row.append(clone, { at: insertAt });
+            } else {
+                row.append(clone);
+            }
+        }
+
+        clearTableCellCopy(clone, header ? 'Column' : '—');
+        dataCells = tableDataCells(row);
+
+        if (dataCells.length <= before) {
+            break;
+        }
+    }
+}
+
+export function applyTableColumnCount(section, nextCount) {
+    if (! isTableSection(section)) {
+        return;
+    }
+
+    const { min, max } = tableColumnBounds(section);
+    const target = Math.max(min, Math.min(max, Number(nextCount) || min));
+    const headRow = findTableHeadRow(section);
+    const { items } = findSectionItems(section);
+
+    if (headRow) {
+        syncRowColumnCount(headRow, target, { header: true });
+    }
+
+    for (const row of items) {
+        syncRowColumnCount(row, target, { header: false });
+    }
+
+    section.addAttributes?.({
+        'data-vb-table-columns': String(target),
+    });
+    section.set?.({ 'data-vb-table-columns': target }, { silent: true });
+}
+
+function optionalVisible(section, key) {
+    const raw = section.getAttributes?.()?.[`data-vb-show-${key}`];
+
+    return raw !== '0' && raw !== 'false';
+}
+
+export function applySectionOptional(section, key, visible) {
+    section.addAttributes?.({
+        [`data-vb-show-${key}`]: visible ? '1' : '0',
+    });
+
+    walkComponents(section, (component) => {
+        if (component === section) {
+            return;
+        }
+
+        const optional = component.getAttributes?.()?.['data-vb-optional'];
+        const colRole = tableColRole(component);
+
+        if (optional === key || (key === 'select' && colRole === 'action')) {
+            setComponentHidden(component, ! visible);
+        }
+    });
+}
+
+function collectSectionOptionals(section) {
+    const found = [];
+    const seen = new Set();
+
+    walkComponents(section, (component) => {
+        if (component === section) {
+            return;
+        }
+
+        const attrs = readAttrs(component);
+        const key = String(attrs['data-vb-optional'] ?? '').trim();
+
+        if (! key || seen.has(key)) {
+            return;
+        }
+
+        seen.add(key);
+        found.push({
+            key,
+            label: String(attrs['data-vb-optional-label'] || attrs['data-vb-field-label'] || key).trim() || key,
+        });
+    });
+
+    return found;
 }
 
 const WIDTH_CLASS_PATTERN = /^(?:sm|md|lg|xl):w-1\/\d+$|^w-1\/\d+$|^w-full$/;
@@ -180,7 +493,41 @@ function markedItems(root) {
         }
     }
 
-    return unwrapped;
+    if (unwrapped.length > 0) {
+        return unwrapped;
+    }
+
+    const nested = [];
+
+    for (const child of [...(root.components?.() ?? [])]) {
+        for (const grand of [...(child.components?.() ?? [])]) {
+            for (const great of [...(grand.components?.() ?? [])]) {
+                if (hasItemAttr(great)) {
+                    nested.push(great);
+                }
+            }
+        }
+    }
+
+    if (nested.length > 0) {
+        return nested;
+    }
+
+    if (! isTabularRoot(root) && componentTag(root) !== 'div') {
+        return [];
+    }
+
+    const rows = [];
+
+    walkComponents(root, (component) => {
+        if (component === root || ! isTableRowComponent(component) || isTheadAncestor(component, root)) {
+            return;
+        }
+
+        rows.push(component);
+    });
+
+    return rows;
 }
 
 /**
@@ -200,7 +547,7 @@ function markedItems(root) {
  * @returns {object|null}
  */
 function hasItemAttr(component) {
-    return Object.prototype.hasOwnProperty.call(component?.getAttributes?.() ?? {}, 'data-vb-item');
+    return Object.prototype.hasOwnProperty.call(readAttrs(component), 'data-vb-item');
 }
 
 /**
@@ -226,7 +573,7 @@ function findItemsRoot(scope) {
         }
 
         if (component !== scope) {
-            const attrs = component.getAttributes?.() ?? {};
+            const attrs = readAttrs(component);
 
             if (Object.prototype.hasOwnProperty.call(attrs, 'data-vb-items-root') && ! insideNestedItem) {
                 found = component;
@@ -257,7 +604,7 @@ function findItemsRoot(scope) {
         const roots = [...(scope.find?.('[data-vb-items-root]') ?? [])];
 
         if (roots.length === 0) {
-            return null;
+            return findTabularItemsRoot(scope);
         }
 
         if (hasItemAttr(scope)) {
@@ -300,16 +647,47 @@ function findItemsRoot(scope) {
             }
         }
 
-        return roots[0] ?? null;
+        return roots[0] ?? findTabularItemsRoot(scope);
     } catch {
-        return null;
+        return findTabularItemsRoot(scope);
     }
+}
+
+function findTabularItemsRoot(scope) {
+    let tbody = null;
+    let table = null;
+
+    walkComponents(scope, (component) => {
+        if (component === scope) {
+            return;
+        }
+
+        const tag = componentTag(component);
+        const type = String(component.get?.('type') ?? '');
+
+        if (! tbody && (tag === 'tbody' || type === 'tbody')) {
+            tbody = component;
+        }
+
+        if (! table && (tag === 'table' || type === 'table')) {
+            table = component;
+        }
+    });
+
+    return tbody ?? table;
 }
 
 export function findSectionItems(section) {
     const attrs = section.getAttributes?.() ?? {};
+    const root = findItemsRoot(section);
+    const tabular = Boolean(
+        root
+        && (isTabularRoot(root) || markedItems(root).some((item) => isTableRowComponent(item))),
+    );
     const min = Math.max(1, Number.parseInt(attrs['data-vb-item-min'] ?? '1', 10) || 1);
-    const max = Math.max(min, Number.parseInt(attrs['data-vb-item-max'] ?? '8', 10) || 8);
+    const max = tabular
+        ? Math.max(min, TABLE_COUNT_SAFETY_MAX)
+        : Math.max(min, Number.parseInt(attrs['data-vb-item-max'] ?? '8', 10) || 8);
     const itemCount = Math.max(
         min,
         Math.min(max, Number.parseInt(attrs['data-vb-item-count'] ?? '0', 10) || 0),
@@ -318,7 +696,6 @@ export function findSectionItems(section) {
     const columns = columnsAttr > 0
         ? Math.max(1, Math.min(6, columnsAttr))
         : Math.max(1, Math.min(6, itemCount || 4));
-    const root = findItemsRoot(section);
 
     if (! root) {
         return { root: null, items: [], min, max, columns };
@@ -363,15 +740,16 @@ export function applySectionItemCount(section, nextCount, options = {}) {
         return;
     }
 
-    const preserveLayout = shouldPreserveItemsLayout(section, root);
+    const table = isTableSection(section);
+    const preserveLayout = table || shouldPreserveItemsLayout(section, root);
     const target = Math.max(min, Math.min(max, Number(nextCount) || min));
     const columns = Math.max(
         1,
         Math.min(6, Number(options.columns ?? currentColumns ?? target) || target),
     );
-    const template = items[0];
     const widthClasses = widthClassesForColumns(columns);
     const working = [...items];
+    const template = table ? working[working.length - 1] : items[0];
 
     while (working.length > target) {
         working.pop()?.remove?.();
@@ -406,14 +784,14 @@ export function applySectionItemCount(section, nextCount, options = {}) {
 
     section.addAttributes({
         'data-vb-item-count': String(target),
-        'data-vb-item-columns': String(columns),
         'data-vb-item-min': String(min),
         'data-vb-item-max': String(max),
+        ...(table ? {} : { 'data-vb-item-columns': String(columns) }),
         ...(preserveLayout ? { 'data-vb-items-layout': 'preserve' } : {}),
     });
     section.set?.({
         'data-vb-item-count': target,
-        'data-vb-item-columns': columns,
+        ...(table ? {} : { 'data-vb-item-columns': columns }),
     }, { silent: true });
 }
 
@@ -435,22 +813,36 @@ export function applySectionItemColumns(section, columns) {
  * @param {object|null|undefined} component
  * @returns {object|null}
  */
+function isCatalogSection(component) {
+    const attrs = readAttrs(component);
+
+    return Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-section-block')
+        || Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-block');
+}
+
 function findItemCountSection(component) {
     let current = component;
 
     while (current) {
-        const attrs = current.getAttributes?.() ?? {};
+        const attrs = readAttrs(current);
 
-        if (Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count')) {
-            if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-logo-scroll')) {
-                current = current.parent?.();
+        if (Object.prototype.hasOwnProperty.call(attrs, 'data-voodbuilder-logo-scroll')) {
+            current = current.parent?.();
 
-                continue;
-            }
+            continue;
+        }
 
+        if (isCatalogSection(current)) {
             const { items } = findSectionItems(current);
 
-            if (items.length > 0) {
+            if (
+                items.length > 0
+                && (
+                    Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count')
+                    || isTableSection(current)
+                )
+            ) {
                 return current;
             }
         }
@@ -479,6 +871,21 @@ function registerRepeatingItemCountSync(editor) {
             return;
         }
 
+        // Whole section/table delete: skip bookkeeping — owner is dying too.
+        let ancestor = component;
+
+        while (ancestor) {
+            if (ancestor.__voodbuilderRemoving) {
+                return;
+            }
+
+            ancestor = ancestor.parent?.();
+        }
+
+        if (editor.__voodbuilderBulkStructureUpdate) {
+            return;
+        }
+
         const parent = component.parent?.();
         const parentAttrs = parent?.getAttributes?.() ?? {};
 
@@ -489,6 +896,10 @@ function registerRepeatingItemCountSync(editor) {
         let owner = parent;
 
         while (owner) {
+            if (owner.__voodbuilderRemoving) {
+                return;
+            }
+
             const attrs = owner.getAttributes?.() ?? {};
 
             if (Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count')) {
@@ -503,7 +914,12 @@ function registerRepeatingItemCountSync(editor) {
     editor.on('component:remove', (component) => {
         const owner = component?.__vbItemCountOwner;
 
-        if (! owner || owner.isRemoved?.()) {
+        if (
+            ! owner
+            || owner.isRemoved?.()
+            || owner.__voodbuilderRemoving
+            || editor.__voodbuilderBulkStructureUpdate
+        ) {
             return;
         }
 
@@ -547,7 +963,12 @@ export function registerSectionItemCountSettings(editor) {
 
             const { items } = findSectionItems(root);
 
-            return Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count') && items.length > 0;
+            if (items.length === 0) {
+                return false;
+            }
+
+            return Object.prototype.hasOwnProperty.call(attrs, 'data-vb-item-count')
+                || isTableSection(root);
         },
         render: ({ mount, root, editor, selected }) => {
             const attrs = root.getAttributes?.() ?? {};
@@ -583,6 +1004,10 @@ export function registerSectionItemCountSettings(editor) {
                 appendDeclarativeItemEditors(mount, items, editor, {
                     selected: selection,
                     itemSingular,
+                    selectHint: attrs['data-vb-items-select-hint']
+                        || (isTableSection(root)
+                            ? 'Select a row on the canvas to edit its content.'
+                            : 'Select an item on the canvas to edit its content.'),
                 });
 
                 return;
@@ -603,6 +1028,31 @@ export function registerSectionItemCountSettings(editor) {
             });
         },
     });
+}
+
+function appendCountInput(fields, { label, name, value, min, onCommit }) {
+    const { field, input } = createTextField({
+        label,
+        name,
+        type: 'number',
+        value: String(value),
+        min,
+    });
+    input.step = '1';
+    const commit = () => {
+        const next = Math.max(min, Math.min(TABLE_COUNT_SAFETY_MAX, Math.floor(Number.parseFloat(input.value) || min)));
+        input.value = String(next);
+        onCommit(next);
+    };
+
+    input.addEventListener('change', commit);
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            input.blur();
+        }
+    });
+    fields.appendChild(field);
 }
 
 /**
@@ -657,7 +1107,6 @@ function renderSectionItemCountPanel({
         ? resolveFocusedItem(items, selection)
         : null;
 
-    // Nested root (category): a selected question → only that question's fields.
     if (nestedFocused) {
         appendDeclarativeItemEditors(mount, items, editor, {
             selected: selection,
@@ -667,6 +1116,7 @@ function renderSectionItemCountPanel({
         return;
     }
 
+            const table = isTableSection(root);
             const current = Math.max(
                 min,
                 Math.min(max, Number.parseInt(attrs['data-vb-item-count'] ?? String(items.length), 10) || items.length),
@@ -675,49 +1125,82 @@ function renderSectionItemCountPanel({
                 1,
                 Math.min(6, Number.parseInt(attrs['data-vb-item-columns'] ?? String(columns), 10) || columns),
             );
+            const { min: tableColMin } = tableColumnBounds(root);
+            const tableColumns = currentTableColumnCount(root, findTableHeadRow(root));
 
-            const itemsLabel = String(attrs['data-vb-items-label'] || 'Number of items').trim() || 'Number of items';
+            const itemsLabel = String(
+                attrs['data-vb-items-label'] || (table ? 'Number of rows' : 'Number of items'),
+            ).trim() || (table ? 'Number of rows' : 'Number of items');
             const { section, fields } = createFormSection(itemsLabel);
-            const itemOptions = [];
 
-            for (let value = min; value <= max; value += 1) {
-                itemOptions.push({ value: String(value), label: String(value) });
-            }
-
-            const columnOptions = [];
-
-            for (let value = 1; value <= 6; value += 1) {
-                columnOptions.push({ value: String(value), label: String(value) });
-            }
-
-            fields.append(
-                createSelectField({
+            if (table) {
+                appendCountInput(fields, {
                     label: itemsLabel,
                     name: 'vbItemCount',
-                    value: String(current),
-                    options: itemOptions,
-                    onChange: (value) => {
-                        const nextCount = Number.parseInt(value, 10);
-                        const cols = Number.parseInt(
-                            root.getAttributes?.()?.['data-vb-item-columns'] ?? String(currentColumns),
-                            10,
-                        ) || currentColumns;
+                    value: current,
+                    min,
+                    onCommit: (nextCount) => applySectionItemCount(root, nextCount),
+                });
+                appendCountInput(fields, {
+                    label: 'Number of columns',
+                    name: 'vbTableColumns',
+                    value: tableColumns,
+                    min: tableColMin,
+                    onCommit: (nextCount) => applyTableColumnCount(root, nextCount),
+                });
+            } else {
+                const itemOptions = [];
 
-                        applySectionItemCount(root, nextCount, { columns: cols });
-                    },
-                }),
-            );
+                for (let value = min; value <= max; value += 1) {
+                    itemOptions.push({ value: String(value), label: String(value) });
+                }
 
-            if (! preserveLayout) {
                 fields.append(
                     createSelectField({
-                        label: 'Columns',
-                        name: 'vbItemColumns',
-                        value: String(currentColumns),
-                        options: columnOptions,
-                        onChange: (value) => applySectionItemColumns(root, Number.parseInt(value, 10)),
+                        label: itemsLabel,
+                        name: 'vbItemCount',
+                        value: String(current),
+                        options: itemOptions,
+                        onChange: (value) => {
+                            const nextCount = Number.parseInt(value, 10);
+                            const cols = Number.parseInt(
+                                root.getAttributes?.()?.['data-vb-item-columns'] ?? String(currentColumns),
+                                10,
+                            ) || currentColumns;
+
+                            applySectionItemCount(root, nextCount, { columns: cols });
+                        },
                     }),
                 );
+
+                if (! preserveLayout) {
+                    const columnOptions = [];
+
+                    for (let value = 1; value <= 6; value += 1) {
+                        columnOptions.push({ value: String(value), label: String(value) });
+                    }
+
+                    fields.append(
+                        createSelectField({
+                            label: 'Columns',
+                            name: 'vbItemColumns',
+                            value: String(currentColumns),
+                            options: columnOptions,
+                            onChange: (value) => applySectionItemColumns(root, Number.parseInt(value, 10)),
+                        }),
+                    );
+                }
+            }
+
+            const optionalFields = collectSectionOptionals(root).map(({ key, label }) => createCheckboxField({
+                label,
+                name: `vbShow-${key}`,
+                checked: optionalVisible(root, key),
+                onChange: (checked) => applySectionOptional(root, key, checked),
+            }));
+
+            if (optionalFields.length > 0) {
+                fields.append(createCheckboxGrid(optionalFields));
             }
 
             mount.appendChild(section);
@@ -742,7 +1225,9 @@ function renderSectionItemCountPanel({
                     selected: selection,
                     itemSingular,
                     selectHint: attrs['data-vb-items-select-hint']
-                        || 'Select an item on the canvas to edit its content.',
+                        || (table
+                            ? 'Select a row on the canvas to edit its content.'
+                            : 'Select an item on the canvas to edit its content.'),
                 });
             }
 

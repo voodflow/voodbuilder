@@ -82,6 +82,20 @@ describe('core/html-sanitize', () => {
         expect(cleaned).not.toContain('@hidden');
         expect(cleaned).toContain('data-voodbuilder-nav-mobile-panel');
     });
+
+    it('stripAuthorInlinePaintFromHtml drops background paints and keeps layout style', async () => {
+        const { stripAuthorInlinePaintFromHtml } = await import(
+            '../../resources/js/editor/core/html-sanitize.js'
+        );
+
+        const html = `<section id="cta" style="background-color:transparent;background-size:cover;background-position:center;background-repeat:no-repeat;background-image:url('/storage/4/photo-lg.webp');display:flex">Hi</section>`;
+        const cleaned = stripAuthorInlinePaintFromHtml(html);
+
+        expect(cleaned).not.toContain('background-image');
+        expect(cleaned).not.toContain('background-size');
+        expect(cleaned).toContain('display:flex');
+        expect(cleaned).toContain('id="cta"');
+    });
 });
 
 describe('core/block-tree', () => {
@@ -729,6 +743,40 @@ describe('theme-tokens background clear', () => {
         expect(css).toContain('background-color:#0ea5e9');
     });
 
+    it('collectAuthorIdCssFromComponents prefers Style panel src over stale composer url', async () => {
+        const { collectAuthorIdCssFromComponents } = await import(
+            '../../resources/js/editor/editor/payload.js'
+        );
+        const { STYLE_BG_SRC_ATTR } = await import(
+            '../../resources/js/editor/style-background-image.js'
+        );
+
+        const components = [
+            {
+                getId: () => 'cta-card',
+                getAttributes: () => ({ [STYLE_BG_SRC_ATTR]: '/storage/9/new.webp' }),
+                getStyle: () => ({}),
+            },
+        ];
+
+        const editor = {
+            Css: {
+                getIdRule: (id) => (id === 'cta-card'
+                    ? { getStyle: () => ({ 'background-image': "url('/storage/4/old.webp')" }) }
+                    : null),
+            },
+            getWrapper: () => ({
+                onAll: (cb) => components.forEach(cb),
+            }),
+        };
+
+        const css = collectAuthorIdCssFromComponents(editor);
+
+        expect(css).toContain('#cta-card');
+        expect(css).toContain('/storage/9/new.webp');
+        expect(css).not.toContain('/storage/4/old.webp');
+    });
+
     it('mergeAuthorCssChunks keeps first #id rule and utilities', async () => {
         const { mergeAuthorCssChunks } = await import(
             '../../resources/js/editor/editor/payload.js'
@@ -1307,6 +1355,99 @@ html.dark #wrap { background-image: url(/d.jpg); background-size: cover }
         expect(inline.stroke == null || inline.stroke === '' || ! /none/i.test(String(inline.stroke))).toBe(true);
         expect(attrs.fill).toBe('none');
         expect(attrs.stroke).toBe('currentColor');
+    });
+
+    it('bakeAuthorStylesToComposerForExport drops leftover display:none when the layer is visible', async () => {
+        const { bakeAuthorStylesToComposerForExport } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const inline = {};
+        const idStyle = { display: 'none', 'background-color': '#111111' };
+        const component = {
+            cid: 'hero-1',
+            getId: () => 'hero',
+            get: () => 'default',
+            getAttributes: () => ({}),
+            getClasses: () => [],
+            getStyle: (opts) => (opts?.inline ? { ...inline } : { ...inline }),
+            addStyle(next) {
+                Object.assign(inline, next);
+            },
+            removeStyle(prop) {
+                delete inline[prop];
+            },
+        };
+
+        const editor = {
+            Css: {
+                getIdRule: (id) => (id === 'hero'
+                    ? {
+                        getStyle: () => ({ ...idStyle }),
+                        removeStyle: (prop) => {
+                            delete idStyle[prop];
+                        },
+                    }
+                    : null),
+                setIdRule(id, next) {
+                    if (id === 'hero') {
+                        Object.keys(idStyle).forEach((key) => delete idStyle[key]);
+                        Object.assign(idStyle, next);
+                    }
+                },
+                getAll: () => [],
+            },
+            LayerManager: {
+                isVisible: () => true,
+            },
+            getWrapper: () => ({
+                onAll: (cb) => cb(component),
+            }),
+        };
+
+        bakeAuthorStylesToComposerForExport(editor);
+
+        expect(idStyle.display).toBeUndefined();
+        expect(inline.display).toBeUndefined();
+        expect(idStyle['background-color']).toBeDefined();
+    });
+
+    it('hydrateAuthorStylesFromIdRules does not copy leftover display:none without a layer-hide marker', async () => {
+        const { hydrateAuthorStylesFromIdRules } = await import(
+            '../../resources/js/editor/tailwind-visual-style.js'
+        );
+
+        const inline = { 'background-color': '#daa0a0' };
+        const component = {
+            getId: () => 'hero',
+            getAttributes: () => ({}),
+            getStyle: (opts) => (opts?.inline ? { ...inline } : { ...inline }),
+            addStyle(next, opts) {
+                if (opts?.inline) {
+                    Object.assign(inline, next);
+                }
+            },
+        };
+
+        const editor = {
+            Css: {
+                getIdRule: (id) => (id === 'hero'
+                    ? { getStyle: () => ({ display: 'none', 'background-color': '#daa0a0' }) }
+                    : null),
+                setIdRule() {},
+            },
+            LayerManager: {
+                isVisible: () => true,
+            },
+            getWrapper: () => ({
+                onAll: (cb) => cb(component),
+            }),
+        };
+
+        hydrateAuthorStylesFromIdRules(editor);
+
+        expect(inline.display).toBeUndefined();
+        expect(inline['background-color']).toBe('#daa0a0');
     });
 
     it('hydrateAuthorStylesFromIdRules restores background-color after reload', async () => {

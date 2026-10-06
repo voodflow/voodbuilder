@@ -9,6 +9,7 @@ import { lucideIcon } from './editor-icons.js';
 import { isEditorBooting, shouldSuppressInspectorDomScan } from './editor-lifecycle.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import { STYLE_UTILITY_GROUPS, componentClassList } from './style-tailwind-class-groups.js';
+import { swatchCssForClassName } from './tailwind-color-palette.js';
 import { safeFindComponents } from './tailwind-visual-style.js';
 
 const SUGGEST_LIST_ATTR = 'data-voodbuilder-class-suggest-list';
@@ -385,15 +386,30 @@ function renderSuggestList(list, suggestions, compiled, onPick) {
         item.className = 'voodbuilder-editor-class-suggest-list__item';
         item.dataset.className = className;
 
+        const main = document.createElement('span');
+        main.className = 'voodbuilder-editor-class-suggest-list__main';
+
+        const swatchCss = swatchCssForClassName(className);
+
+        if (swatchCss) {
+            const swatch = document.createElement('span');
+            swatch.className = 'voodbuilder-editor-class-suggest-list__swatch voodbuilder-editor-select-swatch';
+            swatch.style.background = swatchCss;
+            swatch.setAttribute('aria-hidden', 'true');
+            main.appendChild(swatch);
+            item.classList.add('voodbuilder-editor-class-suggest-list__item--color');
+        }
+
         const label = document.createElement('span');
         label.className = 'voodbuilder-editor-class-suggest-list__label';
         label.textContent = className;
+        main.appendChild(label);
 
         const status = document.createElement('span');
         status.className = 'voodbuilder-editor-class-suggest-list__status';
         status.textContent = compiled.has(className) ? 'on page' : 'new';
 
-        item.append(label, status);
+        item.append(main, status);
         item.addEventListener('mousedown', (event) => {
             event.preventDefault();
             onPick(className);

@@ -21,6 +21,7 @@ import { ensureLayoutContainersForExport } from '../layout-blocks.js';
 import { restoreContentWidthFromAttributes } from '../content-width-toolbar.js';
 import { syncLayerVisibilityForExport } from '../layer-visibility.js';
 import { extractChromeShellPageHtml } from '../editor-chrome-shell.js';
+import { stripAuthorInlinePaintFromHtml } from '../core/html-sanitize.js';
 import { applyVideoFacadesToExportedHtml, syncVideoComponentsForExport } from '../editor-video.js';
 import {
     pruneEmptyDynamicBlocks,
@@ -54,6 +55,7 @@ import {
     withWallpaperLayoutDefaults,
 } from '../page-surface-styles.js';
 import { STYLE_BG_SRC_ATTR, STYLE_BG_SRC_DARK_ATTR } from '../style-background-image.js';
+import { stripLeakedAncestorDecorationBackgrounds } from '../style-tailwind-panel.js';
 import { collectDarkIdStylesCssForPersist } from '../dark-id-styles.js';
 
 /**
@@ -504,9 +506,52 @@ export function stripAuthorIdRules(css) {
 }
 
 /**
+ * @param {string} src
+ * @returns {string}
+ */
+function cssUrlFromSrc(src) {
+    const escaped = String(src).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+    return `url('${escaped}')`;
+}
+
+/**
+ * @param {unknown} image
+ * @param {string} src
+ * @returns {boolean}
+ */
+function backgroundImageMentionsSrc(image, src) {
+    const hay = String(image ?? '');
+    const needle = String(src ?? '').trim();
+
+    if (needle === '' || hay === '') {
+        return false;
+    }
+
+    if (hay.includes(needle)) {
+        return true;
+    }
+
+    try {
+        const decoded = decodeURIComponent(needle);
+
+        if (decoded !== needle && hay.includes(decoded)) {
+            return true;
+        }
+    } catch {
+        // Malformed percent-encoding — compare the raw attr only.
+    }
+
+    return false;
+}
+
+/**
  * Safety net: emit `#id { … }` rules from component inline + CssComposer #id
  * styles. Grapes `getCss()` can omit unused/private rules; without this, Style
  * Manager paints vanish from builder_payload.css on chrome-shell save.
+ *
+ * Style-panel `data-vb-style-bg-src` wins when CssComposer still holds the
+ * previous photo — otherwise Save hashes the old `#id {url}` and skips POST.
  *
  * @param {object} editor
  * @param {{ root?: object }} [options]
@@ -538,6 +583,15 @@ export function collectAuthorIdCssFromComponents(editor, options = {}) {
         // Combined getStyle() can include private-class paints still attached.
         const combined = { ...(component.getStyle?.() ?? {}) };
         const merged = { ...fromId, ...combined, ...inline };
+        const attrs = component.getAttributes?.({ noClass: true, noStyle: true })
+            ?? component.getAttributes?.()
+            ?? {};
+        const lightSrc = String(attrs[STYLE_BG_SRC_ATTR] ?? '').trim();
+
+        if (lightSrc !== '' && ! backgroundImageMentionsSrc(merged['background-image'], lightSrc)) {
+            merged['background-image'] = cssUrlFromSrc(lightSrc);
+        }
+
         const decls = [];
 
         for (const [property, value] of Object.entries(merged)) {
@@ -875,16 +929,23 @@ export function buildPayload(editor, options = {}) {
             editor.__voodbuilderBulkStructureUpdate = true;
 
             try {
+                runExportStep('normalizeDynamicBlockComponents', () => normalizeDynamicBlockComponents(editor));
+                runExportStep('stripLeakedAncestorDecorationBackgrounds', () => {
+                    stripLeakedAncestorDecorationBackgrounds(editor, scoped);
+                });
+
+                // Light Save still needs paint on instances / #id — skipping these
+                // left Style-panel background photos on the canvas only.
+                runExportStep('syncPaintStylesForExport', () => syncPaintStylesForExport(editor, scoped));
+                runExportStep('syncComponentInstancePaintForExport', () => syncComponentInstancePaintForExport(editor));
+
                 if (! light) {
                     runExportStep('detachReadingPreview', () => editor.trigger?.('voodbuilder:reading-preview:detach'));
-                    runExportStep('normalizeDynamicBlockComponents', () => normalizeDynamicBlockComponents(editor));
                     runExportStep('pruneEmptyDynamicBlocks', () => pruneEmptyDynamicBlocks(editor));
                     runExportStep('syncBindingsForExport', () => syncBindingsForExport(editor));
                     runExportStep('ensureComponentInstancesForExport', () => ensureComponentInstancesForExport(editor));
                     runExportStep('purgeDesyncedBackgroundCssRules', () => purgeDesyncedBackgroundCssRules(editor));
                     runExportStep('syncSpacingStylesForExport', () => syncSpacingStylesForExport(editor, scoped));
-                    runExportStep('syncPaintStylesForExport', () => syncPaintStylesForExport(editor, scoped));
-                    runExportStep('syncComponentInstancePaintForExport', () => syncComponentInstancePaintForExport(editor));
                     runExportStep('bakeSvgPaintForExport', () => bakeSvgPaintForExport(editor));
                     runExportStep('pruneRedundantSpacingZerosForExport', () => pruneRedundantSpacingZerosForExport(editor));
                     runExportStep('syncComponentInstancesForExport', () => syncComponentInstancesForExport(editor));
@@ -966,6 +1027,7 @@ export function buildPayload(editor, options = {}) {
         // Click-to-play cover must survive export (GrapesJS still serializes embed iframes).
         html = applyVideoFacadesToExportedHtml(editor, html);
         html = encodeJsonDataGjsAttributes(html);
+        html = stripAuthorInlinePaintFromHtml(html);
 
         editor.__voodbuilderLastSavedPageHtml = String(html);
 
@@ -983,6 +1045,9 @@ export function buildPayload(editor, options = {}) {
         //
         // Block photos (`#id` / `html.dark #id` of ids in the tree) are never
         // stripped. Only the wrapper (re-emitted below) and orphan page wallpapers.
+        //
+        // componentAuthorCss before composer: Style-panel src/inline must win
+        // over a stale `#id {url}` still sitting in CssComposer.
         const wrapperId = String(editor.getWrapper?.()?.getId?.() ?? '').trim();
         const stripOptions = {
             knownIds: collectEditorComponentIds(editor),
@@ -990,8 +1055,8 @@ export function buildPayload(editor, options = {}) {
         };
         let css = mergeAuthorCssChunks([
             darkIdStylesCss,
-            styleManagerCss,
             componentAuthorCss,
+            styleManagerCss,
         ]);
         css = stripStalePageSurfaceWallpaperRules(css, wrapperId, stripOptions);
         css = mergeAuthorCssChunks([

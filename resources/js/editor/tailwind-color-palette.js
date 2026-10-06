@@ -88,16 +88,88 @@ export function tailwindColorOptions(prefix) {
     return options;
 }
 
+const COLOR_UTILITY_PREFIX = '(?:bg|text|border|from|via|to|ring|outline|fill|stroke|divide|accent|caret|decoration|shadow)';
+
 /**
  * @param {string} utility e.g. bg-red-500
  * @returns {string|null}
  */
 export function hexForUtility(utility) {
-    const match = String(utility ?? '').match(/^(?:bg|text|border|from|via|to|shadow)-([a-z]+)-(\d+)$/);
+    const match = String(utility ?? '').match(new RegExp(`^${COLOR_UTILITY_PREFIX}-([a-z]+)-(\\d+)$`));
 
     if (! match) {
         return null;
     }
 
     return TW_COLOR_HEX[match[1]]?.[match[2]] ?? null;
+}
+
+/**
+ * CSS color for a class-manager suggestion swatch (hex, theme var, or color-mix).
+ * Handles variants (`hover:`), opacity (`/10`), theme tokens (`bg-vp-brand-1`).
+ *
+ * @param {string} className
+ * @returns {string|null}
+ */
+export function swatchCssForClassName(className) {
+    let token = String(className ?? '').trim();
+
+    if (token === '') {
+        return null;
+    }
+
+    // Drop responsive / state / dark variants — keep the utility leaf.
+    if (token.includes(':')) {
+        const parts = token.split(':');
+        token = parts[parts.length - 1] ?? token;
+    }
+
+    let opacityPercent = null;
+    const opacityMatch = token.match(/\/(\d{1,3})$/);
+
+    if (opacityMatch) {
+        opacityPercent = Math.min(100, Math.max(0, Number.parseInt(opacityMatch[1], 10) || 0));
+        token = token.slice(0, -opacityMatch[0].length);
+    }
+
+    let css = '';
+
+    if (new RegExp(`^${COLOR_UTILITY_PREFIX}-black$`).test(token) || token === 'black') {
+        css = '#000000';
+    } else if (new RegExp(`^${COLOR_UTILITY_PREFIX}-white$`).test(token) || token === 'white') {
+        css = '#ffffff';
+    } else if (
+        new RegExp(`^${COLOR_UTILITY_PREFIX}-transparent$`).test(token)
+        || token === 'transparent'
+    ) {
+        css = 'transparent';
+    } else {
+        const hex = hexForUtility(token);
+
+        if (hex) {
+            css = hex;
+        } else {
+            const theme = token.match(new RegExp(`^${COLOR_UTILITY_PREFIX}-(vp-[\\w-]+)$`));
+
+            if (theme) {
+                css = `var(--color-${theme[1]})`;
+            } else {
+                const arbitrary = token.match(new RegExp(`^${COLOR_UTILITY_PREFIX}-\\[(.+)\\]$`));
+
+                if (arbitrary) {
+                    css = arbitrary[1].replace(/^['"]|['"]$/g, '');
+                }
+            }
+        }
+    }
+
+    if (! css || css === 'transparent') {
+        return css || null;
+    }
+
+    if (opacityPercent !== null && opacityPercent < 100) {
+        return `color-mix(in srgb, ${css} ${opacityPercent}%, transparent)`;
+    }
+
+    return css;
 }

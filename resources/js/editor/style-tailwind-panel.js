@@ -238,7 +238,7 @@ export function styleWriteTarget(editor) {
  * @param {object} component
  * @param {Record<string, string>} styles
  */
-function persistSurfacePaint(editor, component, styles) {
+function persistSurfacePaint(editor, component, styles, options = {}) {
     if (! editor || ! component || ! styles || typeof styles !== 'object') {
         return;
     }
@@ -250,7 +250,7 @@ function persistSurfacePaint(editor, component, styles) {
     const wrapper = targetingPage ? (editor.getWrapper?.() ?? component) : null;
     const target = targetingPage
         ? wrapper
-        : (resolveVisualStyleTarget(component) ?? component);
+        : (options.lockTarget ? component : (resolveVisualStyleTarget(component) ?? component));
     const pageSurface = Boolean(targetingPage && target);
     const id = String(target?.getId?.() ?? component.getId?.() ?? '').trim();
     const darkTheme = Boolean(editor && isStyleEditingDark(editor));
@@ -328,24 +328,25 @@ function persistSurfacePaint(editor, component, styles) {
 
     // Grapes addStyle often drops `!important` from the value string — opaque
     // `bg-*` utilities then win and Color Opacity looks broken on the canvas.
-    // Keep #id + inline for Save, and force the DOM for live preview.
-    const inlineStyles = {};
-
-    for (const [property, value] of Object.entries(styles)) {
-        if (value == null || value === '') {
-            continue;
-        }
-
-        inlineStyles[property] = String(value).replace(/\s*!important\s*$/i, '').trim();
-    }
-
-    if (Object.keys(inlineStyles).length > 0) {
-        target.addStyle?.(inlineStyles, { inline: true, noEvent: true });
-    }
-
+    // Saved HTML must not get `style=""` paints — `#id` CSS is enough for
+    // Save / publish. Force the canvas DOM only for live preview.
     try {
         const el = target?.getEl?.() ?? target?.view?.el;
         applyImportantBackgroundColorToEl(el, styles['background-color']);
+
+        if (el?.style) {
+            for (const [property, value] of Object.entries(styles)) {
+                if (value == null || value === '' || property === 'background-color') {
+                    continue;
+                }
+
+                const cssValue = String(value).replace(/\s*!important\s*$/i, '').trim();
+
+                if (cssValue !== '') {
+                    el.style.setProperty?.(property, cssValue);
+                }
+            }
+        }
     } catch (error) {
         debugSwallowed(error);
     }
@@ -2548,6 +2549,116 @@ function setDecoLinkButtons(block, link) {
     }
 }
 
+/**
+ * Decoration photos stay on the Style-panel node. Do not follow
+ * resolveVisualStyleTarget: a section with one `bg-*` child would inherit that
+ * child's photo, then Clear on the section would wipe the child and leave the
+ * leaked parent paint.
+ *
+ * @param {object|null|undefined} editor
+ * @param {object} component
+ * @returns {object}
+ */
+function decorationImagePaintTarget(editor, component) {
+    if (isPageSurfaceComponent(component, editor)) {
+        return editor?.getWrapper?.() ?? component;
+    }
+
+    return component;
+}
+
+/**
+ * @param {unknown} src
+ * @returns {string}
+ */
+function backgroundSrcFingerprint(src) {
+    return String(src ?? '').trim().split('?')[0];
+}
+
+/**
+ * @param {object} component
+ * @param {object|null|undefined} editor
+ * @returns {string}
+ */
+function ownLightDecorationSrc(component, editor) {
+    const fromAttr = String(component?.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
+
+    if (fromAttr !== '') {
+        return fromAttr;
+    }
+
+    const fromImage = extractUrlFromBackgroundImage(
+        readComponentCssProperty(editor, component, 'background-image'),
+    );
+
+    if (fromImage !== '') {
+        return fromImage;
+    }
+
+    return extractUrlFromBackgroundImage(
+        readComponentCssProperty(editor, component, 'background'),
+    );
+}
+
+/**
+ * @param {object} component
+ * @param {(child: object) => void} visit
+ */
+function forEachDescendantComponent(component, visit) {
+    if (typeof component?.find === 'function') {
+        for (const child of component.find('*') ?? []) {
+            if (child) {
+                visit(child);
+            }
+        }
+
+        return;
+    }
+
+    const walk = (node) => {
+        for (const child of node?.components?.()?.models ?? []) {
+            if (! child) {
+                continue;
+            }
+
+            visit(child);
+            walk(child);
+        }
+    };
+
+    walk(component);
+}
+
+/**
+ * @param {object} component
+ * @param {string} src
+ * @param {object|null|undefined} editor
+ * @returns {boolean}
+ */
+function descendantOwnsSameDecorationSrc(component, src, editor) {
+    const key = backgroundSrcFingerprint(src);
+
+    if (key === '') {
+        return false;
+    }
+
+    let found = false;
+
+    forEachDescendantComponent(component, (child) => {
+        if (found) {
+            return;
+        }
+
+        const childSrc = ownLightDecorationSrc(child, editor);
+
+        if (childSrc !== '' && backgroundSrcFingerprint(childSrc) === key) {
+            found = true;
+        }
+    });
+
+    return found;
+}
+
 function readComponentCssProperty(editor, component, property) {
     const inline = component?.getStyle?.({ inline: true }) ?? {};
     const live = component?.getStyle?.() ?? {};
@@ -2570,10 +2681,9 @@ function readBackgroundImageUrl(component, editor = null) {
         return '';
     }
 
-    const target = resolveVisualStyleTarget(component) ?? component;
-    const nodes = target === component ? [component] : [component, target];
-    const pageSurface = isPageSurfaceComponent(target, editor)
-        || isPageSurfaceComponent(component, editor);
+    const pageSurface = isPageSurfaceComponent(component, editor);
+    const target = decorationImagePaintTarget(editor, component);
+    const nodes = [target];
     const darkTheme = Boolean(editor && isStyleEditingDark(editor));
     const srcAttr = darkTheme ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
 
@@ -2752,13 +2862,8 @@ function persistBackgroundImageSrcAttr(component, url, editor = null) {
 
     const src = String(url ?? '').trim();
     const targetingPage = isPageSurfaceComponent(component, editor);
-    const wrapper = targetingPage ? (editor?.getWrapper?.() ?? component) : null;
-    const target = targetingPage
-        ? wrapper
-        : (resolveVisualStyleTarget(component) ?? component);
-    const nodes = targetingPage
-        ? [wrapper].filter(Boolean)
-        : (target === component ? [component] : [component, target].filter(Boolean));
+    const target = decorationImagePaintTarget(editor, component);
+    const nodes = [target].filter(Boolean);
     const pageSurface = Boolean(targetingPage);
     const darkTheme = Boolean(editor && isStyleEditingDark(editor));
     const srcAttr = darkTheme ? STYLE_BG_SRC_DARK_ATTR : STYLE_BG_SRC_ATTR;
@@ -2825,16 +2930,14 @@ function scrubBackgroundImageFromPageLiveCss(editor, componentId) {
     }
 }
 
-function clearDecorationBackgroundImage(editor, component) {
+function clearDecorationBackgroundImage(editor, component, options = {}) {
     if (! editor || ! component) {
         return;
     }
 
     const targetingPage = isPageSurfaceComponent(component, editor);
     const wrapper = targetingPage ? (editor.getWrapper?.() ?? component) : null;
-    const target = targetingPage
-        ? wrapper
-        : (resolveVisualStyleTarget(component) ?? component);
+    const target = decorationImagePaintTarget(editor, component);
     const id = String(target?.getId?.() ?? component.getId?.() ?? '').trim();
     const pageSurface = Boolean(targetingPage);
     const darkTheme = Boolean(editor && isStyleEditingDark(editor));
@@ -2980,6 +3083,10 @@ function clearDecorationBackgroundImage(editor, component) {
     } catch (error) {
         // View may be unavailable.
         debugSwallowed(error);
+    }
+
+    if (! options.silent) {
+        editor.__voodbuilderMarkPageUnsaved?.();
     }
 }
 
@@ -3266,7 +3373,7 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
         return;
     }
 
-    const target = resolveVisualStyleTarget(component) ?? component;
+    const target = decorationImagePaintTarget(editor, component);
     const opacity = readBackgroundImageOpacity(component, editor);
     // Pass photo visibility so gradient stops get alpha — opaque TW stops hide the url.
     const gradientLayer = resolveDecorationGradientLayer(component, opacity, editor);
@@ -3279,12 +3386,6 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
     component.addAttributes?.({
         [STYLE_BG_OPACITY_ATTR]: String(opacity),
     });
-
-    if (target !== component) {
-        target.addAttributes?.({
-            [STYLE_BG_OPACITY_ATTR]: String(opacity),
-        });
-    }
 
     const pageSurface = isPageSurfaceComponent(target, editor)
         || isPageSurfaceComponent(component, editor);
@@ -3310,7 +3411,7 @@ function reapplyDecorationBackgroundPaint(editor, component, forcedSrc = null) {
         // Opaque Color would flash before the photo loads (tint lives in overlay
         // layers). A Color with explicit Opacity keeps its alpha paint instead.
         'background-color': translucentBackgroundColorPaint(component, editor) || 'transparent',
-    }));
+    }), { lockTarget: true });
 
     // Do NOT scrub live page CSS here — Save / reload need #id{url} as a
     // recovery source. Scrub only happens on Clear.
@@ -3380,6 +3481,7 @@ function applyDecorationBackgroundImage(editor, component, url, opacity = null) 
             scheduleClassCompile(editor);
         }
 
+        editor.__voodbuilderMarkPageUnsaved?.();
         editor?.trigger?.('update');
     } finally {
         if (! wasApplying) {
@@ -4717,6 +4819,7 @@ export function hydrateDecorationBackgroundImages(editor) {
     const wasApplying = Boolean(editor.__voodbuilderTwStyleApplying);
     editor.__voodbuilderTwStyleApplying = true;
     let updated = 0;
+    let strippedLeaks = 0;
     const wrapperId = String(wrapper.getId?.() ?? '').trim();
     const pageLightSrc = String(wrapper.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
 
@@ -4750,24 +4853,26 @@ export function hydrateDecorationBackgroundImages(editor) {
             ).trim();
 
             if (src === '') {
-                const target = resolveVisualStyleTarget(component) ?? component;
                 src = extractUrlFromBackgroundImage(
-                    readComponentCssProperty(editor, target, 'background-image'),
+                    readComponentCssProperty(editor, component, 'background-image'),
                 );
 
                 if (src === '') {
                     src = extractUrlFromBackgroundImage(
-                        readComponentCssProperty(editor, target, 'background'),
+                        readComponentCssProperty(editor, component, 'background'),
                     );
-                }
-
-                if (src === '') {
-                    src = String(target.getAttributes?.()?.[STYLE_BG_SRC_ATTR] ?? '').trim();
                 }
 
                 if (src === '' && id !== '' && cssUrlById.has(id)) {
                     src = cssUrlById.get(id);
                 }
+            }
+
+            if (src !== '' && descendantOwnsSameDecorationSrc(component, src, editor)) {
+                clearDecorationBackgroundImage(editor, component, { silent: true });
+                strippedLeaks += 1;
+
+                return;
             }
 
             // Page surface light+dark are hydrated above — never reapplyDecoration
@@ -4847,6 +4952,10 @@ export function hydrateDecorationBackgroundImages(editor) {
         }
     }
 
+    if (strippedLeaks > 0) {
+        editor.__voodbuilderMarkPageUnsaved?.();
+    }
+
     try {
         syncPageSurfaceCanvasWallpaperPreview(editor);
     } catch (error) {
@@ -4896,6 +5005,49 @@ function isLikelyPageWallpaperGhost(component, pageLightSrc) {
 
     // Empty instance whose only job is the photo — treat as page-wallpaper leak.
     return true;
+}
+
+/**
+ * Drop parent/section copies of a descendant block photo so Save does not keep
+ * shipping the leaked inline `#section { background-image: url(child) }`.
+ *
+ * @param {object} editor
+ * @param {{ root?: object }} [options]
+ * @returns {number}
+ */
+export function stripLeakedAncestorDecorationBackgrounds(editor, options = {}) {
+    const root = options.root ?? editor?.getWrapper?.();
+
+    if (! editor || ! root?.onAll) {
+        return 0;
+    }
+
+    let stripped = 0;
+    const wasApplying = Boolean(editor.__voodbuilderTwStyleApplying);
+    editor.__voodbuilderTwStyleApplying = true;
+
+    try {
+        root.onAll((component) => {
+            if (! component || isPageSurfaceComponent(component, editor)) {
+                return;
+            }
+
+            const src = ownLightDecorationSrc(component, editor);
+
+            if (src === '' || ! descendantOwnsSameDecorationSrc(component, src, editor)) {
+                return;
+            }
+
+            clearDecorationBackgroundImage(editor, component, { silent: true });
+            stripped += 1;
+        });
+    } finally {
+        if (! wasApplying) {
+            editor.__voodbuilderTwStyleApplying = false;
+        }
+    }
+
+    return stripped;
 }
 
 export {

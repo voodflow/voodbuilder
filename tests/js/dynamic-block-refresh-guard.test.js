@@ -25,5 +25,8 @@ describe('dynamic block cascade guard', () => {
 
         expect(source).toContain("component:remove:before");
         expect(source).toContain('__voodbuilderRemoving');
+        expect(source).toContain('isHeavyRemovableRoot');
+        expect(source).toContain('data-vb-table');
+        expect(source).toContain('is-structure-busy');
     });
 });

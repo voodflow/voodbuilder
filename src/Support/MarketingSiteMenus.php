@@ -198,6 +198,8 @@ final class MarketingSiteMenus
         foreach ([
             'privacy-policy' => 'Privacy Policy',
             'cookie-policy' => 'Cookie Policy',
+            'license-agreement' => 'License Agreement',
+            'legal' => 'Legal',
         ] as $slug => $label) {
             if (! SitePage::query()->where('slug', $slug)->exists()) {
                 continue;

@@ -4,8 +4,10 @@ import {
     findDeclarativeFields,
     findItemDeclarativeFields,
     readFieldText,
+    readStatusValue,
     resolveFocusedItem,
     writeFieldText,
+    writeStatusValue,
 } from '../../resources/js/editor/declarative-fields.js';
 
 function mockComponent({ attrs = {}, content = '', children = [], cid = null } = {}) {
@@ -169,5 +171,120 @@ describe('declarative-fields', () => {
         expect(remounts).toBe(0);
         expect(leafContent).toBe('After');
         expect(readFieldText(host)).toBe('After');
+    });
+
+    it('treats table cells as text fields even without data-vb-field', () => {
+        const cell = mockComponent({ content: '15 GB', cid: 'td1' });
+        const originalGet = cell.get;
+        cell.get = (key) => (key === 'tagName' ? 'td' : originalGet(key));
+        const row = mockComponent({ children: [cell], cid: 'tr1' });
+        cell.parent = () => row;
+
+        expect(findItemDeclarativeFields(row).map((field) => field.label)).toEqual(['Cell']);
+        expect(readFieldText(cell)).toBe('15 GB');
+    });
+
+    it('keeps body row cells off the section panel until that row is focused', () => {
+        const heading = mockComponent({
+            attrs: { 'data-vb-field': 'heading' },
+            content: 'Pricing',
+        });
+        const th = mockComponent({ content: 'Plan', cid: 'th1' });
+        th.get = (key) => (key === 'tagName' ? 'th' : (key === 'content' ? 'Plan' : undefined));
+        const headRow = mockComponent({ children: [th], cid: 'head' });
+        th.parent = () => headRow;
+        const thead = mockComponent({ children: [headRow], cid: 'thead' });
+        thead.get = (key) => (key === 'tagName' ? 'thead' : undefined);
+        headRow.parent = () => thead;
+        headRow.get = (key) => (key === 'tagName' ? 'tr' : undefined);
+
+        const td = mockComponent({ content: 'Start', cid: 'td1' });
+        td.get = (key) => (key === 'tagName' ? 'td' : (key === 'content' ? 'Start' : undefined));
+        const bodyRow = mockComponent({ attrs: { 'data-vb-item': '' }, children: [td], cid: 'row1' });
+        bodyRow.get = (key) => (key === 'tagName' ? 'tr' : undefined);
+        td.parent = () => bodyRow;
+        const tbody = mockComponent({ children: [bodyRow], cid: 'tbody' });
+        tbody.get = (key) => (key === 'tagName' ? 'tbody' : undefined);
+        bodyRow.parent = () => tbody;
+
+        const table = mockComponent({ children: [thead, tbody], cid: 'table' });
+        table.get = (key) => (key === 'tagName' ? 'table' : undefined);
+        thead.parent = () => table;
+        tbody.parent = () => table;
+
+        const section = mockComponent({
+            attrs: { 'data-voodbuilder-section-block': 'vb-pricing-2' },
+            children: [heading, table],
+        });
+        heading.parent = () => section;
+        table.parent = () => section;
+
+        const fields = findDeclarativeFields(section);
+
+        expect(fields.map((field) => field.key)).toEqual(['heading', 'cell-th1']);
+        expect(fields.some((field) => field.component.cid === 'td1')).toBe(false);
+        expect(findItemDeclarativeFields(bodyRow).map((field) => field.component.cid)).toEqual(['td1']);
+        expect(resolveFocusedItem([bodyRow], td)).toEqual({ item: bodyRow, index: 0 });
+    });
+
+    it('reads and writes status fields as yes/no without rich html', () => {
+        let attrs = { 'data-vb-field': 'you', 'data-vb-field-type': 'status', 'data-vb-status': 'yes' };
+        let childrenHtml = '';
+
+        const cell = {
+            getAttributes: () => ({ ...attrs }),
+            setAttributes: (next) => { attrs = { ...next }; },
+            addAttributes: (next) => { attrs = { ...attrs, ...next }; },
+            get: (key) => (key === 'tagName' ? 'td' : undefined),
+            components: (next) => {
+                if (typeof next === 'string') {
+                    childrenHtml = next;
+                }
+
+                return [];
+            },
+            parent: () => null,
+            getEl: () => ({
+                querySelector: (sel) => (sel === '[aria-label]'
+                    ? { getAttribute: () => (attrs['data-vb-status'] === 'yes' ? 'Yes' : 'No') }
+                    : null),
+                getAttribute: () => null,
+                innerHTML: childrenHtml,
+            }),
+        };
+
+        expect(readStatusValue(cell)).toBe('yes');
+        writeStatusValue(cell, 'no');
+        expect(attrs['data-vb-status']).toBe('no');
+        expect(childrenHtml).toContain('aria-label="No"');
+        expect(childrenHtml).toContain('text-red-500');
+        writeStatusValue(cell, 'yes');
+        expect(childrenHtml).toContain('text-emerald-500');
+        expect(readStatusValue(cell)).toBe('yes');
+
+        const typed = mockComponent({
+            attrs: { 'data-vb-field': 'alt1', 'data-vb-field-type': 'status', 'data-vb-status': 'no' },
+            content: '',
+        });
+        const row = mockComponent({ attrs: { 'data-vb-item': '' }, children: [typed], cid: 'r1' });
+        typed.parent = () => row;
+        expect(findItemDeclarativeFields(row).map((field) => field.type)).toEqual(['status']);
+    });
+
+    it('resolves a focused row via DOM containment after remount', () => {
+        const rowEl = { nodeType: 1, contains: (node) => node === cellEl };
+        const cellEl = { nodeType: 1, parentElement: rowEl };
+        rowEl.contains = (node) => node === cellEl;
+
+        const orphanCell = mockComponent({ content: 'Pro', cid: 'orphan' });
+        orphanCell.get = (key) => (key === 'tagName' ? 'td' : (key === 'content' ? 'Pro' : undefined));
+        orphanCell.parent = () => null;
+        orphanCell.getEl = () => cellEl;
+
+        const bodyRow = mockComponent({ attrs: { 'data-vb-item': '' }, cid: 'row1' });
+        bodyRow.get = (key) => (key === 'tagName' ? 'tr' : undefined);
+        bodyRow.getEl = () => rowEl;
+
+        expect(resolveFocusedItem([bodyRow], orphanCell)).toEqual({ item: bodyRow, index: 0 });
     });
 });

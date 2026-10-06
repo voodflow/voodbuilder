@@ -96,6 +96,8 @@ function cssClassSelector(bpPrefix, className) {
 
 /**
  * Tablet+desktop activate md:; desktop also activates lg:.
+ * Dark Style edits author dark: / dark:md: / dark:lg: — without these shims
+ * (frame width often &lt; Tailwind lg) spacing looks like a no-op in Desktop·Dark.
  *
  * @param {string} className
  * @param {string} declarations CSS declarations without braces
@@ -104,11 +106,21 @@ function cssClassSelector(bpPrefix, className) {
 function deviceScopedUtilityRules(className, declarations) {
     const mdSel = cssClassSelector('md:', className);
     const lgSel = cssClassSelector('lg:', className);
+    const darkSel = cssClassSelector('dark:', className);
+    const darkMdSel = cssClassSelector('dark:md:', className);
+    const darkLgSel = cssClassSelector('dark:lg:', className);
 
     return [
         `body[data-voodbuilder-editor-device='tablet'] ${mdSel},`,
         `body[data-voodbuilder-editor-device='desktop'] ${mdSel} { ${declarations} }`,
         `body[data-voodbuilder-editor-device='desktop'] ${lgSel} { ${declarations} }`,
+        // Theme Dark + device (html.dark stamped on the canvas documentElement).
+        `html.dark body[data-voodbuilder-editor-device='mobilePortrait'] ${darkSel},`,
+        `html.dark body[data-voodbuilder-editor-device='tablet'] ${darkSel},`,
+        `html.dark body[data-voodbuilder-editor-device='desktop'] ${darkSel} { ${declarations} }`,
+        `html.dark body[data-voodbuilder-editor-device='tablet'] ${darkMdSel},`,
+        `html.dark body[data-voodbuilder-editor-device='desktop'] ${darkMdSel} { ${declarations} }`,
+        `html.dark body[data-voodbuilder-editor-device='desktop'] ${darkLgSel} { ${declarations} }`,
     ];
 }
 
@@ -177,14 +189,21 @@ export function buildResponsiveFontSizeSafelist() {
     const tokens = [];
 
     for (const className of Object.keys(STYLE_FONT_SIZE_SCALE)) {
-        tokens.push(className, `md:${className}`, `lg:${className}`);
+        tokens.push(
+            className,
+            `md:${className}`,
+            `lg:${className}`,
+            `dark:${className}`,
+            `dark:md:${className}`,
+            `dark:lg:${className}`,
+        );
     }
 
     return tokens.join(' ');
 }
 
 /**
- * Responsive spacing tokens so md:/lg: margin/padding ship in section-utilities.
+ * Responsive spacing tokens so md:/lg: (+ dark:) margin/padding ship in section-utilities.
  *
  * @returns {string}
  */
@@ -195,7 +214,14 @@ export function buildResponsiveSpacingSafelist() {
     for (const { prefix } of SPACING_UTILITIES) {
         for (const token of scaleTokens) {
             const bare = `${prefix}-${token}`;
-            tokens.push(bare, `md:${bare}`, `lg:${bare}`);
+            tokens.push(
+                bare,
+                `md:${bare}`,
+                `lg:${bare}`,
+                `dark:${bare}`,
+                `dark:md:${bare}`,
+                `dark:lg:${bare}`,
+            );
         }
     }
 

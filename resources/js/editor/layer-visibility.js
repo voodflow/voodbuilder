@@ -215,9 +215,65 @@ export function syncCoreNodesCustomCardConfig(component, hidden) {
 }
 
 /**
+ * True when the author currently intends Layers eye-hide (marker or LayerManager).
+ * Leftover CssComposer `#id { display:none }` is not intent — Save bake used to
+ * copy that back onto inline and resurrect the hide after the eye was opened.
+ *
+ * @param {object} editor
  * @param {object} component
- * @param {boolean} hidden
+ * @returns {boolean}
  */
+export function authorLayerHideIsActive(editor, component) {
+    if (componentHasLayerHiddenMarker(component)) {
+        return true;
+    }
+
+    try {
+        if (editor?.LayerManager?.isVisible && ! editor.LayerManager.isVisible(component)) {
+            return true;
+        }
+    } catch (error) {
+        debugSwallowed(error);
+    }
+
+    return false;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function displayIsNone(value) {
+    return String(value ?? '').trim().toLowerCase().indexOf('none') === 0;
+}
+
+/**
+ * Drop leftover `#id { display:none }` from Layers hide (Grapes setVisible).
+ *
+ * @param {object} component
+ */
+function clearHiddenDisplayFromComposer(component) {
+    const css = component?.em?.Css;
+    const id = component.getId?.();
+
+    if (! id || ! css?.getIdRule) {
+        return;
+    }
+
+    const rule = css.getIdRule(id);
+
+    rule?.removeStyle?.('display');
+
+    const existing = { ...(rule?.getStyle?.() ?? css.getIdRule(id)?.getStyle?.() ?? {}) };
+
+    if (! displayIsNone(existing.display)) {
+        return;
+    }
+
+    delete existing.display;
+    css.setIdRule?.(id, existing);
+}
+
 export function persistLayerHiddenMarker(component, hidden) {
     if (! component?.addAttributes) {
         return;
@@ -252,7 +308,7 @@ export function persistLayerHiddenMarker(component, hidden) {
 
     const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
 
-    if (String(inline.display ?? '').trim().toLowerCase().indexOf('none') === 0) {
+    if (displayIsNone(inline.display)) {
         const prev = component.get?.('__prev-display');
 
         component.removeStyle?.('display');
@@ -263,6 +319,7 @@ export function persistLayerHiddenMarker(component, hidden) {
         }
     }
 
+    clearHiddenDisplayFromComposer(component);
     syncCoreNodesCustomCardConfig(component, false);
 }
 

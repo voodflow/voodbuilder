@@ -153,7 +153,7 @@ final class EditorCommunityBlockCatalog
         // Steps extras
         'vb-step-2', 'vb-step-3',
         // Pricing (entire category)
-        'vb-pricing-1', 'vb-pricing-2',
+        'vb-pricing-1', 'vb-pricing-2', 'vb-compare-1',
         // CTA extras
         'vb-cta-2', 'vb-cta-3', 'vb-cta-4', 'vb-landing01-cta',
         'vb-cta-glow-pulse', 'vb-cta-split-shimmer',

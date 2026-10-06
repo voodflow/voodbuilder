@@ -508,6 +508,11 @@ export function registerLayersChromeFilter(editor) {
             return;
         }
 
+        // Child storm while a heavy section/table is tearing down — wait for the root.
+        if (editor.__voodbuilderBulkStructureUpdate && ! component?.__voodbuilderRemoving) {
+            return;
+        }
+
         if (
             (isChromeLayoutModeEditor(editor) || isChromeShellModeEditor(editor))
             && ! isChromeStructureComponent(component)

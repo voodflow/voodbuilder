@@ -30,5 +30,7 @@ class VoodbuilderSeederTest extends TestCase
         $this->assertTrue(SitePage::query()->where('slug', 'home')->where('is_home', true)->exists());
         $this->assertTrue(SitePage::query()->where('slug', 'privacy-policy')->exists());
         $this->assertTrue(SitePage::query()->where('slug', 'cookie-policy')->exists());
+        $this->assertTrue(SitePage::query()->where('slug', 'license-agreement')->exists());
+        $this->assertTrue(SitePage::query()->where('slug', 'legal')->exists());
     }
 }

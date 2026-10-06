@@ -1019,3 +1019,124 @@ describe('dark element background image panel sync', () => {
         expect(getDarkIdStyles(editor, 'ixu2pn')['background-image']).toContain('/dark.jpg');
     });
 });
+
+describe('section does not inherit a child block photo', () => {
+    const PHOTO = '/storage/4/conversions/BS0jkz3CWCRzeRDfEZ3MuHBiCidueqzdCxwCx7QO-lg.webp';
+
+    function makeTree() {
+        const childAttrs = { [STYLE_BG_SRC_ATTR]: PHOTO };
+        const parentAttrs = {};
+        const childStyle = {
+            'background-image': `url('${PHOTO}')`,
+            'background-size': 'cover',
+        };
+        const parentStyle = {};
+        const child = {
+            getId: () => 'icard',
+            get: () => 'div',
+            getAttributes: () => ({ ...childAttrs }),
+            getClasses: () => ['bg-cover', 'bg-center'],
+            getStyle: (opts) => (opts?.inline ? { ...childStyle } : { ...childStyle }),
+            addStyle: vi.fn((next) => Object.assign(childStyle, next)),
+            addAttributes: vi.fn((next) => Object.assign(childAttrs, next)),
+            removeAttributes: vi.fn((key) => {
+                delete childAttrs[key];
+            }),
+            setAttributes: vi.fn((next) => {
+                Object.keys(childAttrs).forEach((k) => delete childAttrs[k]);
+                Object.assign(childAttrs, next);
+            }),
+            components: () => ({ models: [] }),
+            find: () => [],
+            getEl: () => null,
+            isRemoved: () => false,
+            view: { updateStyle: vi.fn(), updateAttributes: vi.fn(), updateClasses: vi.fn(), updateStyles: vi.fn() },
+        };
+        const parent = {
+            getId: () => 'isection',
+            get: () => 'section',
+            getAttributes: () => ({ ...parentAttrs }),
+            getClasses: () => ['py-16'],
+            getStyle: (opts) => (opts?.inline ? { ...parentStyle } : { ...parentStyle }),
+            addStyle: vi.fn((next) => Object.assign(parentStyle, next)),
+            addAttributes: vi.fn((next) => Object.assign(parentAttrs, next)),
+            removeAttributes: vi.fn((key) => {
+                delete parentAttrs[key];
+            }),
+            setAttributes: vi.fn((next) => {
+                Object.keys(parentAttrs).forEach((k) => delete parentAttrs[k]);
+                Object.assign(parentAttrs, next);
+            }),
+            components: () => ({ models: [child], length: 1 }),
+            find: () => [child],
+            getEl: () => null,
+            isRemoved: () => false,
+            view: { updateStyle: vi.fn(), updateAttributes: vi.fn(), updateClasses: vi.fn(), updateStyles: vi.fn() },
+        };
+        child.parent = () => parent;
+        const idRules = {
+            icard: {
+                getStyle: () => ({ 'background-image': `url('${PHOTO}')` }),
+                setStyle: vi.fn(),
+            },
+        };
+        const editor = {
+            getWrapper: () => ({
+                getId: () => 'iwrap',
+                get: () => 'wrapper',
+                getAttributes: () => ({}),
+                onAll: (cb) => {
+                    cb(parent);
+                    cb(child);
+                },
+            }),
+            Css: {
+                getIdRule: (id) => idRules[id] ?? null,
+                setIdRule: vi.fn(),
+                remove: vi.fn(),
+            },
+            trigger: vi.fn(),
+            __voodbuilderMarkPageUnsaved: vi.fn(),
+        };
+
+        return { editor, parent, child, parentAttrs, parentStyle, childAttrs };
+    }
+
+    it('readBackgroundImageUrl on a section does not return the inner block photo', () => {
+        const { editor, parent } = makeTree();
+
+        expect(readBackgroundImageUrl(parent, editor)).toBe('');
+    });
+
+    it('hydrateDecorationBackgroundImages does not stamp the child photo onto the section', async () => {
+        const { hydrateDecorationBackgroundImages } = await import(
+            '../../resources/js/editor/style-tailwind-panel.js'
+        );
+        const { editor, parentAttrs, parentStyle, childAttrs } = makeTree();
+
+        hydrateDecorationBackgroundImages(editor);
+
+        expect(parentAttrs[STYLE_BG_SRC_ATTR]).toBeUndefined();
+        expect(String(parentStyle['background-image'] ?? '')).not.toContain(PHOTO);
+        expect(childAttrs[STYLE_BG_SRC_ATTR]).toBe(PHOTO);
+    });
+
+    it('stripLeakedAncestorDecorationBackgrounds clears a section copy of the child photo', async () => {
+        const { stripLeakedAncestorDecorationBackgrounds } = await import(
+            '../../resources/js/editor/style-tailwind-panel.js'
+        );
+        const { editor, parentAttrs, parentStyle, childAttrs } = makeTree();
+        parentAttrs[STYLE_BG_SRC_ATTR] = PHOTO;
+        parentStyle['background-image'] = `url('${PHOTO}')`;
+        parentStyle['background-size'] = 'cover';
+        parentStyle['background-position'] = 'center';
+        parentStyle['background-repeat'] = 'no-repeat';
+        parentStyle['background-color'] = 'transparent';
+
+        const stripped = stripLeakedAncestorDecorationBackgrounds(editor);
+
+        expect(stripped).toBe(1);
+        expect(parentAttrs[STYLE_BG_SRC_ATTR]).toBeUndefined();
+        expect(childAttrs[STYLE_BG_SRC_ATTR]).toBe(PHOTO);
+    });
+});

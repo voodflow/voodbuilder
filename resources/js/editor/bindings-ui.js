@@ -1633,6 +1633,7 @@ function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
         isEditorBooting(editor)
         || editor?.__voodbuilderBindingPreviewPainting
         || editor?.__voodbuilderSettingsChange
+        || editor?.__voodbuilderBulkStructureUpdate
     ) {
         return;
     }
@@ -1643,6 +1644,7 @@ function scheduleRepeatMaintenance(editor, catalog, previewOptions) {
             isEditorBooting(editor)
             || editor?.__voodbuilderBindingPreviewPainting
             || editor?.__voodbuilderSettingsChange
+            || editor?.__voodbuilderBulkStructureUpdate
         ) {
             return;
         }

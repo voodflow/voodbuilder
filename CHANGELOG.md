@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.43] - 2026-10-06
+
+### Added
+
+- Declarative `data-vb-field-type="status"` (✓ / ✕) for pricing/compare cells
+- Table section item-count: row/column controls via `data-vb-table` / `data-vb-table-col`
+- Seeded marketing pages + footer links: License Agreement, Legal (Trademark Notice)
+
+### Changed
+
+- Style panel surface paints persist as `#id` CSS only — saved HTML no longer keeps inline `background-*` / paint styles for live preview
+- Background publish normalizer strips redundant author paint when published CSS already owns it
+- Tailwind color swatches resolve theme tokens and opacity (`bg-vp-brand-1/10`)
+- Layer visibility and responsive canvas polish for nested / section chrome
+
 ## [1.11.42] - 2026-10-06
 
 ### Fixed

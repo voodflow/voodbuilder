@@ -1210,8 +1210,23 @@
     background: color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 10%, transparent);
 }
 
+.voodbuilder-editor-class-suggest-list__main {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
 .voodbuilder-editor-class-suggest-list__label {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.voodbuilder-editor-class-suggest-list__swatch {
+    width: 0.7rem;
+    height: 0.7rem;
 }
 
 .voodbuilder-editor-class-suggest-list__status {

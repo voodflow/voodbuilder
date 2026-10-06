@@ -122,7 +122,7 @@ final class EditorHtmlSanitizer
      */
     public static function repairBrokenJsonDataAttributes(string $html): string
     {
-        foreach (['data-vforms-visibility'] as $attribute) {
+        foreach (['data-vforms-visibility', 'data-voodbuilder-config', 'data-vcontent-snapshot'] as $attribute) {
             $html = self::reescapeRawJsonAttribute($html, $attribute);
         }
 

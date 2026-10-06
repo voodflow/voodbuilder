@@ -64,10 +64,13 @@ save/load is the page HTML (no extra PHP config required for static sections).
 | Attribute | Purpose |
 | --- | --- |
 | `data-vb-field` | Field key (required) |
-| `data-vb-field-type` | `text` \| `textarea` \| `icon` \| `number` \| `rich` (aliases: `richeditor`, `html`; default `text`; icons / rich hosts auto-detect) |
+| `data-vb-field-type` | `text` \| `textarea` \| `icon` \| `number` \| `rich` \| `status` (aliases: `richeditor`/`html` → rich; `check`/`boolean`/`yesno` → status; default `text`; icons / rich hosts auto-detect) |
 | `data-vb-field-label` | Label in the Content panel |
+| `data-vb-status` | With `type=status`: `yes` \| `no` — inspector shows a ✓ / ✕ toggle (not a rich editor) |
 | `data-vb-items-root` / `data-vb-item` | Repeating cards (item count in Layout items) |
 | `data-vb-items-layout="preserve"` | Clone/remove items without rewriting grid/`p-4` classes |
+| `data-vb-optional` | Any key; inspector checkbox (label from `data-vb-optional-label`) |
+| Table HTML (`<tr>` / `<td>`) | Rows/columns inspector from markup — catalogs must set `data-gjs-type="default"` on table nodes |
 
 ## Selection contract
 

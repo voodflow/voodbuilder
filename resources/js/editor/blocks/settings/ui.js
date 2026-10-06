@@ -1050,6 +1050,10 @@ export function registerSettingsUi(editor, mount) {
 
     const scheduleRender = () => {
         if (editor.__voodbuilderSettingsChange) {
+            // Selection / updates during a Content write were dropped — remember
+            // to refresh once the write guard clears (otherwise row editors stick).
+            editor.__voodbuilderBlockSettingsRenderPending = true;
+
             return;
         }
 
@@ -1064,6 +1068,17 @@ export function registerSettingsUi(editor, mount) {
             render();
         });
     };
+
+    const flushPendingSettingsRender = () => {
+        if (! editor.__voodbuilderBlockSettingsRenderPending) {
+            return;
+        }
+
+        editor.__voodbuilderBlockSettingsRenderPending = false;
+        scheduleRender();
+    };
+
+    editor.__voodbuilderFlushBlockSettingsRender = flushPendingSettingsRender;
 
     const clearInspectorAfterChromeRemoval = (removed) => {
         if (! isChromeLayoutModeEditor(editor) || ! removed) {

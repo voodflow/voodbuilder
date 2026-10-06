@@ -76,3 +76,36 @@ export function stripInvalidDomAttributesFromHtml(html) {
 
     return temp.innerHTML;
 }
+
+/**
+ * Drop author background paints from `style=""`. Saved HTML should keep those
+ * on `#id` CSS / `data-vb-*` / utilities — inline copies leaked onto parent
+ * sections and were impossible to Clear.
+ *
+ * Leaves Grapes layout leftovers (display, width, position, …).
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+export function stripAuthorInlinePaintFromHtml(html) {
+    if (typeof html !== 'string' || html === '' || ! /style\s*=/i.test(html)) {
+        return html;
+    }
+
+    return html.replace(/(\sstyle\s*=\s*)(["'])([\s\S]*?)\2/gi, (match, prefix, quote, value) => {
+        const next = String(value)
+            .replace(
+                /(?:^|;)\s*(?:background(?:-image|-size|-position|-repeat|-attachment|-color)?)\s*:[^;]*/gi,
+                '',
+            )
+            .replace(/;{2,}/g, ';')
+            .replace(/^[;\s]+|[;\s]+$/g, '')
+            .trim();
+
+        if (next === '') {
+            return '';
+        }
+
+        return `${prefix}${quote}${next}${quote}`;
+    });
+}

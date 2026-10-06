@@ -174,6 +174,7 @@ export const SECTION_BLOCK_LABELS = {
     'vb-step-3': 'Steps · timeline',
     'vb-pricing-1': 'Pricing · tiers',
     'vb-pricing-2': 'Pricing · comparison',
+    'vb-compare-1': 'Pricing · feature matrix',
     // CTA / Contact / Shop
     'vb-cta-1': 'CTA · headline + button',
     'vb-cta-2': 'CTA · split + signup',

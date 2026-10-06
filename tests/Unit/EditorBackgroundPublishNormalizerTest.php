@@ -17,8 +17,20 @@ class EditorBackgroundPublishNormalizerTest extends TestCase
         $out = EditorBackgroundPublishNormalizer::preferCssBackgrounds($html, $css);
 
         $this->assertStringNotContainsString('url(', $out);
-        $this->assertStringContainsString('background-size: cover', $out);
+        $this->assertStringNotContainsString('background-size', $out);
+        $this->assertStringNotContainsString('style=', $out);
         $this->assertStringContainsString('class="hero"', $out);
+    }
+
+    public function test_strips_full_inline_paint_when_id_rule_owns_background(): void
+    {
+        $html = '<section id="cta" style="background-color:transparent;background-size:cover;background-position:center;background-repeat:no-repeat;background-image:url(\'/storage/4/photo-lg.webp\');">Hi</section>';
+        $css = '#cta{background-image:url(\'/storage/4/photo-lg.webp\');background-size:cover}';
+
+        $out = EditorBackgroundPublishNormalizer::preferCssBackgrounds($html, $css);
+
+        $this->assertStringNotContainsString('style=', $out);
+        $this->assertStringContainsString('id="cta"', $out);
     }
 
     public function test_keeps_inline_background_when_css_has_no_matching_url(): void

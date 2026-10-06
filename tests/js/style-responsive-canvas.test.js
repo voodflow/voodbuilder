@@ -26,6 +26,14 @@ describe('editor breakpoint font-size css', () => {
         expect(css).toContain('font-size: 8rem !important');
         expect(css).not.toContain("body[data-voodbuilder-editor-device='mobilePortrait'] .md\\:text-9xl");
     });
+
+    it('scopes dark:lg / dark:md font-size for Style theme Dark', () => {
+        const css = buildEditorBreakpointFontSizeCss();
+
+        expect(css).toContain("html.dark body[data-voodbuilder-editor-device='desktop'] .dark\\:lg\\:text-9xl");
+        expect(css).toContain("html.dark body[data-voodbuilder-editor-device='tablet'] .dark\\:md\\:text-6xl");
+        expect(STYLE_RESPONSIVE_FONT_SIZE_SAFELIST).toContain('dark:lg:text-9xl');
+    });
 });
 
 describe('editor breakpoint spacing css', () => {
@@ -34,6 +42,8 @@ describe('editor breakpoint spacing css', () => {
         expect(STYLE_RESPONSIVE_SPACING_SAFELIST).toContain('lg:px-4');
         expect(STYLE_RESPONSIVE_SPACING_SAFELIST).toContain('md:mb-auto');
         expect(STYLE_RESPONSIVE_SPACING_SAFELIST).toContain('py-12');
+        expect(STYLE_RESPONSIVE_SPACING_SAFELIST).toContain('dark:lg:mt-8');
+        expect(STYLE_RESPONSIVE_SPACING_SAFELIST).toContain('dark:md:px-4');
     });
 
     it('scopes spacing utilities to device like font-size', () => {
@@ -41,6 +51,7 @@ describe('editor breakpoint spacing css', () => {
 
         expect(css).toContain("body[data-voodbuilder-editor-device='tablet'] .md\\:mt-8");
         expect(css).toContain("body[data-voodbuilder-editor-device='desktop'] .lg\\:mt-8");
+        expect(css).toContain("html.dark body[data-voodbuilder-editor-device='desktop'] .dark\\:lg\\:mt-8");
         expect(css).toContain('margin-top: 2rem !important');
         expect(css).toContain('padding-left: 1rem !important');
         expect(css).not.toContain("body[data-voodbuilder-editor-device='mobilePortrait'] .md\\:mt-8");
