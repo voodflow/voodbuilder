@@ -1590,11 +1590,17 @@ function resolveSolidBackgroundColorCss(utility, editor = null) {
  * @param {object|null|undefined} [editor]
  * @returns {string}
  */
+function isThemeBackgroundUtility(color) {
+    const bare = String(color ?? '').trim().replace(/^(?:dark:)?(?:sm|md|lg|xl|2xl):/, '');
+
+    return /^bg-vp-[\w-]+$/.test(bare);
+}
+
 function composeTranslucentBackgroundColor(color, opacityPercent, editor = null) {
     const pct = String(opacityPercent ?? '').trim();
     const base = String(color ?? '').trim();
 
-    if (base === '' || pct === '' || pct === '100') {
+    if (base === '' || base === 'bg-transparent') {
         return '';
     }
 
@@ -1604,6 +1610,12 @@ function composeTranslucentBackgroundColor(color, opacityPercent, editor = null)
 
     if (colorCss === '') {
         return '';
+    }
+
+    // 100%: still paint theme tokens solid — `.bg-vp-*` is absent until JIT finishes
+    // (pageCssCoversClass used to skip compile entirely for *-vp-*).
+    if (pct === '' || pct === '100') {
+        return isThemeBackgroundUtility(base) ? withImportantCssValue(colorCss) : '';
     }
 
     const alpha = Math.min(1, Math.max(0, Number.parseInt(pct, 10) / 100));
@@ -1839,12 +1851,14 @@ function applyGroup(editor, component, groupId, value) {
 
             // Page-surface paints are CssComposer-only — JIT on the content slot
             // cannot cover wrapper utilities and only keeps Save in "Compiling…".
+            // Pass the token so lg:/dark:/vp-* force a rebuild (soft schedule alone
+            // used to no-op for theme colors that pageCssCoversClass falsely covered).
             if (! isPageSurfaceComponent(component, editor)) {
-                scheduleClassCompile(editor);
+                scheduleClassCompile(editor, styleWrittenToken(editor, nextColor));
             }
 
-            // JIT / dynamic remount can race the first paint — keep opacity visible.
-            if (nextColor !== '' && nextOpacity !== '' && nextOpacity !== '100') {
+            // JIT / dynamic remount can race the first paint — keep color/opacity visible.
+            if (nextColor !== '') {
                 const paintLater = () => {
                     if (editor.__voodbuilderTwStyleApplying) {
                         return;

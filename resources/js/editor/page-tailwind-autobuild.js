@@ -311,10 +311,9 @@ export function pageCssCoversClass(editor, className) {
         normalized = normalized.slice(1);
     }
 
-    // Theme / section utility tokens ship outside page live CSS.
-    if (normalized.includes('-vp-') || /(?:^|:)vp-/.test(normalized)) {
-        return true;
-    }
+    // Theme Studio only defines --color-vp-* variables. Utilities like
+    // bg-vp-brand-1 / text-vp-text-1 still need page JIT — do not treat *-vp-*
+    // as pre-covered or Style Color never recompiles and the canvas stays bare.
 
     // Style panel catalogs (section-utilities) + Animation sector (theme.css).
     if (isCanvasBundledUtility(normalized)) {

@@ -38,4 +38,13 @@ describe('stripCanvasBundledUtilitiesFromCss', () => {
         expect(pageCssCoversClass(editor, 'xl:w-1/4')).toBe(true);
         expect(pageCssCoversClass(editor, 'max-w-[80rem]')).toBe(true);
     });
+
+    it('does not pretreat theme vp utilities as covered (they need page JIT)', () => {
+        const editor = { __voodbuilderPageLiveCss: '' };
+
+        expect(pageCssCoversClass(editor, 'bg-vp-brand-1')).toBe(false);
+        expect(pageCssCoversClass(editor, 'text-vp-text-2')).toBe(false);
+        expect(pageCssCoversClass(editor, 'border-vp-divider')).toBe(false);
+        expect(pageCssCoversClass(editor, 'lg:bg-vp-bg-alt')).toBe(false);
+    });
 });
