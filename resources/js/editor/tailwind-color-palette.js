@@ -193,6 +193,63 @@ export function resolveThemeSwatchHex(editor, token) {
 }
 
 /**
+ * @param {string} hex
+ * @returns {[number, number, number]|null}
+ */
+function expandHexRgb(hex) {
+    const match = String(hex ?? '').trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+
+    if (! match) {
+        return null;
+    }
+
+    let h = match[1];
+
+    if (h.length === 3) {
+        h = h.split('').map((c) => c + c).join('');
+    }
+
+    return [
+        Number.parseInt(h.slice(0, 2), 16),
+        Number.parseInt(h.slice(2, 4), 16),
+        Number.parseInt(h.slice(4, 6), 16),
+    ];
+}
+
+/**
+ * Approximate `color-mix(in srgb, #a p%, #b)` without a DOM (Vitest / SSR).
+ *
+ * @param {string} raw
+ * @returns {string|null}
+ */
+function hexFromSimpleColorMix(raw) {
+    const match = String(raw ?? '').match(
+        /^color-mix\(\s*in\s+srgb\s*,\s*(#[0-9a-f]{3,8})\s+([\d.]+)%\s*,\s*(#[0-9a-f]{3,8})\s*\)$/i,
+    );
+
+    if (! match) {
+        return null;
+    }
+
+    const a = expandHexRgb(match[1]);
+    const b = expandHexRgb(match[3]);
+    const pct = Math.min(100, Math.max(0, Number.parseFloat(match[2]) || 0)) / 100;
+
+    if (! a || ! b) {
+        return null;
+    }
+
+    const mix = (x, y) => Math.round((x * pct) + (y * (1 - pct)));
+    const part = (n) => {
+        const h = Math.max(0, Math.min(255, n)).toString(16);
+
+        return h.length === 1 ? `0${h}` : h;
+    };
+
+    return `#${part(mix(a[0], b[0]))}${part(mix(a[1], b[1]))}${part(mix(a[2], b[2]))}`;
+}
+
+/**
  * @param {string} cssColor
  * @returns {string|null}
  */
@@ -206,16 +263,26 @@ function cssColorToHex(cssColor) {
         return null;
     }
 
-    const hexMatch = raw.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    const fromHex = expandHexRgb(raw);
 
-    if (hexMatch) {
-        let h = hexMatch[1];
+    if (fromHex) {
+        const part = (n) => {
+            const h = n.toString(16);
 
-        if (h.length === 3) {
-            h = h.split('').map((c) => c + c).join('');
-        }
+            return h.length === 1 ? `0${h}` : h;
+        };
 
-        return `#${h.toLowerCase()}`;
+        return `#${part(fromHex[0])}${part(fromHex[1])}${part(fromHex[2])}`;
+    }
+
+    const fromMix = hexFromSimpleColorMix(raw);
+
+    if (fromMix) {
+        return fromMix;
+    }
+
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+        return null;
     }
 
     const probe = document.createElement('div');
