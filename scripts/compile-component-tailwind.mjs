@@ -249,6 +249,12 @@ const PAGE_THEME_FALLBACKS = {
     '--text-5xl--line-height': '1',
     '--text-6xl': '3.75rem',
     '--text-6xl--line-height': '1',
+    '--text-7xl': '4.5rem',
+    '--text-7xl--line-height': '1',
+    '--text-8xl': '6rem',
+    '--text-8xl--line-height': '1',
+    '--text-9xl': '8rem',
+    '--text-9xl--line-height': '1',
     '--width-vp-layout': '80rem',
     '--container-3xs': '16rem',
     '--container-2xs': '18rem',
@@ -352,6 +358,9 @@ function rewriteThemeVarFallbacks(root) {
         '--text-4xl': '2.25rem',
         '--text-5xl': '3rem',
         '--text-6xl': '3.75rem',
+        '--text-7xl': '4.5rem',
+        '--text-8xl': '6rem',
+        '--text-9xl': '8rem',
         '--text-xs--line-height': 'calc(1 / 0.75)',
         '--text-sm--line-height': 'calc(1.25 / 0.875)',
         '--text-base--line-height': 'calc(1.5 / 1)',
@@ -362,6 +371,9 @@ function rewriteThemeVarFallbacks(root) {
         '--text-4xl--line-height': 'calc(2.5 / 2.25)',
         '--text-5xl--line-height': '1',
         '--text-6xl--line-height': '1',
+        '--text-7xl--line-height': '1',
+        '--text-8xl--line-height': '1',
+        '--text-9xl--line-height': '1',
     };
 
     root.walkDecls((decl) => {

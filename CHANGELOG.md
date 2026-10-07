@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.45] - 2026-10-07
+
+### Fixed
+
+- Published page JIT CSS omitted `--text-7xl` / `--text-8xl` / `--text-9xl` theme tokens, so utilities like `lg:text-7xl` worked in the editor but fell back to default heading size on the live site
+
 ## [1.11.43] - 2026-10-06
 
 ### Added
