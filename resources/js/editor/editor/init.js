@@ -1025,6 +1025,7 @@ export function initVoodbuilderEditor(container, options = {}) {
     editor.__voodbuilderMediaLibraryUrl = options.mediaLibraryUrl ?? '';
     editor.__voodbuilderMediaGalleriesUrl = options.mediaGalleriesUrl ?? '';
     editor.__voodbuilderUploadUrl = options.uploadUrl ?? '';
+    editor.__voodbuilderMediaMetaUrl = options.mediaMetaUrl ?? '';
     editor.__voodbuilderCsrf = options.csrf ?? '';
     registerMediaPickerCommands(editor);
     // Do not preload thousands of assets into GrapesJS AM — the media browser loads pages on demand.
@@ -2519,6 +2520,7 @@ function mountFrontendEditor() {
         uploadUrl: config.uploadUrl,
         mediaLibraryUrl: config.mediaLibraryUrl ?? null,
         mediaGalleriesUrl: config.mediaGalleriesUrl ?? null,
+        mediaMetaUrl: config.mediaMetaUrl ?? '',
         imageEditor: config.imageEditor !== false,
         csrf: config.csrf,
         formSubmitUrl: config.formSubmitUrl,

@@ -138,7 +138,7 @@ final class EditorGate
         return [
             'pageId' => $page->getKey(),
             'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.pages.update', $page)
-                ?? '/voodbuilder/editor/pages/'.$page->getKey(),
+                ?? '/voodbuilder/editor/pages/' . $page->getKey(),
             'csrf' => csrf_token(),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
@@ -162,6 +162,7 @@ final class EditorGate
             'savedPageHtml' => (string) (($page->builder_payload ?? [])['html'] ?? ''),
             'uploadUrl' => self::mediaUploadUrl() ?? '',
             'mediaReplaceUrl' => self::mediaReplaceUrl(),
+            'mediaMetaUrl' => self::mediaMetaUrl() ?? '',
             'mediaLibraryUrl' => self::mediaLibraryIndexUrl(),
             // Galleries API is owned by voodflow/vmedia when the Filament plugin is active.
             'mediaGalleriesUrl' => self::mediaCompanionBrowserEnabled()
@@ -252,7 +253,7 @@ final class EditorGate
                 ...$appTypography['stylesheetUrls'],
             ]))),
             'canvasScripts' => EditorCanvas::scriptTags(),
-            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)."\n".$appTypography['editorCanvasCss'],
+            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme) . "\n" . $appTypography['editorCanvasCss'],
             'appTypography' => [
                 'bodyFont' => $appTypography['bodyFont'],
                 'headingFont' => $appTypography['headingFont'],
@@ -395,6 +396,8 @@ final class EditorGate
             'imageSettingsCaptionDisplayOverlay' => __('voodbuilder::pro.editor.image_settings.caption_display_overlay'),
             'imageSettingsCaptionHint' => __('voodbuilder::pro.editor.image_settings.caption_hint'),
             'imageSettingsGalleryCaptionHint' => __('voodbuilder::pro.editor.image_settings.gallery_caption_hint'),
+            'imageSettingsCredits' => __('voodbuilder::pro.editor.image_settings.credits'),
+            'imageSettingsCreditsPlaceholder' => __('voodbuilder::pro.editor.image_settings.credits_placeholder'),
             'imageSettingsOpacity' => __('voodbuilder::pro.editor.image_settings.opacity'),
             'imageSettingsFit' => __('voodbuilder::pro.editor.image_settings.fit'),
             'imageSettingsFitCover' => __('voodbuilder::pro.editor.image_settings.fit_cover'),
@@ -1456,6 +1459,15 @@ final class EditorGate
         }
 
         return self::editorRoute('vmedia.media.replace');
+    }
+
+    private static function mediaMetaUrl(): ?string
+    {
+        if (! Route::has('vmedia.media.meta')) {
+            return null;
+        }
+
+        return self::editorRoute('vmedia.media.meta');
     }
 
     private static function mediaLibraryIndexUrl(): ?string

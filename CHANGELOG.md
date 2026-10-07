@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.48] - 2026-10-07
+
+### Changed
+
+- Inside a VoodMedia gallery, the IMAGE panel edits vault caption / alt / credits via `mediaMetaUrl` (shared across galleries); no Grapes “Caption display”. Stronger gallery detection (`vmedia-gallery-block` / `data-vmedia-gallery-lightbox`).
+
 ## [1.11.47] - 2026-10-07
 
 ### Fixed

@@ -10,6 +10,7 @@ import {
     createTextField,
     createTextareaField,
 } from './editor-form-ui.js';
+import { editorApiHeaders, resolveApiErrorMessage, resolveCsrfToken } from './editor-api.js';
 import { CMD_EDIT_IMAGE, isDynamicallyBoundImage, isRasterEditableSrc } from './jodit-image-editor.js';
 import { isBackgroundImageHeroId } from './media-hero.js';
 import { applyResponsiveImageAttrs, resolveResponsiveImageUrls } from './responsive-image.js';
@@ -135,6 +136,14 @@ function isVbImageFigure(component) {
  * @returns {boolean}
  */
 export function isInsideVmediaGalleryBlock(component) {
+    return findVmediaGalleryRoot(component) != null;
+}
+
+/**
+ * @param {import('grapesjs').Component | null | undefined} component
+ * @returns {import('grapesjs').Component | null}
+ */
+export function findVmediaGalleryRoot(component) {
     let current = component;
 
     while (current) {
@@ -146,13 +155,95 @@ export function isInsideVmediaGalleryBlock(component) {
         ).trim();
 
         if (blockId.indexOf('vmedia_gallery_') === 0) {
-            return true;
+            return current;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(attrs, 'data-vmedia-gallery-lightbox')) {
+            return current;
+        }
+
+        const classes = componentClasses(current);
+
+        if (classes.includes('vmedia-gallery-block')) {
+            return current;
         }
 
         current = typeof current.parent === 'function' ? current.parent() : null;
     }
 
-    return false;
+    return null;
+}
+
+/**
+ * @param {import('grapesjs').Editor} editor
+ * @param {string} uuid
+ * @param {{ caption?: string|null, alt?: string|null, credits?: string|null }} fields
+ * @returns {Promise<object|null>}
+ */
+async function persistVaultMediaMeta(editor, uuid, fields) {
+    const metaUrl = String(editor.__voodbuilderMediaMetaUrl ?? '').trim();
+    const mediaUuid = String(uuid ?? '').trim();
+
+    if (metaUrl === '' || mediaUuid === '') {
+        throw new Error('Media meta update is not configured.');
+    }
+
+    const csrf = resolveCsrfToken(editor.__voodbuilderCsrf ?? '');
+    const body = { uuid: mediaUuid };
+
+    if (Object.prototype.hasOwnProperty.call(fields, 'caption')) {
+        body.caption = fields.caption;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(fields, 'alt')) {
+        body.alt = fields.alt;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(fields, 'credits')) {
+        body.credits = fields.credits;
+    }
+
+    const response = await fetch(metaUrl, {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: {
+            ...editorApiHeaders(csrf),
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (! response.ok) {
+        throw new Error(await resolveApiErrorMessage(
+            response,
+            'Could not save media metadata.',
+        ));
+    }
+
+    const payload = await response.json();
+
+    return payload?.media && typeof payload.media === 'object' ? payload.media : null;
+}
+
+/**
+ * @param {import('grapesjs').Editor} editor
+ * @param {import('grapesjs').Component} image
+ */
+function refreshVmediaGalleryBlock(editor, image) {
+    const root = findVmediaGalleryRoot(image);
+
+    if (! root || ! editor?.trigger) {
+        return;
+    }
+
+    try {
+        delete root.__voodbuilderLastDynamicRenderFingerprint;
+        delete root.__voodbuilderLastDynamicRenderHtml;
+        editor.trigger('voodbuilder:refresh-dynamic-block', root);
+    } catch (error) {
+        // ignore refresh failures — vault write already succeeded
+    }
 }
 
 function findAncestorSection(component) {
@@ -775,6 +866,26 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
     );
 
     if (mode === 'image') {
+        const imageAttrs = image.getAttributes?.() ?? {};
+        const mediaUuid = String(imageAttrs['data-vb-media-uuid'] ?? '').trim();
+        let vaultCaption = String(imageAttrs['data-vb-media-caption'] ?? '').trim();
+        let vaultCredits = String(imageAttrs['data-vb-media-credits'] ?? '').trim();
+
+        if (galleryManaged) {
+            // Prefer vault meta; fall back to img alt already on the node.
+            if (vaultCaption === '' && caption !== '') {
+                vaultCaption = caption;
+            }
+
+            // Clear editor-only Grapes caption chrome so the canvas matches the live gallery.
+            if (captionDisplay !== CAPTION_DISPLAY_NONE || String(imageAttrs['data-vb-caption'] ?? '').trim() !== '') {
+                captionDisplay = CAPTION_DISPLAY_NONE;
+                runWithSettingsChangeGuard(editor, () => {
+                    syncImageCaption(image, { caption: '', display: CAPTION_DISPLAY_NONE });
+                });
+            }
+        }
+
         const { field: altField, input: altInput } = createTextField({
             label: labels.imageSettingsAlt ?? 'Alt text',
             name: 'imageAlt',
@@ -785,6 +896,25 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
 
         altInput.addEventListener('change', () => {
             alt = String(altInput.value ?? '').trim();
+
+            if (galleryManaged && mediaUuid !== '') {
+                void persistVaultMediaMeta(editor, mediaUuid, { alt: alt || null })
+                    .then((media) => {
+                        runWithSettingsChangeGuard(editor, () => {
+                            image.addAttributes({
+                                alt: media?.alt != null ? String(media.alt) : alt,
+                                'data-vb-media-alt': media?.alt != null ? String(media.alt) : (alt || null),
+                            });
+                        });
+                        refreshVmediaGalleryBlock(editor, image);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+
+                return;
+            }
+
             runWithSettingsChangeGuard(editor, () => {
                 image.addAttributes({ alt });
             });
@@ -793,14 +923,70 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
         fields.append(altField);
 
         if (galleryManaged) {
-            // Clear editor-only Grapes caption chrome so the canvas matches the live gallery.
-            if (captionDisplay !== CAPTION_DISPLAY_NONE || caption !== '') {
-                caption = '';
-                captionDisplay = CAPTION_DISPLAY_NONE;
-                runWithSettingsChangeGuard(editor, () => {
-                    syncImageCaption(image, { caption: '', display: CAPTION_DISPLAY_NONE });
-                });
-            }
+            const { field: captionField, input: captionInput } = createTextareaField({
+                label: labels.imageSettingsCaption ?? 'Caption',
+                name: 'imageVaultCaption',
+                value: vaultCaption,
+                rows: 2,
+                placeholder: labels.imageSettingsCaptionPlaceholder ?? 'Optional caption',
+            });
+
+            captionInputEl = captionInput;
+
+            captionInput.addEventListener('change', () => {
+                vaultCaption = String(captionInput.value ?? '').trim();
+
+                if (mediaUuid === '') {
+                    return;
+                }
+
+                void persistVaultMediaMeta(editor, mediaUuid, { caption: vaultCaption || null })
+                    .then((media) => {
+                        const next = media?.caption != null ? String(media.caption) : vaultCaption;
+                        runWithSettingsChangeGuard(editor, () => {
+                            image.addAttributes({
+                                'data-vb-media-caption': next || null,
+                            });
+                        });
+                        refreshVmediaGalleryBlock(editor, image);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            });
+
+            fields.append(captionField);
+
+            const { field: creditsField, input: creditsInput } = createTextField({
+                label: labels.imageSettingsCredits ?? 'Credits',
+                name: 'imageVaultCredits',
+                value: vaultCredits,
+                placeholder: labels.imageSettingsCreditsPlaceholder ?? 'Optional attribution',
+            });
+
+            creditsInput.addEventListener('change', () => {
+                vaultCredits = String(creditsInput.value ?? '').trim();
+
+                if (mediaUuid === '') {
+                    return;
+                }
+
+                void persistVaultMediaMeta(editor, mediaUuid, { credits: vaultCredits || null })
+                    .then((media) => {
+                        const next = media?.credits != null ? String(media.credits) : vaultCredits;
+                        runWithSettingsChangeGuard(editor, () => {
+                            image.addAttributes({
+                                'data-vb-media-credits': next || null,
+                            });
+                        });
+                        refreshVmediaGalleryBlock(editor, image);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            });
+
+            fields.append(creditsField);
         } else {
             const { field: captionField, input: captionInput } = createTextareaField({
                 label: labels.imageSettingsCaption ?? 'Caption',
@@ -972,7 +1158,7 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
             ?? 'Choose a photo for the hero background. SVG placeholders cannot be cropped until you upload a real image.';
     } else if (galleryManaged) {
         hint.textContent = labels.imageSettingsGalleryCaptionHint
-            ?? 'This photo is inside a VoodMedia gallery. Caption and credits come from the media library; show/position them with the Gallery block settings (they override any per-image caption display).';
+            ?? 'Saved on the media in the library (same caption/credits in every gallery). Show and position captions with the Gallery block settings.';
     } else {
         hint.textContent = labels.imageSettingsCaptionHint
             ?? labels.imageSettingsHint

@@ -69,6 +69,7 @@ final class EditorChromeLayoutEditorGate
             ),
             'uploadUrl' => self::mediaUploadUrl() ?? '',
             'mediaReplaceUrl' => self::mediaReplaceUrl(),
+            'mediaMetaUrl' => self::mediaMetaUrl() ?? '',
             'mediaLibraryUrl' => self::mediaLibraryIndexUrl(),
             // Same as page editor: vmedia browser needs both library + galleries routes.
             'mediaGalleriesUrl' => self::mediaCompanionBrowserEnabled()
@@ -277,6 +278,15 @@ CSS;
         }
 
         return self::editorRoute('vmedia.media.replace');
+    }
+
+    private static function mediaMetaUrl(): ?string
+    {
+        if (! Route::has('vmedia.media.meta')) {
+            return null;
+        }
+
+        return self::editorRoute('vmedia.media.meta');
     }
 
     private static function mediaLibraryIndexUrl(): ?string

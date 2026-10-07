@@ -100,12 +100,22 @@ class EditorGateTest extends TestCase
 
         $this->assertSame('/voodbuilder/editor/pages/' . $page->getKey(), $config['saveUrl']);
         $this->assertIsString($config['uploadUrl']);
+        $this->assertArrayHasKey('mediaMetaUrl', $config);
+        $this->assertIsString($config['mediaMetaUrl']);
+        $this->assertArrayHasKey('imageSettingsCredits', $config['labels']);
+        $this->assertArrayHasKey('imageSettingsGalleryCaptionHint', $config['labels']);
 
         if (Route::has('vmedia.media.upload')) {
             $this->assertNotSame('', $config['uploadUrl']);
         } else {
             // Companion inactive — editor must still boot.
             $this->assertSame('', $config['uploadUrl']);
+        }
+
+        if (Route::has('vmedia.media.meta')) {
+            $this->assertNotSame('', $config['mediaMetaUrl']);
+        } else {
+            $this->assertSame('', $config['mediaMetaUrl']);
         }
     }
 
