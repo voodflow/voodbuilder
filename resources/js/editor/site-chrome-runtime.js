@@ -355,6 +355,36 @@ function setReadingDrawerOpen(doc, open) {
  * Companion reading pages (vdocs / vtuts): local nav "Menu" opens the left
  * sidebar as a drawer below 960px; "On this page" is a native <details> dropdown.
  */
+/**
+ * Scroll the active left-nav link into view inside `.voodbuilder-doc-sidebar-scroll`.
+ * Full page navigations reset that scroller to the top, hiding deep active items.
+ */
+export function scrollActiveReadingSidebarLinkIntoView(scope = document) {
+    const doc = scope.ownerDocument ?? scope;
+    const root = scope.querySelector?.('.voodbuilder-doc-sidebar-scroll') ?? doc.querySelector?.('.voodbuilder-doc-sidebar-scroll');
+
+    if (! root) {
+        return;
+    }
+
+    const active = root.querySelector('a[aria-current="page"]');
+
+    if (! active) {
+        return;
+    }
+
+    if (root.scrollHeight <= root.clientHeight) {
+        return;
+    }
+
+    const scrollerRect = root.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    const delta = (activeRect.top + activeRect.height / 2)
+        - (scrollerRect.top + scrollerRect.height / 2);
+
+    root.scrollTop += delta;
+}
+
 export function initReadingLocalNav(scope = document) {
     const doc = scope.ownerDocument ?? scope;
 
@@ -363,6 +393,10 @@ export function initReadingLocalNav(scope = document) {
     }
 
     doc.__voodbuilderReadingLocalNavBound = true;
+
+    doc.defaultView?.requestAnimationFrame?.(() => {
+        scrollActiveReadingSidebarLinkIntoView(scope);
+    });
 
     const isDrawerOpen = () => doc.documentElement?.classList?.contains(READING_DRAWER_OPEN_CLASS) === true;
 
@@ -425,4 +459,5 @@ export function initSiteChrome(scope = document) {
     initMobileNavSections(scope);
     initMobileNav(scope);
     initReadingLocalNav(scope);
+    scrollActiveReadingSidebarLinkIntoView(scope);
 }
