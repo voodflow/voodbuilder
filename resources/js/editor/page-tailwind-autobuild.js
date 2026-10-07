@@ -44,6 +44,8 @@ const RATE_LIMIT_MAX_BACKOFF_MS = 60_000;
 /** Utilities already shipped in canvas section-utilities.css (Style panel catalogs). */
 const PALETTE_SHADE_UTILITY_RE = /^(?:bg|text|border|from|via|to|shadow)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}$/;
 const NAMED_COLOR_UTILITY_RE = /^(?:bg|text|border|from|via|to|shadow)-(?:black|white|transparent|current|inherit)$/;
+/** Theme Studio tokens — CSS variables exist, utilities still need page JIT. */
+const THEME_VP_COLOR_UTILITY_RE = /^(?:bg|text|border|from|via|to|shadow)-vp-[\w-]+$/;
 
 const CANVAS_BUNDLED_UTILITIES = (() => {
     const set = new Set(
@@ -54,10 +56,9 @@ const CANVAS_BUNDLED_UTILITIES = (() => {
     );
 
     // Add Style panel literals (font-bold, bg-cover, drop-shadow-lg, …).
-    // Skip palette/named color tokens unless they are already in the safelist
-    // files — template-built options (e.g. shadow-red-500) are invisible to
-    // Tailwind @source; claiming them as "bundled" skipped JIT so the color
-    // only appeared after Save.
+    // Skip palette/named/theme-vp color tokens unless they are already in the
+    // safelist files — claiming them as "bundled" skipped JIT so the color
+    // only appeared after Save (same bug as shadow-red-500 / bg-vp-brand-1).
     for (const group of STYLE_UTILITY_GROUPS ?? []) {
         for (const opt of group.options ?? []) {
             const value = String(opt?.value ?? '').trim();
@@ -66,10 +67,11 @@ const CANVAS_BUNDLED_UTILITIES = (() => {
                 continue;
             }
 
-            const isPaletteColor = PALETTE_SHADE_UTILITY_RE.test(value)
-                || NAMED_COLOR_UTILITY_RE.test(value);
+            const isColorNeedingJit = PALETTE_SHADE_UTILITY_RE.test(value)
+                || NAMED_COLOR_UTILITY_RE.test(value)
+                || THEME_VP_COLOR_UTILITY_RE.test(value);
 
-            if (isPaletteColor && ! set.has(value)) {
+            if (isColorNeedingJit && ! set.has(value)) {
                 continue;
             }
 
