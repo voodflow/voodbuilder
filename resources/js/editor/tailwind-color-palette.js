@@ -105,6 +105,172 @@ export function hexForUtility(utility) {
 }
 
 /**
+ * Resolve a `vp-*` theme token to a concrete #hex from the canvas theme / palette CSS.
+ * Editor chrome defaults are indigo — never use those for Style select swatches.
+ *
+ * @param {object|null|undefined} editor
+ * @param {string} token e.g. vp-brand-1 or bg-vp-brand-1
+ * @returns {string|null}
+ */
+export function resolveThemeSwatchHex(editor, token) {
+    let name = String(token ?? '').trim();
+
+    if (name === '') {
+        return null;
+    }
+
+    if (name.includes(':')) {
+        const parts = name.split(':');
+        name = parts[parts.length - 1] ?? name;
+    }
+
+    name = name.replace(/\/\d{1,3}$/, '');
+    const prefixed = name.match(/^(?:bg|text|border|from|via|to|shadow|outline|ring|fill|stroke)-(vp-[\w-]+)$/);
+
+    if (prefixed) {
+        name = prefixed[1];
+    }
+
+    if (! name.startsWith('vp-')) {
+        return null;
+    }
+
+    const varName = `--color-${name}`;
+    const paletteCss = String(editor?.__voodbuilderThemePaletteCss ?? '').trim();
+
+    if (paletteCss !== '') {
+        const re = new RegExp(`${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;}{]+)`);
+        const match = paletteCss.match(re);
+        const raw = String(match?.[1] ?? '').trim();
+        const fromPalette = cssColorToHex(raw);
+
+        if (fromPalette) {
+            return fromPalette;
+        }
+    }
+
+    const docs = [];
+
+    try {
+        const frameDoc = editor?.Canvas?.getDocument?.();
+
+        if (frameDoc) {
+            docs.push(frameDoc);
+        }
+    } catch {
+        // Frame may be unavailable during boot.
+    }
+
+    docs.push(document);
+
+    for (const doc of docs) {
+        if (! doc) {
+            continue;
+        }
+
+        const roots = [doc.documentElement, doc.body].filter(Boolean);
+        const view = doc.defaultView || window;
+
+        for (const root of roots) {
+            let raw = '';
+
+            try {
+                raw = String(view.getComputedStyle(root).getPropertyValue(varName) ?? '').trim();
+            } catch {
+                raw = '';
+            }
+
+            const hex = cssColorToHex(raw);
+
+            if (hex) {
+                return hex;
+            }
+        }
+    }
+
+    return cssColorToHex(`var(${varName})`);
+}
+
+/**
+ * @param {string} cssColor
+ * @returns {string|null}
+ */
+function cssColorToHex(cssColor) {
+    const raw = String(cssColor ?? '').trim();
+
+    if (raw === '') {
+        return null;
+    }
+
+    const hexMatch = raw.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+
+    if (hexMatch) {
+        let h = hexMatch[1];
+
+        if (h.length === 3) {
+            h = h.split('').map((c) => c + c).join('');
+        }
+
+        return `#${h.toLowerCase()}`;
+    }
+
+    const probe = document.createElement('div');
+    probe.style.cssText = `position:absolute;left:-99999px;top:0;color:${raw}`;
+    document.documentElement.appendChild(probe);
+    let computed = '';
+
+    try {
+        computed = String(window.getComputedStyle(probe).color ?? '');
+    } catch {
+        computed = '';
+    }
+
+    probe.remove();
+
+    const rgb = computed.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+
+    if (! rgb) {
+        return null;
+    }
+
+    const part = (n) => {
+        const h = Math.max(0, Math.min(255, Math.round(Number(n) || 0))).toString(16);
+
+        return h.length === 1 ? `0${h}` : h;
+    };
+
+    return `#${part(rgb[1])}${part(rgb[2])}${part(rgb[3])}`;
+}
+
+/**
+ * Concrete swatch color for a Style select option (`data-hex`). Prefers baked
+ * theme hex for `vp-*` so the inspector host shows the canvas palette, not chrome defaults.
+ *
+ * @param {object|null|undefined} editor
+ * @param {string} className
+ * @returns {string|null}
+ */
+export function swatchHexForUtility(editor, className) {
+    const themeHex = resolveThemeSwatchHex(editor, className);
+
+    if (themeHex) {
+        return themeHex;
+    }
+
+    const css = swatchCssForClassName(className);
+
+    if (! css || css === 'transparent' || css.startsWith('var(') || css.startsWith('color-mix')) {
+        return css === 'transparent' ? null : (cssColorToHex(css) || null);
+    }
+
+    if (css.startsWith('#')) {
+        return cssColorToHex(css);
+    }
+
+    return cssColorToHex(css);
+}
+
+/**
  * CSS color for a class-manager suggestion swatch (hex, theme var, or color-mix).
  * Handles variants (`hover:`), opacity (`/10`), theme tokens (`bg-vp-brand-1`).
  *

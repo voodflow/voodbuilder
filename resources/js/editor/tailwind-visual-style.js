@@ -322,7 +322,8 @@ function firstUsableSvgPaint(...candidates) {
     return '';
 }
 
-const VISUAL_SURFACE_PATTERN = /(?:^|-)(?:rounded|bg-|border-(?:gray|vp|indigo|slate|white|black|opacity)|shadow)/;
+// Match bare + responsive/dark utilities (`lg:bg-black`, `dark:bg-vp-bg`).
+const VISUAL_SURFACE_PATTERN = /(?:^|:|-)(?:rounded|bg-|border-(?:gray|vp|indigo|slate|white|black|opacity)|shadow)/;
 
 function elementChildren(component) {
     return (component?.components?.()?.models ?? []).filter((child) => {

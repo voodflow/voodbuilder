@@ -152,7 +152,7 @@ import {
     injectEditorBreakpointStyleCss,
     registerEditorBreakpointFontSizeCss,
 } from './style-responsive-canvas.js';
-import { hexForUtility } from './tailwind-color-palette.js';
+import { hexForUtility, swatchHexForUtility } from './tailwind-color-palette.js';
 
 /**
  * Remember which surface the Style panel is editing: a concrete element, or the
@@ -885,12 +885,56 @@ const SANITIZE_PROPERTIES = [
     'transform',
 ];
 
-function optionsHtml(options) {
+function optionsHtml(options, editor = null) {
     return options.map((opt) => {
-        const hex = opt.hex ? ` data-hex="${escapeAttr(opt.hex)}"` : '';
+        const value = String(opt.value ?? '');
+        const resolved = opt.hex
+            || (value !== '' ? swatchHexForUtility(editor, value) : null)
+            || '';
+        const hex = resolved ? ` data-hex="${escapeAttr(resolved)}"` : '';
 
-        return `<option value="${escapeAttr(opt.value)}"${hex}>${escapeHtml(opt.label)}</option>`;
+        return `<option value="${escapeAttr(value)}"${hex}>${escapeHtml(opt.label)}</option>`;
     }).join('');
+}
+
+/**
+ * Stamp concrete theme hex onto color <option>s so custom selects show the pallino
+ * for vp-* tokens (chrome defaults would otherwise look empty / indigo).
+ *
+ * @param {object|null|undefined} editor
+ * @param {ParentNode|null|undefined} root
+ */
+function enrichColorSelectSwatches(editor, root) {
+    if (! root) {
+        return;
+    }
+
+    const touched = new Set();
+
+    root.querySelectorAll?.('select option[value]').forEach((option) => {
+        const value = String(option.value ?? '').trim();
+
+        if (value === '' || value === '—' || value.startsWith('__')) {
+            return;
+        }
+
+        if (! /(?:^|:)(?:bg|text|border|from|via|to|shadow)-/.test(value) && ! value.includes('vp-')) {
+            return;
+        }
+
+        const hex = swatchHexForUtility(editor, value);
+
+        if (! hex || option.getAttribute('data-hex') === hex) {
+            return;
+        }
+
+        option.setAttribute('data-hex', hex);
+        touched.add(option.parentElement);
+    });
+
+    touched.forEach((select) => {
+        select?.dispatchEvent?.(new Event('vb:options-changed', { bubbles: true }));
+    });
 }
 
 function escapeHtml(value) {
@@ -911,7 +955,7 @@ function escapeAttr(value) {
  *   surrounding block heading already reads as its label. Without it the control has no
  *   programmatic name at all.
  */
-function fieldHtml({ label, selectAttr, addAttr, options, addLabel, searchable = false, searchPlaceholder = 'Search…', live = false, ariaLabel = null }) {
+function fieldHtml({ label, selectAttr, addAttr, options, addLabel, searchable = false, searchPlaceholder = 'Search…', live = false, ariaLabel = null, editor = null }) {
     const searchAttr = searchable
         ? ` data-vb-search="1" data-vb-search-placeholder="${escapeAttr(searchPlaceholder)}"`
         : '';
@@ -931,7 +975,7 @@ function fieldHtml({ label, selectAttr, addAttr, options, addLabel, searchable =
             <div class="gjs-fields">
                 <div class="voodbuilder-editor-anim-combobox${live ? ' voodbuilder-editor-anim-combobox--solo' : ''}">
                     <select class="voodbuilder-editor-input voodbuilder-editor-input--select"${nameAttr}${searchAttr} ${selectAttr}>
-                        ${optionsHtml(options)}
+                        ${optionsHtml(options, editor)}
                     </select>
                     ${addButton}
                 </div>
@@ -1512,7 +1556,7 @@ export function watchComponentClassList(component, onChange) {
     };
 }
 
-function resolveSolidBackgroundColorCss(utility) {
+function resolveSolidBackgroundColorCss(utility, editor = null) {
     const token = String(utility ?? '').trim();
 
     if (token === 'bg-black') {
@@ -1527,6 +1571,14 @@ function resolveSolidBackgroundColorCss(utility) {
         return '';
     }
 
+    // Bake theme tokens to hex so opacity paint is rgba (color-mix(var(--color-vp-*))
+    // often fails in the canvas iframe until Save recompiles).
+    const themeHex = swatchHexForUtility(editor, token);
+
+    if (themeHex) {
+        return themeHex;
+    }
+
     return hexForUtility(token) || cssColorFromBackgroundUtility(token) || '';
 }
 
@@ -1535,9 +1587,10 @@ function resolveSolidBackgroundColorCss(utility) {
  *
  * @param {string} color bg-* utility
  * @param {string} opacityPercent '' = 100%
+ * @param {object|null|undefined} [editor]
  * @returns {string}
  */
-function composeTranslucentBackgroundColor(color, opacityPercent) {
+function composeTranslucentBackgroundColor(color, opacityPercent, editor = null) {
     const pct = String(opacityPercent ?? '').trim();
     const base = String(color ?? '').trim();
 
@@ -1547,7 +1600,7 @@ function composeTranslucentBackgroundColor(color, opacityPercent) {
 
     // Prefer resolved CSS (hex / theme var). Never fall back to currentColor —
     // that left opaque bg-* utilities looking like opacity did nothing.
-    const colorCss = resolveSolidBackgroundColorCss(base) || cssColorFromBackgroundUtility(base);
+    const colorCss = resolveSolidBackgroundColorCss(base, editor) || cssColorFromBackgroundUtility(base);
 
     if (colorCss === '') {
         return '';
@@ -1572,7 +1625,7 @@ function translucentBackgroundColorPaint(component, editor = null) {
         currentStyleVariantPrefix(editor),
     );
 
-    return composeTranslucentBackgroundColor(color, opacity);
+    return composeTranslucentBackgroundColor(color, opacity, editor);
 }
 
 /**
@@ -1585,7 +1638,7 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     }
 
     const target = resolveVisualStyleTarget(component) ?? component;
-    const painted = composeTranslucentBackgroundColor(color, opacityPercent);
+    const painted = composeTranslucentBackgroundColor(color, opacityPercent, editor);
     const dark = isStyleEditingDark(editor);
     const pageSurface = isPageSurfaceComponent(component, editor)
         || isPageSurfaceComponent(target, editor);
@@ -1598,6 +1651,13 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
             clearPageSurfaceDarkWallpaperRule(editor, id, 'background-color');
         } else {
             clearStyleProperty(editor, target, 'background-color', { family: false });
+        }
+
+        try {
+            const el = target?.getEl?.() ?? target?.view?.el;
+            el?.style?.removeProperty?.('background-color');
+        } catch (error) {
+            debugSwallowed(error);
         }
 
         return;
@@ -1684,6 +1744,18 @@ function applyGroup(editor, component, groupId, value) {
             } catch (error) {
                 // View may be unavailable during bulk updates.
                 debugSwallowed(error);
+            }
+
+            // updateStyle can wipe DOM paints that are not on the Grapes style model.
+            // CssComposer #id alone often only becomes visible after Save — re-paint.
+            if (nextColor === '') {
+                paintBackgroundColorOpacity(editor, component, '', '');
+            } else {
+                paintBackgroundColorOpacity(editor, component, nextColor, nextOpacity);
+
+                if (preservedBgUrl !== '') {
+                    reapplyDecorationBackgroundPaint(editor, component, preservedBgUrl);
+                }
             }
 
             // Page-surface paints are CssComposer-only — JIT on the content slot
@@ -2094,7 +2166,7 @@ function buildSpacingSector(labels) {
     });
 }
 
-function decoLiveFieldHtml({ label, groupId, options, searchPlaceholder = null, ariaLabel = null }) {
+function decoLiveFieldHtml({ label, groupId, options, searchPlaceholder = null, ariaLabel = null, editor = null }) {
     return fieldHtml({
         label,
         ariaLabel,
@@ -2105,15 +2177,16 @@ function decoLiveFieldHtml({ label, groupId, options, searchPlaceholder = null, 
         searchable: Boolean(searchPlaceholder),
         searchPlaceholder: searchPlaceholder || 'Search…',
         live: true,
+        editor,
     });
 }
 
-function decoSideSelectHtml(groupId, options, title) {
+function decoSideSelectHtml(groupId, options, title, editor = null) {
     return `
         <label class="voodbuilder-editor-deco-sides__cell" title="${escapeAttr(title)}">
             <span class="voodbuilder-editor-deco-sides__cap">${escapeHtml(title)}</span>
             <select class="voodbuilder-editor-input voodbuilder-editor-input--select" data-voodbuilder-tw-group="${escapeAttr(groupId)}" aria-label="${escapeAttr(title)}">
-                ${optionsHtml(options)}
+                ${optionsHtml(options, editor)}
             </select>
         </label>
     `;
@@ -2145,6 +2218,7 @@ function gradientStopRowHtml(opts) {
                 groupId: opts.colorGroupId,
                 options: opts.colorOptions,
                 searchPlaceholder: opts.searchPlaceholder ?? null,
+                editor: opts.editor ?? null,
             })}
             <div class="voodbuilder-editor-deco-stop__pos">
                 <span class="voodbuilder-editor-deco-stop__pos-label">${escapeHtml(posLabel)}</span>
@@ -2166,7 +2240,7 @@ function gradientStopRowHtml(opts) {
     `;
 }
 
-function gradientStopsBlockHtml(prefix, labels, searchPh) {
+function gradientStopsBlockHtml(prefix, labels, searchPh, editor = null) {
     const hint = labels.classStyleGradientStopHint
         ?? 'Soft fade: drag Start to ~0% (not 90%), End ~100%, Via empty. Otherwise the color becomes a hard thin band.';
 
@@ -2182,6 +2256,7 @@ function gradientStopsBlockHtml(prefix, labels, searchPh) {
                 defaultPos: GRADIENT_POS_DEFAULTS.from,
                 searchPlaceholder: searchPh,
                 posLabel: labels.classStyleGradientStopFrom ?? 'Start',
+                editor,
             })}
             ${gradientStopRowHtml({
                 colorLabel: labels.classStyleGradientVia ?? 'Via',
@@ -2192,6 +2267,7 @@ function gradientStopsBlockHtml(prefix, labels, searchPh) {
                 defaultPos: GRADIENT_POS_DEFAULTS.via,
                 searchPlaceholder: searchPh,
                 posLabel: labels.classStyleGradientStopVia ?? 'Middle',
+                editor,
             })}
             ${gradientStopRowHtml({
                 colorLabel: labels.classStyleGradientTo ?? 'To',
@@ -2202,12 +2278,13 @@ function gradientStopsBlockHtml(prefix, labels, searchPh) {
                 defaultPos: GRADIENT_POS_DEFAULTS.to,
                 searchPlaceholder: searchPh,
                 posLabel: labels.classStyleGradientStopTo ?? 'End',
+                editor,
             })}
         </div>
     `;
 }
 
-function buildDecorationsSector(labels) {
+function buildDecorationsSector(labels, editor = null) {
     const searchPh = labels.classStyleFieldSearch ?? 'Search…';
     const clearLabel = labels.classStyleClear ?? 'None';
     const linkAll = labels.classStyleSpacingLinkAll ?? 'All sides linked';
@@ -2230,11 +2307,13 @@ function buildDecorationsSector(labels) {
                         groupId: 'background',
                         options: BACKGROUND_OPTIONS,
                         searchPlaceholder: searchPh,
+                        editor,
                     })}
                     ${decoLiveFieldHtml({
                         label: labels.classStyleBackgroundColorOpacity ?? 'Opacity',
                         groupId: 'background-opacity',
                         options: BG_COLOR_OPACITY_OPTIONS,
+                        editor,
                     })}
                     <details class="voodbuilder-editor-deco-fold" data-voodbuilder-deco-fold="image">
                         <summary class="voodbuilder-editor-deco-fold__summary">
@@ -2276,7 +2355,7 @@ function buildDecorationsSector(labels) {
                                 groupId: 'gradient-opacity',
                                 options: BG_COLOR_OPACITY_OPTIONS,
                             })}
-                            ${gradientStopsBlockHtml('gradient', labels, searchPh)}
+                            ${gradientStopsBlockHtml('gradient', labels, searchPh, editor)}
                         </div>
                     </details>
                 </div>
@@ -2319,6 +2398,7 @@ function buildDecorationsSector(labels) {
                         groupId: 'border-color',
                         options: BORDER_COLOR_OPTIONS,
                         searchPlaceholder: searchPh,
+                        editor,
                     })}
                 </div>
 
@@ -2368,6 +2448,7 @@ function buildDecorationsSector(labels) {
                         groupId: 'shadow-color',
                         options: SHADOW_COLOR_OPTIONS,
                         searchPlaceholder: searchPh,
+                        editor,
                     })}
                     ${decoLiveFieldHtml({
                         label: labels.classStyleDropShadow ?? 'Drop shadow',
@@ -2380,7 +2461,7 @@ function buildDecorationsSector(labels) {
     });
 }
 
-function buildTypographySector(labels, addLabel) {
+function buildTypographySector(labels, addLabel, editor = null) {
     const clearLabel = labels.classStyleClear ?? 'None';
     const searchPh = labels.classStyleFieldSearch ?? 'Search…';
 
@@ -2403,7 +2484,7 @@ function buildTypographySector(labels, addLabel) {
             ${segmentControlHtml({ label: labels.classStyleTextAlign ?? 'Text align', groupId: 'text-align', segments: TEXT_ALIGN_SEGMENTS, clearLabel, authoredHint: labels.classStyleAuthoredHint ?? 'Value set' })}
             ${segmentControlHtml({ label: labels.classStyleTextTransform ?? 'Text transform', groupId: 'text-transform', segments: TEXT_TRANSFORM_SEGMENTS, clearLabel, authoredHint: labels.classStyleAuthoredHint ?? 'Value set' })}
             ${segmentControlHtml({ label: labels.classStyleTextDecoration ?? 'Text decoration', groupId: 'text-decoration', segments: TEXT_DECORATION_SEGMENTS, clearLabel, authoredHint: labels.classStyleAuthoredHint ?? 'Value set' })}
-            ${fieldHtml({ label: labels.classStyleTextColor ?? 'Text color', selectAttr: 'data-voodbuilder-tw-group="text-color"', addAttr: 'data-voodbuilder-tw-group-add="text-color"', options: TEXT_COLOR_OPTIONS, addLabel, searchable: true, searchPlaceholder: searchPh, live: true })}
+            ${fieldHtml({ label: labels.classStyleTextColor ?? 'Text color', selectAttr: 'data-voodbuilder-tw-group="text-color"', addAttr: 'data-voodbuilder-tw-group-add="text-color"', options: TEXT_COLOR_OPTIONS, addLabel, searchable: true, searchPlaceholder: searchPh, live: true, editor })}
             <details class="voodbuilder-editor-deco-fold voodbuilder-editor-typo-gradient" data-voodbuilder-typo-fold="text-gradient" hidden>
                 <summary class="voodbuilder-editor-deco-fold__summary">
                     <span>${escapeHtml(labels.classStyleGradient ?? 'Gradient')}</span>
@@ -2415,7 +2496,7 @@ function buildTypographySector(labels, addLabel) {
                         groupId: 'text-gradient-direction',
                         options: GRADIENT_DIRECTION_OPTIONS,
                     })}
-                    ${gradientStopsBlockHtml('text-gradient', labels, searchPh)}
+                    ${gradientStopsBlockHtml('text-gradient', labels, searchPh, editor)}
                 </div>
             </details>
             ${fieldHtml({ label: labels.classStyleLeading ?? 'Line height', selectAttr: 'data-voodbuilder-tw-group="leading"', addAttr: 'data-voodbuilder-tw-group-add="leading"', options: LEADING_OPTIONS, addLabel, live: true })}
@@ -4047,6 +4128,7 @@ function wireSectorFields(editor, sector, labels = {}) {
     wireBackgroundImageField(editor, sector, labels);
     wireTypographySegments(editor, sector);
     wireGradientPosSliders(editor, sector);
+    enrichColorSelectSwatches(editor, sector);
 
     const fontAdd = sector.querySelector('[data-voodbuilder-tw-font-family-add]');
     const fontSelect = sector.querySelector('[data-voodbuilder-tw-font-family]');
@@ -4282,8 +4364,8 @@ export function registerStyleTailwindPanel(editor, options = {}) {
 
             const dimension = buildDimensionSector(labels, addLabel);
             const spacing = buildSpacingSector(labels);
-            const decorations = buildDecorationsSector(labels);
-            const typography = buildTypographySector(labels, addLabel);
+            const decorations = buildDecorationsSector(labels, editor);
+            const typography = buildTypographySector(labels, addLabel, editor);
             const pageMode = isTargetingPageSurface(editor);
 
             // Pre-hide before insert so opening Style with no selection never flashes
@@ -4628,6 +4710,8 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         }
 
         syncViewportStrip(stylesMount, editor, labels);
+        enrichColorSelectSwatches(editor, stylesMount);
+        enhanceInspectorSelects(stylesMount);
 
         if (editor.__voodbuilderTwStyleApplying) {
             return;
