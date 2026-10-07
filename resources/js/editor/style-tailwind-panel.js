@@ -1714,6 +1714,59 @@ function syncBgOpacityCanvasStyle(editor, id, painted) {
  * Paint solid Color opacity via inline/#id (light) or html.dark #id cache (dark).
  * Plain/prefixed `bg-*` stays for the Color field; alpha lives in data attrs.
  */
+/**
+ * Clear Color opacity paint from the author node and its visual target (both #id rules).
+ * Stale `#section { background-color: rgba(red…) }` must not survive Clear / color changes.
+ *
+ * @param {object} editor
+ * @param {object} component
+ */
+function clearBackgroundColorOpacityPaint(editor, component) {
+    if (! editor || ! component) {
+        return;
+    }
+
+    const targets = [component];
+    const visual = resolveVisualStyleTarget(component);
+
+    if (visual && visual !== component) {
+        targets.push(visual);
+    }
+
+    const seen = new Set();
+
+    for (const target of targets) {
+        const id = String(target?.getId?.() ?? '').trim();
+
+        if (id !== '' && seen.has(id)) {
+            continue;
+        }
+
+        if (id !== '') {
+            seen.add(id);
+        }
+
+        clearStyleProperty(editor, target, 'background-color', { family: false });
+
+        try {
+            const el = target?.getEl?.() ?? target?.view?.el;
+            el?.style?.removeProperty?.('background-color');
+        } catch (error) {
+            debugSwallowed(error);
+        }
+
+        if (id) {
+            syncBgOpacityCanvasStyle(editor, id, '');
+
+            try {
+                editor.Css?.getIdRule?.(id)?.removeStyle?.('background-color');
+            } catch (error) {
+                debugSwallowed(error);
+            }
+        }
+    }
+}
+
 function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     if (! editor || ! component) {
         return;
@@ -1728,32 +1781,17 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     const colorToken = String(color ?? '').trim();
 
     if (painted === '') {
-        // Theme hex can lag (iframe / Theme Studio). Do not wipe a prior #id paint
-        // or the public page keeps the previous color (e.g. black) after Save.
-        if (
-            colorToken !== ''
-            && colorToken !== 'bg-transparent'
-            && isThemeBackgroundUtility(colorToken)
-        ) {
-            return;
-        }
-
+        // Never keep a previous Color paint (e.g. red rgba) when clearing or when the
+        // new theme token cannot be composed yet — stale #id wins over utilities on publish.
         if (dark && ! pageSurface) {
             clearDarkIdStyles(editor, id, 'background-color');
         } else if (dark && pageSurface) {
             clearPageSurfaceDarkWallpaperRule(editor, id, 'background-color');
         } else {
-            clearStyleProperty(editor, target, 'background-color', { family: false });
+            clearBackgroundColorOpacityPaint(editor, component);
         }
 
-        try {
-            const el = target?.getEl?.() ?? target?.view?.el;
-            el?.style?.removeProperty?.('background-color');
-        } catch (error) {
-            debugSwallowed(error);
-        }
-
-        if (id && ! dark) {
+        if (id && ! dark && colorToken === '') {
             syncBgOpacityCanvasStyle(editor, id, '');
         }
 
@@ -1815,10 +1853,16 @@ function applyGroup(editor, component, groupId, value, options = {}) {
                 nextOpacity = normalizeBgColorOpacityPercent(options.opacityHint);
             }
 
-            if (nextColor === '') {
+            const clearingColor = nextColor === '' || nextColor === 'bg-transparent';
+
+            if (clearingColor) {
                 clearBackgroundColorUtilities(component, variant);
+                clearBackgroundColorOpacityPaint(editor, component);
                 paintBackgroundColorOpacity(editor, component, '', '');
             } else {
+                // Drop the previous #id rgba before painting the next Color — otherwise a
+                // failed/partial paint leaves the old red on the public page.
+                clearBackgroundColorOpacityPaint(editor, component);
                 applyBackgroundColorWithOpacity(component, nextColor, nextOpacity, variant);
                 paintBackgroundColorOpacity(editor, component, nextColor, nextOpacity);
             }
@@ -1861,7 +1905,8 @@ function applyGroup(editor, component, groupId, value, options = {}) {
             // updateStyle can wipe DOM paints that are not on the Grapes style model.
             // CssComposer #id alone often only becomes visible after Save — re-paint
             // (+ durable canvas <style> inside paintBackgroundColorOpacity).
-            if (nextColor === '') {
+            if (clearingColor) {
+                clearBackgroundColorOpacityPaint(editor, component);
                 paintBackgroundColorOpacity(editor, component, '', '');
             } else {
                 paintBackgroundColorOpacity(editor, component, nextColor, nextOpacity);
@@ -1880,7 +1925,7 @@ function applyGroup(editor, component, groupId, value, options = {}) {
             }
 
             // JIT / dynamic remount can race the first paint — keep color/opacity visible.
-            if (nextColor !== '') {
+            if (! clearingColor) {
                 const paintLater = () => {
                     if (editor.__voodbuilderTwStyleApplying) {
                         return;
@@ -4517,18 +4562,35 @@ export function hydrateBgColorOpacityAttrsFromComposer(editor, onlyComponent = n
         }
 
         const attrs = component.getAttributes?.() ?? {};
-
-        if (String(attrs[BG_COLOR_OPACITY_ATTR] ?? '').trim() !== '') {
-            return 0;
-        }
-
         const id = String(component.getId?.() ?? '').trim();
 
         if (id === '') {
             return 0;
         }
 
+        const { color } = resolveBackgroundColorAndOpacity(
+            componentClassList(component),
+            component,
+            currentStyleVariantPrefix(editor),
+        );
         const paint = css.getIdRule?.(id)?.getStyle?.()?.['background-color'];
+        const hasColor = Boolean(color && color !== 'bg-transparent');
+
+        // Stale #id rgba with no Color utility (Clear → transparent) must be wiped.
+        if (! hasColor) {
+            if (paint && String(paint).trim() !== '') {
+                clearBackgroundColorOpacityPaint(editor, component);
+
+                return 1;
+            }
+
+            return 0;
+        }
+
+        if (String(attrs[BG_COLOR_OPACITY_ATTR] ?? '').trim() !== '') {
+            return 0;
+        }
+
         const recovered = opacityFromPaint(paint);
 
         if (recovered == null || recovered === '') {
@@ -4536,16 +4598,8 @@ export function hydrateBgColorOpacityAttrsFromComposer(editor, onlyComponent = n
         }
 
         component.addAttributes?.({ [BG_COLOR_OPACITY_ATTR]: recovered });
-
-        const { color } = resolveBackgroundColorAndOpacity(
-            componentClassList(component),
-            component,
-            currentStyleVariantPrefix(editor),
-        );
-
-        if (color) {
-            paintBackgroundColorOpacity(editor, component, color, recovered);
-        }
+        // Re-paint with the *current* Color utility — never keep a previous hue's rgba.
+        paintBackgroundColorOpacity(editor, component, color, recovered);
 
         return 1;
     };
@@ -4570,47 +4624,114 @@ export function hydrateBgColorOpacityAttrsFromComposer(editor, onlyComponent = n
 }
 
 /**
- * Push live canvas opacity paints into CssComposer so Save does not ship a stale #id color.
+ * Find authored solid Background Color + opacity across Style breakpoints.
+ * Desktop often stores `lg:bg-vp-*` only — bare-prefix resolve would miss it and
+ * wrongly clear `#id` paint (or leave a stale red rule).
  *
- * @param {object} editor
+ * @param {object} component
+ * @param {object|null|undefined} editor
+ * @returns {{ color: string, opacity: string }}
  */
-export function flushBgOpacityPaintsToComposer(editor) {
-    const map = editor?.__voodbuilderBgOpacityPaints;
-    const css = editor?.Css;
+function resolveAuthoredBackgroundColorForExport(component, editor = null) {
+    const classes = componentClassList(component);
+    const prefixes = [
+        currentStyleVariantPrefix(editor),
+        'lg:',
+        'md:',
+        'sm:',
+        '',
+    ];
+    const seen = new Set();
 
-    if (! map || typeof map !== 'object' || ! css?.setIdRule) {
-        return;
-    }
+    for (const prefix of prefixes) {
+        const key = String(prefix ?? '');
 
-    for (const [rawId, color] of Object.entries(map)) {
-        const id = String(rawId ?? '').replace(/[^A-Za-z0-9_-]/g, '');
-        const cssValue = String(color ?? '').replace(/\s*!important\s*$/i, '').trim();
-
-        if (id === '' || cssValue === '') {
+        if (seen.has(key)) {
             continue;
         }
 
-        try {
-            const existing = { ...(css.getIdRule?.(id)?.getStyle?.() ?? {}) };
-            css.setIdRule(id, {
-                ...existing,
-                'background-color': cssValue,
-            });
-        } catch (error) {
-            debugSwallowed(error);
+        seen.add(key);
+
+        const bg = resolveBackgroundColorAndOpacity(classes, component, prefix);
+        const color = String(bg.color ?? '').trim();
+
+        if (color !== '' && color !== 'bg-transparent') {
+            return {
+                color,
+                opacity: normalizeBgColorOpacityPercent(bg.opacity),
+            };
         }
     }
+
+    return { color: '', opacity: '' };
 }
 
 /**
- * Before getHtml(): ensure opacity attrs exist whenever #id / canvas paint is translucent
- * so the next editor load does not treat Color as 100% solid.
+ * Authoritative Save sync: derive Color opacity `#id` paint + attrs from each
+ * component's utilities — never re-ship a stale canvas map / previous rgba hue.
+ *
+ * @param {object} editor
+ */
+export function reconcileBgColorOpacityForExport(editor) {
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper?.onAll || ! editor?.Css) {
+        return;
+    }
+
+    // Rebuild durable canvas paints from live component state only.
+    editor.__voodbuilderBgOpacityPaints = {};
+
+    wrapper.onAll((component) => {
+        if (! component?.getId) {
+            return;
+        }
+
+        const id = String(component.getId() ?? '').trim();
+
+        if (id === '') {
+            return;
+        }
+
+        const { color, opacity } = resolveAuthoredBackgroundColorForExport(component, editor);
+
+        if (color === '' || color === 'bg-transparent') {
+            clearBackgroundColorOpacityPaint(editor, component);
+
+            try {
+                component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);
+            } catch (error) {
+                const attrs = { ...(component.getAttributes?.() ?? {}) };
+                delete attrs[BG_COLOR_OPACITY_ATTR];
+                component.setAttributes?.(attrs);
+            }
+
+            return;
+        }
+
+        if (opacity !== '') {
+            component.addAttributes?.({ [BG_COLOR_OPACITY_ATTR]: opacity });
+        } else {
+            try {
+                component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);
+            } catch (error) {
+                const attrs = { ...(component.getAttributes?.() ?? {}) };
+                delete attrs[BG_COLOR_OPACITY_ATTR];
+                component.setAttributes?.(attrs);
+            }
+        }
+
+        paintBackgroundColorOpacity(editor, component, color, opacity);
+    });
+}
+
+/**
+ * Before getHtml(): align `#id` Color paints + opacity attrs with utilities.
  *
  * @param {object} editor
  */
 export function syncBgColorOpacityAttrsForExport(editor) {
-    flushBgOpacityPaintsToComposer(editor);
-    hydrateBgColorOpacityAttrsFromComposer(editor);
+    reconcileBgColorOpacityForExport(editor);
 }
 
 export function registerStyleTailwindPanel(editor, options = {}) {

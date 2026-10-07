@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.55] - 2026-10-07
+
+### Fixed
+
+- Style Color Clear / recolor left a stale `#id { background-color: rgba(…) }` on Save (public page kept previous red while the editor showed transparent or `vp-bg-alt`). Reconcile paints from utilities before export, clear both author node and visual-target `#id` rules on change, and stop re-flushing a stale canvas opacity map during bake.
+
 ## [1.11.54] - 2026-10-07
 
 ### Fixed
