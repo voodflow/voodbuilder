@@ -1628,6 +1628,76 @@ function translucentBackgroundColorPaint(component, editor = null) {
     return composeTranslucentBackgroundColor(color, opacity, editor);
 }
 
+const BG_OPACITY_CANVAS_STYLE_ID = 'voodbuilder-bg-color-opacity-paint';
+
+/**
+ * Durable canvas <style> for translucent Color opacity — survives Grapes
+ * updateStyle / soft remounts that wipe inline paints until Save.
+ *
+ * @param {object} editor
+ * @param {string} id
+ * @param {string} painted '' clears this id
+ */
+function syncBgOpacityCanvasStyle(editor, id, painted) {
+    if (! editor || ! id) {
+        return;
+    }
+
+    const map = editor.__voodbuilderBgOpacityPaints && typeof editor.__voodbuilderBgOpacityPaints === 'object'
+        ? editor.__voodbuilderBgOpacityPaints
+        : {};
+    editor.__voodbuilderBgOpacityPaints = map;
+
+    const cssValue = String(painted ?? '').replace(/\s*!important\s*$/i, '').trim();
+
+    if (cssValue === '') {
+        delete map[id];
+    } else {
+        map[id] = cssValue;
+    }
+
+    let doc = null;
+
+    try {
+        doc = editor.Canvas?.getDocument?.() ?? null;
+    } catch (error) {
+        debugSwallowed(error);
+    }
+
+    if (! doc?.head) {
+        return;
+    }
+
+    let tag = doc.getElementById(BG_OPACITY_CANVAS_STYLE_ID);
+    const rules = Object.entries(map)
+        .filter(([, color]) => color)
+        .map(([ruleId, color]) => {
+            const safeId = String(ruleId).replace(/[^A-Za-z0-9_-]/g, '');
+
+            if (safeId === '') {
+                return '';
+            }
+
+            return `#${safeId}{background-color:${color}!important}`;
+        })
+        .filter(Boolean)
+        .join('\n');
+
+    if (rules === '') {
+        tag?.remove?.();
+
+        return;
+    }
+
+    if (! tag) {
+        tag = doc.createElement('style');
+        tag.id = BG_OPACITY_CANVAS_STYLE_ID;
+        doc.head.appendChild(tag);
+    }
+
+    tag.textContent = rules;
+}
+
 /**
  * Paint solid Color opacity via inline/#id (light) or html.dark #id cache (dark).
  * Plain/prefixed `bg-*` stays for the Color field; alpha lives in data attrs.
@@ -1660,6 +1730,10 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
             debugSwallowed(error);
         }
 
+        if (id && ! dark) {
+            syncBgOpacityCanvasStyle(editor, id, '');
+        }
+
         return;
     }
 
@@ -1681,6 +1755,10 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     persistSurfacePaint(editor, component, {
         'background-color': painted,
     });
+
+    if (id) {
+        syncBgOpacityCanvasStyle(editor, id, painted);
+    }
 }
 
 function applyGroup(editor, component, groupId, value) {
@@ -1747,7 +1825,8 @@ function applyGroup(editor, component, groupId, value) {
             }
 
             // updateStyle can wipe DOM paints that are not on the Grapes style model.
-            // CssComposer #id alone often only becomes visible after Save — re-paint.
+            // CssComposer #id alone often only becomes visible after Save — re-paint
+            // (+ durable canvas <style> inside paintBackgroundColorOpacity).
             if (nextColor === '') {
                 paintBackgroundColorOpacity(editor, component, '', '');
             } else {
@@ -1762,6 +1841,26 @@ function applyGroup(editor, component, groupId, value) {
             // cannot cover wrapper utilities and only keeps Save in "Compiling…".
             if (! isPageSurfaceComponent(component, editor)) {
                 scheduleClassCompile(editor);
+            }
+
+            // JIT / dynamic remount can race the first paint — keep opacity visible.
+            if (nextColor !== '' && nextOpacity !== '' && nextOpacity !== '100') {
+                const paintLater = () => {
+                    if (editor.__voodbuilderTwStyleApplying) {
+                        return;
+                    }
+
+                    paintBackgroundColorOpacity(editor, component, nextColor, nextOpacity);
+                };
+
+                window.setTimeout(paintLater, 120);
+                window.setTimeout(paintLater, 480);
+
+                if (typeof editor.__voodbuilderWaitForPageCssIdle === 'function') {
+                    editor.__voodbuilderWaitForPageCssIdle(6000).then(paintLater).catch(() => {
+                        paintLater();
+                    });
+                }
             }
 
             editor?.trigger?.('update');
@@ -4302,6 +4401,22 @@ function syncPageSurfaceStylePanelChrome(stylesMount, editor) {
  */
 configureSpacingPanel({ applyGroup, resolveStyleGroup, syncSelectsFromComponent });
 
+function resyncAllBgOpacityCanvasStyles(editor) {
+    const map = editor?.__voodbuilderBgOpacityPaints;
+
+    if (! map || typeof map !== 'object') {
+        return;
+    }
+
+    // Force rebuild of the canvas <style> tag after frame reload.
+    const snapshot = { ...map };
+    editor.__voodbuilderBgOpacityPaints = {};
+
+    for (const [id, color] of Object.entries(snapshot)) {
+        syncBgOpacityCanvasStyle(editor, id, color);
+    }
+}
+
 export function registerStyleTailwindPanel(editor, options = {}) {
     const stylesMount = options.mount;
     const labels = options.labels ?? {};
@@ -4327,6 +4442,12 @@ export function registerStyleTailwindPanel(editor, options = {}) {
     };
 
     registerEditorBreakpointFontSizeCss(editor);
+
+    editor.on('canvas:frame:load', () => {
+        window.setTimeout(() => {
+            resyncAllBgOpacityCanvasStyles(editor);
+        }, 0);
+    });
 
     const addLabel = labels.classAnimationAdd ?? labels.classStyleAdd ?? 'Add';
 

@@ -139,7 +139,8 @@ export function resolveThemeSwatchHex(editor, token) {
     const paletteCss = String(editor?.__voodbuilderThemePaletteCss ?? '').trim();
 
     if (paletteCss !== '') {
-        const re = new RegExp(`${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;}{]+)`);
+        // Values may be color-mix(...)!important — capture until ; or } , then strip flags.
+        const re = new RegExp(`${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;}+]+)`);
         const match = paletteCss.match(re);
         const raw = String(match?.[1] ?? '').trim();
         const fromPalette = cssColorToHex(raw);
@@ -196,7 +197,10 @@ export function resolveThemeSwatchHex(editor, token) {
  * @returns {string|null}
  */
 function cssColorToHex(cssColor) {
-    const raw = String(cssColor ?? '').trim();
+    // Theme Studio often emits `color-mix(...)!important` — flags break style.cssText.
+    const raw = String(cssColor ?? '')
+        .replace(/\s*!important\s*$/i, '')
+        .trim();
 
     if (raw === '') {
         return null;
@@ -215,12 +219,13 @@ function cssColorToHex(cssColor) {
     }
 
     const probe = document.createElement('div');
-    probe.style.cssText = `position:absolute;left:-99999px;top:0;color:${raw}`;
+    // background-color resolves color-mix() more reliably than `color:` for swatches.
+    probe.style.cssText = `position:absolute;left:-99999px;top:0;background-color:${raw}`;
     document.documentElement.appendChild(probe);
     let computed = '';
 
     try {
-        computed = String(window.getComputedStyle(probe).color ?? '');
+        computed = String(window.getComputedStyle(probe).backgroundColor ?? '');
     } catch {
         computed = '';
     }
