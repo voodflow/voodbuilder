@@ -945,6 +945,31 @@ export function bakeAuthorStylesToComposerForExport(editor, options = {}) {
         return;
     }
 
+    // Live Color-opacity canvas paints must win over a stale CssComposer #id
+    // (e.g. previous black) before we serialize getCss() for the public page.
+    const bgOpacityPaints = editor.__voodbuilderBgOpacityPaints;
+
+    if (bgOpacityPaints && typeof bgOpacityPaints === 'object' && editor.Css.setIdRule) {
+        for (const [rawId, color] of Object.entries(bgOpacityPaints)) {
+            const id = String(rawId ?? '').replace(/[^A-Za-z0-9_-]/g, '');
+            const cssValue = String(color ?? '').replace(/\s*!important\s*$/i, '').trim();
+
+            if (id === '' || cssValue === '') {
+                continue;
+            }
+
+            try {
+                const existing = { ...(editor.Css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+                editor.Css.setIdRule(id, {
+                    ...existing,
+                    'background-color': cssValue,
+                });
+            } catch (error) {
+                debugSwallowed(error);
+            }
+        }
+    }
+
     // HTML clones reuse .cXXXX — promote every private class onto unique #id
     // rules before baking, with #id/inline winning over shared class paints.
     promotePrivateStyleClassesToIdRules(editor, options.root ? { root: options.root } : {});

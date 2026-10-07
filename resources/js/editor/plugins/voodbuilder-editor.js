@@ -1774,6 +1774,48 @@ function registerSiteNavSettingsUi(editor) {
     registerNavSettings(editor);
 }
 
+/**
+ * Grapes `isComponent` attribute objects replace the parsed DOM attrs.
+ * Keep author Style chrome (`data-vb-*`, id) or Color opacity is lost on every reload.
+ *
+ * @param {Element} element
+ * @param {string} blockId
+ * @param {Record<string, unknown>} config
+ * @param {string} defaultClass
+ * @returns {Record<string, string>}
+ */
+function dynamicBlockParseAttributes(element, blockId, config, defaultClass) {
+    const attrs = {
+        'data-voodbuilder-block': blockId,
+        'data-voodbuilder-config': encodeBlockConfig(config),
+        class: defaultClass,
+    };
+
+    if (element?.hasAttribute?.('data-voodbuilder-hydrate-slots')) {
+        attrs['data-voodbuilder-hydrate-slots'] = '1';
+    }
+
+    const id = String(element?.getAttribute?.('id') ?? '').trim();
+
+    if (id !== '') {
+        attrs.id = id;
+    }
+
+    const names = typeof element?.getAttributeNames === 'function'
+        ? element.getAttributeNames()
+        : [];
+
+    for (const name of names) {
+        if (! name.startsWith('data-vb-')) {
+            continue;
+        }
+
+        attrs[name] = String(element.getAttribute(name) ?? '');
+    }
+
+    return attrs;
+}
+
 function registerDynamicBlockType(editor) {
     editor.DomComponents.addType('voodbuilder-dynamic', {
         isComponent: (element) => {
@@ -1801,14 +1843,7 @@ function registerDynamicBlockType(editor) {
                 type: 'voodbuilder-dynamic',
                 tagName: isFooter ? 'footer' : (element.tagName?.toLowerCase() ?? 'div'),
                 voodbuilderConfig: config,
-                attributes: {
-                    'data-voodbuilder-block': blockId,
-                    'data-voodbuilder-config': encodeBlockConfig(config),
-                    class: defaultClass,
-                    ...(element.hasAttribute('data-voodbuilder-hydrate-slots')
-                        ? { 'data-voodbuilder-hydrate-slots': '1' }
-                        : {}),
-                },
+                attributes: dynamicBlockParseAttributes(element, blockId, config, defaultClass),
             };
         },
         model: {

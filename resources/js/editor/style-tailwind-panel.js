@@ -1725,8 +1725,19 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     const pageSurface = isPageSurfaceComponent(component, editor)
         || isPageSurfaceComponent(target, editor);
     const id = String(target?.getId?.() ?? component.getId?.() ?? '').trim();
+    const colorToken = String(color ?? '').trim();
 
     if (painted === '') {
+        // Theme hex can lag (iframe / Theme Studio). Do not wipe a prior #id paint
+        // or the public page keeps the previous color (e.g. black) after Save.
+        if (
+            colorToken !== ''
+            && colorToken !== 'bg-transparent'
+            && isThemeBackgroundUtility(colorToken)
+        ) {
+            return;
+        }
+
         if (dark && ! pageSurface) {
             clearDarkIdStyles(editor, id, 'background-color');
         } else if (dark && pageSurface) {
@@ -1773,7 +1784,7 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     }
 }
 
-function applyGroup(editor, component, groupId, value) {
+function applyGroup(editor, component, groupId, value, options = {}) {
     const groupSet = GROUP_SETS[groupId];
 
     if (! component) {
@@ -1791,7 +1802,18 @@ function applyGroup(editor, component, groupId, value) {
                 variant,
             );
             const nextColor = groupId === 'background' ? (value || '') : current.color;
-            const nextOpacity = groupId === 'background-opacity' ? (value || '') : current.opacity;
+            // When Color changes first, attr may still be empty while the Opacity
+            // select already shows e.g. 20% — honour that UI hint.
+            let nextOpacity = groupId === 'background-opacity' ? (value || '') : current.opacity;
+
+            if (
+                groupId === 'background'
+                && nextOpacity === ''
+                && options.opacityHint != null
+                && String(options.opacityHint).trim() !== ''
+            ) {
+                nextOpacity = normalizeBgColorOpacityPercent(options.opacityHint);
+            }
 
             if (nextColor === '') {
                 clearBackgroundColorUtilities(component, variant);
@@ -2236,7 +2258,10 @@ function bindGroupField(editor, root, groupId, { applyOnChange = false } = {}) {
             return;
         }
 
-        applyGroup(editor, selected, groupId, select?.value ?? '');
+        const opacityHint = groupId === 'background'
+            ? root.querySelector?.('[data-voodbuilder-tw-group="background-opacity"]')?.value
+            : undefined;
+        applyGroup(editor, selected, groupId, select?.value ?? '', { opacityHint });
         syncSelectsFromComponent(root.closest('.gjs-sm-sectors') ?? root, selected, editor);
     };
 
@@ -4431,6 +4456,163 @@ function resyncAllBgOpacityCanvasStyles(editor) {
     }
 }
 
+/**
+ * Recover `data-vb-bg-color-opacity` from saved `#id { background-color: rgba(..., a) }`
+ * when the attr was stripped (dynamic isComponent whitelist / remount wipe).
+ *
+ * @param {object} editor
+ * @param {object|null} [onlyComponent]
+ * @returns {number} components updated
+ */
+export function hydrateBgColorOpacityAttrsFromComposer(editor, onlyComponent = null) {
+    const css = editor?.Css;
+
+    if (! css) {
+        return 0;
+    }
+
+    /**
+     * @param {string} value
+     * @returns {string|null} percent '' = 100%, or null if not recoverable
+     */
+    const opacityFromPaint = (value) => {
+        const raw = String(value ?? '').replace(/\s*!important\s*$/i, '').trim();
+
+        if (raw === '') {
+            return null;
+        }
+
+        const rgba = raw.match(
+            /^rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(?:,\s*([\d.]+)\s*)?\)$/i,
+        );
+
+        if (rgba) {
+            const alpha = rgba[1] == null ? 1 : Number.parseFloat(rgba[1]);
+
+            if (! Number.isFinite(alpha) || alpha >= 0.999) {
+                return '';
+            }
+
+            return normalizeBgColorOpacityPercent(Math.round(alpha * 100));
+        }
+
+        const hex = raw.match(/^#([0-9a-f]{8})$/i);
+
+        if (hex) {
+            const alpha = Number.parseInt(hex[1].slice(6, 8), 16) / 255;
+
+            if (! Number.isFinite(alpha) || alpha >= 0.999) {
+                return '';
+            }
+
+            return normalizeBgColorOpacityPercent(Math.round(alpha * 100));
+        }
+
+        return null;
+    };
+
+    const apply = (component) => {
+        if (! component) {
+            return 0;
+        }
+
+        const attrs = component.getAttributes?.() ?? {};
+
+        if (String(attrs[BG_COLOR_OPACITY_ATTR] ?? '').trim() !== '') {
+            return 0;
+        }
+
+        const id = String(component.getId?.() ?? '').trim();
+
+        if (id === '') {
+            return 0;
+        }
+
+        const paint = css.getIdRule?.(id)?.getStyle?.()?.['background-color'];
+        const recovered = opacityFromPaint(paint);
+
+        if (recovered == null || recovered === '') {
+            return 0;
+        }
+
+        component.addAttributes?.({ [BG_COLOR_OPACITY_ATTR]: recovered });
+
+        const { color } = resolveBackgroundColorAndOpacity(
+            componentClassList(component),
+            component,
+            currentStyleVariantPrefix(editor),
+        );
+
+        if (color) {
+            paintBackgroundColorOpacity(editor, component, color, recovered);
+        }
+
+        return 1;
+    };
+
+    if (onlyComponent) {
+        return apply(onlyComponent);
+    }
+
+    const wrapper = editor?.getWrapper?.();
+
+    if (! wrapper?.onAll) {
+        return 0;
+    }
+
+    let updated = 0;
+
+    wrapper.onAll((component) => {
+        updated += apply(component);
+    });
+
+    return updated;
+}
+
+/**
+ * Push live canvas opacity paints into CssComposer so Save does not ship a stale #id color.
+ *
+ * @param {object} editor
+ */
+export function flushBgOpacityPaintsToComposer(editor) {
+    const map = editor?.__voodbuilderBgOpacityPaints;
+    const css = editor?.Css;
+
+    if (! map || typeof map !== 'object' || ! css?.setIdRule) {
+        return;
+    }
+
+    for (const [rawId, color] of Object.entries(map)) {
+        const id = String(rawId ?? '').replace(/[^A-Za-z0-9_-]/g, '');
+        const cssValue = String(color ?? '').replace(/\s*!important\s*$/i, '').trim();
+
+        if (id === '' || cssValue === '') {
+            continue;
+        }
+
+        try {
+            const existing = { ...(css.getIdRule?.(id)?.getStyle?.() ?? {}) };
+            css.setIdRule(id, {
+                ...existing,
+                'background-color': cssValue,
+            });
+        } catch (error) {
+            debugSwallowed(error);
+        }
+    }
+}
+
+/**
+ * Before getHtml(): ensure opacity attrs exist whenever #id / canvas paint is translucent
+ * so the next editor load does not treat Color as 100% solid.
+ *
+ * @param {object} editor
+ */
+export function syncBgColorOpacityAttrsForExport(editor) {
+    flushBgOpacityPaintsToComposer(editor);
+    hydrateBgColorOpacityAttrsFromComposer(editor);
+}
+
 export function registerStyleTailwindPanel(editor, options = {}) {
     const stylesMount = options.mount;
     const labels = options.labels ?? {};
@@ -4869,6 +5051,9 @@ export function registerStyleTailwindPanel(editor, options = {}) {
         // Re-paint the active Style target for the new theme (color / gradient / photo).
         if (selected && ! editor.__voodbuilderTwStyleApplying) {
             try {
+                // Recover opacity from #id rgba before solid theme paint at "100%".
+                hydrateBgColorOpacityAttrsFromComposer(editor, selected);
+
                 const bg = resolveBackgroundColorAndOpacity(
                     componentClassList(selected),
                     selected,

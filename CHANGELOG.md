@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.54] - 2026-10-07
+
+### Fixed
+
+- Style Color opacity on dynamic blocks: `data-vb-bg-color-opacity` survived Save/`#id` rgba paint but was dropped on Grapes parse (`voodbuilder-dynamic` isComponent attribute whitelist) and remount `setAttributes`, so refresh painted solid theme red and the first Save could keep a stale black `#id`. Preserve `data-vb-*` + id on parse, merge remount attrs, flush canvas opacity paints into CssComposer before export, and recover opacity from saved rgba on load.
+
 ## [1.11.48] - 2026-10-07
 
 ### Changed

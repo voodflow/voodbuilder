@@ -41,6 +41,7 @@ import {
     syncPaintStylesForExport,
     syncSpacingStylesForExport,
 } from '../tailwind-visual-style.js';
+import { syncBgColorOpacityAttrsForExport } from '../style-tailwind-panel.js';
 import { shouldOmitAuthorStyleValue } from '../theme-tokens.js';
 import { withoutUndo } from '../editor-undo.js';
 import {
@@ -966,6 +967,10 @@ export function buildPayload(editor, options = {}) {
 
                 runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
                 runExportStep('detachInnerDropSlotsForExport', () => detachInnerDropSlotsForExport(editor));
+                // Persist Color opacity attrs + flush canvas paints before #id bake / getHtml.
+                runExportStep('syncBgColorOpacityAttrsForExport', () => {
+                    syncBgColorOpacityAttrsForExport(editor);
+                });
                 // Chrome shell: bake only the page content slot (nav/footer are separate).
                 runExportStep('bakeAuthorStylesToComposerForExport', () => {
                     bakeAuthorStylesToComposerForExport(editor, scoped);

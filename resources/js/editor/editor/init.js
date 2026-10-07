@@ -135,7 +135,11 @@ import { registerLayersChromeFilter } from '../layers-chrome-filter.js';
 import { registerLayerVisibilityPersistence, restoreLayerVisibilityFromAttributes, captureHiddenLayerNames, restoreHiddenLayerNames } from '../layer-visibility.js';
 import { registerTailwindClassSuggestions } from '../tailwind-class-suggestions.js';
 import { registerStyleAnimationSector } from '../style-animation-sector.js';
-import { registerStyleTailwindPanel, hydrateDecorationBackgroundImages } from '../style-tailwind-panel.js';
+import {
+    registerStyleTailwindPanel,
+    hydrateDecorationBackgroundImages,
+    hydrateBgColorOpacityAttrsFromComposer,
+} from '../style-tailwind-panel.js';
 import { stripForcedDarkScopeFromComponents } from '../imported-tailwind-support.js';
 import { registerCanvasClassHoverPopover } from '../canvas-class-hover-popover.js';
 import { syncAllLayerDisplayNames, registerLayerDisplayNamePersistence } from '../layer-display-name.js';
@@ -262,6 +266,7 @@ function applyInitialContent(editor, initial, options = {}) {
         bakeAuthorStylesToComposerForExport(editor);
         stripForcedDarkScopeFromComponents(editor);
         hydrateAuthorStylesFromIdRules(editor);
+        hydrateBgColorOpacityAttrsFromComposer(editor);
         hydrateDecorationBackgroundImages(editor);
         restoreLayerVisibilityFromAttributes(editor);
         editor.__voodbuilderHydrateCanvasFonts?.(initial.css ?? editor.getCss?.() ?? '');
@@ -1493,6 +1498,7 @@ export function initVoodbuilderEditor(container, options = {}) {
             // After CSS load, mirror #id paints into inline so Style Manager fields
             // (font family, color, …) are not empty/"-" on first select.
             hydrateAuthorStylesFromIdRules(editor);
+            hydrateBgColorOpacityAttrsFromComposer(editor);
             // Layers hide may exist only as #id {display:none} from older saves —
             // re-apply marker + inline so eyes/canvas stay in sync after reload.
             restoreLayerVisibilityFromAttributes(editor);
@@ -1502,6 +1508,7 @@ export function initVoodbuilderEditor(container, options = {}) {
             window.requestAnimationFrame(() => {
                 try {
                     hydrateAuthorStylesFromIdRules(editor);
+                    hydrateBgColorOpacityAttrsFromComposer(editor);
                     restoreLayerVisibilityFromAttributes(editor);
                     hydrateDecorationBackgroundImages(editor);
                     void editor.__voodbuilderHydrateCanvasFonts?.(editor.getCss?.() ?? '');
@@ -1946,11 +1953,11 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             const hiddenLayerNames = captureHiddenLayerNames(component, editor);
             const authorRootChrome = captureDynamicRootAuthorChrome(component);
             component.set('voodbuilderConfig', freshConfig, { silent: true });
-            component.setAttributes({
+            // addAttributes — never setAttributes (that wiped data-vb-bg-color-opacity / id).
+            component.addAttributes({
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
                 'data-voodbuilder-config': fresh.getAttribute('data-voodbuilder-config') ?? encodeBlockConfig(freshConfig),
-                class: fresh.getAttribute('class') ?? 'voodbuilder-editor-dynamic',
-            });
+            }, { silent: true });
             component.components(fresh.innerHTML);
             restoreContainerAuthorClasses(component, authorContainerClasses);
             restoreChromeMenuSlotAuthorClasses(component, authorMenuSlotClasses);
@@ -1963,6 +1970,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             window.requestAnimationFrame(() => {
                 lockDynamicPreviewContent(component, editor);
                 hydrateAuthorStylesFromIdRules(editor, component);
+                hydrateBgColorOpacityAttrsFromComposer(editor, component);
 
                 if (editor.__voodbuilderChromeLayoutMode) {
                     reconcileLayoutChromeBlockSettings(editor);
@@ -2026,14 +2034,17 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             }
 
             component.set('voodbuilderConfig', freshConfig, { silent: true });
-            component.setAttributes({
+            // Merge block identity only — setAttributes used to drop author data-vb-* chrome.
+            const remountAttrs = {
                 'data-voodbuilder-block': fresh.getAttribute('data-voodbuilder-block') ?? blockId,
                 'data-voodbuilder-config': encodeBlockConfig(freshConfig),
-                class: fresh.getAttribute('class') ?? 'voodbuilder-editor-dynamic',
-                ...(fresh.hasAttribute('data-voodbuilder-hydrate-slots')
-                    ? { 'data-voodbuilder-hydrate-slots': '1' }
-                    : {}),
-            });
+            };
+
+            if (fresh.hasAttribute('data-voodbuilder-hydrate-slots')) {
+                remountAttrs['data-voodbuilder-hydrate-slots'] = '1';
+            }
+
+            component.addAttributes(remountAttrs, { silent: true });
 
             const hydratesSlots = fresh.hasAttribute('data-voodbuilder-hydrate-slots')
                 && safeFindComponents(component, '[data-voodbuilder-menu], [data-voodbuilder-brand], [data-voodbuilder-chrome="brand"]').length > 0;
@@ -2057,6 +2068,7 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             try {
                 lockDynamicPreviewContent(component, editor);
                 hydrateAuthorStylesFromIdRules(editor, component);
+                hydrateBgColorOpacityAttrsFromComposer(editor, component);
 
                 if (editor.__voodbuilderChromeLayoutMode) {
                     reconcileLayoutChromeBlockSettings(editor);
