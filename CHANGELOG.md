@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.47] - 2026-10-07
+
+### Fixed
+
+- IMAGE settings hide caption / caption-display when the photo is inside a VoodMedia gallery block (those controls only painted the editor; live pages use vault meta + gallery block settings). Selecting such an image clears editor-only caption chrome and shows an explanatory hint.
+
 ## [1.11.45] - 2026-10-07
 
 ### Fixed

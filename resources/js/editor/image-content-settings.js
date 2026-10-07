@@ -126,6 +126,35 @@ function isVbImageFigure(component) {
  * @param {import('grapesjs').Component} component
  * @returns {import('grapesjs').Component | null}
  */
+/**
+ * True when the image lives inside a VoodMedia gallery presentation block.
+ * Those blocks own caption position / visibility from vault meta — Grapes
+ * IMAGE caption traits only paint the editor canvas and never reach the live page.
+ *
+ * @param {import('grapesjs').Component | null | undefined} component
+ * @returns {boolean}
+ */
+export function isInsideVmediaGalleryBlock(component) {
+    let current = component;
+
+    while (current) {
+        const attrs = current.getAttributes?.() ?? {};
+        const blockId = String(
+            attrs['data-voodbuilder-block']
+            ?? attrs['data-voodbuilder-section-block']
+            ?? '',
+        ).trim();
+
+        if (blockId.indexOf('vmedia_gallery_') === 0) {
+            return true;
+        }
+
+        current = typeof current.parent === 'function' ? current.parent() : null;
+    }
+
+    return false;
+}
+
 function findAncestorSection(component) {
     let current = component;
 
@@ -668,6 +697,7 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
 
     let src = readImageSrc(image);
     let alt = String(image.getAttributes?.()?.alt ?? '');
+    const galleryManaged = mode === 'image' && isInsideVmediaGalleryBlock(image);
     const captionState = readCaptionState(image);
     let caption = captionState.caption;
     let captionDisplay = captionState.display;
@@ -762,52 +792,63 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
 
         fields.append(altField);
 
-        const { field: captionField, input: captionInput } = createTextareaField({
-            label: labels.imageSettingsCaption ?? 'Caption',
-            name: 'imageCaption',
-            value: caption,
-            rows: 2,
-            placeholder: labels.imageSettingsCaptionPlaceholder ?? 'Optional caption',
-        });
-
-        captionInputEl = captionInput;
-
-        captionInput.addEventListener('change', () => {
-            caption = String(captionInput.value ?? '').trim();
-            runWithSettingsChangeGuard(editor, () => {
-                syncImageCaption(image, { caption, display: captionDisplay });
+        if (galleryManaged) {
+            // Clear editor-only Grapes caption chrome so the canvas matches the live gallery.
+            if (captionDisplay !== CAPTION_DISPLAY_NONE || caption !== '') {
+                caption = '';
+                captionDisplay = CAPTION_DISPLAY_NONE;
+                runWithSettingsChangeGuard(editor, () => {
+                    syncImageCaption(image, { caption: '', display: CAPTION_DISPLAY_NONE });
+                });
+            }
+        } else {
+            const { field: captionField, input: captionInput } = createTextareaField({
+                label: labels.imageSettingsCaption ?? 'Caption',
+                name: 'imageCaption',
+                value: caption,
+                rows: 2,
+                placeholder: labels.imageSettingsCaptionPlaceholder ?? 'Optional caption',
             });
-        });
 
-        fields.append(captionField);
+            captionInputEl = captionInput;
 
-        fields.append(
-            createSelectField({
-                label: labels.imageSettingsCaptionDisplay ?? 'Caption display',
-                name: 'imageCaptionDisplay',
-                value: captionDisplay,
-                options: [
-                    {
-                        value: CAPTION_DISPLAY_NONE,
-                        label: labels.imageSettingsCaptionDisplayNone ?? 'None (manual)',
+            captionInput.addEventListener('change', () => {
+                caption = String(captionInput.value ?? '').trim();
+                runWithSettingsChangeGuard(editor, () => {
+                    syncImageCaption(image, { caption, display: captionDisplay });
+                });
+            });
+
+            fields.append(captionField);
+
+            fields.append(
+                createSelectField({
+                    label: labels.imageSettingsCaptionDisplay ?? 'Caption display',
+                    name: 'imageCaptionDisplay',
+                    value: captionDisplay,
+                    options: [
+                        {
+                            value: CAPTION_DISPLAY_NONE,
+                            label: labels.imageSettingsCaptionDisplayNone ?? 'None (manual)',
+                        },
+                        {
+                            value: CAPTION_DISPLAY_BELOW,
+                            label: labels.imageSettingsCaptionDisplayBelow ?? 'Below image',
+                        },
+                        {
+                            value: CAPTION_DISPLAY_OVERLAY,
+                            label: labels.imageSettingsCaptionDisplayOverlay ?? 'Overlay',
+                        },
+                    ],
+                    onChange: (value) => {
+                        captionDisplay = value;
+                        runWithSettingsChangeGuard(editor, () => {
+                            syncImageCaption(image, { caption, display: value });
+                        });
                     },
-                    {
-                        value: CAPTION_DISPLAY_BELOW,
-                        label: labels.imageSettingsCaptionDisplayBelow ?? 'Below image',
-                    },
-                    {
-                        value: CAPTION_DISPLAY_OVERLAY,
-                        label: labels.imageSettingsCaptionDisplayOverlay ?? 'Overlay',
-                    },
-                ],
-                onChange: (value) => {
-                    captionDisplay = value;
-                    runWithSettingsChangeGuard(editor, () => {
-                        syncImageCaption(image, { caption, display: value });
-                    });
-                },
-            }),
-        );
+                }),
+            );
+        }
     }
 
     if (mode === 'hero') {
@@ -929,6 +970,9 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
     } else if (mode === 'hero') {
         hint.textContent = labels.imageSettingsHeroHint
             ?? 'Choose a photo for the hero background. SVG placeholders cannot be cropped until you upload a real image.';
+    } else if (galleryManaged) {
+        hint.textContent = labels.imageSettingsGalleryCaptionHint
+            ?? 'This photo is inside a VoodMedia gallery. Caption and credits come from the media library; show/position them with the Gallery block settings (they override any per-image caption display).';
     } else {
         hint.textContent = labels.imageSettingsCaptionHint
             ?? labels.imageSettingsHint

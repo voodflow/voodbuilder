@@ -665,6 +665,7 @@ return [
             'caption_display_below' => 'Below image',
             'caption_display_overlay' => 'Overlay',
             'caption_hint' => 'Choose or upload an image. “None” keeps the caption in data attributes so you can place text manually.',
+            'gallery_caption_hint' => 'This photo is inside a VoodMedia gallery. Caption and credits come from the media library; show/position them with the Gallery block settings (they override any per-image caption display).',
             'opacity' => 'Opacity',
             'fit' => 'Image fit',
             'fit_cover' => 'Cover',

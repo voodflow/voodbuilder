@@ -665,6 +665,7 @@ return [
             'caption_display_below' => 'Sotto l\'immagine',
             'caption_display_overlay' => 'In sovraimpressione',
             'caption_hint' => 'Scegli o carica un\'immagine. Con “Nessuna” la didascalia resta negli attributi data e puoi posizionarla a mano.',
+            'gallery_caption_hint' => 'Questa foto è in una galleria VoodMedia. Didascalia e crediti vengono dalla libreria media; mostra/posiziona con le impostazioni del blocco Galleria (hanno priorità sulla didascalia singola).',
             'opacity' => 'Opacità',
             'fit' => 'Adattamento',
             'fit_cover' => 'Cover',

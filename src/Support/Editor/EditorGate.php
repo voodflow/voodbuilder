@@ -394,6 +394,7 @@ final class EditorGate
             'imageSettingsCaptionDisplayBelow' => __('voodbuilder::pro.editor.image_settings.caption_display_below'),
             'imageSettingsCaptionDisplayOverlay' => __('voodbuilder::pro.editor.image_settings.caption_display_overlay'),
             'imageSettingsCaptionHint' => __('voodbuilder::pro.editor.image_settings.caption_hint'),
+            'imageSettingsGalleryCaptionHint' => __('voodbuilder::pro.editor.image_settings.gallery_caption_hint'),
             'imageSettingsOpacity' => __('voodbuilder::pro.editor.image_settings.opacity'),
             'imageSettingsFit' => __('voodbuilder::pro.editor.image_settings.fit'),
             'imageSettingsFitCover' => __('voodbuilder::pro.editor.image_settings.fit_cover'),
