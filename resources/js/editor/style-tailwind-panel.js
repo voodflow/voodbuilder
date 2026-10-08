@@ -1643,30 +1643,18 @@ function translucentBackgroundColorPaint(component, editor = null) {
 const BG_OPACITY_CANVAS_STYLE_ID = 'voodbuilder-bg-color-opacity-paint';
 
 /**
- * Durable canvas <style> for translucent Color opacity — survives Grapes
- * updateStyle / soft remounts that wipe inline paints until Save.
+ * Flush durable canvas Color-opacity `<style>` from `__voodbuilderBgOpacityPaints`.
  *
  * @param {object} editor
- * @param {string} id
- * @param {string} painted '' clears this id
  */
-function syncBgOpacityCanvasStyle(editor, id, painted) {
-    if (! editor || ! id) {
+function flushBgOpacityCanvasStyleTag(editor) {
+    if (! editor) {
         return;
     }
 
     const map = editor.__voodbuilderBgOpacityPaints && typeof editor.__voodbuilderBgOpacityPaints === 'object'
         ? editor.__voodbuilderBgOpacityPaints
         : {};
-    editor.__voodbuilderBgOpacityPaints = map;
-
-    const cssValue = String(painted ?? '').replace(/\s*!important\s*$/i, '').trim();
-
-    if (cssValue === '') {
-        delete map[id];
-    } else {
-        map[id] = cssValue;
-    }
 
     let doc = null;
 
@@ -1711,6 +1699,40 @@ function syncBgOpacityCanvasStyle(editor, id, painted) {
 }
 
 /**
+ * Durable canvas <style> for translucent Color opacity — survives Grapes
+ * updateStyle / soft remounts that wipe inline paints until Save.
+ *
+ * @param {object} editor
+ * @param {string} id
+ * @param {string} painted '' clears this id
+ * @param {{ deferDom?: boolean }} [options] when true, only update the map (Save batch)
+ */
+function syncBgOpacityCanvasStyle(editor, id, painted, options = {}) {
+    if (! editor || ! id) {
+        return;
+    }
+
+    const map = editor.__voodbuilderBgOpacityPaints && typeof editor.__voodbuilderBgOpacityPaints === 'object'
+        ? editor.__voodbuilderBgOpacityPaints
+        : {};
+    editor.__voodbuilderBgOpacityPaints = map;
+
+    const cssValue = String(painted ?? '').replace(/\s*!important\s*$/i, '').trim();
+
+    if (cssValue === '') {
+        delete map[id];
+    } else {
+        map[id] = cssValue;
+    }
+
+    if (options.deferDom === true || editor.__voodbuilderBgOpacityPaintBatch) {
+        return;
+    }
+
+    flushBgOpacityCanvasStyleTag(editor);
+}
+
+/**
  * Paint solid Color opacity via inline/#id (light) or html.dark #id cache (dark).
  * Plain/prefixed `bg-*` stays for the Color field; alpha lives in data attrs.
  */
@@ -1720,12 +1742,14 @@ function syncBgOpacityCanvasStyle(editor, id, painted) {
  *
  * @param {object} editor
  * @param {object} component
+ * @param {{ light?: boolean }} [options] light=true skips full CssComposer rule walks (Save)
  */
-function clearBackgroundColorOpacityPaint(editor, component) {
+function clearBackgroundColorOpacityPaint(editor, component, options = {}) {
     if (! editor || ! component) {
         return;
     }
 
+    const light = options.light === true;
     const targets = [component];
     const visual = resolveVisualStyleTarget(component);
 
@@ -1746,7 +1770,9 @@ function clearBackgroundColorOpacityPaint(editor, component) {
             seen.add(id);
         }
 
-        clearStyleProperty(editor, target, 'background-color', { family: false });
+        if (! light) {
+            clearStyleProperty(editor, target, 'background-color', { family: false });
+        }
 
         // Hydrate copies `#id` → Grapes inline; bake/collectAuthorIdCss used to
         // prefer that inline and resurrect the previous Color after recolor.
@@ -1774,6 +1800,46 @@ function clearBackgroundColorOpacityPaint(editor, component) {
             }
         }
     }
+}
+
+/**
+ * Cheap gate: does this node look like it participates in Color opacity?
+ *
+ * @param {object} component
+ * @param {object} editor
+ * @returns {boolean}
+ */
+function componentMayHaveBgColorOpacity(component, editor) {
+    const id = String(component?.getId?.() ?? '').trim();
+    const attrs = component?.getAttributes?.() ?? {};
+
+    if (
+        String(attrs[BG_COLOR_OPACITY_ATTR] ?? '').trim() !== ''
+        || String(attrs[BG_COLOR_OPACITY_DARK_ATTR] ?? '').trim() !== ''
+    ) {
+        return true;
+    }
+
+    if (id && editor?.__voodbuilderBgOpacityPaints?.[id]) {
+        return true;
+    }
+
+    if (id) {
+        const paint = editor?.Css?.getIdRule?.(id)?.getStyle?.()?.['background-color'];
+
+        if (paint != null && String(paint).trim() !== '') {
+            return true;
+        }
+    }
+
+    const classes = componentClassList(component);
+
+    return classes.some((name) => {
+        const bare = String(name ?? '').replace(/^(?:dark:)?(?:sm|md|lg|xl|2xl):/, '');
+
+        return /^bg-(?!gradient|none|repeat|cover|contain|auto|fixed|local|scroll|clip|origin)/.test(bare)
+            && bare !== 'bg-transparent';
+    });
 }
 
 function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
@@ -4688,70 +4754,85 @@ function resolveAuthoredBackgroundColorForExport(component, editor = null) {
  * Authoritative Save sync: derive Color opacity `#id` paint + attrs from each
  * component's utilities — never re-ship a stale canvas map / previous rgba hue.
  *
+ * Scoped to the content slot when provided (chrome-shell Save). Skips nodes with
+ * no Color involvement — full-tree clearStyleProperty used to dominate Save time.
+ *
  * @param {object} editor
+ * @param {{ root?: object }} [options]
  */
-export function reconcileBgColorOpacityForExport(editor) {
+export function reconcileBgColorOpacityForExport(editor, options = {}) {
     const wrapper = editor?.getWrapper?.();
+    const root = options.root ?? wrapper;
 
-    if (! wrapper?.onAll || ! editor?.Css) {
+    if (! root?.onAll || ! editor?.Css) {
         return;
     }
 
-    // Rebuild durable canvas paints from live component state only.
-    editor.__voodbuilderBgOpacityPaints = {};
+    editor.__voodbuilderBgOpacityPaintBatch = true;
 
-    wrapper.onAll((component) => {
-        if (! component?.getId) {
-            return;
-        }
-
-        const id = String(component.getId() ?? '').trim();
-
-        if (id === '') {
-            return;
-        }
-
-        const { color, opacity } = resolveAuthoredBackgroundColorForExport(component, editor);
-
-        // Always drop hydrated inline before paint so bake cannot restore a prior hue.
-        clearBackgroundColorOpacityPaint(editor, component);
-
-        if (color === '' || color === 'bg-transparent') {
-
-            try {
-                component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);
-            } catch (error) {
-                const attrs = { ...(component.getAttributes?.() ?? {}) };
-                delete attrs[BG_COLOR_OPACITY_ATTR];
-                component.setAttributes?.(attrs);
+    try {
+        root.onAll((component) => {
+            if (! component?.getId) {
+                return;
             }
 
-            return;
-        }
+            const id = String(component.getId() ?? '').trim();
 
-        if (opacity !== '') {
-            component.addAttributes?.({ [BG_COLOR_OPACITY_ATTR]: opacity });
-        } else {
-            try {
-                component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);
-            } catch (error) {
-                const attrs = { ...(component.getAttributes?.() ?? {}) };
-                delete attrs[BG_COLOR_OPACITY_ATTR];
-                component.setAttributes?.(attrs);
+            if (id === '') {
+                return;
             }
-        }
 
-        paintBackgroundColorOpacity(editor, component, color, opacity);
-    });
+            if (! componentMayHaveBgColorOpacity(component, editor)) {
+                return;
+            }
+
+            const { color, opacity } = resolveAuthoredBackgroundColorForExport(component, editor);
+
+            if (color === '' || color === 'bg-transparent') {
+                clearBackgroundColorOpacityPaint(editor, component, { light: true });
+
+                try {
+                    component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);
+                } catch (error) {
+                    const attrs = { ...(component.getAttributes?.() ?? {}) };
+                    delete attrs[BG_COLOR_OPACITY_ATTR];
+                    component.setAttributes?.(attrs);
+                }
+
+                return;
+            }
+
+            // Drop stale hydrated inline / prior hue, then paint current Color.
+            clearBackgroundColorOpacityPaint(editor, component, { light: true });
+
+            if (opacity !== '') {
+                component.addAttributes?.({ [BG_COLOR_OPACITY_ATTR]: opacity });
+            } else {
+                try {
+                    component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);
+                } catch (error) {
+                    const attrs = { ...(component.getAttributes?.() ?? {}) };
+                    delete attrs[BG_COLOR_OPACITY_ATTR];
+                    component.setAttributes?.(attrs);
+                }
+            }
+
+            paintBackgroundColorOpacity(editor, component, color, opacity);
+        });
+    } finally {
+        editor.__voodbuilderBgOpacityPaintBatch = false;
+        flushBgOpacityCanvasStyleTag(editor);
+    }
 }
 
 /**
  * Before getHtml(): align `#id` Color paints + opacity attrs with utilities.
  *
  * @param {object} editor
+ * @param {{ root?: object }} [options]
  */
-export function syncBgColorOpacityAttrsForExport(editor) {
-    reconcileBgColorOpacityForExport(editor);
+export function syncBgColorOpacityAttrsForExport(editor, options = {}) {
+    reconcileBgColorOpacityForExport(editor, options);
 }
 
 export function registerStyleTailwindPanel(editor, options = {}) {

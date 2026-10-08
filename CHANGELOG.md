@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.59] - 2026-10-08
+
+### Fixed
+
+- Save after Style Color changes: `reconcileBgColorOpacityForExport` no longer `clearStyleProperty`s every node in the tree (that dominated Save). It scopes to the content slot, skips unrelated components, uses a light clear, and rebuilds the canvas opacity `<style>` once per Save.
+
 ## [1.11.58] - 2026-10-08
 
 ### Fixed

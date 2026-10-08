@@ -989,8 +989,9 @@ export function buildPayload(editor, options = {}) {
                 runExportStep('detachTopDropSpacerForExport', () => detachTopDropSpacerForExport(editor));
                 runExportStep('detachInnerDropSlotsForExport', () => detachInnerDropSlotsForExport(editor));
                 // Persist Color opacity attrs + flush canvas paints before #id bake / getHtml.
+                // Scope to content slot (same as bake) — full-tree reconcile froze Save.
                 runExportStep('syncBgColorOpacityAttrsForExport', () => {
-                    syncBgColorOpacityAttrsForExport(editor);
+                    syncBgColorOpacityAttrsForExport(editor, scoped);
                 });
                 // Chrome shell: bake only the page content slot (nav/footer are separate).
                 runExportStep('bakeAuthorStylesToComposerForExport', () => {
