@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.58] - 2026-10-08
+
+### Fixed
+
+- Vitest: hydrate no longer expects background-color on Grapes inline.
+
 ## [1.11.57] - 2026-10-08
 
 ### Changed
