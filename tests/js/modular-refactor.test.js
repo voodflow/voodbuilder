@@ -1450,7 +1450,7 @@ html.dark #wrap { background-image: url(/d.jpg); background-size: cover }
         expect(inline['background-color']).toBe('#daa0a0');
     });
 
-    it('hydrateAuthorStylesFromIdRules restores background-color after reload', async () => {
+    it('hydrateAuthorStylesFromIdRules does not copy background-color into Grapes inline', async () => {
         const { hydrateAuthorStylesFromIdRules } = await import(
             '../../resources/js/editor/tailwind-visual-style.js'
         );
@@ -1458,21 +1458,27 @@ html.dark #wrap { background-image: url(/d.jpg); background-size: cover }
             '../../resources/js/editor/editor/payload.js'
         );
 
-        const inline = {};
+        const inline = { 'background-color': '#stale-gray' };
+        const removed = [];
         const component = {
             getId: () => 'section-bg',
+            getClasses: () => ['lg:bg-vp-brand-1'],
             getStyle: (opts) => (opts?.inline ? { ...inline } : { ...inline }),
             addStyle(next, opts) {
                 if (opts?.inline) {
                     Object.assign(inline, next);
                 }
             },
+            removeStyle(property) {
+                removed.push(property);
+                delete inline[property];
+            },
         };
 
         const editor = {
             Css: {
                 getIdRule: (id) => (id === 'section-bg'
-                    ? { getStyle: () => ({ 'background-color': '#daa0a0 !important' }) }
+                    ? { getStyle: () => ({ 'background-color': '#daa0a0 !important', 'font-family': 'Inter' }) }
                     : null),
                 setIdRule() {},
             },
@@ -1483,8 +1489,11 @@ html.dark #wrap { background-image: url(/d.jpg); background-size: cover }
 
         const updated = hydrateAuthorStylesFromIdRules(editor);
 
+        // font-family may hydrate; background paints must stay on `#id` only.
         expect(updated).toBe(1);
-        expect(inline['background-color']).toBe('#daa0a0');
+        expect(inline['background-color']).toBeUndefined();
+        expect(removed).toContain('background-color');
+        expect(inline['font-family']).toBe('Inter');
 
         const css = collectAuthorIdCssFromComponents(editor);
 
