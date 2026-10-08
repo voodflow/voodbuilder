@@ -1792,13 +1792,49 @@ function clearBackgroundColorOpacityPaint(editor, component, options = {}) {
 
         if (id) {
             syncBgOpacityCanvasStyle(editor, id, '');
-
-            try {
-                editor.Css?.getIdRule?.(id)?.removeStyle?.('background-color');
-            } catch (error) {
-                debugSwallowed(error);
-            }
+            clearIdRuleBackgroundColor(editor, id);
         }
+    }
+}
+
+/**
+ * Grapes `removeStyle` often leaves `background-color` in serialized getCss().
+ * Rewrite the `#id` rule without that property (or drop an empty rule).
+ *
+ * @param {object} editor
+ * @param {string} id
+ */
+function clearIdRuleBackgroundColor(editor, id) {
+    const safeId = String(id ?? '').trim();
+
+    if (! editor?.Css || safeId === '') {
+        return;
+    }
+
+    try {
+        const rule = editor.Css.getIdRule?.(safeId);
+
+        if (! rule) {
+            return;
+        }
+
+        const style = { ...(rule.getStyle?.() ?? {}) };
+
+        if (! Object.prototype.hasOwnProperty.call(style, 'background-color')) {
+            return;
+        }
+
+        delete style['background-color'];
+
+        if (Object.keys(style).length === 0) {
+            editor.Css.remove?.(rule);
+        } else if (editor.Css.setIdRule) {
+            editor.Css.setIdRule(safeId, style);
+        } else {
+            rule.setStyle?.(style);
+        }
+    } catch (error) {
+        debugSwallowed(error);
     }
 }
 
@@ -4833,6 +4869,124 @@ export function reconcileBgColorOpacityForExport(editor, options = {}) {
  */
 export function syncBgColorOpacityAttrsForExport(editor, options = {}) {
     reconcileBgColorOpacityForExport(editor, options);
+}
+
+/**
+ * Final Save guard on the assembled author CSS string: each node's `#id`
+ * background-color must match its current Color utility (or be stripped at 100%
+ * so Tailwind wins). Grapes CssComposer alone kept shipping a prior red rgba
+ * after the class changed to amber/orange.
+ *
+ * @param {object} editor
+ * @param {string} css
+ * @param {{ root?: object }} [options]
+ * @returns {string}
+ */
+export function rewriteAuthorBgColorOpacityInCss(editor, css, options = {}) {
+    const source = String(css ?? '');
+    const root = options.root ?? editor?.getWrapper?.();
+
+    if (! editor || source === '' || ! root?.onAll) {
+        return source;
+    }
+
+    /** @type {Map<string, string>} id → painted value ('' = strip) */
+    const desired = new Map();
+
+    root.onAll((component) => {
+        if (! component?.getId) {
+            return;
+        }
+
+        const id = String(component.getId() ?? '').replace(/[^A-Za-z0-9_-]/g, '');
+
+        if (id === '') {
+            return;
+        }
+
+        if (! componentMayHaveBgColorOpacity(component, editor) && ! source.includes(`#${id}`)) {
+            return;
+        }
+
+        const { color, opacity } = resolveAuthoredBackgroundColorForExport(component, editor);
+
+        if (color === '' || color === 'bg-transparent') {
+            desired.set(id, '');
+
+            return;
+        }
+
+        const painted = composeTranslucentBackgroundColor(color, opacity, editor)
+            .replace(/\s*!important\s*$/i, '')
+            .trim();
+
+        // '' at 100% non-theme → strip `#id` so `.bg-amber-500` owns the paint.
+        desired.set(id, painted);
+    });
+
+    if (desired.size === 0) {
+        return source;
+    }
+
+    let next = source;
+
+    for (const [id, value] of desired.entries()) {
+        next = upsertBareIdBackgroundColor(next, id, value);
+    }
+
+    return next;
+}
+
+/**
+ * @param {string} css
+ * @param {string} id
+ * @param {string} bgValue empty = remove background-color from bare `#id`
+ * @returns {string}
+ */
+function upsertBareIdBackgroundColor(css, id, bgValue) {
+    const safeId = String(id ?? '').replace(/[^A-Za-z0-9_-]/g, '');
+
+    if (safeId === '') {
+        return css;
+    }
+
+    let touched = false;
+    const result = String(css).replace(
+        /#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/g,
+        (full, ruleId, body, offset, whole) => {
+            if (ruleId !== safeId) {
+                return full;
+            }
+
+            const before = String(whole).slice(Math.max(0, offset - 24), offset);
+
+            if (/html\.dark\s*$/i.test(before)) {
+                return full;
+            }
+
+            touched = true;
+            const decls = String(body)
+                .split(';')
+                .map((part) => part.trim())
+                .filter((part) => part !== '' && ! /^background-color\s*:/i.test(part));
+
+            if (bgValue) {
+                decls.push(`background-color: ${bgValue}`);
+            }
+
+            if (decls.length === 0) {
+                return '';
+            }
+
+            return `#${safeId} {${decls.join('; ')}}`;
+        },
+    );
+
+    if (! touched && bgValue) {
+        return `${result.trim()}\n#${safeId} {background-color: ${bgValue}}`.trim();
+    }
+
+    return result.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 export function registerStyleTailwindPanel(editor, options = {}) {

@@ -41,7 +41,10 @@ import {
     syncPaintStylesForExport,
     syncSpacingStylesForExport,
 } from '../tailwind-visual-style.js';
-import { syncBgColorOpacityAttrsForExport } from '../style-tailwind-panel.js';
+import {
+    rewriteAuthorBgColorOpacityInCss,
+    syncBgColorOpacityAttrsForExport,
+} from '../style-tailwind-panel.js';
 import { shouldOmitAuthorStyleValue } from '../theme-tokens.js';
 import { withoutUndo } from '../editor-undo.js';
 import {
@@ -1094,6 +1097,10 @@ export function buildPayload(editor, options = {}) {
         // Final guard: never ship Grapes comma form `#id, html.dark`.
         css = css.replace(/#[\w-]+\s*,\s*html\.dark\s*\{[^{}]*\}/gi, '').trim();
 
+        // Color utility is source of truth — rewrite/strip stale `#id` rgba hues
+        // (e.g. red left behind after class → lg:bg-amber-500).
+        css = rewriteAuthorBgColorOpacityInCss(editor, css, scoped);
+
         const maxCssBytes = Number(editor.__voodbuilderMaxCssBytes ?? 1_000_000);
 
         if (css.length > maxCssBytes) {
@@ -1107,6 +1114,7 @@ export function buildPayload(editor, options = {}) {
                 extractBareIdAuthorCss(pageSurfaceCss),
                 css,
             ]);
+            css = rewriteAuthorBgColorOpacityInCss(editor, css, scoped);
         }
 
         if (css.length > maxCssBytes) {

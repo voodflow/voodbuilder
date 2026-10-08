@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.60] - 2026-10-08
+
+### Fixed
+
+- Front still showed a prior Color `#id` rgba (e.g. red) after the Style class changed to another utility (`lg:bg-amber-500`): Grapes `removeStyle` did not drop the property from serialized CSS. Clear via `setIdRule` rewrite, and on Save rewrite/strip `#id` background-color from the author CSS string so Tailwind owns opaque colors.
+
 ## [1.11.59] - 2026-10-08
 
 ### Fixed
