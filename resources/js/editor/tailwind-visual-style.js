@@ -1122,6 +1122,22 @@ export function bakeAuthorStylesToComposerForExport(editor, options = {}) {
  * @param {object|null} [onlyComponent] When set, hydrate only this component (e.g. on select).
  * @returns {number}
  */
+/**
+ * Background paints must stay on CssComposer `#id` / utilities — never Grapes inline.
+ * Hydrating them into inline caused stale hues to win on Save over new Tailwind colors.
+ */
+const HYDRATE_SKIP_INLINE_PROPERTIES = new Set([
+    'background',
+    'background-color',
+    'background-image',
+    'background-size',
+    'background-position',
+    'background-repeat',
+    'background-attachment',
+    'background-origin',
+    'background-clip',
+]);
+
 export function hydrateAuthorStylesFromIdRules(editor, onlyComponent = null) {
     const css = editor?.Css;
 
@@ -1143,10 +1159,27 @@ export function hydrateAuthorStylesFromIdRules(editor, onlyComponent = null) {
         }
 
         const inline = { ...(component.getStyle?.({ inline: true }) ?? {}) };
+
+        // Scrub leftover background paints off Grapes inline (prior hydrate / SM).
+        for (const property of HYDRATE_SKIP_INLINE_PROPERTIES) {
+            if (inline[property] != null && String(inline[property]).trim() !== '') {
+                try {
+                    component.removeStyle?.(property);
+                } catch (error) {
+                    debugSwallowed(error);
+                }
+            }
+        }
+
         const next = {};
 
         for (const [property, value] of Object.entries(fromId)) {
             if (shouldOmitAuthorStyleValue(property, value)) {
+                continue;
+            }
+
+            // Author rule: Tailwind utilities (+ `#id` CSS for opacity), not inline paints.
+            if (HYDRATE_SKIP_INLINE_PROPERTIES.has(property)) {
                 continue;
             }
 

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.57] - 2026-10-08
+
+### Changed
+
+- Author styling rule: do not hydrate CssComposer background paints into Grapes inline — Color/photo/gradient stay on Tailwind utilities + `#id` CSS only (no `style="background-*"` as source of truth).
+
 ## [1.11.56] - 2026-10-08
 
 ### Fixed
