@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.61] - 2026-10-08
+
+### Changed
+
+- Community package license metadata aligned with the public EULA: `composer.json` and `LICENSE` are now **MIT** (matches Packagist / License Agreement for VoodBuilder Community).
+
 ## [1.11.60] - 2026-10-08
 
 ### Fixed
