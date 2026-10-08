@@ -584,6 +584,27 @@ export function collectAuthorIdCssFromComponents(editor, options = {}) {
         // Combined getStyle() can include private-class paints still attached.
         const combined = { ...(component.getStyle?.() ?? {}) };
         const merged = { ...fromId, ...combined, ...inline };
+        // Color opacity paints live on CssComposer `#id`. Hydrate copies them to
+        // Grapes inline for Style Manager — that stale inline must not win on Save
+        // (kept a prior gray rgba after the author switched to vp-brand-1).
+        if (Object.prototype.hasOwnProperty.call(fromId, 'background-color')) {
+            merged['background-color'] = fromId['background-color'];
+        } else if (Object.prototype.hasOwnProperty.call(merged, 'background-color')) {
+            const classList = typeof component.getClasses === 'function'
+                ? [...component.getClasses()]
+                : String(component.getAttributes?.()?.class ?? '').split(/\s+/).filter(Boolean);
+            const hasSolidBg = classList.some((name) => {
+                const bare = String(name ?? '').replace(/^(?:dark:)?(?:sm|md|lg|xl|2xl):/, '');
+
+                return /^bg-(?!gradient|none|repeat|cover|contain|auto|fixed|local|scroll|clip|origin)/.test(bare)
+                    && bare !== 'bg-transparent';
+            });
+
+            if (hasSolidBg) {
+                delete merged['background-color'];
+            }
+        }
+
         const attrs = component.getAttributes?.({ noClass: true, noStyle: true })
             ?? component.getAttributes?.()
             ?? {};

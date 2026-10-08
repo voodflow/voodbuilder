@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.56] - 2026-10-08
+
+### Fixed
+
+- Style Color recolor after hydrate: Grapes inline still held the previous `#id` rgba (e.g. gray) and `collectAuthorIdCssFromComponents` / bake preferred that inline over CssComposer, so Save kept shipping the old hue while the canvas showed the new `vp-*` class. Prefer `#id` background-color on export, clear hydrated inline on Color paint/reconcile.
+
 ## [1.11.55] - 2026-10-07
 
 ### Fixed

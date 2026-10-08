@@ -1748,6 +1748,15 @@ function clearBackgroundColorOpacityPaint(editor, component) {
 
         clearStyleProperty(editor, target, 'background-color', { family: false });
 
+        // Hydrate copies `#id` → Grapes inline; bake/collectAuthorIdCss used to
+        // prefer that inline and resurrect the previous Color after recolor.
+        try {
+            target.removeStyle?.('background-color');
+            component.removeStyle?.('background-color');
+        } catch (error) {
+            debugSwallowed(error);
+        }
+
         try {
             const el = target?.getEl?.() ?? target?.view?.el;
             el?.style?.removeProperty?.('background-color');
@@ -1816,6 +1825,15 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     persistSurfacePaint(editor, component, {
         'background-color': painted,
     });
+
+    // Keep Color opacity off Grapes inline — `#id` + canvas <style> only — so a
+    // prior hydrated hue cannot win over CssComposer on the next Save.
+    try {
+        target.removeStyle?.('background-color');
+        component.removeStyle?.('background-color');
+    } catch (error) {
+        debugSwallowed(error);
+    }
 
     if (id) {
         syncBgOpacityCanvasStyle(editor, id, painted);
@@ -4695,8 +4713,10 @@ export function reconcileBgColorOpacityForExport(editor) {
 
         const { color, opacity } = resolveAuthoredBackgroundColorForExport(component, editor);
 
+        // Always drop hydrated inline before paint so bake cannot restore a prior hue.
+        clearBackgroundColorOpacityPaint(editor, component);
+
         if (color === '' || color === 'bg-transparent') {
-            clearBackgroundColorOpacityPaint(editor, component);
 
             try {
                 component.removeAttributes?.(BG_COLOR_OPACITY_ATTR);

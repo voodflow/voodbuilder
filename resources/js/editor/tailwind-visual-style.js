@@ -987,6 +987,13 @@ export function bakeAuthorStylesToComposerForExport(editor, options = {}) {
         }
 
         const live = { ...fromPrivate, ...existing, ...inline };
+
+        // Style Color opacity: CssComposer `#id` (reconciled just before bake) must
+        // beat hydrated inline, or a previous hue is written back onto `#id`.
+        if (Object.prototype.hasOwnProperty.call(existing, 'background-color')) {
+            live['background-color'] = existing['background-color'];
+        }
+
         const merged = {};
 
         for (const [property, value] of Object.entries(live)) {
