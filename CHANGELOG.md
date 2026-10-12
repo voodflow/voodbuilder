@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.67] - 2026-10-12
+
+### Fixed
+
+- Site footer menu columns stay left-aligned (chrome `text-center` utility no longer recenters link lists)
+
 ## [1.11.66] - 2026-10-12
 
 ### Fixed

@@ -99,6 +99,14 @@
     text-align: center;
 }
 
+/* Menu column wrapper used to carry text-center for mobile; keep lists left-aligned. */
+.voodbuilder-editor-footer [data-voodbuilder-footer-menu-cols].text-center,
+[data-voodbuilder-footer-menu-cols].text-center,
+.voodbuilder-editor-footer [data-voodbuilder-footer-menu-cols],
+[data-voodbuilder-footer-menu-cols] {
+    text-align: left;
+}
+
 .voodbuilder-editor-footer .text-left,
 [data-voodbuilder-block^='site_footer_'] .text-left {
     text-align: left;

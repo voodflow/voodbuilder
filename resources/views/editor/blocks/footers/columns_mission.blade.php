@@ -9,7 +9,7 @@
                 'taglineClass' => 'mt-3 text-sm text-vp-text-2',
             ])
         </div>
-        <div class="mt-10 flex grow flex-wrap lg:mt-0 lg:pl-12 lg:text-left text-center">
+        <div class="mt-10 flex grow flex-wrap text-left lg:mt-0 lg:pl-12">
             @include('voodbuilder::editor.blocks.footers._columns', ['config' => $config])
         </div>
     </div>

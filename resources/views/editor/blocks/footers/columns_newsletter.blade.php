@@ -41,7 +41,7 @@
     <div class="flex flex-col flex-wrap lg:flex-row lg:flex-nowrap lg:items-start">
         @include('voodbuilder::editor.blocks.footers._brand_column', ['config' => $config, 'preview' => $preview])
         <div @class([
-            'mt-10 w-full grow lg:mt-0 lg:pl-12 lg:text-left text-center',
+            'mt-10 w-full grow text-left lg:mt-0 lg:pl-12',
             'flex flex-wrap lg:flex-nowrap' => $redistribute,
             'grid grid-cols-1 lg:grid-cols-4' => ! $redistribute,
             $menuColumnsAlign,

@@ -310,6 +310,16 @@ body.voodbuilder-editor-editing :is(main, main .VPRichPage, main .voodbuilder-si
     @apply hidden m-0 min-h-0 p-0;
 }
 
+/*
+ * Footer menu columns: always left-align link lists (mobile + desktop).
+ * Stored chrome HTML may still carry text-center; override so it cannot win
+ * the cascade against lg:text-left.
+ */
+[data-voodbuilder-footer-menu-cols],
+[data-voodbuilder-footer-menu-cols].text-center {
+    text-align: left;
+}
+
 /* Escape nested .container wrappers when blocks were dropped inside footer columns. */
 .VPRichPage--landing :is(.voodbuilder-editor-hero, .voodbuilder-editor-cta, .vp-landing-hero) {
     @apply relative w-full max-w-none;
