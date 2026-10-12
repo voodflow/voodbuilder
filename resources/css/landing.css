@@ -719,6 +719,10 @@ body.voodbuilder-page-gated .voodbuilder-page-gate > .relative {
     @apply relative m-0;
 }
 
+.vb-image--has-credits {
+    @apply overflow-hidden;
+}
+
 .vb-image > img {
     @apply block w-full h-auto;
 }

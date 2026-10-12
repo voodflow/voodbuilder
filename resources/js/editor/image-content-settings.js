@@ -124,6 +124,57 @@ function isVbImageFigure(component) {
 }
 
 /**
+ * @param {import('grapesjs').Component | null | undefined} figure
+ * @returns {import('grapesjs').Component | null}
+ */
+function findImageCreditsChrome(figure) {
+    if (! figure) {
+        return null;
+    }
+
+    return safeFindComponents(figure, '[data-vb-image-credits]')[0]
+        ?? figure.components?.()?.find?.((child) => {
+            const attrs = child.getAttributes?.() ?? {};
+
+            return Object.prototype.hasOwnProperty.call(attrs, 'data-vb-image-credits')
+                || Object.prototype.hasOwnProperty.call(attrs, 'data-vmedia-credits');
+        })
+        ?? null;
+}
+
+/**
+ * @param {import('grapesjs').Component} image
+ * @returns {string}
+ */
+function readCreditsText(image) {
+    const attrs = image.getAttributes?.() ?? {};
+
+    return String(attrs['data-vb-credits'] ?? attrs['data-vb-media-credits'] ?? '').trim();
+}
+
+/**
+ * Re-bind gallery/image credits toggles inside the canvas iframe (or current doc).
+ *
+ * @param {import('grapesjs').Editor | null | undefined} editor
+ * @param {import('grapesjs').Component | null | undefined} image
+ */
+function rebindCreditsToggles(editor, image = null) {
+    const doc = image?.view?.el?.ownerDocument
+        ?? editor?.Canvas?.getDocument?.()
+        ?? (typeof document !== 'undefined' ? document : null);
+
+    if (! doc) {
+        return;
+    }
+
+    const bind = doc.defaultView?.__vmediaBindCredits ?? window.__vmediaBindCredits;
+
+    if (typeof bind === 'function') {
+        bind(doc);
+    }
+}
+
+/**
  * @param {import('grapesjs').Component} component
  * @returns {import('grapesjs').Component | null}
  */
@@ -575,9 +626,11 @@ function syncImageCaption(image, values) {
             parent.addAttributes({ 'data-vb-caption-display': null });
 
             const remaining = parent.components?.() ?? [];
+            const creditsChrome = findImageCreditsChrome(parent);
             const onlyImage = remaining.length === 1 && remaining.at?.(0) === image;
 
-            if (onlyImage && isVbImageFigure(parent) && parent.parent?.()) {
+            // Keep the figure when credits chrome is present (same wrapper as caption).
+            if (onlyImage && ! creditsChrome && isVbImageFigure(parent) && parent.parent?.()) {
                 const grandParent = parent.parent();
                 const at = parent.index();
                 transferLayoutSlotClasses(parent, image);
@@ -616,6 +669,197 @@ function syncImageCaption(image, values) {
         captionEl.addClass?.('vb-image__caption');
         setFigcaptionText(captionEl, caption);
     }
+}
+
+/**
+ * Gallery-style “i” credits chrome on standalone images (saved in page HTML).
+ *
+ * @param {import('grapesjs').Component} image
+ * @param {string} credits
+ * @param {{ editor?: import('grapesjs').Editor|null, label?: string }} [options]
+ */
+export function syncImageCredits(image, credits, options = {}) {
+    if (isInsideVmediaGalleryBlock(image)) {
+        return;
+    }
+
+    const text = String(credits ?? '').trim();
+    const label = String(options.label ?? 'Credits');
+    const parent = image.parent?.();
+    const existingOnParent = parent ? findImageCreditsChrome(parent) : null;
+
+    image.addAttributes({
+        'data-vb-credits': text || null,
+    });
+
+    if (text === '') {
+        if (existingOnParent) {
+            existingOnParent.remove();
+        }
+
+        if (parent && isVbImageFigure(parent)) {
+            parent.removeClass('vb-image--has-credits');
+        }
+
+        // Drop an empty figure wrapper when caption chrome is also gone.
+        if (parent && isVbImageFigure(parent) && ! findFigureCaption(parent) && parent.parent?.()) {
+            const remaining = parent.components?.() ?? [];
+            const onlyImage = remaining.length === 1 && remaining.at?.(0) === image;
+
+            if (onlyImage) {
+                const grandParent = parent.parent();
+                const at = parent.index();
+                transferLayoutSlotClasses(parent, image);
+                image.move(grandParent, { at });
+                parent.remove();
+            }
+        }
+
+        rebindCreditsToggles(options.editor ?? null, image);
+
+        return;
+    }
+
+    const figure = ensureVbImageFigure(image);
+
+    if (! figure) {
+        return;
+    }
+
+    figure.addClass('vb-image--has-credits');
+
+    let chrome = findImageCreditsChrome(figure);
+
+    if (! chrome) {
+        const imageIndex = typeof image.index === 'function' ? image.index() : 0;
+        const appended = figure.append({
+            tagName: 'div',
+            classes: ['vmedia-gallery-credits', 'vmedia-gallery-credits--on-dark'],
+            attributes: {
+                'data-vmedia-credits': '',
+                'data-vb-image-credits': '',
+            },
+            selectable: false,
+            hoverable: false,
+            draggable: false,
+            droppable: false,
+            highlightable: false,
+            components: [
+                {
+                    tagName: 'button',
+                    type: 'button',
+                    classes: ['vmedia-gallery-credits__btn', 'vmedia-gallery-credits__btn--on-dark'],
+                    attributes: {
+                        type: 'button',
+                        'data-vmedia-credits-toggle': '',
+                        'data-voodbuilder-skip-cta': 'true',
+                        'aria-expanded': 'false',
+                        'aria-label': label,
+                        title: label,
+                    },
+                    selectable: false,
+                    hoverable: false,
+                    draggable: false,
+                    droppable: false,
+                    components: [
+                        {
+                            tagName: 'span',
+                            attributes: { 'aria-hidden': 'true' },
+                            content: 'i',
+                            selectable: false,
+                            hoverable: false,
+                            draggable: false,
+                        },
+                    ],
+                },
+                {
+                    tagName: 'div',
+                    classes: ['vmedia-gallery-credits__panel'],
+                    attributes: {
+                        'data-vmedia-credits-panel': '',
+                        hidden: true,
+                        role: 'note',
+                    },
+                    selectable: false,
+                    hoverable: false,
+                    draggable: false,
+                    droppable: false,
+                    content: text,
+                },
+            ],
+        }, { at: Math.max(0, imageIndex) + 1 });
+
+        chrome = Array.isArray(appended) ? appended[0] : appended;
+    }
+
+    const panel = chrome
+        ? (safeFindComponents(chrome, '[data-vmedia-credits-panel]')[0]
+            ?? chrome.components?.()?.find?.((child) => {
+                const attrs = child.getAttributes?.() ?? {};
+
+                return Object.prototype.hasOwnProperty.call(attrs, 'data-vmedia-credits-panel');
+            }))
+        : null;
+
+    if (panel) {
+        if (typeof panel.components === 'function') {
+            panel.components(text);
+        }
+
+        panel.set?.('content', text);
+        panel.addAttributes?.({ hidden: true });
+    }
+
+    const toggle = chrome
+        ? (safeFindComponents(chrome, '[data-vmedia-credits-toggle]')[0]
+            ?? chrome.components?.()?.find?.((child) => {
+                const attrs = child.getAttributes?.() ?? {};
+
+                return Object.prototype.hasOwnProperty.call(attrs, 'data-vmedia-credits-toggle');
+            }))
+        : null;
+
+    toggle?.addAttributes?.({
+        'aria-label': label,
+        title: label,
+        'aria-expanded': 'false',
+    });
+
+    chrome?.removeClass?.('is-open');
+    figure.removeClass?.('is-credits-open');
+
+    rebindCreditsToggles(options.editor ?? null, image);
+}
+
+/**
+ * Ensure standalone images with credit attrs get the “i” chrome after load.
+ *
+ * @param {import('grapesjs').Editor} editor
+ * @param {{ label?: string }} [options]
+ */
+export function hydrateImageCreditsChrome(editor, options = {}) {
+    if (! editor?.getWrapper) {
+        return;
+    }
+
+    const label = String(options.label ?? editor.__voodbuilderLabels?.imageSettingsCredits ?? 'Credits');
+    const images = safeFindComponents(editor.getWrapper(), 'img');
+
+    for (const image of images) {
+        if (! isImageComponent(image) || isInsideVmediaGalleryBlock(image)) {
+            continue;
+        }
+
+        const credits = readCreditsText(image);
+
+        if (credits === '' && ! findImageCreditsChrome(image.parent?.())) {
+            continue;
+        }
+
+        syncImageCredits(image, credits, { editor, label });
+    }
+
+    rebindCreditsToggles(editor);
 }
 
 /**
@@ -796,6 +1040,9 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
     let captionInputEl = null;
     /** @type {HTMLInputElement | null} */
     let altInputEl = null;
+    /** @type {HTMLInputElement | null} */
+    let creditsInputEl = null;
+    let credits = mode === 'image' && ! galleryManaged ? readCreditsText(image) : '';
     const imageStyle = image.getStyle?.() ?? {};
     let opacity = String(
         section?.getAttributes?.()?.['data-vb-bg-opacity']
@@ -837,7 +1084,9 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
 
                     const libraryAlt = String(meta?.alt ?? '').trim();
                     const libraryCaption = String(meta?.caption ?? '').trim();
+                    const libraryCredits = String(meta?.credits ?? '').trim();
                     const pageCaption = String(image.getAttributes?.()?.['data-vb-caption'] ?? '').trim();
+                    const pageCredits = String(image.getAttributes?.()?.['data-vb-credits'] ?? '').trim();
 
                     if (libraryAlt !== '') {
                         alt = libraryAlt;
@@ -859,6 +1108,19 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                         } else {
                             image.addAttributes({ 'data-vb-caption': libraryCaption });
                         }
+                    }
+
+                    if (libraryCredits !== '' && pageCredits === '' && ! galleryManaged) {
+                        credits = libraryCredits;
+
+                        if (creditsInputEl) {
+                            creditsInputEl.value = libraryCredits;
+                        }
+
+                        syncImageCredits(image, libraryCredits, {
+                            editor,
+                            label: labels.imageSettingsCredits ?? 'Credits',
+                        });
                     }
                 });
             },
@@ -1034,6 +1296,37 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                     },
                 }),
             );
+
+            const { field: creditsField, input: creditsInput } = createTextField({
+                label: labels.imageSettingsCredits ?? 'Credits',
+                name: 'imageCredits',
+                value: credits,
+                placeholder: labels.imageSettingsCreditsPlaceholder ?? 'Optional attribution',
+            });
+
+            creditsInputEl = creditsInput;
+
+            creditsInput.addEventListener('change', () => {
+                credits = String(creditsInput.value ?? '').trim();
+                runWithSettingsChangeGuard(editor, () => {
+                    syncImageCredits(image, credits, {
+                        editor,
+                        label: labels.imageSettingsCredits ?? 'Credits',
+                    });
+                });
+            });
+
+            fields.append(creditsField);
+
+            // Keep canvas chrome in sync when opening settings (legacy attrs without chrome).
+            if (credits !== '' || findImageCreditsChrome(image.parent?.())) {
+                runWithSettingsChangeGuard(editor, () => {
+                    syncImageCredits(image, credits, {
+                        editor,
+                        label: labels.imageSettingsCredits ?? 'Credits',
+                    });
+                });
+            }
         }
     }
 
@@ -1162,7 +1455,7 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
     } else {
         hint.textContent = labels.imageSettingsCaptionHint
             ?? labels.imageSettingsHint
-            ?? 'Choose or upload an image. Use “None” to keep the caption in data attributes and place text manually.';
+            ?? 'Choose or upload an image. Use “None” to keep the caption in data attributes and place text manually. Credits show an “i” badge on the image.';
     }
 
     fields.append(hint);

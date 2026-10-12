@@ -664,7 +664,7 @@ return [
             'caption_display_none' => 'None (manual)',
             'caption_display_below' => 'Below image',
             'caption_display_overlay' => 'Overlay',
-            'caption_hint' => 'Choose or upload an image. “None” keeps the caption in data attributes so you can place text manually.',
+            'caption_hint' => 'Choose or upload an image. “None” keeps the caption in data attributes so you can place text manually. Credits show an “i” badge on the image.',
             'gallery_caption_hint' => 'Saved on the media in the library (same caption/credits in every gallery). Show and position captions with the Gallery block settings.',
             'credits' => 'Credits',
             'credits_placeholder' => 'Optional attribution',

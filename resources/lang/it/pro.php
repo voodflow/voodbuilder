@@ -664,7 +664,7 @@ return [
             'caption_display_none' => 'Nessuna (manuale)',
             'caption_display_below' => 'Sotto l\'immagine',
             'caption_display_overlay' => 'In sovraimpressione',
-            'caption_hint' => 'Scegli o carica un\'immagine. Con “Nessuna” la didascalia resta negli attributi data e puoi posizionarla a mano.',
+            'caption_hint' => 'Scegli o carica un\'immagine. Con “Nessuna” la didascalia resta negli attributi data e puoi posizionarla a mano. I crediti mostrano un badge “i” sull\'immagine.',
             'gallery_caption_hint' => 'Salvata sul media in libreria (stessa didascalia/crediti in tutte le gallery). Mostra e posiziona le didascalie con le impostazioni del blocco Galleria.',
             'credits' => 'Crediti',
             'credits_placeholder' => 'Attribuzione opzionale',

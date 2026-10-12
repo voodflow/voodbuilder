@@ -69,7 +69,11 @@ import {
     renderLayoutStructureSettings,
 } from '../../layout-elements-settings.js';
 import { isAnimatedCounterComponent, renderAnimatedCounterSettings, syncAnimatedCounterSettingsForm } from '../../animated-counter-settings.js';
-import { isImageSettingsComponent, renderImageContentSettings } from '../../image-content-settings.js';
+import {
+    hydrateImageCreditsChrome,
+    isImageSettingsComponent,
+    renderImageContentSettings,
+} from '../../image-content-settings.js';
 import {
     isInlineVideoSettingsComponent,
     isVideoSettingsComponent,
@@ -401,6 +405,16 @@ export function registerSettingsUi(editor, mount) {
     editor.__voodbuilderBlockSettingsUiRegistered = true;
 
     guardTraitManagerForBlockSettings(editor);
+
+    const hydrateCredits = () => {
+        hydrateImageCreditsChrome(editor, {
+            label: editor.__voodbuilderLabels?.imageSettingsCredits ?? 'Credits',
+        });
+    };
+
+    editor.on('load', hydrateCredits);
+    editor.on('canvas:frame:load:body', hydrateCredits);
+    editor.on('storage:end:load', hydrateCredits);
 
     let renderedRoot = null;
     let renderedRootBlockId = '';

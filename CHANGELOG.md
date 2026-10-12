@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.63] - 2026-10-12
+
+### Added
+
+- Standalone Image settings: Credits field (same as gallery) with top-right “i” badge and click-to-reveal panel on canvas and published pages
+
 ## [1.11.62] - 2026-10-12
 
 ### Fixed

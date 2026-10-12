@@ -43,13 +43,27 @@ final class EditorCanvas
 
         return collect($entries)
             ->filter(static fn ($entry): bool => is_string($entry) && trim($entry) !== '')
-            ->map(static fn (string $entry): ?string => self::resolveViteAsset(trim($entry)))
+            ->map(static function (string $entry): ?array {
+                $trimmed = trim($entry);
+                $url = self::resolveViteAsset($trimmed);
+
+                if ($url === null) {
+                    return null;
+                }
+
+                // Absolute public assets (e.g. /vendor/vmedia/gallery-lightbox.js) are
+                // classic scripts; Vite app entries stay ES modules.
+                $type = str_starts_with($trimmed, '/') || str_starts_with($url, '/vendor/')
+                    ? 'text/javascript'
+                    : 'module';
+
+                return [
+                    'src' => $url,
+                    'type' => $type,
+                ];
+            })
             ->filter()
-            ->unique()
-            ->map(static fn (string $url): array => [
-                'src' => $url,
-                'type' => 'module',
-            ])
+            ->unique('src')
             ->values()
             ->all();
     }
