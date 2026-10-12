@@ -27,6 +27,7 @@ use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Throwable;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Voodbuilder\Support\AdminAuthorization;
 use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\Popups\PopupsOrphanStatus;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
@@ -59,8 +60,20 @@ class VoodbuilderSettingsPage extends Page
     /** @var array<string, mixed>|null */
     public ?array $data = [];
 
+    public static function canAccess(): bool
+    {
+        return AdminAuthorization::allows(auth()->user(), 'View:VoodbuilderSettingsPage');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess() && parent::shouldRegisterNavigation();
+    }
+
     public function mount(): void
     {
+        abort_unless(static::canAccess(), 403);
+
         $data = VoodbuilderSettings::data();
 
         $this->data = $data;

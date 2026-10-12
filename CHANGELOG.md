@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.64] - 2026-10-12
+
+### Added
+
+- Standalone Image settings: optional lightbox checkbox (`data-vb-lightbox`) to open the image full-size on the published page
+
+### Fixed
+
+- Image Credits field is a multi-line textarea (no single-line truncation); Unsplash-style HTML credits keep safe `https://` links as clickable anchors in the “i” panel
+- Theme Studio and Voodbuilder Settings now honour Filament Shield (`View:ThemeStudioPage` / `View:VoodbuilderSettingsPage`) so roles without those abilities no longer see the Voodbuilder admin nav
+- Model Integration policy uses `AdminAuthorization` instead of always-allow
+- Subscriber page access checks explicit role/permission assignment (avoids Gate `before` wildcards like `super_admin`)
+
 ## [1.11.63] - 2026-10-12
 
 ### Added

@@ -723,8 +723,18 @@ body.voodbuilder-page-gated .voodbuilder-page-gate > .relative {
     @apply overflow-hidden;
 }
 
+.vb-image--lightbox > img {
+    cursor: zoom-in;
+}
+
 .vb-image > img {
     @apply block w-full h-auto;
+}
+
+.vb-image .vmedia-gallery-credits__panel a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
 }
 
 .vb-image__caption {

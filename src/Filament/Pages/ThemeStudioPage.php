@@ -20,6 +20,7 @@ use Livewire\Attributes\On;
 use Throwable;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Themes\ThemesModule;
+use Voodflow\Voodbuilder\Support\AdminAuthorization;
 use Voodflow\Voodbuilder\Support\SubThemeResolver;
 use Voodflow\Voodbuilder\Support\ThemeBindings;
 
@@ -55,7 +56,11 @@ class ThemeStudioPage extends Page
 
     public static function canAccess(): bool
     {
-        return ThemesModule::isEnabled();
+        if (! ThemesModule::isEnabled()) {
+            return false;
+        }
+
+        return AdminAuthorization::allows(auth()->user(), 'View:ThemeStudioPage');
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -65,6 +70,8 @@ class ThemeStudioPage extends Page
 
     public function mount(): void
     {
+        abort_unless(static::canAccess(), 403);
+
         $data = VoodbuilderSettings::data();
 
         $channelThemes = is_array($data['content_channel_sub_themes'] ?? null)

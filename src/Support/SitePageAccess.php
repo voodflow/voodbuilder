@@ -220,16 +220,25 @@ final class SitePageAccess
             return SubscriberAccess::canAccess($user);
         }
 
-        if (! method_exists($user, 'can')) {
-            return false;
-        }
-
         $ability = (string) config(
             'voodbuilder.access.subscriber_ability',
             'access subscriber content',
         );
 
-        return $user->can($ability);
+        // Explicit assignment only — do not rely on Gate::before wildcards (super_admin).
+        if (method_exists($user, 'hasRole') && $user->hasRole('subscriber')) {
+            return true;
+        }
+
+        if (method_exists($user, 'hasPermissionTo')) {
+            try {
+                return (bool) $user->hasPermissionTo($ability);
+            } catch (\Throwable) {
+                // Permission may not exist yet.
+            }
+        }
+
+        return method_exists($user, 'can') && $user->can($ability);
     }
 
     public static function loginUrl(): string

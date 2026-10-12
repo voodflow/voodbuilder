@@ -4,6 +4,7 @@
  */
 
 import {
+    createCheckboxField,
     createFormSection,
     createImageUrlField,
     createSelectField,
@@ -153,6 +154,84 @@ function readCreditsText(image) {
 }
 
 /**
+ * @param {import('grapesjs').Component} image
+ * @returns {boolean}
+ */
+function readLightboxEnabled(image) {
+    const attrs = image.getAttributes?.() ?? {};
+    const parentAttrs = image.parent?.()?.getAttributes?.() ?? {};
+
+    return attrs['data-vb-lightbox'] === '1' || parentAttrs['data-vb-lightbox'] === '1';
+}
+
+/**
+ * Allow plain text + http(s) &lt;a&gt; only (Unsplash-style credit HTML).
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+function sanitizeCreditsHtml(raw) {
+    const fromWindow = typeof window !== 'undefined' ? window.__vmediaSanitizeCreditsHtml : null;
+
+    if (typeof fromWindow === 'function') {
+        return String(fromWindow(raw) ?? '');
+    }
+
+    const text = String(raw ?? '').trim();
+
+    if (text === '') {
+        return '';
+    }
+
+    if (! text.includes('<')) {
+        const esc = document.createElement('div');
+        esc.textContent = text;
+
+        return esc.innerHTML;
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = text;
+    const out = document.createElement('div');
+
+    const walk = (node, parent) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            parent.appendChild(document.createTextNode(node.textContent ?? ''));
+
+            return;
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return;
+        }
+
+        const el = /** @type {Element} */ (node);
+        const tag = el.tagName.toLowerCase();
+
+        if (tag === 'a') {
+            const href = String(el.getAttribute('href') ?? '').trim();
+
+            if (/^https?:\/\//i.test(href)) {
+                const a = document.createElement('a');
+                a.href = href;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                [...el.childNodes].forEach((child) => walk(child, a));
+                parent.appendChild(a);
+
+                return;
+            }
+        }
+
+        [...el.childNodes].forEach((child) => walk(child, parent));
+    };
+
+    [...template.content.childNodes].forEach((child) => walk(child, out));
+
+    return out.innerHTML;
+}
+
+/**
  * Re-bind gallery/image credits toggles inside the canvas iframe (or current doc).
  *
  * @param {import('grapesjs').Editor | null | undefined} editor
@@ -172,6 +251,29 @@ function rebindCreditsToggles(editor, image = null) {
     if (typeof bind === 'function') {
         bind(doc);
     }
+
+    const bindLightbox = doc.defaultView?.__vmediaBindStandaloneLightbox
+        ?? window.__vmediaBindStandaloneLightbox;
+
+    if (typeof bindLightbox === 'function') {
+        bindLightbox(doc);
+    }
+}
+
+/**
+ * @param {import('grapesjs').Component | null | undefined} figure
+ * @returns {boolean}
+ */
+function figureHasExtras(figure) {
+    if (! figure) {
+        return false;
+    }
+
+    return Boolean(
+        findFigureCaption(figure)
+        || findImageCreditsChrome(figure)
+        || (figure.getAttributes?.() ?? {})['data-vb-lightbox'] === '1',
+    );
 }
 
 /**
@@ -626,11 +728,10 @@ function syncImageCaption(image, values) {
             parent.addAttributes({ 'data-vb-caption-display': null });
 
             const remaining = parent.components?.() ?? [];
-            const creditsChrome = findImageCreditsChrome(parent);
             const onlyImage = remaining.length === 1 && remaining.at?.(0) === image;
 
-            // Keep the figure when credits chrome is present (same wrapper as caption).
-            if (onlyImage && ! creditsChrome && isVbImageFigure(parent) && parent.parent?.()) {
+            // Keep the figure when credits / lightbox chrome still needs the wrapper.
+            if (onlyImage && ! figureHasExtras(parent) && isVbImageFigure(parent) && parent.parent?.()) {
                 const grandParent = parent.parent();
                 const at = parent.index();
                 transferLayoutSlotClasses(parent, image);
@@ -684,6 +785,7 @@ export function syncImageCredits(image, credits, options = {}) {
     }
 
     const text = String(credits ?? '').trim();
+    const safeHtml = sanitizeCreditsHtml(text);
     const label = String(options.label ?? 'Credits');
     const parent = image.parent?.();
     const existingOnParent = parent ? findImageCreditsChrome(parent) : null;
@@ -692,7 +794,7 @@ export function syncImageCredits(image, credits, options = {}) {
         'data-vb-credits': text || null,
     });
 
-    if (text === '') {
+    if (text === '' || safeHtml === '') {
         if (existingOnParent) {
             existingOnParent.remove();
         }
@@ -701,8 +803,8 @@ export function syncImageCredits(image, credits, options = {}) {
             parent.removeClass('vb-image--has-credits');
         }
 
-        // Drop an empty figure wrapper when caption chrome is also gone.
-        if (parent && isVbImageFigure(parent) && ! findFigureCaption(parent) && parent.parent?.()) {
+        // Drop an empty figure wrapper when caption / lightbox chrome is also gone.
+        if (parent && isVbImageFigure(parent) && ! figureHasExtras(parent) && parent.parent?.()) {
             const remaining = parent.components?.() ?? [];
             const onlyImage = remaining.length === 1 && remaining.at?.(0) === image;
 
@@ -784,7 +886,8 @@ export function syncImageCredits(image, credits, options = {}) {
                     hoverable: false,
                     draggable: false,
                     droppable: false,
-                    content: text,
+                    // Grapes parses HTML so <a href> become real link components.
+                    components: safeHtml,
                 },
             ],
         }, { at: Math.max(0, imageIndex) + 1 });
@@ -803,11 +906,18 @@ export function syncImageCredits(image, credits, options = {}) {
 
     if (panel) {
         if (typeof panel.components === 'function') {
-            panel.components(text);
+            panel.components(safeHtml);
         }
 
-        panel.set?.('content', text);
         panel.addAttributes?.({ hidden: true });
+
+        // Canvas DOM may lag Grapes model — keep live preview links clickable.
+        const panelEl = panel.view?.el;
+
+        if (panelEl) {
+            panelEl.innerHTML = safeHtml;
+            panelEl.hidden = true;
+        }
     }
 
     const toggle = chrome
@@ -832,7 +942,61 @@ export function syncImageCredits(image, credits, options = {}) {
 }
 
 /**
- * Ensure standalone images with credit attrs get the “i” chrome after load.
+ * Toggle click-to-zoom lightbox on standalone images (published front).
+ *
+ * @param {import('grapesjs').Component} image
+ * @param {boolean} enabled
+ * @param {{ editor?: import('grapesjs').Editor|null }} [options]
+ */
+export function syncImageLightbox(image, enabled, options = {}) {
+    if (isInsideVmediaGalleryBlock(image)) {
+        return;
+    }
+
+    const on = Boolean(enabled);
+
+    if (! on) {
+        image.addAttributes({ 'data-vb-lightbox': null });
+        const parent = image.parent?.();
+
+        if (parent && (isVbImageFigure(parent) || componentTag(parent) === 'figure')) {
+            parent.addAttributes({ 'data-vb-lightbox': null });
+            parent.removeClass('vb-image--lightbox');
+
+            if (! figureHasExtras(parent) && parent.parent?.()) {
+                const remaining = parent.components?.() ?? [];
+                const onlyImage = remaining.length === 1 && remaining.at?.(0) === image;
+
+                if (onlyImage) {
+                    const grandParent = parent.parent();
+                    const at = parent.index();
+                    transferLayoutSlotClasses(parent, image);
+                    image.move(grandParent, { at });
+                    parent.remove();
+                }
+            }
+        }
+
+        rebindCreditsToggles(options.editor ?? null, image);
+
+        return;
+    }
+
+    const figure = ensureVbImageFigure(image);
+
+    if (! figure) {
+        return;
+    }
+
+    image.addAttributes({ 'data-vb-lightbox': '1' });
+    figure.addAttributes({ 'data-vb-lightbox': '1' });
+    figure.addClass('vb-image--lightbox');
+
+    rebindCreditsToggles(options.editor ?? null, image);
+}
+
+/**
+ * Ensure standalone images with credit / lightbox attrs get chrome after load.
  *
  * @param {import('grapesjs').Editor} editor
  * @param {{ label?: string }} [options]
@@ -851,12 +1015,15 @@ export function hydrateImageCreditsChrome(editor, options = {}) {
         }
 
         const credits = readCreditsText(image);
+        const lightbox = readLightboxEnabled(image);
 
-        if (credits === '' && ! findImageCreditsChrome(image.parent?.())) {
-            continue;
+        if (credits !== '' || findImageCreditsChrome(image.parent?.())) {
+            syncImageCredits(image, credits, { editor, label });
         }
 
-        syncImageCredits(image, credits, { editor, label });
+        if (lightbox) {
+            syncImageLightbox(image, true, { editor });
+        }
     }
 
     rebindCreditsToggles(editor);
@@ -1219,11 +1386,13 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
 
             fields.append(captionField);
 
-            const { field: creditsField, input: creditsInput } = createTextField({
+            const { field: creditsField, input: creditsInput } = createTextareaField({
                 label: labels.imageSettingsCredits ?? 'Credits',
                 name: 'imageVaultCredits',
                 value: vaultCredits,
-                placeholder: labels.imageSettingsCreditsPlaceholder ?? 'Optional attribution',
+                rows: 3,
+                placeholder: labels.imageSettingsCreditsPlaceholder
+                    ?? 'Optional attribution (HTML links allowed)',
             });
 
             creditsInput.addEventListener('change', () => {
@@ -1297,11 +1466,13 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                 }),
             );
 
-            const { field: creditsField, input: creditsInput } = createTextField({
+            const { field: creditsField, input: creditsInput } = createTextareaField({
                 label: labels.imageSettingsCredits ?? 'Credits',
                 name: 'imageCredits',
                 value: credits,
-                placeholder: labels.imageSettingsCreditsPlaceholder ?? 'Optional attribution',
+                rows: 3,
+                placeholder: labels.imageSettingsCreditsPlaceholder
+                    ?? 'Optional attribution (HTML links allowed, e.g. Unsplash credit)',
             });
 
             creditsInputEl = creditsInput;
@@ -1318,6 +1489,22 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
 
             fields.append(creditsField);
 
+            let lightboxEnabled = readLightboxEnabled(image);
+
+            fields.append(
+                createCheckboxField({
+                    label: labels.imageSettingsLightbox ?? 'Open in lightbox',
+                    name: 'imageLightbox',
+                    checked: lightboxEnabled,
+                    onChange: (checked) => {
+                        lightboxEnabled = checked;
+                        runWithSettingsChangeGuard(editor, () => {
+                            syncImageLightbox(image, checked, { editor });
+                        });
+                    },
+                }),
+            );
+
             // Keep canvas chrome in sync when opening settings (legacy attrs without chrome).
             if (credits !== '' || findImageCreditsChrome(image.parent?.())) {
                 runWithSettingsChangeGuard(editor, () => {
@@ -1325,6 +1512,12 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                         editor,
                         label: labels.imageSettingsCredits ?? 'Credits',
                     });
+                });
+            }
+
+            if (lightboxEnabled) {
+                runWithSettingsChangeGuard(editor, () => {
+                    syncImageLightbox(image, true, { editor });
                 });
             }
         }
