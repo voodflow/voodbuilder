@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.66] - 2026-10-12
+
+### Fixed
+
+- Image credit links forced to white; strip readability aligned with Vmedia dark+brand-tint credits chrome
+
 ## [1.11.65] - 2026-10-12
 
 ### Added
