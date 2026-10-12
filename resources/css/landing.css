@@ -732,9 +732,15 @@ body.voodbuilder-page-gated .voodbuilder-page-gate > .relative {
 }
 
 .vb-image .vmedia-gallery-credits__panel a {
-    color: inherit;
+    color: color-mix(in srgb, #fff 42%, var(--color-vp-brand-2, var(--color-vp-brand-3, #a8b1ff)));
     text-decoration: underline;
-    text-underline-offset: 0.12em;
+    text-decoration-color: color-mix(in srgb, #fff 55%, var(--color-vp-brand-1, #3451b2));
+    text-underline-offset: 0.14em;
+}
+
+.vb-image .vmedia-gallery-credits__panel a:hover {
+    color: #fff;
+    text-decoration-color: #fff;
 }
 
 .vb-image__caption {

@@ -4,10 +4,10 @@
  */
 
 import {
-    createCheckboxField,
     createFormSection,
     createImageUrlField,
     createSelectField,
+    createSwitchField,
     createTextField,
     createTextareaField,
 } from './editor-form-ui.js';
@@ -1492,10 +1492,12 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
             let lightboxEnabled = readLightboxEnabled(image);
 
             fields.append(
-                createCheckboxField({
+                createSwitchField({
                     label: labels.imageSettingsLightbox ?? 'Open in lightbox',
                     name: 'imageLightbox',
                     checked: lightboxEnabled,
+                    hint: labels.imageSettingsLightboxHint
+                        ?? 'When on, clicking the image opens a full-size modal on the published page.',
                     onChange: (checked) => {
                         lightboxEnabled = checked;
                         runWithSettingsChangeGuard(editor, () => {

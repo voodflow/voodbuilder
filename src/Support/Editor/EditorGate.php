@@ -400,6 +400,7 @@ final class EditorGate
             'imageSettingsCredits' => __('voodbuilder::pro.editor.image_settings.credits'),
             'imageSettingsCreditsPlaceholder' => __('voodbuilder::pro.editor.image_settings.credits_placeholder'),
             'imageSettingsLightbox' => __('voodbuilder::pro.editor.image_settings.lightbox'),
+            'imageSettingsLightboxHint' => __('voodbuilder::pro.editor.image_settings.lightbox_hint'),
             'imageSettingsOpacity' => __('voodbuilder::pro.editor.image_settings.opacity'),
             'imageSettingsFit' => __('voodbuilder::pro.editor.image_settings.fit'),
             'imageSettingsFitCover' => __('voodbuilder::pro.editor.image_settings.fit_cover'),

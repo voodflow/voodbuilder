@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.65] - 2026-10-12
+
+### Added
+
+- Image settings: visible lightbox switch (full-size modal on/off) with short hint
+
+### Changed
+
+- Standalone image credit links use theme brand colors (aligned with Vmedia gallery credits)
+
 ## [1.11.64] - 2026-10-12
 
 ### Added

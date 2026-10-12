@@ -735,6 +735,91 @@
     cursor: pointer;
 }
 
+/* Full-width switch (Image lightbox, etc.) */
+.voodbuilder-editor-form-field--switch {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    padding: 0.55rem 0;
+}
+
+.voodbuilder-editor-switch-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.voodbuilder-editor-form-label--switch {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--color-vp-text-1, #0f172a);
+    cursor: pointer;
+}
+
+.voodbuilder-editor-switch {
+    position: relative;
+    flex-shrink: 0;
+    display: inline-flex;
+    width: 2.5rem;
+    height: 1.4rem;
+}
+
+.voodbuilder-editor-switch__input {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.voodbuilder-editor-switch__track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-vp-divider, #e2e8f0) 85%, var(--color-vp-text-2, #64748b));
+    transition: background-color 140ms ease;
+    pointer-events: none;
+}
+
+.voodbuilder-editor-switch__track::after {
+    content: '';
+    position: absolute;
+    top: 0.15rem;
+    left: 0.15rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.28);
+    transition: transform 140ms ease;
+}
+
+.voodbuilder-editor-switch__input:checked + .voodbuilder-editor-switch__track {
+    background: var(--color-vp-brand-1, #6366f1);
+}
+
+.voodbuilder-editor-switch__input:checked + .voodbuilder-editor-switch__track::after {
+    transform: translateX(1.1rem);
+}
+
+.voodbuilder-editor-switch__input:focus-visible + .voodbuilder-editor-switch__track {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-vp-brand-1, #6366f1) 22%, transparent);
+}
+
+.voodbuilder-editor-hint--compact {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.35;
+}
+
 .voodbuilder-editor-form-label--checkbox {
     flex: 1 1 auto;
     min-width: 0;

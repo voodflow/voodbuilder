@@ -268,6 +268,62 @@ export function createCheckboxField({ label, name, checked, onChange }) {
 }
 
 /**
+ * Full-width switch (more visible than a bare checkbox in the content panel).
+ *
+ * @param {{ label: string, name: string, checked?: boolean, onChange?: (checked: boolean) => void, hint?: string }} options
+ * @returns {HTMLElement}
+ */
+export function createSwitchField({ label, name, checked = false, onChange, hint = '' }) {
+    const id = fieldId(name);
+    const field = document.createElement('div');
+    field.className = 'voodbuilder-editor-form-field voodbuilder-editor-form-field--switch';
+
+    const row = document.createElement('div');
+    row.className = 'voodbuilder-editor-switch-row';
+
+    const labelEl = document.createElement('label');
+    labelEl.className = 'voodbuilder-editor-form-label voodbuilder-editor-form-label--switch';
+    labelEl.htmlFor = id;
+    labelEl.textContent = label;
+
+    const switchWrap = document.createElement('span');
+    switchWrap.className = 'voodbuilder-editor-switch';
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = id;
+    input.name = name;
+    input.className = 'voodbuilder-editor-switch__input';
+    input.checked = Boolean(checked);
+    input.setAttribute('role', 'switch');
+    input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
+
+    const track = document.createElement('span');
+    track.className = 'voodbuilder-editor-switch__track';
+    track.setAttribute('aria-hidden', 'true');
+
+    switchWrap.append(input, track);
+    row.append(labelEl, switchWrap);
+    field.appendChild(row);
+
+    if (hint) {
+        const hintEl = document.createElement('p');
+        hintEl.className = 'voodbuilder-editor-hint voodbuilder-editor-hint--compact';
+        hintEl.textContent = hint;
+        field.appendChild(hintEl);
+    }
+
+    if (typeof onChange === 'function') {
+        input.addEventListener('change', () => {
+            input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
+            onChange(input.checked);
+        });
+    }
+
+    return field;
+}
+
+/**
  * Two-column checkbox grid for brand/visibility toggles.
  *
  * @param {HTMLElement[]} fields
