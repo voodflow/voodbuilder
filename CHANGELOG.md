@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.69] - 2026-10-12
+
+### Fixed
+
+- Full-page heal uses `healExistingEditorSections()` (and multi-section `ensureEditorLayoutShell` short-circuit) so saved pages are never re-wrapped into a single paste shell
+
 ## [1.11.68] - 2026-10-12
 
 ### Fixed

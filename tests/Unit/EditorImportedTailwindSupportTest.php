@@ -414,6 +414,55 @@ HTML;
         );
     }
 
+    public function test_heal_existing_editor_sections_keeps_multi_section_page(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section relative isolate" data-voodbuilder-section-block="vb-hero-plasma">
+  <div aria-hidden="true" class="voodbuilder-editor-container vb-hero-plasma__stage mx-auto w-full max-w-[var(--width-vp-layout)]">
+    <div class="vb-hero-plasma__orb vb-hero-plasma__orb--a"></div>
+    <div class="voodbuilder-editor-container relative z-[1] px-5 py-28 text-center">
+      <a href="/admin/login" data-voodbuilder-cta="true">Login</a>
+    </div>
+  </div>
+</section>
+<section class="voodbuilder-editor-section" data-voodbuilder-section-block="vb-cta-glow-pulse">
+  <div class="voodbuilder-editor-container px-5 py-24"><h2>Your turn</h2></div>
+</section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::healExistingEditorSections($html);
+
+        $this->assertSame(2, substr_count(strtolower($healed), '<section'));
+        $this->assertStringContainsString('data-voodbuilder-section-block="vb-hero-plasma"', $healed);
+        $this->assertStringContainsString('data-voodbuilder-section-block="vb-cta-glow-pulse"', $healed);
+        $this->assertStringContainsString('Your turn', $healed);
+
+        libxml_use_internal_errors(true);
+        $document = new \DOMDocument;
+        $document->loadHTML('<?xml encoding="utf-8" ?>'.$healed, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $xpath = new \DOMXPath($document);
+        $stage = $xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " vb-hero-plasma__stage ")]')->item(0);
+        $cta = $xpath->query('//*[@data-voodbuilder-cta="true"]')->item(0);
+        $this->assertInstanceOf(\DOMElement::class, $stage);
+        $this->assertInstanceOf(\DOMElement::class, $cta);
+        $this->assertFalse($stage->contains($cta));
+    }
+
+    public function test_ensure_editor_layout_shell_does_not_wrap_multi_section_pages(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section" data-voodbuilder-section-block="a"><div class="voodbuilder-editor-container"><p>A</p></div></section>
+<section class="voodbuilder-editor-section" data-voodbuilder-section-block="b"><div class="voodbuilder-editor-container"><p>B</p></div></section>
+HTML;
+
+        $result = EditorImportedTailwindSupport::ensureEditorLayoutShell($html);
+
+        $this->assertSame(2, substr_count(strtolower($result), '<section'));
+        $this->assertStringNotContainsString('voodbuilder-pasted-component', $result);
+        $this->assertStringContainsString('data-voodbuilder-section-block="a"', $result);
+        $this->assertStringContainsString('data-voodbuilder-section-block="b"', $result);
+    }
+
     public function test_plain_section_paste_is_not_nested_inside_content_shell(): void
     {
         $html = <<<'HTML'

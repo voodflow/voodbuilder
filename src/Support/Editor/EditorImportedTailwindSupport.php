@@ -798,6 +798,45 @@ final class EditorImportedTailwindSupport
      * Ensure imported snippets expose the standard section → content shell so the
      * canvas content-width ("resize") toolbar and Layers stay compliant.
      */
+    /**
+     * Heal already-saved page HTML (multi-section): unwrap content nested in
+     * decorative plasma/aurora layers and restamp content shells — never wrap
+     * the whole page into a single paste shell.
+     */
+    public static function healExistingEditorSections(string $html): string
+    {
+        $html = trim($html);
+
+        if ($html === '') {
+            return $html;
+        }
+
+        $document = self::loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        $sections = [];
+
+        foreach ($body->getElementsByTagName('section') as $section) {
+            if ($section instanceof DOMElement && self::isEditorSectionElement($section)) {
+                $sections[] = $section;
+            }
+        }
+
+        if ($sections === []) {
+            return $html;
+        }
+
+        foreach ($sections as $section) {
+            self::ensureContentWrapperOnSection($document, $section);
+        }
+
+        return self::extractBodyHtml($document) ?? $html;
+    }
+
     public static function ensureEditorLayoutShell(string $html): string
     {
         $html = trim($html);
@@ -823,6 +862,25 @@ final class EditorImportedTailwindSupport
 
         if ($roots === []) {
             return $html;
+        }
+
+        // Full / multi-root pages that already include editor sections: heal in place
+        // only — never wrap the whole document into a single paste shell.
+        if (count($roots) > 1) {
+            $healedAny = false;
+
+            foreach ($roots as $root) {
+                if (! self::isEditorSectionElement($root)) {
+                    continue;
+                }
+
+                self::ensureContentWrapperOnSection($document, $root);
+                $healedAny = true;
+            }
+
+            if ($healedAny) {
+                return self::extractBodyHtml($document) ?? $html;
+            }
         }
 
         // Any single <section> becomes the editor section — never nest section-in-section.

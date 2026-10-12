@@ -131,7 +131,7 @@ final class EditorRenderer
         $html = app(EditorDynamicBlockRenderer::class)->render($html, $page);
         $html = EditorImportedTailwindSupport::stripForcedDarkScope($html);
         // Heal nested content inside plasma/aurora stages + strip measure style="" shells.
-        $html = EditorImportedTailwindSupport::ensureEditorLayoutShell($html);
+        $html = EditorImportedTailwindSupport::healExistingEditorSections($html);
         $html = GlobalTextTags::replaceInHtml($html);
 
         // Last gate before `{!! !!}`. The save path sanitizes too, but the render must never
