@@ -184,6 +184,7 @@ final class EditorGate
                 ? self::optionalEditorRoute('voodbuilder.editor.bindings.preview', $page)
                 : null,
             'blocksRenderUrl' => self::optionalEditorRoute('voodbuilder.editor.blocks.render') ?? '',
+            'serverRenderableBlockIds' => self::serverRenderableBlockIds(),
             'codeHighlightUrl' => self::optionalEditorRoute('voodbuilder.editor.code.highlight') ?? '',
             'formSubmitUrl' => self::optionalEditorRoute('voodbuilder.editor.forms.submit', $page) ?? '',
             'newsletterLists' => self::newsletterListOptions(),
@@ -1375,6 +1376,30 @@ final class EditorGate
         }
 
         return $options;
+    }
+
+    /**
+     * Block IDs that `/editor/blocks/render` can rebuild from Blade/config.
+     * Static catalog HTML and media heroes (e.g. vb-bg-image) are excluded so the
+     * canvas does not spam 404 when refreshing `[data-voodbuilder-block]` nodes.
+     *
+     * @return list<string>
+     */
+    public static function serverRenderableBlockIds(): array
+    {
+        $ids = [
+            ...array_keys(app(EditorDynamicBlockRegistry::class)->blocks()),
+            ...array_keys(app(EditorServerBlockRegistry::class)->blocks()),
+        ];
+
+        $ids = array_values(array_unique(array_filter(
+            $ids,
+            static fn (mixed $id): bool => is_string($id) && $id !== '',
+        )));
+
+        sort($ids);
+
+        return $ids;
     }
 
     /**

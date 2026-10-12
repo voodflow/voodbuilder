@@ -1162,6 +1162,11 @@ export function initVoodbuilderEditor(container, options = {}) {
     editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
     editor.__voodbuilderChromeShellName = options.chromeShellName ?? options.chromeLayoutName ?? null;
     editor.__voodbuilderChromeLayoutName = options.chromeLayoutName ?? options.chromeShellName ?? null;
+    editor.__voodbuilderServerRenderableBlockIds = new Set(
+        Array.isArray(options.serverRenderableBlockIds)
+            ? options.serverRenderableBlockIds.filter((id) => typeof id === 'string' && id !== '')
+            : [],
+    );
     editor.__voodbuilderLastSavedPageHtml = String(
         options.pageContentHtml
         ?? options.savedPageHtml
@@ -1840,6 +1845,30 @@ function dynamicBlockRenderFingerprint(blockId, config) {
     return `${blockId}::${serializeBlockConfig(config ?? {})}`;
 }
 
+function isServerRenderableBlockId(editor, blockId) {
+    if (! blockId) {
+        return false;
+    }
+
+    const allow = editor.__voodbuilderServerRenderableBlockIds;
+
+    // Empty/missing allowlist → keep legacy fetch behaviour (deployments without gate field).
+    if (! (allow instanceof Set) || allow.size === 0) {
+        return true;
+    }
+
+    if (allow.has(blockId)) {
+        return true;
+    }
+
+    // Legacy chrome IDs still resolve server-side via EditorLegacySiteBlockMap.
+    if (isSiteNavBlock(blockId) || isSiteFooterBlock(blockId)) {
+        return true;
+    }
+
+    return false;
+}
+
 async function refreshDynamicBlockComponent(editor, renderUrl, component) {
     if (! renderUrl || ! component || component.isRemoved?.()) {
         return;
@@ -1859,6 +1888,12 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         blockId = attributes['data-voodbuilder-block'] ?? '';
 
         if (! blockId) {
+            return;
+        }
+
+        // Static HTML / catalog / media heroes (e.g. vb-bg-image) are not Blade blocks —
+        // /blocks/render returns 404. Skip the round-trip entirely when we know that.
+        if (! isServerRenderableBlockId(editor, blockId)) {
             return;
         }
 
@@ -1906,6 +1941,11 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
         });
 
         if (! response.ok) {
+            // 404 = static HTML block (catalog element / community media) — not an error.
+            if (response.status === 404) {
+                return;
+            }
+
             const body = await response.text().catch(() => '');
             const preview = body.length > 240 ? `${body.slice(0, 240)}…` : body;
             console.error('Voodbuilder Editor: could not refresh dynamic block.', blockId, response.status, preview);
@@ -2591,6 +2631,7 @@ function mountFrontendEditor() {
         editionSummary: config.editionSummary ?? null,
         plugins: config.plugins ?? {},
         blocksRenderUrl: config.blocksRenderUrl,
+        serverRenderableBlockIds: config.serverRenderableBlockIds ?? [],
         blocksUrl: config.blocksUrl ?? null,
         blockAllowlist: config.blockAllowlist ?? null,
         elementsSourceUrl: config.elementsSourceUrl ?? null,

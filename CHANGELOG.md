@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.62] - 2026-10-12
+
+### Fixed
+
+- Editor no longer requests `/blocks/render` for static HTML blocks (`vb-bg-image`, catalog Elements). Those returned 404 and logged `could not refresh dynamic block` when changing styles (e.g. link color) on a page that also had a media hero. Gate now exposes `serverRenderableBlockIds`; 404 remains a silent no-op.
+
 ## [1.11.61] - 2026-10-08
 
 ### Changed

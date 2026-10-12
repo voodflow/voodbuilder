@@ -84,6 +84,7 @@ final class EditorChromeLayoutEditorGate
                 : null,
             'linkTargetsUrl' => self::optionalEditorRoute('voodbuilder.editor.link-targets') ?? '',
             'blocksRenderUrl' => self::optionalEditorRoute('voodbuilder.editor.blocks.render') ?? '',
+            'serverRenderableBlockIds' => EditorGate::serverRenderableBlockIds(),
             'codeHighlightUrl' => self::optionalEditorRoute('voodbuilder.editor.code.highlight') ?? '',
             'globalClassesUrl' => ComponentRuntimeBridge::moduleEnabled()
                 ? self::optionalEditorRoute('voodbuilder.editor.global-classes.index')
