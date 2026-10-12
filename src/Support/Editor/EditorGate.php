@@ -1249,6 +1249,7 @@ final class EditorGate
         $html = EditorHtmlSecuritySanitizer::sanitize($html);
         $html = EditorCodeBlockNormalizer::normalize($html);
         $html = EditorImportedTailwindSupport::stripForcedDarkScope($html);
+        $html = EditorImportedTailwindSupport::ensureEditorLayoutShell($html);
         $css = (string) ($payload['css'] ?? '');
         // Withheld at write time as well as at render: an installation that may not run
         // author scripts should not be storing them either.

@@ -1122,13 +1122,36 @@ final class EditorImportedTailwindSupport
             $element->setAttribute('data-voodbuilder-content-width', 'normal');
         }
 
+        // Measure lives on Tailwind utilities / data attrs — never author style="".
         $style = trim($element->getAttribute('style'));
-        $required = 'width:100%;max-width:80rem;margin-left:auto;margin-right:auto;';
 
         if ($style === '') {
-            $element->setAttribute('style', $required);
-        } elseif (! str_contains($style, 'max-width')) {
-            $element->setAttribute('style', rtrim($style, ';') . ';' . $required);
+            return;
+        }
+
+        $kept = [];
+
+        foreach (explode(';', $style) as $part) {
+            $part = trim($part);
+
+            if ($part === '' || ! str_contains($part, ':')) {
+                continue;
+            }
+
+            [$property] = array_map('trim', explode(':', $part, 2));
+            $propertyLower = strtolower($property);
+
+            if (in_array($propertyLower, ['max-width', 'margin-left', 'margin-right', 'margin-inline', 'width'], true)) {
+                continue;
+            }
+
+            $kept[] = $part;
+        }
+
+        if ($kept === []) {
+            $element->removeAttribute('style');
+        } else {
+            $element->setAttribute('style', implode('; ', $kept) . ';');
         }
     }
 
@@ -1148,6 +1171,7 @@ final class EditorImportedTailwindSupport
 
         if (
             in_array('vb-hero-aurora__mesh', $classes, true)
+            || in_array('vb-hero-plasma__stage', $classes, true)
             || in_array('voodbuilder-hero-media', $classes, true)
             || in_array('voodbuilder-hero-media__shade', $classes, true)
         ) {
@@ -1168,19 +1192,29 @@ final class EditorImportedTailwindSupport
     protected static function unstampDecorativeContentShell(DOMElement $element): void
     {
         $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $isPlasmaStage = in_array('vb-hero-plasma__stage', $classes, true);
+        $isFullBleedMesh = in_array('absolute', $classes, true)
+            && (in_array('inset-0', $classes, true) || in_array('inset-x-0', $classes, true));
+
         $classes = array_values(array_filter(
             $classes,
-            static fn (string $token): bool => $token !== 'max-w-[80rem]' && $token !== 'mx-auto',
-        ));
+            static function (string $token) use ($isPlasmaStage, $isFullBleedMesh): bool {
+                if ($token === 'mx-auto' || $token === 'max-w-[80rem]') {
+                    return false;
+                }
 
-        // Absolute full-bleed mesh: measure utilities fight inset-0.
-        if (in_array('absolute', $classes, true)
-            && (in_array('inset-0', $classes, true) || in_array('inset-x-0', $classes, true))) {
-            $classes = array_values(array_filter(
-                $classes,
-                static fn (string $token): bool => ! str_starts_with($token, 'max-w-'),
-            ));
-        }
+                // Plasma stage / absolute mesh must stay full-bleed — drop measure utilities.
+                if (($isPlasmaStage || $isFullBleedMesh) && (
+                    $token === 'voodbuilder-editor-container'
+                    || $token === 'w-full'
+                    || str_starts_with($token, 'max-w-')
+                )) {
+                    return false;
+                }
+
+                return true;
+            },
+        ));
 
         $element->setAttribute('class', implode(' ', $classes));
 
@@ -1260,8 +1294,48 @@ final class EditorImportedTailwindSupport
         return null;
     }
 
+    /**
+     * Pull content shells wrongly nested inside plasma/aurora stage layers.
+     */
+    protected static function unwrapContentNestedInDecorativeStages(DOMElement $section): void
+    {
+        $stages = [];
+
+        foreach ($section->childNodes as $child) {
+            if (! $child instanceof DOMElement) {
+                continue;
+            }
+
+            $classes = preg_split('/\s+/', trim($child->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+            if (self::isDecorativeSectionChild($child) || in_array('vb-hero-plasma__stage', $classes, true)) {
+                $stages[] = $child;
+            }
+        }
+
+        foreach ($stages as $stage) {
+            $move = [];
+
+            foreach ($stage->childNodes as $nested) {
+                if ($nested instanceof DOMElement && self::isContentShellElement($nested)) {
+                    $move[] = $nested;
+                }
+            }
+
+            foreach ($move as $nested) {
+                if ($stage->parentNode) {
+                    $stage->parentNode->insertBefore($nested, $stage->nextSibling);
+                }
+            }
+
+            self::unstampDecorativeContentShell($stage);
+        }
+    }
+
     protected static function ensureContentWrapperOnSection(DOMDocument $document, DOMElement $section): void
     {
+        self::unwrapContentNestedInDecorativeStages($section);
+
         $existing = null;
 
         foreach ($section->childNodes as $child) {
@@ -1269,14 +1343,15 @@ final class EditorImportedTailwindSupport
                 continue;
             }
 
-            // Heal mesh/shade layers previously stamped as content shells on import/save.
+            // Heal mesh/shade/plasma layers previously stamped as content shells on import/save.
             if (self::isDecorativeSectionChild($child)
                 || (
                     $child->getAttribute('aria-hidden') === 'true'
                     && str_contains($child->getAttribute('class'), 'absolute')
                     && str_contains($child->getAttribute('class'), 'voodbuilder-editor-container')
                 )
-                || str_contains($child->getAttribute('class'), 'vb-hero-aurora__mesh')) {
+                || str_contains($child->getAttribute('class'), 'vb-hero-aurora__mesh')
+                || str_contains($child->getAttribute('class'), 'vb-hero-plasma__stage')) {
                 self::unstampDecorativeContentShell($child);
 
                 continue;

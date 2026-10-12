@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.68] - 2026-10-12
+
+### Fixed
+
+- Hero plasma stage is decorative: content nested inside `vb-hero-plasma__stage` is unwrapped on save/render so CTAs stay clickable (`pointer-events` / `aria-hidden`)
+- Content-width shells no longer persist measure via `style="width/max-width/margin…"` — Tailwind utilities + `data-voodbuilder-content-width` only
+- Footer chrome `.text-center` no longer recenters `[data-voodbuilder-footer-menu-cols]` (proper `:not` selector, not a landing.css override)
+
 ## [1.11.67] - 2026-10-12
 
 ### Fixed

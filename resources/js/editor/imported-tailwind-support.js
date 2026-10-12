@@ -202,6 +202,7 @@ function isDecorativeSectionChildElement(element) {
 
     if (
         classList?.contains('vb-hero-aurora__mesh')
+        || classList?.contains('vb-hero-plasma__stage')
         || classList?.contains('voodbuilder-hero-media')
         || classList?.contains('voodbuilder-hero-media__shade')
     ) {
@@ -231,12 +232,27 @@ function stampContentShellElement(shell) {
         shell.setAttribute('data-voodbuilder-content-width', 'normal');
     }
 
+    // Measure lives on Tailwind utilities / data-vb attrs — never author style="".
     const style = String(shell.getAttribute('style') ?? '').trim();
 
-    if (style === '') {
-        shell.setAttribute('style', 'width:100%;max-width:80rem;margin-left:auto;margin-right:auto;');
-    } else if (! /max-width\s*:/i.test(style)) {
-        shell.setAttribute('style', `${style.replace(/;$/, '')};width:100%;max-width:80rem;margin-left:auto;margin-right:auto;`);
+    if (! style) {
+        return;
+    }
+
+    const kept = style.split(';').map((part) => part.trim()).filter((part) => {
+        if (! part || ! part.includes(':')) {
+            return false;
+        }
+
+        const property = part.split(':', 1)[0].trim().toLowerCase();
+
+        return ! ['max-width', 'margin-left', 'margin-right', 'margin-inline', 'width'].includes(property);
+    });
+
+    if (kept.length === 0) {
+        shell.removeAttribute('style');
+    } else {
+        shell.setAttribute('style', `${kept.join('; ')};`);
     }
 }
 
@@ -248,10 +264,14 @@ function unstampDecorativeContentShellElement(shell) {
         return;
     }
 
+    const isPlasmaStage = shell.classList.contains('vb-hero-plasma__stage');
+    const isFullBleedMesh = shell.classList.contains('absolute')
+        && (shell.classList.contains('inset-0') || shell.classList.contains('inset-x-0'));
+
     shell.classList.remove('max-w-[80rem]', 'mx-auto');
 
-    if (shell.classList.contains('absolute')
-        && (shell.classList.contains('inset-0') || shell.classList.contains('inset-x-0'))) {
+    if (isPlasmaStage || isFullBleedMesh) {
+        shell.classList.remove('voodbuilder-editor-container', 'w-full');
         [...shell.classList].forEach((token) => {
             if (String(token).startsWith('max-w-')) {
                 shell.classList.remove(token);
@@ -452,18 +472,40 @@ function promotePastedComponentClassToSectionElement(section) {
 }
 
 /**
+ * Content wrongly nested inside plasma/aurora stage (breaks clicks / aria-hidden).
+ *
  * @param {Element} section
  */
+function unwrapContentNestedInDecorativeStages(section) {
+    for (const child of [...section.children]) {
+        if (! isDecorativeSectionChildElement(child) && ! child.classList?.contains('vb-hero-plasma__stage')) {
+            continue;
+        }
+
+        for (const nested of [...child.children]) {
+            if (nested.classList?.contains('voodbuilder-editor-container')
+                || nested.getAttribute?.('data-voodbuilder-role') === 'content') {
+                child.parentNode?.insertBefore(nested, child.nextSibling);
+            }
+        }
+
+        unstampDecorativeContentShellElement(child);
+    }
+}
+
 function ensureContentWrapperOnSectionElement(section) {
     if (! section) {
         return;
     }
+
+    unwrapContentNestedInDecorativeStages(section);
 
     let contentShell = null;
 
     for (const child of [...section.children]) {
         if (isDecorativeSectionChildElement(child)
             || child.classList.contains('vb-hero-aurora__mesh')
+            || child.classList.contains('vb-hero-plasma__stage')
             || (
                 child.getAttribute('aria-hidden') === 'true'
                 && child.classList.contains('absolute')
@@ -521,7 +563,7 @@ export function ensureEditorLayoutShell(html) {
 
         return [
             '<section class="voodbuilder-editor-section voodbuilder-pasted-component relative w-full">',
-            '<div class="voodbuilder-editor-container mx-auto w-full max-w-[80rem]" data-voodbuilder-role="content" data-voodbuilder-content-width="normal" style="width:100%;max-width:80rem;margin-left:auto;margin-right:auto;">',
+            '<div class="voodbuilder-editor-container mx-auto w-full max-w-[80rem]" data-voodbuilder-role="content" data-voodbuilder-content-width="normal">',
             trimmed,
             '</div></section>',
         ].join('');

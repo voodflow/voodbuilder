@@ -350,6 +350,70 @@ HTML;
         $this->assertStringContainsString('<p>Hi</p>', $healed);
     }
 
+    public function test_ensure_editor_layout_shell_unwraps_content_nested_in_plasma_stage(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section relative isolate" data-voodbuilder-section-block="vb-hero-plasma">
+  <div aria-hidden="true" class="voodbuilder-editor-container vb-hero-plasma__stage mx-auto w-full max-w-[var(--width-vp-layout)]" style="width:100%;max-width:80rem;margin-left:auto;margin-right:auto;">
+    <div class="vb-hero-plasma__orb vb-hero-plasma__orb--a"></div>
+    <div class="voodbuilder-editor-container relative z-[1] mx-auto flex w-full max-w-[var(--width-vp-layout)] flex-col items-center px-5 py-28 text-center">
+      <a href="/admin/login" data-voodbuilder-cta="true">Login</a>
+    </div>
+  </div>
+</section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::ensureEditorLayoutShell($html);
+
+        libxml_use_internal_errors(true);
+        $document = new \DOMDocument;
+        $document->loadHTML('<?xml encoding="utf-8" ?>'.$healed, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $xpath = new \DOMXPath($document);
+        $stages = $xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " vb-hero-plasma__stage ")]');
+
+        $this->assertSame(1, $stages->length);
+        $stage = $stages->item(0);
+        $this->assertInstanceOf(\DOMElement::class, $stage);
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $stage->getAttribute('class'));
+        $this->assertStringNotContainsString('max-w-', $stage->getAttribute('class'));
+        $this->assertSame('', trim($stage->getAttribute('style')));
+        $this->assertSame('shade', $stage->getAttribute('data-voodbuilder-role'));
+
+        foreach ($stage->childNodes as $child) {
+            if ($child instanceof \DOMElement) {
+                $this->assertStringNotContainsString('voodbuilder-editor-container', $child->getAttribute('class'));
+                $this->assertNotSame('content', $child->getAttribute('data-voodbuilder-role'));
+            }
+        }
+
+        $cta = $xpath->query('//*[@data-voodbuilder-cta="true"]')->item(0);
+        $this->assertInstanceOf(\DOMElement::class, $cta);
+        $this->assertFalse($stage->isSameNode($cta->parentNode) || $stage->contains($cta));
+        $this->assertStringContainsString('Login', $healed);
+    }
+
+    public function test_stamp_content_shell_does_not_write_measure_inline_styles(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section relative w-full">
+  <div class="relative z-[1] px-5 py-10"><p>Body</p></div>
+</section>
+HTML;
+
+        $prepared = EditorImportedTailwindSupport::ensureEditorLayoutShell($html);
+
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $prepared);
+        $this->assertStringContainsString('max-w-[80rem]', $prepared);
+        $this->assertDoesNotMatchRegularExpression(
+            '/data-voodbuilder-role="content"[^>]*style="[^"]*max-width:\s*80rem/',
+            $prepared,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/style="[^"]*max-width:\s*80rem[^"]*"[^>]*data-voodbuilder-role="content"/',
+            $prepared,
+        );
+    }
+
     public function test_plain_section_paste_is_not_nested_inside_content_shell(): void
     {
         $html = <<<'HTML'
