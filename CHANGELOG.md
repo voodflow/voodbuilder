@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.70] - 2026-10-14
+
+### Changed
+
+- README Developer/Agency purchase links include AnyStack affiliate `?via=arf178`
+
 ## [1.11.69] - 2026-10-12
 
 ### Fixed

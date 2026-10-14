@@ -61,7 +61,7 @@ For solo developers and small teams building dynamic Filament sites. Adds the da
 
 **Licence:** **1 seat** (one concurrent activation). **Unlimited sites** on that licence.
 
-**Purchase:** [checkout.anystack.sh/voodbuilder-developer](https://checkout.anystack.sh/voodbuilder-developer)
+**Purchase:** [checkout.anystack.sh/voodbuilder-developer](https://checkout.anystack.sh/voodbuilder-developer?via=arf178)
 
 ### Agency
 
@@ -73,7 +73,7 @@ For agencies and multi-person teams. Everything in Developer, plus agency toolin
 
 **Licence:** **5 seats** (five concurrent activations). **Unlimited sites** on that licence.
 
-**Purchase:** [checkout.anystack.sh/voodbuilder-agency](https://checkout.anystack.sh/voodbuilder-agency)
+**Purchase:** [checkout.anystack.sh/voodbuilder-agency](https://checkout.anystack.sh/voodbuilder-agency?via=arf178)
 
 | | Community | Developer | Agency |
 |--|:---------:|:---------:|:------:|
