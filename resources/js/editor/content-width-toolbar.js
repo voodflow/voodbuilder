@@ -650,6 +650,24 @@ export function resolveContentWidthTarget(component, editor = null) {
         if (nestedSection) {
             return ensureSectionContentWrapper(nestedSection);
         }
+
+        // A genuine author content shell inside the block owns the measure when one
+        // exists (the 2nd-level model). It is never the block's own layout row:
+        // `findSectionContentWrapper()` skips layout-utility children.
+        const shell = findSectionContentWrapper(component);
+
+        if (shell) {
+            return shell;
+        }
+
+        /*
+         * No shell: the block root owns the measure. It is the only safe target — the
+         * block's inner markup is server-owned (never wrapped, never moved) and its
+         * own preview row is layout, not a container. Applying to the root adds only
+         * measure utilities / attrs on the block itself, so the block is not
+         * restructured and keeps its children exactly as the render ships them.
+         */
+        return component;
     }
 
     if (isComponentInstanceHost(component)) {
@@ -851,21 +869,20 @@ export function shouldShowContentWidthToolbar(component, editor) {
         return false;
     }
 
-    if (isDynamicRichContentHost(component) && findNestedContentWidthSection(component)) {
+    /*
+     * A dynamic block always owns a measure: a genuine author content shell when it
+     * has one, otherwise the block root itself (see `resolveContentWidthTarget()`).
+     * The root receives only measure utilities / attributes — never a synthesized
+     * wrapper — so the block is never restructured and the control is safe to offer
+     * on every dynamic block. 1.11.76 hid it whenever no shell existed, which is the
+     * normal Livewire case, and that guard is exactly why the width button vanished.
+     */
+    if (isDynamicRichContentHost(component)) {
         return true;
     }
 
     if (isComponentInstanceHost(component) && findNestedContentWidthSection(component)) {
         return true;
-    }
-
-    // A dynamic block with no real content shell has nowhere to apply a measure
-    // (its inner markup must not be wrapped). Hide the control instead of
-    // offering a cycle that would mutate the block. Dynamic blocks that do
-    // carry a shell (`voodbuilder-editor-container` / `role=content`) or wrap a
-    // nested section keep the toolbar.
-    if (isDynamicRichContentHost(component) && ! findSectionContentWrapper(component)) {
-        return false;
     }
 
     if (isContentWidthSection(component)) {
@@ -1002,6 +1019,16 @@ export function applyComponentContentWidth(component, mode, editor) {
             if (custom) {
                 if (! classes.includes('mx-auto')) {
                     classes.push('mx-auto');
+                }
+
+                // The custom measure also rides as a durable utility, not only as
+                // inline style: a dynamic block root keeps its measure through
+                // classes on save (the root attributes are normalized), so a custom
+                // width stored only in `style` would never reach the published page.
+                const customMaxClass = `max-w-[${custom}]`;
+
+                if (! classes.includes(customMaxClass)) {
+                    classes.push(customMaxClass);
                 }
 
                 component.setClass(classes);

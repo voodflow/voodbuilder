@@ -207,7 +207,21 @@ final class EditorDynamicBlockAttributeNormalizer
      */
     protected static function pruneForeignAttributes(DOMElement $node): void
     {
-        $allowed = ['data-voodbuilder-block', 'data-voodbuilder-config', 'class', 'id'];
+        /*
+         * Author chrome that the published renderer captures and re-applies
+         * (`EditorDynamicBlockRenderer::captureAuthorRootChrome()`), plus the
+         * content-width measure the toolbar stamps on the block root. Pruning the
+         * latter made the author's width choice silently disappear on save: the
+         * dynamic block root carries the measure directly (there is no content shell
+         * inside a Livewire mount), so the attribute has to survive the save.
+         */
+        $allowed = [
+            'data-voodbuilder-block',
+            'data-voodbuilder-config',
+            'class',
+            'id',
+            'data-voodbuilder-content-width',
+        ];
         $remove = [];
 
         foreach ($node->attributes ?? [] as $attribute) {

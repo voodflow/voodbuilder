@@ -8,8 +8,11 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    applyComponentContentWidth,
+    buildContentWidthToolbarButton,
     ensureSectionContentWrapper,
     findSectionContentWrapper,
+    resolveContentWidthTarget,
     shouldShowContentWidthToolbar,
 } from '../../resources/js/editor/content-width-toolbar.js';
 
@@ -188,7 +191,7 @@ describe('content-width helpers and dynamic blocks', () => {
         expect(ensureSectionContentWrapper(section)).toBe(shell);
     });
 
-    it('hides the content-width toolbar when a dynamic block has no shell', () => {
+    it('shows the content-width toolbar when a dynamic block has no shell', () => {
         const editor = { __voodbuilderFullWidthPage: true };
         const bare = dynamicSection();
         const flexRow = attach(bare, makeComponent({ tagName: 'div', classes: ['flex', 'gap-4'] }));
@@ -201,9 +204,61 @@ describe('content-width helpers and dynamic blocks', () => {
             attrs: { 'data-voodbuilder-role': 'content' },
         }));
 
-        expect(shouldShowContentWidthToolbar(bare, editor)).toBe(false);
+        // Regression (1.11.79): a Livewire/dynamic block normally ships no content
+        // shell, yet the width control must be offered — the measure lands on the
+        // block root. Hiding it whenever no shell existed made the button disappear.
+        expect(shouldShowContentWidthToolbar(bare, editor)).toBe(true);
+        expect(buildContentWidthToolbarButton(bare, editor)).not.toBeNull();
         expect(shouldShowContentWidthToolbar(withShell, editor)).toBe(true);
+        expect(buildContentWidthToolbarButton(withShell, editor)).not.toBeNull();
         expect(flexRow.getClasses()).toEqual(['flex', 'gap-4']);
+    });
+
+    it('resolves a dynamic block without a shell to the block root, never an inner layout node', () => {
+        const editor = { __voodbuilderFullWidthPage: true };
+        const section = dynamicSection();
+        const flexRow = attach(section, makeComponent({
+            tagName: 'div',
+            classes: ['flex', 'flex-col', 'gap-4', 'sm:flex-row', 'sm:justify-between'],
+        }));
+        const list = attach(section, makeComponent({ tagName: 'ul', classes: ['grid', 'gap-3'] }));
+
+        // The root is a valid measure target; inner layout nodes never are.
+        const target = resolveContentWidthTarget(section, editor);
+
+        expect(target).toBe(section);
+        expect(target).not.toBe(flexRow);
+        expect(target).not.toBe(list);
+    });
+
+    it('resolves a dynamic block with a genuine shell to that shell', () => {
+        const editor = { __voodbuilderFullWidthPage: true };
+        const section = dynamicSection('vb-bg-image');
+        const shell = attach(section, makeComponent({
+            tagName: 'div',
+            classes: ['voodbuilder-editor-container', 'mx-auto', 'max-w-[48rem]'],
+            attrs: { 'data-voodbuilder-role': 'content' },
+        }));
+
+        expect(resolveContentWidthTarget(section, editor)).toBe(shell);
+    });
+
+    it('persists a custom measure as a durable max-w utility on the block root', () => {
+        const editor = {
+            __voodbuilderFullWidthPage: true,
+            __voodbuilderPageContentWidth: { mode: 'custom', maxWidth: '48rem', customMaxWidth: '48rem' },
+        };
+        const section = dynamicSection();
+        attach(section, makeComponent({ tagName: 'div', classes: ['flex', 'gap-4'] }));
+
+        applyComponentContentWidth(section, 'custom', editor);
+
+        const classes = section.getClasses();
+
+        expect(section.getAttributes()['data-voodbuilder-content-width']).toBe('custom');
+        expect(classes).toContain('mx-auto');
+        expect(classes).toContain('max-w-[48rem]');
+        expect(classes).toContain('w-full');
     });
 
     /*

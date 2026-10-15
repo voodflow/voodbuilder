@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.79] - 2026-10-15
+
+### Fixed
+
+- **The content-width control is back on dynamic (Livewire) blocks.** 1.11.76 added a guard to `shouldShowContentWidthToolbar()` that hid the toolbar button whenever a dynamic block had no explicit content shell — which is the *normal* case, because a Livewire mount ships its own markup and no shell, so `findSectionContentWrapper()` returns `null` and the condition was always true on the demo block. The guard is gone: a dynamic block always owns a measure. `resolveContentWidthTarget()` now resolves to a genuine author content shell when one exists, otherwise to the **block root itself** — never to an inner layout node. Because the root only receives measure utilities / `data-voodbuilder-content-width` / inline measure, the block is never restructured: no wrapper is synthesized inside the block and no child is absorbed (`ensureSectionContentWrapper()` still refuses to create a shell for a dynamic host), so the shrink-and-relayout regression 1.11.76/1.11.77 fixed cannot come back. The button stays in the same canvas toolbar slot as 1.11.72 (`arrow-autofit-width`, next to the class / dynamic tools), where authors already look for it.
+- **The author's width choice now survives Save on a dynamic block root.** The save normalizer (`EditorDynamicBlockAttributeNormalizer::pruneForeignAttributes()`) kept only `data-voodbuilder-block`, `data-voodbuilder-config`, `class` and `id`, so `data-voodbuilder-content-width` was silently dropped on every save: the block looked right in the canvas and reverted to its unconstrained width on the published page, and the editor could no longer restore the mode. The attribute is now preserved (corrupted config leaks such as `limit=""` are still pruned).
+- **A custom width reaches the published page even when the inline measure is not the source of truth.** The custom cycle step wrote the max width only as inline `style`; a dynamic block root persists its measure through Tailwind classes (and 1.11.79 prunes the rest), so `custom` published as full-bleed. The cycle now also emits a durable `max-w-[<custom>]` utility (mirroring the `max-w-[80rem]` of the normal step), so Normal, Full and Custom all compile into the page CSS and render as chosen.
+
 ## [1.11.78] - 2026-10-15
 
 ### Fixed

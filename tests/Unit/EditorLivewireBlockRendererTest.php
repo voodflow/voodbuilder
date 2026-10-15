@@ -131,6 +131,32 @@ class EditorLivewireBlockRendererTest extends TestCase
         $this->assertStringNotContainsString('data-voodbuilder-role="content"', $html);
     }
 
+    public function test_published_mount_carries_the_author_measure_stamped_on_the_block_root(): void
+    {
+        // 1.11.79: a dynamic block without a genuine content shell owns the measure
+        // on its root. The published mount must honour it and stay structurally
+        // untouched — no wrapper, layout row intact.
+        $saved = '<section data-voodbuilder-block="test_livewire_counter"'
+            . ' data-voodbuilder-config=\'{"start":1,"secret":"never-forwarded"}\''
+            . ' data-voodbuilder-content-width="normal"'
+            . ' class="rounded-lg bg-vp-bg-elv p-6 voodbuilder-editor-section voodbuilder-editor-dynamic mx-auto w-full max-w-[80rem]">'
+            . '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">'
+            . '<p>Livewire preview</p></div></section>';
+
+        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $this->registry());
+        $html = $renderer->render($saved);
+        $classes = $this->rootClasses($html);
+
+        $this->assertContains('mx-auto', $classes);
+        $this->assertContains('w-full', $classes);
+        $this->assertContains('max-w-[80rem]', $classes);
+        $this->assertStringContainsString('data-voodbuilder-content-width="normal"', $html);
+        $this->assertStringContainsString('data-voodbuilder-block="test_livewire_counter"', $html);
+        // No author wrapper is synthesized around the mount.
+        $this->assertStringNotContainsString('data-voodbuilder-role="content"', $html);
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $html);
+    }
+
     public function test_props_from_config_is_an_allowlist(): void
     {
         $props = CounterLivewireTestBlock::propsFromConfig(['start' => 7, 'secret' => 'leaked']);
