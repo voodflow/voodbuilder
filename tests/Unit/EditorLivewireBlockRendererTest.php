@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
+use DOMDocument;
 use Livewire\Component;
 use Livewire\Livewire;
 use Voodflow\Voodbuilder\Contracts\EditorLivewireBlock;
@@ -41,6 +42,36 @@ class EditorLivewireBlockRendererTest extends TestCase
         $this->assertStringContainsString('wire:id', $html);
         $this->assertStringContainsString('wire:snapshot', $html);
         $this->assertSame('voodbuilder-test-counter', $this->snapshotComponentName($html));
+    }
+
+    public function test_published_mount_is_rebuilt_inside_the_author_content_width_shell(): void
+    {
+        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $this->registry());
+        $html = $renderer->render($this->wrappedWithContentWidthShell());
+
+        $this->assertStringContainsString('data-voodbuilder-content-width="custom"', $html);
+        $this->assertStringContainsString('max-w-[48rem]', $html);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $html);
+
+        // The mount must sit *inside* the shell, not next to it.
+        $document = new DOMDocument;
+        libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8"><body>' . $html . '</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $shell = $document->getElementsByTagName('div')->item(0);
+
+        $this->assertNotNull($shell);
+        $this->assertSame('custom', $shell->getAttribute('data-voodbuilder-content-width'));
+        $this->assertStringContainsString('wire:snapshot', $document->saveHTML($shell));
+    }
+
+    public function test_published_mount_is_not_wrapped_when_the_author_never_set_a_width(): void
+    {
+        $html = $this->renderBlock();
+
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $html);
+        $this->assertStringNotContainsString('data-voodbuilder-role="content"', $html);
     }
 
     public function test_props_from_config_is_an_allowlist(): void
@@ -114,6 +145,22 @@ class EditorLivewireBlockRendererTest extends TestCase
 
         // Grapes stamps an id on every dropped node; mimic it so the key path runs.
         return (string) preg_replace('/^<(\w+)/', '<$1 id="' . $id . '"', $html, 1);
+    }
+
+    /**
+     * Same saved markup, but wrapped in the content-width shell the width toolbar writes.
+     */
+    private function wrappedWithContentWidthShell(): string
+    {
+        $saved = '<section data-voodbuilder-block="test_livewire_counter"'
+            . ' data-voodbuilder-config=\'{"start":1,"secret":"never-forwarded"}\''
+            . ' class="voodbuilder-editor-section voodbuilder-editor-dynamic">'
+            . '<div data-voodbuilder-role="content" data-voodbuilder-content-width="custom"'
+            . ' class="voodbuilder-editor-container w-full mx-auto max-w-[48rem]">'
+            . '<p>Livewire preview</p>'
+            . '</div></section>';
+
+        return $saved;
     }
 
     private function snapshotComponentName(string $html): ?string

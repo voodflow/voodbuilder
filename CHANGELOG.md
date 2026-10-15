@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.72] - 2026-10-15
+
+### Fixed
+
+- Livewire blocks keep the author's content-width shell on the published page. The mount carries no shell of its own, so the shell is rebuilt around it (`EditorDynamicBlockRenderer::wrapRenderedInAuthorContentWidthShell()`) instead of patched onto regenerated markup — the patch helper only finds shells the Blade output already contains. Previously the width toolbar's choice was dropped on publish while the canvas kept showing it; a block the author never constrained still stays full-bleed, matching the canvas. `captureAuthorContentWidthShells()` now also captures the shell tag so it can be rebuilt faithfully.
+
 ## [1.11.71] - 2026-10-15
 
 ### Added

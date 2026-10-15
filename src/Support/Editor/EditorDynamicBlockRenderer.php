@@ -150,15 +150,19 @@ final class EditorDynamicBlockRenderer
         }
 
         /*
-         * Livewire blocks own their markup: the mounted component root ships, not the
-         * editor wrapper. Re-applying the captured author chrome would overwrite the
-         * component's own classes with the wrapper's, so this path inserts the mount
-         * as-is. Author styling of the shell stays a component/props concern.
+         * Livewire blocks own their inner markup: the mounted component root ships, not
+         * the editor wrapper. Re-applying the captured author chrome would overwrite the
+         * component's own classes, so only the content-width shell is carried over — and
+         * it has to be rebuilt around the mount, because the mounted markup carries no
+         * shell of its own for the patch helper to find.
          */
         if (! $canvasPreview && $this->isLivewireBlock($blockId)) {
+            $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
+
             $rendered = $this->renderBlockId($blockId, $config, $renderData, false, $this->livewireInstanceKey($node));
 
             if ($rendered !== null) {
+                $rendered = $this->wrapRenderedInAuthorContentWidthShell($rendered, $authorContentWidthShells);
                 $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
             }
 
@@ -561,7 +565,7 @@ final class EditorDynamicBlockRenderer
     }
 
     /**
-     * @return list<array{content_width: string, class: string, style: string}>
+     * @return list<array{tag: string, content_width: string, class: string, style: string}>
      */
     protected function captureAuthorContentWidthShells(DOMElement $node): array
     {
@@ -569,6 +573,7 @@ final class EditorDynamicBlockRenderer
 
         foreach ($this->contentWidthShellElements($node) as $element) {
             $shells[] = [
+                'tag' => strtolower($element->nodeName),
                 'content_width' => trim((string) $element->getAttribute('data-voodbuilder-content-width')),
                 'class' => trim((string) $element->getAttribute('class')),
                 'style' => trim((string) $element->getAttribute('style')),
@@ -579,7 +584,60 @@ final class EditorDynamicBlockRenderer
     }
 
     /**
-     * @param  list<array{content_width: string, class: string, style: string}>  $shells
+     * Rebuild the author's content-width shell around regenerated markup.
+     *
+     * `applyAuthorContentWidthShellsToHtml()` patches shells that the regenerated markup
+     * already contains — true for Blade blocks, false for a Livewire mount, which has no
+     * shell of its own. Without this the author's width choice silently disappears on the
+     * published page while the canvas keeps showing it.
+     *
+     * No author shell means no wrapper: a block the author never constrained stays
+     * full-bleed, exactly as the canvas renders it.
+     *
+     * @param  list<array{tag: string, content_width: string, class: string, style: string}>  $shells
+     */
+    protected function wrapRenderedInAuthorContentWidthShell(string $html, array $shells): string
+    {
+        $shell = $shells[0] ?? null;
+
+        if ($shell === null || trim($html) === '') {
+            return $html;
+        }
+
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        $tag = preg_match('/^[a-z][a-z0-9-]*$/i', $shell['tag']) === 1 ? $shell['tag'] : 'div';
+        $wrapper = $document->createElement($tag);
+        $wrapper->setAttribute('data-voodbuilder-role', 'content');
+
+        if ($shell['content_width'] !== '') {
+            $wrapper->setAttribute('data-voodbuilder-content-width', $shell['content_width']);
+        }
+
+        if ($shell['class'] !== '') {
+            $wrapper->setAttribute('class', $shell['class']);
+        }
+
+        if ($shell['style'] !== '') {
+            $wrapper->setAttribute('style', $shell['style']);
+        }
+
+        foreach (iterator_to_array($body->childNodes) as $child) {
+            $wrapper->appendChild($child);
+        }
+
+        $body->appendChild($wrapper);
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * @param  list<array{tag: string, content_width: string, class: string, style: string}>  $shells
      */
     protected function restoreAuthorContentWidthShells(DOMElement $node, array $shells): void
     {
@@ -600,7 +658,7 @@ final class EditorDynamicBlockRenderer
     }
 
     /**
-     * @param  list<array{content_width: string, class: string, style: string}>  $shells
+     * @param  list<array{tag: string, content_width: string, class: string, style: string}>  $shells
      */
     protected function applyAuthorContentWidthShellsToHtml(string $html, array $shells): string
     {
