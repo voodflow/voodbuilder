@@ -182,6 +182,7 @@ final class EditorDynamicBlockRenderer
                 $rendered = $this->applyAuthorRootChromeToHtml($rendered, $authorRootChrome);
                 $rendered = $this->applyAuthorRootClassesToHtml($rendered, $authorRootClasses);
                 $rendered = $this->applyRootAttributesToHtml($rendered, $authorRootAttributes);
+                $rendered = $this->applyLivewireRootSelfProtectionToHtml($rendered);
                 $rendered = $this->wrapRenderedInAuthorContentWidthShell($rendered, $authorContentWidthShells);
                 $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
             }
@@ -712,6 +713,47 @@ final class EditorDynamicBlockRenderer
             foreach ($attributes as $name => $value) {
                 $element->setAttribute($name, $value);
             }
+        });
+    }
+
+    /**
+     * Freeze the mounted component root's own attributes for the whole Livewire session.
+     *
+     * The chrome this renderer applies to a dynamic block root — measure utilities, the
+     * author's `lg:my-20`, `id`, `data-vb-*` paint, `data-voodbuilder-content-width` and the
+     * block identity — lands on the node Livewire owns (the mount root, the one carrying
+     * `wire:id` / `wire:snapshot` / `wire:key`). Every component request re-renders the
+     * component from its own Blade markup, which knows nothing about any of that, and morphs
+     * the response onto that element: morph's `patchAttributes()` walks the *incoming*
+     * attribute list and removes every attribute it does not carry, so the width choice, the
+     * author margin and `data-voodbuilder-block` were all gone at the first search keystroke.
+     *
+     * `wire:ignore.self` is Livewire's own answer to exactly this. `js/directives/wire-ignore.js`
+     * flags the element, and the morph hook in `js/morph.js` (`getMorphConfig()`) answers with
+     * `childrenOnly()`; the morph then skips `patchAttributes()` for that element while still
+     * running `patchChildren()`. The search input and the result list keep being morphed (the
+     * component keeps working) and only the element's own attributes are frozen. That is safe
+     * here because the state is *not* read back from the attribute: the request payload is
+     * built from the in-memory snapshot (`getEncodedSnapshotWithLatestChildrenMergedIn()`), so
+     * a stale `wire:snapshot` on the element cannot roll the component back — a `wire:navigate`
+     * page swap re-inscribes it anyway (`inscribeSnapshotAndEffectsOnElement()`).
+     *
+     * Only the mount root is touched: the attribute is written on the element that owns the
+     * chrome, never on a wrapper, and never on the non-visual siblings a mount can ship
+     * (`script` / `style` / `link`).
+     */
+    protected function applyLivewireRootSelfProtectionToHtml(string $html): string
+    {
+        if (trim($html) === '' || ! str_contains($html, 'wire:')) {
+            return $html;
+        }
+
+        return $this->mapTopLevelElements($html, function (DOMElement $element): void {
+            if (! $element->hasAttribute('wire:id') && ! $element->hasAttribute('wire:snapshot')) {
+                return;
+            }
+
+            $element->setAttribute('wire:ignore.self', '');
         });
     }
 

@@ -136,15 +136,7 @@ class EditorLivewireBlockRendererTest extends TestCase
         // 1.11.79: a dynamic block without a genuine content shell owns the measure
         // on its root. The published mount must honour it and stay structurally
         // untouched — no wrapper, layout row intact.
-        $saved = '<section data-voodbuilder-block="test_livewire_counter"'
-            . ' data-voodbuilder-config=\'{"start":1,"secret":"never-forwarded"}\''
-            . ' data-voodbuilder-content-width="normal"'
-            . ' class="rounded-lg bg-vp-bg-elv p-6 voodbuilder-editor-section voodbuilder-editor-dynamic mx-auto w-full max-w-[80rem]">'
-            . '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">'
-            . '<p>Livewire preview</p></div></section>';
-
-        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $this->registry());
-        $html = $renderer->render($saved);
+        $html = $this->publishedSavedRootMeasureRender();
         $classes = $this->rootClasses($html);
 
         $this->assertContains('mx-auto', $classes);
@@ -155,6 +147,76 @@ class EditorLivewireBlockRendererTest extends TestCase
         // No author wrapper is synthesized around the mount.
         $this->assertStringNotContainsString('data-voodbuilder-role="content"', $html);
         $this->assertStringNotContainsString('voodbuilder-editor-container', $html);
+    }
+
+    public function test_published_mount_root_is_frozen_for_livewire_so_a_re_render_cannot_strip_the_chrome(): void
+    {
+        /*
+         * 1.11.81: the author chrome (measure, margin, `id`, paint attrs, content-width,
+         * block identity) rides on the mount root, and the mount root is the node Livewire
+         * owns. At every component request Livewire morphs the component's own Blade markup
+         * onto it, and morph's `patchAttributes()` walks the *incoming* attribute list,
+         * removing everything it does not carry: the author's width choice, the margin and
+         * `data-voodbuilder-block` all vanished at the first search keystroke.
+         */
+        $html = $this->publishedSavedRootMeasureRender();
+        $root = $this->topLevelElement($html);
+
+        $this->assertStringContainsString('wire:snapshot', $html);
+        $this->assertTrue($root->hasAttribute('wire:id'));
+        $this->assertTrue(
+            $root->hasAttribute('wire:ignore.self'),
+            'The mount root that owns the author chrome must carry wire:ignore.self.',
+        );
+
+        // The chrome is still on the same element — the protection did not move it.
+        $classes = $this->rootClasses($html);
+        $this->assertContains('lg:my-20', $classes);
+        $this->assertContains('mx-auto', $classes);
+        $this->assertContains('max-w-[80rem]', $classes);
+        $this->assertSame('normal', $root->getAttribute('data-voodbuilder-content-width'));
+        $this->assertSame('test_livewire_counter', $root->getAttribute('data-voodbuilder-block'));
+    }
+
+    public function test_the_freeze_attribute_never_costs_a_dom_level(): void
+    {
+        // The 1.11.76/1.11.77 guards still hold: protection is an attribute on the mount
+        // root, never a wrapper with a measure or a layout of its own.
+        $html = $this->publishedSavedRootMeasureRender();
+        $body = $this->body($html);
+
+        $this->assertSame(1, $body->childNodes->length);
+        $this->assertSame('section', strtolower($body->firstChild->nodeName));
+        $this->assertStringNotContainsString('data-voodbuilder-role="content"', $html);
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $html);
+        $this->assertStringNotContainsString('sm:justify-between', $html);
+    }
+
+    public function test_every_published_livewire_root_is_frozen(): void
+    {
+        $renders = [
+            'plain mount' => $this->renderBlock(),
+            'author measure on the root' => $this->publishedSavedRootMeasureRender(),
+            'legacy payload with a stamped layout node' => $this->publishedPoisonedRender(),
+        ];
+
+        foreach ($renders as $label => $html) {
+            $this->assertStringContainsString('wire:snapshot', $html, $label);
+            $this->assertTrue($this->topLevelElement($html)->hasAttribute('wire:ignore.self'), $label);
+        }
+    }
+
+    public function test_two_mounts_freeze_their_own_root_only(): void
+    {
+        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $this->registry());
+        $html = $renderer->render($this->wrapped('first') . $this->wrapped('second'));
+
+        $this->assertSame(2, substr_count($html, 'wire:ignore.self'));
+    }
+
+    public function test_canvas_preview_never_carries_the_freeze_attribute(): void
+    {
+        $this->assertStringNotContainsString('wire:ignore.self', $this->renderBlock(canvasPreview: true));
     }
 
     public function test_props_from_config_is_an_allowlist(): void
@@ -270,9 +332,40 @@ class EditorLivewireBlockRendererTest extends TestCase
     }
 
     /**
+     * The root shape the width toolbar writes on a Livewire block that has no genuine
+     * content shell: author classes + measure + width attribute, all on the block root.
+     */
+    private function savedRootMeasureMarkup(): string
+    {
+        return '<section data-voodbuilder-block="test_livewire_counter"'
+            . ' data-voodbuilder-config=\'{"start":1,"secret":"never-forwarded"}\''
+            . ' data-voodbuilder-content-width="normal"'
+            . ' class="rounded-lg bg-vp-bg-elv p-6 voodbuilder-editor-section voodbuilder-editor-dynamic lg:my-20 mx-auto w-full max-w-[80rem]">'
+            . '<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">'
+            . '<p>Livewire preview</p></div></section>';
+    }
+
+    private function publishedSavedRootMeasureRender(): string
+    {
+        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $this->registry());
+
+        return $renderer->render($this->savedRootMeasureMarkup());
+    }
+
+    /**
      * @return list<string>
      */
     private function rootClasses(string $html): array
+    {
+        return preg_split(
+            '/\s+/',
+            trim($this->topLevelElement($html)->getAttribute('class')),
+            -1,
+            PREG_SPLIT_NO_EMPTY,
+        ) ?: [];
+    }
+
+    private function body(string $html): DOMElement
     {
         $document = new DOMDocument;
         libxml_use_internal_errors(true);
@@ -281,9 +374,18 @@ class EditorLivewireBlockRendererTest extends TestCase
         $body = $document->getElementsByTagName('body')->item(0);
 
         $this->assertNotNull($body);
+        $this->assertTrue($body instanceof DOMElement);
+
+        return $body;
+    }
+
+    private function topLevelElement(string $html): DOMElement
+    {
+        $body = $this->body($html);
+
         $this->assertTrue($body->firstChild instanceof DOMElement);
 
-        return preg_split('/\s+/', trim($body->firstChild->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        return $body->firstChild;
     }
 
     private function snapshotComponentName(string $html): ?string

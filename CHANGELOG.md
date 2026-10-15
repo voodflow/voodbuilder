@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.81] - 2026-10-15
+
+### Fixed
+
+- **A dynamic (Livewire) block keeps the author's root styling and its content-width choice through every component interaction.** Narrowing `demo_pages_explorer` with the width button held until the block was used: the first search keystroke made the block go full-width again. The chrome this renderer stamps on a dynamic block root — the measure utilities (`w-full mx-auto max-w-[80rem]`), the author's own `lg:my-20`, `id`, `data-vb-*` paint, `data-voodbuilder-content-width` and `data-voodbuilder-block` — all land on the node Livewire owns (the mount root, the one carrying `wire:id` / `wire:snapshot`). A Livewire request re-renders the component from its own Blade markup, which knows nothing about any of that, and morphs the response onto that element: morph's `patchAttributes()` walks the *incoming* attribute list and removes every attribute it does not carry, so the width, the margin and the block identity were gone at the first keystroke. The lesson is that a long-lived component's own attributes are not the renderer's to keep, so the publish path now freezes them with Livewire's own mechanism for this: `applyLivewireRootSelfProtectionToHtml()` writes `wire:ignore.self` on the mount root, which makes morph answer `childrenOnly()` — the element's own attributes are skipped while its children keep updating, so the search input and the result list still work. The attribute is written on the element that already exists and only on the mount root: no wrapper is added, no DOM level changes, no utility list moves (the 1.11.76 restructure cannot come back), and `script` / `style` / `link` siblings are never touched. It is applied after the author chrome merge and before the content-width wrapper, so a block with a genuine measure shell keeps the measure on the shell and the freeze on the mount inside it. Canvas preview is deliberately excluded. Note the trade-off: the root's own attributes are now static for the component's live session, which is correct for template-static roots (the normal case) but means a component whose root *classes* are computed server-side per render would keep its first-render classes until the page is reloaded.
+
 ## [1.11.80] - 2026-10-15
 
 ### Fixed
