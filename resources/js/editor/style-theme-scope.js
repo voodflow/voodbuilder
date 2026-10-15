@@ -23,6 +23,10 @@ import {
 import {
     currentStyleBreakpointPrefix,
     currentStyleVariantPrefix,
+    resolveGroupValueAtBreakpoint,
+    resolveGroupValueAtBreakpointWithLegacyDark,
+    resolveGroupValueExact,
+    resolveGroupValueExactWithLegacyDark,
     stripVariantPrefixes,
 } from './style-tailwind-breakpoints.js';
 
@@ -97,6 +101,67 @@ const HEALABLE_NEUTRAL_UTILITY_NAMES = new Set(
  */
 export function isHealableNeutralStyleUtility(name) {
     return HEALABLE_NEUTRAL_UTILITY_NAMES.has(String(name ?? '').trim());
+}
+
+/**
+ * Whether a neutral read may fall back to the legacy `dark:` twin of a utility.
+ *
+ * Two reasons to say no:
+ * - the group is theme-scoped: its `dark:` value is the dark *paint*, never a neutral
+ *   value (background color / opacity, gradients, bg-size/position/repeat);
+ * - the group owns names shared with a theme-scoped group (`from-*`, `to-*`, `via-*`,
+ *   `bg-gradient-*`, `bg-none`): the paint behind that `dark:` cannot be inferred, so
+ *   reading it as a neutral value would show a value the element never applies.
+ *
+ * @param {string|null|undefined} groupId
+ * @param {Array<{value: string, label?: string}>|null|undefined} options
+ * @returns {boolean}
+ */
+export function acceptsLegacyDarkFallback(groupId, options) {
+    if (isThemeScopedStyleGroupId(groupId)) {
+        return false;
+    }
+
+    const names = [...classSetFromOptions(options ?? [])];
+
+    return names.length > 0 && names.every((name) => ! THEME_SCOPED_UTILITY_NAMES.has(name));
+}
+
+/**
+ * Read a Style group value, tolerating the legacy `dark:` prefixes only where the
+ * group is theme-neutral (see {@link acceptsLegacyDarkFallback}).
+ *
+ * @param {Iterable<string>|string[]} classes
+ * @param {Array<{value: string, label?: string}>} options
+ * @param {string|null|undefined} groupId
+ * @param {string|null|undefined} prefix breakpoint prefix for neutral groups,
+ *   theme+breakpoint for theme-scoped ones
+ * @returns {string}
+ */
+export function resolveNeutralStyleGroupValue(classes, options, groupId, prefix = '') {
+    if (! acceptsLegacyDarkFallback(groupId, options)) {
+        return resolveGroupValueAtBreakpoint(classes, options, prefix);
+    }
+
+    return resolveGroupValueAtBreakpointWithLegacyDark(classes, options, prefix);
+}
+
+/**
+ * Exact variant of {@link resolveNeutralStyleGroupValue} — used to tell "authored
+ * here" from "cascaded from a smaller viewport" without reporting a paint as one.
+ *
+ * @param {Iterable<string>|string[]} classes
+ * @param {Array<{value: string, label?: string}>} options
+ * @param {string|null|undefined} groupId
+ * @param {string|null|undefined} prefix
+ * @returns {string}
+ */
+export function resolveNeutralStyleGroupValueExact(classes, options, groupId, prefix = '') {
+    if (! acceptsLegacyDarkFallback(groupId, options)) {
+        return resolveGroupValueExact(classes, options, prefix);
+    }
+
+    return resolveGroupValueExactWithLegacyDark(classes, options, prefix);
 }
 
 /**
@@ -189,6 +254,80 @@ export function healNonThemeScopedThemeClasses(component) {
     }
 
     return removed.length;
+}
+
+/**
+ * Heal the *selected* component while the author works, so the canvas and the Style
+ * panel agree before Save: `healNonThemeScopedThemeClassesForExport()` only ran on
+ * Save, so a legacy `dark:lg:my-20` kept painting (canvas forces `.dark`) and reading
+ * as "no value" in the panel until the page was saved.
+ *
+ * Guarded by `editor.__voodbuilderTwStyleApplying` (the flag the panel write path uses)
+ * so an in-flight author edit is never fought, and so `component:update:classes` cannot
+ * bounce back into another heal. A no-op when the flag is already set.
+ *
+ * @param {object|null|undefined} editor
+ * @param {object|null|undefined} component
+ * @returns {number} healed class count
+ */
+export function healLegacyNeutralThemeClassesForComponent(editor, component) {
+    if (! component || editor?.__voodbuilderTwStyleApplying) {
+        return 0;
+    }
+
+    const wasApplying = Boolean(editor?.__voodbuilderTwStyleApplying);
+
+    if (editor) {
+        editor.__voodbuilderTwStyleApplying = true;
+    }
+
+    try {
+        return healNonThemeScopedThemeClasses(component);
+    } finally {
+        if (editor && ! wasApplying) {
+            editor.__voodbuilderTwStyleApplying = false;
+        }
+    }
+}
+
+/**
+ * Save-time guard on the serialized HTML: the tree heal above is skipped entirely on a
+ * read-only Save (`buildPayload(editor, { mutate: false })`) and can be defeated by a
+ * component whose classes only live in the `class` attribute (dynamic blocks re-stamped
+ * from the server preview on refresh). This pass makes the invariant unconditional —
+ * a saved payload never carries a neutral `dark:` utility.
+ *
+ * @param {string|null|undefined} html
+ * @returns {string}
+ */
+export function healNonThemeScopedThemeClassesInHtml(html) {
+    const source = String(html ?? '');
+
+    if (source === '' || ! source.includes('dark:')) {
+        return source;
+    }
+
+    return source.replace(
+        /\bclass=("([^"]*)"|'([^']*)')/gi,
+        (match, _quoted, doubleQuoted, singleQuoted) => {
+            const value = doubleQuoted ?? singleQuoted ?? '';
+
+            if (value === '' || ! value.includes('dark:')) {
+                return match;
+            }
+
+            const tokens = value.split(/\s+/).filter(Boolean);
+            const { classes, removed } = stripNonThemeScopedThemePrefixes(tokens);
+
+            if (removed.length === 0) {
+                return match;
+            }
+
+            const quote = doubleQuoted === undefined ? '\'' : '"';
+
+            return `class=${quote}${classes.join(' ')}${quote}`;
+        },
+    );
 }
 
 /**

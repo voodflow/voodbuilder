@@ -424,6 +424,45 @@ CSS;
         $this->assertStringContainsString('#keep', $resolved);
     }
 
+    public function test_resolve_published_page_css_compiles_the_class_the_legacy_dark_heal_added(): void
+    {
+        if (EditorComponentTailwindCompiler::compile('<span class="text-sm">probe</span>') === null) {
+            $this->markTestSkipped('Node.js Tailwind compiler is not available in this environment.');
+        }
+
+        // The page as it was saved by the pre-1.11.76 policy: the margin is dark-only,
+        // so the published light page applies nothing (the reported symptom).
+        $dirtyHtml = '<section data-voodbuilder-block="demo_pages_explorer" '
+            . 'class="rounded-2xl border border-vp-divider bg-vp-bg-elv p-6 dark:lg:my-20">'
+            . '<div class="flex gap-4">Hi</div></section>';
+        $darkSheet = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave($dirtyHtml, '');
+        $dirtyFingerprint = EditorPastedComponentNormalizer::pageUtilityClassFingerprint($dirtyHtml);
+
+        $this->assertStringContainsString('.dark\\:lg\\:my-20', $darkSheet);
+        $this->assertFalse(EditorPastedComponentNormalizer::cssDefinesUtilityClass($darkSheet, 'lg:my-20'));
+
+        // What the editor sends after the heal: the same page without the theme prefix.
+        $healedHtml = str_replace('dark:lg:my-20', 'lg:my-20', $dirtyHtml);
+
+        $healedSheet = EditorPastedComponentNormalizer::resolvePublishedPageCssForSave(
+            $healedHtml,
+            '',
+            $darkSheet,
+            $dirtyFingerprint,
+        );
+
+        // Every class in the saved HTML must exist in the saved CSS: the class the heal
+        // added is compiled, and the dead dark twin is gone with it.
+        foreach (['lg:my-20', 'p-6', 'gap-4', 'rounded-2xl', 'flex'] as $utility) {
+            $this->assertTrue(
+                EditorPastedComponentNormalizer::cssDefinesUtilityClass($healedSheet, $utility),
+                "Expected the saved CSS to define .{$utility}",
+            );
+        }
+
+        $this->assertStringNotContainsString('.dark\\:lg\\:my-20', $healedSheet);
+    }
+
     public function test_page_utility_class_fingerprint_ignores_text_content(): void
     {
         $a = EditorPastedComponentNormalizer::pageUtilityClassFingerprint(

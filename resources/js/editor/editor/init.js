@@ -59,6 +59,7 @@ import {
     refreshBlockSettingsUi,
 } from '../blocks/settings/index.js';
 import { buildPayload, readingTypographyFingerprint, stripAuthorIdRules } from './payload.js';
+import { healNonThemeScopedThemeClassesForExport } from '../style-theme-scope.js';
 import {
     registerChromeLayoutInspectorSelection,
     wireInspector,
@@ -2817,6 +2818,34 @@ function mountFrontendEditor() {
         return (hash >>> 0).toString(16);
     };
 
+    /**
+     * Seed the "clean page" baseline, then heal the legacy neutral `dark:` utilities.
+     *
+     * The pre-1.11.76 policy wrote every Style group as a theme variant, so a page saved
+     * back then can still carry `dark:lg:my-20`. A Save the author did not otherwise touch
+     * takes the read-only path and compares the payload hash against this baseline: if the
+     * tree were left alone, that Save would send no request at all and the page would stay
+     * broken (the published light page applies nothing) in the database forever. Healing
+     * after seeding makes the tree differ from the baseline, and marking the page unsaved
+     * makes the first Save persist the fix. Idempotent: a page with nothing to heal leaves
+     * the baseline untouched and the page clean.
+     *
+     * @param {(error: unknown) => void} onError
+     */
+    const seedSaveBaselineAndHealLegacyTheme = (onError) => {
+        try {
+            const baseline = buildPayload(editor, { mutate: false });
+            editor.__voodbuilderLastSavePayloadHash = hashSavePayload(baseline);
+            editor.__voodbuilderPageSaveClean = true;
+
+            if (healNonThemeScopedThemeClassesForExport(editor) > 0) {
+                editor.__voodbuilderMarkPageUnsaved?.();
+            }
+        } catch (error) {
+            onError(error);
+        }
+    };
+
     if (autosave) {
         // Only once the canvas actually holds the saved page: the draft is compared
         // against what the author would otherwise be looking at, and a prompt over a
@@ -2824,13 +2853,9 @@ function mountFrontendEditor() {
         void Promise.resolve(editor.__voodbuilderCanvasReady)
             .then(() => autosave.recover())
             .then(() => {
-                try {
-                    const baseline = buildPayload(editor, { mutate: false });
-                    editor.__voodbuilderLastSavePayloadHash = hashSavePayload(baseline);
-                    editor.__voodbuilderPageSaveClean = true;
-                } catch (error) {
+                seedSaveBaselineAndHealLegacyTheme((error) => {
                     console.warn('VoodBuilder: could not seed save baseline.', error);
-                }
+                });
 
                 window.setTimeout(() => {
                     editor.__voodbuilderTrackSaveDirty = true;
@@ -2843,14 +2868,10 @@ function mountFrontendEditor() {
     } else {
         void Promise.resolve(editor.__voodbuilderCanvasReady)
             .then(() => {
-                try {
-                    const baseline = buildPayload(editor, { mutate: false });
-                    editor.__voodbuilderLastSavePayloadHash = hashSavePayload(baseline);
-                    editor.__voodbuilderPageSaveClean = true;
-                } catch (error) {
+                seedSaveBaselineAndHealLegacyTheme((error) => {
                     // Ignore.
                     debugSwallowed(error);
-                }
+                });
 
                 window.setTimeout(() => {
                     editor.__voodbuilderTrackSaveDirty = true;

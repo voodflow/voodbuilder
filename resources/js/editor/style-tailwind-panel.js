@@ -134,8 +134,11 @@ import {
     resolveGroupValueExact,
 } from './style-tailwind-breakpoints.js';
 import {
+    healLegacyNeutralThemeClassesForComponent,
     healNonThemeScopedThemeClassesForExport,
     isThemeScopedStyleGroupId,
+    resolveNeutralStyleGroupValue,
+    resolveNeutralStyleGroupValueExact,
     styleGroupVariantPrefix,
 } from './style-theme-scope.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
@@ -1455,8 +1458,23 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
                 el.classList?.toggle?.('is-inherited', false);
                 el.removeAttribute?.('title');
             } else {
-                const exact = resolveGroupValueExact(classes, group.options, bp);
-                const cascaded = resolveGroupValueAtBreakpoint(classes, group.options, bp);
+                // Neutral groups tolerate the legacy `dark:` prefixes (pre-1.11.76 wrote
+                // them for every group): a `dark:lg:my-20` on the element must show as 20,
+                // otherwise the author cannot see — and therefore cannot rewrite — the
+                // state the canvas is rendering. Theme-scoped groups and shared gradient
+                // stop names never fall back (see acceptsLegacyDarkFallback).
+                const exact = resolveNeutralStyleGroupValueExact(
+                    classes,
+                    group.options,
+                    group.id,
+                    bp,
+                );
+                const cascaded = resolveNeutralStyleGroupValue(
+                    classes,
+                    group.options,
+                    group.id,
+                    bp,
+                );
                 el.value = cascaded;
                 const inherited = Boolean(cascaded) && exact !== cascaded;
                 el.classList?.toggle?.('is-inherited', inherited);
@@ -4682,7 +4700,7 @@ function syncPageSurfaceStylePanelChrome(stylesMount, editor) {
  * @param {object} editor
  * @param {{ mount?: HTMLElement, labels?: Record<string, string> }} [options]
  */
-configureSpacingPanel({ applyGroup, resolveStyleGroup, syncSelectsFromComponent });
+configureSpacingPanel({ applyGroup, syncSelectsFromComponent });
 
 function resyncAllBgOpacityCanvasStyles(editor) {
     const map = editor?.__voodbuilderBgOpacityPaints;
@@ -5328,6 +5346,21 @@ export function registerStyleTailwindPanel(editor, options = {}) {
                 return;
             }
 
+            // Legacy neutral `dark:` utilities (`dark:lg:my-20`) are healed the moment
+            // the author selects the element: the canvas forces `.dark`, so the margin
+            // showed there while the Style panel read nothing and the published page
+            // (light) applied nothing. Healing here keeps canvas, panel and Save in
+            // agreement instead of waiting for a Save that the author may never make.
+            try {
+                const healed = healLegacyNeutralThemeClassesForComponent(editor, component);
+
+                if (healed > 0) {
+                    scheduleClassCompile(editor);
+                }
+            } catch (error) {
+                debugSwallowed(error);
+            }
+
             // Leaving page-background mode: restore Dimension/Typography/… immediately.
             // Without this, sectors stay hidden after “Page background…” then picking an element.
             if (editor.__voodbuilderForcePageSurfaceStyle
@@ -5387,6 +5420,17 @@ export function registerStyleTailwindPanel(editor, options = {}) {
             const selected = editor.getSelected?.();
 
             if (selected && sectorsReady()) {
+                // A dynamic remount re-stamps the root classes captured before the
+                // refresh (server preview merged in), which can revive a legacy neutral
+                // `dark:` the author had just healed — heal again before reading.
+                try {
+                    if (healLegacyNeutralThemeClassesForComponent(editor, selected) > 0) {
+                        scheduleClassCompile(editor);
+                    }
+                } catch (error) {
+                    debugSwallowed(error);
+                }
+
                 syncSelectsFromComponent(stylesMount, selected, editor, syncOpts());
             }
         }, 0);

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.78] - 2026-10-15
+
+### Fixed
+
+- **Spacing — and every other neutral Style field — now shows the value the legacy `dark:` class on the element actually carries.** 1.11.76 made neutral groups theme-free, so the panel began reading them only at the plain breakpoint prefix, while a page authored before that still carries `dark:lg:my-20`. The canvas forces `.dark` from the editor theme, so the margin was visible there, but `resolveSpacingState()` / `syncSpacingBox()` found no class at `lg:` and rendered the Margin and Padding boxes empty: the author could neither see the state nor rewrite it cleanly, and the writer could not drop a `dark:` twin it did not know existed. Reads for theme-neutral groups now fall back to the legacy `dark:` twin (`resolveGroupValueAtBreakpointWithLegacyDark()` / `resolveGroupValueExactWithLegacyDark()`), guarded by `acceptsLegacyDarkFallback()` so a theme-scoped background paint — or a stop name shared with text gradients (`from-*`, `to-*`, `via-*`) — is never misread as a neutral value.
+- **A legacy page heals as the author works, and a plain re-save really persists the fix.** Two gaps kept `dark:lg:my-20` alive. First, the heal only ran at Save, so the canvas and the panel disagreed until then; `healLegacyNeutralThemeClassesForComponent()` now runs on element selection and on the panel resync, guarded by `__voodbuilderTwStyleApplying` so it never fights an in-flight edit. Second, and worse: a Save with no other edit is skipped outright when the payload hash matches the seeded baseline, so on a page whose only problem was the legacy class the request was never sent and the broken page stayed broken in the database forever. The tree is now healed immediately *after* the baseline is seeded and the page is marked unsaved when anything was healed, so the first Save takes the mutating path and posts. Reporters: "in editor dark vedo il padding ma in colonna editor sono vuote le caselle" and "in pagina, il dark ha il margine e il light no".
+- **A neutral `dark:` can no longer survive a Save on *any* path.** The tree heal is skipped by a read-only Save (`buildPayload(editor, { mutate: false })`) and can miss a component whose classes only live in a `class` attribute (a dynamic block re-stamped from the server preview on refresh). `healNonThemeScopedThemeClassesInHtml()` is now the last step before the payload HTML is stored, so the invariant holds unconditionally: a saved payload never carries a neutral `dark:` utility, and therefore never a class the light page would drop.
+
+### Verified
+
+- The reported "the healed class is in the HTML but not in the CSS" was **not** an ordering bug: `payload.js` heals before `editor.getHtml()`, and `EditorGate::normalizePayload()` heals before `resolvePublishedPageCssForSave()`. The earlier count of `lg:my-20` in the dirty payload was a substring artifact of `dark:lg:my-20`; HTML and compiled CSS were consistent (both dark-only), which is why the light page applied nothing. `EditorPastedComponentNormalizerTest::test_resolve_published_page_css_compiles_the_class_the_legacy_dark_heal_added` pins the real invariant — every class in the saved HTML is defined by the saved CSS — for the page as it was saved before and after the heal.
+- Reproduced on the demo page (`livewire-demo`, block `demo_pages_explorer`): before, the Margin box was empty and the payload carried `dark:lg:my-20` with `.dark\:lg\:my-20` in the CSS; after a Save it carries `lg:my-20` and `.lg\:my-20`, and the published page renders the same margin with `<html class="">` (light).
+
 ## [1.11.77] - 2026-10-15
 
 ### Fixed

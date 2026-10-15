@@ -24,26 +24,26 @@ import {
 } from './style-tailwind-class-groups.js';
 import {
     currentStyleBreakpointPrefix,
-    resolveGroupValueAtBreakpoint,
-    resolveGroupValueExact,
     stripVariantPrefixes,
 } from './style-tailwind-breakpoints.js';
-/** @type {{ applyGroup: Function, resolveStyleGroup: Function, syncSelectsFromComponent: Function }} */
+import {
+    resolveNeutralStyleGroupValue,
+    resolveNeutralStyleGroupValueExact,
+} from './style-theme-scope.js';
+/** @type {{ applyGroup: Function, syncSelectsFromComponent: Function }} */
 const panel = {
     applyGroup: () => {},
-    resolveStyleGroup: () => '',
     syncSelectsFromComponent: () => {},
 };
 
 /**
- * @param {{ applyGroup: Function, resolveStyleGroup: Function, syncSelectsFromComponent: Function }} helpers
+ * @param {{ applyGroup: Function, syncSelectsFromComponent: Function }} helpers
  */
 export function configureSpacingPanel(helpers) {
     Object.assign(panel, helpers);
 }
 
 const applyGroup = (...args) => panel.applyGroup(...args);
-const resolveStyleGroup = (...args) => panel.resolveStyleGroup(...args);
 const syncSelectsFromComponent = (...args) => panel.syncSelectsFromComponent(...args);
 
 function escapeHtml(value) {
@@ -197,19 +197,35 @@ export function resolveSpacingState(kind, classes, prefix = '') {
         return { link: 'independent', sides: { t: '', r: '', b: '', l: '' }, hasValue: false };
     }
 
+    // Spacing is theme-neutral. Read the class the element actually carries, including
+    // the legacy `dark:` twin the pre-1.11.76 policy wrote (`dark:lg:my-20`): otherwise
+    // the boxes showed empty while the canvas (forced `.dark`) rendered the margin.
+    const exact = (options, groupId) => resolveNeutralStyleGroupValueExact(
+        classes,
+        options,
+        groupId,
+        prefix,
+    );
+    const cascaded = (options, groupId) => resolveNeutralStyleGroupValue(
+        classes,
+        options,
+        groupId,
+        prefix,
+    );
+
     // Prefer exact utilities at this breakpoint so base `p-4` does not hide `md:py-12`.
-    const allExact = resolveGroupValueExact(classes, cfg.all, prefix);
-    const xExact = resolveGroupValueExact(classes, cfg.x, prefix);
-    const yExact = resolveGroupValueExact(classes, cfg.y, prefix);
-    const tExact = resolveGroupValueExact(classes, cfg.t, prefix);
-    const rExact = resolveGroupValueExact(classes, cfg.r, prefix);
-    const bExact = resolveGroupValueExact(classes, cfg.b, prefix);
-    const lExact = resolveGroupValueExact(classes, cfg.l, prefix);
+    const allExact = exact(cfg.all, cfg.group.all);
+    const xExact = exact(cfg.x, cfg.group.x);
+    const yExact = exact(cfg.y, cfg.group.y);
+    const tExact = exact(cfg.t, cfg.group.t);
+    const rExact = exact(cfg.r, cfg.group.r);
+    const bExact = exact(cfg.b, cfg.group.b);
+    const lExact = exact(cfg.l, cfg.group.l);
     const hasExact = Boolean(allExact || xExact || yExact || tExact || rExact || bExact || lExact);
 
     const all = hasExact
         ? allExact
-        : resolveGroupValueAtBreakpoint(classes, cfg.all, prefix);
+        : cascaded(cfg.all, cfg.group.all);
 
     if (all) {
         const token = spacingTokenFromClass(all);
@@ -221,12 +237,12 @@ export function resolveSpacingState(kind, classes, prefix = '') {
         };
     }
 
-    const x = hasExact ? xExact : resolveGroupValueAtBreakpoint(classes, cfg.x, prefix);
-    const y = hasExact ? yExact : resolveGroupValueAtBreakpoint(classes, cfg.y, prefix);
-    const tSide = hasExact ? tExact : resolveGroupValueAtBreakpoint(classes, cfg.t, prefix);
-    const rSide = hasExact ? rExact : resolveGroupValueAtBreakpoint(classes, cfg.r, prefix);
-    const bSide = hasExact ? bExact : resolveGroupValueAtBreakpoint(classes, cfg.b, prefix);
-    const lSide = hasExact ? lExact : resolveGroupValueAtBreakpoint(classes, cfg.l, prefix);
+    const x = hasExact ? xExact : cascaded(cfg.x, cfg.group.x);
+    const y = hasExact ? yExact : cascaded(cfg.y, cfg.group.y);
+    const tSide = hasExact ? tExact : cascaded(cfg.t, cfg.group.t);
+    const rSide = hasExact ? rExact : cascaded(cfg.r, cfg.group.r);
+    const bSide = hasExact ? bExact : cascaded(cfg.b, cfg.group.b);
+    const lSide = hasExact ? lExact : cascaded(cfg.l, cfg.group.l);
 
     const sides = {
         t: spacingTokenFromClass(tSide) || spacingTokenFromClass(y),
@@ -283,10 +299,12 @@ function expandSpacingShorthandToAxes(editor, component, kind) {
         return false;
     }
 
-    const all = resolveStyleGroup(
+    // Neutral read (legacy `dark:` tolerant, breakpoint only): the shorthand may have
+    // been written by the pre-1.11.76 policy as `dark:lg:m-20`.
+    const all = resolveNeutralStyleGroupValue(
         componentClassList(component),
         cfg.all,
-        editor,
+        cfg.group.all,
         currentStyleBreakpointPrefix(editor),
     );
 
@@ -448,15 +466,17 @@ export function syncSpacingBox(root, component, options = {}, editor = null) {
         const dot = block.querySelector('[data-voodbuilder-spacing-dot]');
 
         if (dot) {
-            // Dot = authored at this breakpoint (not merely cascaded).
+            // Dot = authored at this breakpoint (not merely cascaded). A legacy
+            // `dark:lg:` value counts as authored here — it is what the canvas renders
+            // and what the author has to rewrite.
             const exactHere = Boolean(
-                resolveGroupValueExact(classes, cfg.all, bp)
-                || resolveGroupValueExact(classes, cfg.x, bp)
-                || resolveGroupValueExact(classes, cfg.y, bp)
-                || resolveGroupValueExact(classes, cfg.t, bp)
-                || resolveGroupValueExact(classes, cfg.r, bp)
-                || resolveGroupValueExact(classes, cfg.b, bp)
-                || resolveGroupValueExact(classes, cfg.l, bp),
+                resolveNeutralStyleGroupValueExact(classes, cfg.all, cfg.group.all, bp)
+                || resolveNeutralStyleGroupValueExact(classes, cfg.x, cfg.group.x, bp)
+                || resolveNeutralStyleGroupValueExact(classes, cfg.y, cfg.group.y, bp)
+                || resolveNeutralStyleGroupValueExact(classes, cfg.t, cfg.group.t, bp)
+                || resolveNeutralStyleGroupValueExact(classes, cfg.r, cfg.group.r, bp)
+                || resolveNeutralStyleGroupValueExact(classes, cfg.b, cfg.group.b, bp)
+                || resolveNeutralStyleGroupValueExact(classes, cfg.l, cfg.group.l, bp),
             );
             dot.hidden = ! exactHere;
         }
@@ -473,7 +493,7 @@ export function syncSpacingBox(root, component, options = {}, editor = null) {
             const value = state.sides[side] || '';
             const target = spacingGroupFor(kind, side, link);
             const exactClass = target
-                ? resolveGroupValueExact(classes, target.options, bp)
+                ? resolveNeutralStyleGroupValueExact(classes, target.options, target.groupId, bp)
                 : '';
             const exactToken = spacingTokenFromClass(exactClass);
             const inherited = Boolean(value) && exactToken !== value;
@@ -534,10 +554,10 @@ function openSpacingScalePopover(editor, sector, anchor, kind, side, labels = {}
 
     const selected = editor.getSelected();
     const currentToken = spacingTokenFromClass(
-        resolveStyleGroup(
+        resolveNeutralStyleGroupValue(
             componentClassList(selected),
             target.options,
-            editor,
+            target.groupId,
             currentStyleBreakpointPrefix(editor),
         ),
     );

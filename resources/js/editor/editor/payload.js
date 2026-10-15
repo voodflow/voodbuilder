@@ -61,7 +61,7 @@ import {
 } from '../page-surface-styles.js';
 import { STYLE_BG_SRC_ATTR, STYLE_BG_SRC_DARK_ATTR } from '../style-background-image.js';
 import { stripLeakedAncestorDecorationBackgrounds } from '../style-tailwind-panel.js';
-import { healNonThemeScopedThemeClassesForExport } from '../style-theme-scope.js';
+import { healNonThemeScopedThemeClassesForExport, healNonThemeScopedThemeClassesInHtml } from '../style-theme-scope.js';
 import { collectDarkIdStylesCssForPersist } from '../dark-id-styles.js';
 
 /**
@@ -1067,6 +1067,11 @@ export function buildPayload(editor, options = {}) {
         html = applyVideoFacadesToExportedHtml(editor, html);
         html = encodeJsonDataGjsAttributes(html);
         html = stripAuthorInlinePaintFromHtml(html);
+        // Final guard, on the serialized markup: the tree heal inside the mutate block
+        // above is skipped by a read-only Save and can miss a component whose classes
+        // only live in the `class` attribute. The saved payload must never carry a
+        // neutral `dark:` utility — the published page starts light and would drop it.
+        html = healNonThemeScopedThemeClassesInHtml(html);
 
         editor.__voodbuilderLastSavedPageHtml = String(html);
 

@@ -359,6 +359,64 @@ export function resolveGroupValueAtBreakpoint(classes, options, prefix = '') {
 }
 
 /**
+ * Legacy `dark:` cascade for a theme-neutral read: `dark:lg:` → `dark:md:` → `dark:`.
+ *
+ * Only a neutral group may fall back to it (see style-theme-scope.js): the policy
+ * before 1.11.76 wrote every group as a theme variant, so a page can still carry
+ * `dark:lg:my-20` for a value the author authored in dark mode.
+ *
+ * @param {string|null|undefined} prefix breakpoint prefix (never dark:)
+ * @returns {string[]}
+ */
+export function legacyDarkCascadePrefixesFor(prefix = '') {
+    return cascadePrefixesFor(normalizeBreakpointPrefix(prefix)).map((bp) => `dark:${bp}`);
+}
+
+/**
+ * Exact legacy-tolerant match: the canonical breakpoint utility, else the `dark:`
+ * twin the pre-1.11.76 policy wrote.
+ *
+ * @param {Iterable<string>|string[]} classes
+ * @param {Array<{value: string, label?: string}>} options
+ * @param {string|null|undefined} prefix
+ * @returns {string}
+ */
+export function resolveGroupValueExactWithLegacyDark(classes, options, prefix = '') {
+    const bp = normalizeBreakpointPrefix(prefix);
+
+    return resolveGroupValueExact(classes, options, bp)
+        || resolveGroupValueExact(classes, options, `dark:${bp}`);
+}
+
+/**
+ * Cascade read tolerant of the legacy `dark:` prefixes: the light value always wins
+ * (it is what the published page renders), the dark twin only fills a gap so the
+ * author sees the value the element actually carries.
+ *
+ * @param {Iterable<string>|string[]} classes
+ * @param {Array<{value: string, label?: string}>} options
+ * @param {string|null|undefined} prefix
+ * @returns {string}
+ */
+export function resolveGroupValueAtBreakpointWithLegacyDark(classes, options, prefix = '') {
+    const direct = resolveGroupValueAtBreakpoint(classes, options, prefix);
+
+    if (direct !== '') {
+        return direct;
+    }
+
+    for (const darkBp of legacyDarkCascadePrefixesFor(prefix)) {
+        const found = resolveGroupValueExact(classes, options, darkBp);
+
+        if (found !== '') {
+            return found;
+        }
+    }
+
+    return '';
+}
+
+/**
  * Replace one exclusive utility group at a single variant prefix only.
  *
  * @param {object|null|undefined} component
