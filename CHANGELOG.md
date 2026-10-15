@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.74] - 2026-10-15
+
+### Fixed
+
+- Solid **theme** background paints are no longer baked into `#id`. `composeTranslucentBackgroundColor()` used to paint `bg-vp-*` solid at 100% opacity, resolving the token to a hex through `swatchHexForUtility()` — which reads the *editing canvas* theme. Authoring in a light canvas therefore wrote `#id { background-color:#ffffff !important }` (plus the same white dark companion), so a block that relies on `bg-vp-bg*` turned **white right after Save** and only came back dark on reload, once the orphan ids stopped matching. The frozen hex also defeated theme switching, because `bg-vp-*` resolves through `var(--color-vp-*)` per theme and cannot be pre-resolved. The utility now owns the paint at 100%, exactly like non-theme colors; theme.css ships the `.bg-vp-*` utilities, so the canvas needs no fallback. Opacity below 100% still paints rgba.
+
 ## [1.11.73] - 2026-10-15
 
 ### Added

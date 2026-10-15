@@ -7,6 +7,7 @@ import {
     composeBackgroundColorClass,
     resolveBackgroundColorAndOpacity,
 } from '../../resources/js/editor/style-tailwind-class-groups.js';
+import { composeTranslucentBackgroundColor } from '../../resources/js/editor/style-tailwind-panel.js';
 
 function mockComponent(initialClasses = [], initialAttrs = {}) {
     const classes = new Set(initialClasses);
@@ -133,6 +134,34 @@ describe('background color opacity', () => {
             color: 'bg-red-900',
             opacity: '55',
             legacyOpacity: false,
+        });
+    });
+
+    describe('solid theme paints are never baked into #id', () => {
+        it('leaves a solid theme utility to the utility itself', () => {
+            // Regression: this used to resolve `bg-vp-*` through the editing canvas
+            // theme and freeze `#ffffff !important` into `#id` (+ white dark
+            // companion), so a block on a dark page turned white after Save.
+            expect(composeTranslucentBackgroundColor('bg-vp-bg-elv', '')).toBe('');
+            expect(composeTranslucentBackgroundColor('bg-vp-bg-elv', '100')).toBe('');
+            expect(composeTranslucentBackgroundColor('bg-vp-brand-1', '')).toBe('');
+        });
+
+        it('leaves a solid non-theme utility to Tailwind', () => {
+            expect(composeTranslucentBackgroundColor('bg-amber-500', '')).toBe('');
+            expect(composeTranslucentBackgroundColor('bg-white', '100')).toBe('');
+        });
+
+        it('still paints rgba below 100%', () => {
+            const painted = composeTranslucentBackgroundColor('bg-amber-500', '60');
+
+            expect(painted).toContain('rgba(');
+            expect(painted).toContain('!important');
+        });
+
+        it('paints nothing for a cleared or transparent color', () => {
+            expect(composeTranslucentBackgroundColor('', '')).toBe('');
+            expect(composeTranslucentBackgroundColor('bg-transparent', '')).toBe('');
         });
     });
 });

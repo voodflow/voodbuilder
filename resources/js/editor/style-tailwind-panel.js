@@ -1590,17 +1590,26 @@ function resolveSolidBackgroundColorCss(utility, editor = null) {
  * @param {object|null|undefined} [editor]
  * @returns {string}
  */
-function isThemeBackgroundUtility(color) {
-    const bare = String(color ?? '').trim().replace(/^(?:dark:)?(?:sm|md|lg|xl|2xl):/, '');
-
-    return /^bg-vp-[\w-]+$/.test(bare);
-}
-
-function composeTranslucentBackgroundColor(color, opacityPercent, editor = null) {
+export function composeTranslucentBackgroundColor(color, opacityPercent, editor = null) {
     const pct = String(opacityPercent ?? '').trim();
     const base = String(color ?? '').trim();
 
     if (base === '' || base === 'bg-transparent') {
+        return '';
+    }
+
+    // 100%: the utility owns the paint — nothing is baked into `#id`.
+    //
+    // This used to paint theme tokens solid as a canvas fallback, resolving
+    // `bg-vp-*` to a hex through `swatchHexForUtility()`. That hex comes from the
+    // *editing canvas* theme, so authoring in a light canvas froze `#ffffff` into
+    // `#id { background-color:#ffffff !important }` (+ the same white dark
+    // companion). On a dark page the block then painted pure white — the white
+    // block after Save — and the frozen hex also broke theme switching, since
+    // `bg-vp-*` resolves through `var(--color-vp-*)` per theme and cannot be
+    // pre-resolved. theme.css ships the `.bg-vp-*` utilities, so the canvas does
+    // not need the fallback.
+    if (pct === '' || pct === '100') {
         return '';
     }
 
@@ -1610,12 +1619,6 @@ function composeTranslucentBackgroundColor(color, opacityPercent, editor = null)
 
     if (colorCss === '') {
         return '';
-    }
-
-    // 100%: still paint theme tokens solid — `.bg-vp-*` is absent until JIT finishes
-    // (pageCssCoversClass used to skip compile entirely for *-vp-*).
-    if (pct === '' || pct === '100') {
-        return isThemeBackgroundUtility(base) ? withImportantCssValue(colorCss) : '';
     }
 
     const alpha = Math.min(1, Math.max(0, Number.parseInt(pct, 10) / 100));
