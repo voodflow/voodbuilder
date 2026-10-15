@@ -159,6 +159,40 @@ HTML;
         $this->assertStringNotContainsString('data-voodbuilder-block', $published);
     }
 
+    public function test_published_render_ignores_layout_nodes_stamped_as_content_width_shells(): void
+    {
+        $registry = new EditorDynamicBlockRegistry;
+        $registry->register('Test', StubContentWidthDynamicBlock::class);
+
+        $config = ['heading' => 'Exhibitors'];
+        $encoded = htmlspecialchars(
+            json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+            ENT_QUOTES,
+            'UTF-8',
+        );
+
+        // The stamped layout row comes first: it must not own the author measure.
+        $saved = <<<HTML
+<div data-voodbuilder-block="stub_content_width" data-voodbuilder-config="{$encoded}" class="voodbuilder-editor-dynamic">
+  <div data-voodbuilder-role="content" data-voodbuilder-content-width="full" class="voodbuilder-editor-container flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mx-auto w-full max-w-none">
+    <h2>Saved</h2>
+  </div>
+  <div class="voodbuilder-editor-container mx-auto max-w-[72rem] px-6" data-voodbuilder-role="content" data-voodbuilder-content-width="custom">
+    <h2>Saved</h2>
+  </div>
+</div>
+HTML;
+
+        $renderer = new EditorDynamicBlockRenderer($registry, new EditorServerBlockRegistry);
+        $published = $renderer->render($saved, null, canvasPreview: false);
+
+        $this->assertStringContainsString('data-voodbuilder-content-width="custom"', $published);
+        $this->assertStringContainsString('max-w-[72rem]', $published);
+        $this->assertStringNotContainsString('data-voodbuilder-content-width="full"', $published);
+        $this->assertStringNotContainsString('max-w-none', $published);
+        $this->assertStringNotContainsString('sm:justify-between', $published);
+    }
+
     public function test_published_render_preserves_author_root_id_and_background_style(): void
     {
         $registry = new EditorDynamicBlockRegistry;

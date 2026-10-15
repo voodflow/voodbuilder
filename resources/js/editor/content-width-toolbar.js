@@ -12,6 +12,10 @@ import { tablerIcon } from './editor-icons.js';
 import { isLayoutContainer, isLayoutSection } from './layout-blocks.js';
 import { COMPONENT_ATTR } from './component-instance-type.js';
 import { applyPageLiveCss } from './page-tailwind-autobuild.js';
+import {
+    classListHasLayoutUtilities,
+    unstampLayoutContentShellNode,
+} from './core/content-shell-classes.js';
 
 export const CONTENT_WIDTH_ATTR = 'data-voodbuilder-content-width';
 export const CMD_CYCLE_CONTENT_WIDTH = 'voodbuilder-cycle-content-width';
@@ -461,6 +465,17 @@ export function findSectionContentWrapper(section) {
             return false;
         }
 
+        /*
+         * A block's own layout row (flex / grid / gap / justify / …) is the block's
+         * preview tree, never an author measure. A pre-1.11.76 save stamped the shell
+         * markers on that very node; treating it as the wrapper made
+         * `ensureSectionContentWrapper()` absorb the rest of the block into it, which
+         * is why the published block shrank.
+         */
+        if (classListHasLayoutUtilities(componentClasses(child))) {
+            return false;
+        }
+
         return isContentWidthContainer(child);
     });
 
@@ -516,6 +531,36 @@ function absorbSectionContentIntoWrapper(section, wrapper) {
 }
 
 /**
+ * Unstamp content-width shell markers that a pre-1.11.76 save left on a block's own
+ * layout children. The layout itself (flex/grid classes, children) is owned by the
+ * server render, so only the measure stamps go: leaving them is what let
+ * `findSectionContentWrapper()` hand the block's flex row to
+ * `absorbSectionContentIntoWrapper()`.
+ *
+ * @param {object|null|undefined} section
+ * @returns {number} healed node count
+ */
+export function healStampedLayoutChildren(section) {
+    let healed = 0;
+
+    for (const child of componentChildren(section)) {
+        if (! child || child.isRemoved?.()) {
+            continue;
+        }
+
+        if (! classListHasLayoutUtilities(componentClasses(child))) {
+            continue;
+        }
+
+        if (unstampLayoutContentShellNode(child) > 0) {
+            healed++;
+        }
+    }
+
+    return healed;
+}
+
+/**
  * Ensure a section has a content wrapper to apply width to.
  *
  * When missing, wraps existing children instead of appending an empty sibling
@@ -525,6 +570,8 @@ function absorbSectionContentIntoWrapper(section, wrapper) {
  * @returns {object|null}
  */
 export function ensureSectionContentWrapper(section) {
+    healStampedLayoutChildren(section);
+
     const existing = findSectionContentWrapper(section);
 
     if (existing) {

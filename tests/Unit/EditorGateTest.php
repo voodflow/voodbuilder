@@ -77,6 +77,32 @@ class EditorGateTest extends TestCase
         $this->assertIsString($config['uploadUrl']);
     }
 
+    public function test_normalize_payload_heals_a_dynamic_block_shell_stamped_on_its_layout_row(): void
+    {
+        $html = '<section data-voodbuilder-block="demo_pages_explorer" data-voodbuilder-config="{}"'
+            . ' class="rounded-2xl bg-vp-bg-elv p-6 voodbuilder-editor-section voodbuilder-editor-dynamic dark:lg:my-20">'
+            . '<div data-voodbuilder-role="content" data-voodbuilder-content-width="normal"'
+            . ' class="voodbuilder-editor-container flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mx-auto w-full max-w-[80rem]">'
+            . '<h2>Explore the site</h2><ul class="mt-5 grid gap-3"><li>Home</li></ul></div></section>';
+
+        $normalized = EditorGate::normalizePayload([
+            'html' => $html,
+            'css' => '',
+            'js' => '',
+            'project' => null,
+        ]);
+
+        // Save path unstamps the poison; the publish wrapper can no longer pick it up.
+        $this->assertStringNotContainsString('data-voodbuilder-role="content"', $normalized['html']);
+        $this->assertStringNotContainsString('data-voodbuilder-content-width', $normalized['html']);
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $normalized['html']);
+        $this->assertStringNotContainsString('max-w-[80rem]', $normalized['html']);
+
+        $this->assertStringContainsString('flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between', $normalized['html']);
+        $this->assertStringContainsString('dark:lg:my-20', $normalized['html']);
+        $this->assertStringContainsString('data-voodbuilder-block="demo_pages_explorer"', $normalized['html']);
+    }
+
     public function test_config_exposes_save_url_and_tolerates_optional_media_routes(): void
     {
         EditorGate::authorizeUsing(

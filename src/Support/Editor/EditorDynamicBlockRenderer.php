@@ -151,17 +151,37 @@ final class EditorDynamicBlockRenderer
 
         /*
          * Livewire blocks own their inner markup: the mounted component root ships, not
-         * the editor wrapper. Re-applying the captured author chrome would overwrite the
-         * component's own classes, so only the content-width shell is carried over — and
-         * it has to be rebuilt around the mount, because the mounted markup carries no
-         * shell of its own for the patch helper to find.
+         * the editor wrapper. The component's own Blade classes are never dropped, but
+         * the author's root chrome (Style Manager utilities, `id`, paint attrs,
+         * `data-vb-*`, block identity) has to ride along or every root edit silently
+         * disappears on the published page. Only the content-width shell is rebuilt
+         * around the mount, because the mounted markup carries no shell of its own for
+         * the patch helper to find — and only from a *genuine* shell: a layout node
+         * stamped as one (legacy poisoned payloads) is ignored, which leaves the block
+         * full-bleed exactly as the canvas renders it.
          */
         if (! $canvasPreview && $this->isLivewireBlock($blockId)) {
             $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
+            $authorRootChrome = $this->captureAuthorRootChrome($node);
+            $authorRootClasses = trim((string) $node->getAttribute('class'));
+            $authorRootAttributes = [];
+
+            $authorContentWidth = trim((string) $node->getAttribute('data-voodbuilder-content-width'));
+
+            if ($authorContentWidth !== '') {
+                $authorRootAttributes['data-voodbuilder-content-width'] = $authorContentWidth;
+            }
+
+            // Identity stays on the published root: the renderer is the only node that
+            // knows which Blade block is mounted, and the demo/editor surfaces read it.
+            $authorRootAttributes['data-voodbuilder-block'] = $blockId;
 
             $rendered = $this->renderBlockId($blockId, $config, $renderData, false, $this->livewireInstanceKey($node));
 
             if ($rendered !== null) {
+                $rendered = $this->applyAuthorRootChromeToHtml($rendered, $authorRootChrome);
+                $rendered = $this->applyAuthorRootClassesToHtml($rendered, $authorRootClasses);
+                $rendered = $this->applyRootAttributesToHtml($rendered, $authorRootAttributes);
                 $rendered = $this->wrapRenderedInAuthorContentWidthShell($rendered, $authorContentWidthShells);
                 $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
             }
@@ -598,7 +618,7 @@ final class EditorDynamicBlockRenderer
      */
     protected function wrapRenderedInAuthorContentWidthShell(string $html, array $shells): string
     {
-        $shell = $shells[0] ?? null;
+        $shell = $this->firstGenuineContentWidthShell($shells);
 
         if ($shell === null || trim($html) === '') {
             return $html;
@@ -634,6 +654,95 @@ final class EditorDynamicBlockRenderer
         $body->appendChild($wrapper);
 
         return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * First shell that is a real content measure, not the block's own layout node.
+     *
+     * @param  list<array{tag: string, content_width: string, class: string, style: string}>  $shells
+     * @return array{tag: string, content_width: string, class: string, style: string}|null
+     */
+    protected function firstGenuineContentWidthShell(array $shells): ?array
+    {
+        foreach ($shells as $shell) {
+            if (! EditorBlockClasses::hasLayoutUtilities((string) ($shell['class'] ?? ''))) {
+                return $shell;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Apply the author's root classes to every top-level element of the markup.
+     */
+    protected function applyAuthorRootClassesToHtml(string $html, string $authorClasses): string
+    {
+        if (trim($html) === '' || trim($authorClasses) === '') {
+            return $html;
+        }
+
+        return $this->mapTopLevelElements($html, function (DOMElement $element) use ($authorClasses): void {
+            if ($this->isNonVisualRootElement($element)) {
+                return;
+            }
+
+            $element->setAttribute(
+                'class',
+                EditorBlockClasses::mergeAuthorRootClasses(
+                    $authorClasses,
+                    trim((string) $element->getAttribute('class')),
+                ),
+            );
+        });
+    }
+
+    /**
+     * @param  array<string, string>  $attributes
+     */
+    protected function applyRootAttributesToHtml(string $html, array $attributes): string
+    {
+        $attributes = array_filter($attributes, static fn (string $value): bool => trim($value) !== '');
+
+        if (trim($html) === '' || $attributes === []) {
+            return $html;
+        }
+
+        return $this->mapTopLevelElements($html, function (DOMElement $element) use ($attributes): void {
+            foreach ($attributes as $name => $value) {
+                $element->setAttribute($name, $value);
+            }
+        });
+    }
+
+    /**
+     * @param  callable(DOMElement): void  $callback
+     */
+    protected function mapTopLevelElements(string $html, callable $callback): string
+    {
+        $document = $this->loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        foreach ($body->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $callback($child);
+            }
+        }
+
+        return $this->extractBodyHtml($document) ?? $html;
+    }
+
+    /**
+     * Never paint classes on the non-visual nodes a mount can ship alongside the
+     * component root (inline `<script>` / `<style>` / `<link>`).
+     */
+    protected function isNonVisualRootElement(DOMElement $element): bool
+    {
+        return in_array(strtolower($element->tagName), ['script', 'style', 'link', 'meta', 'title'], true);
     }
 
     /**
@@ -746,6 +855,16 @@ final class EditorDynamicBlockRenderer
                 continue;
             }
 
+            /*
+             * A dynamic block's own preview layout row can carry the shell markers
+             * (legacy poisoned payloads: `voodbuilder-editor-container flex … mx-auto
+             * max-w-[80rem]` + `role=content`). It is the block's layout, not an
+             * author measure: selecting it makes the publish wrapper copy its flex
+             * classes around the whole block. A genuine shell never hosts a layout.
+             */
+            if (EditorBlockClasses::hasLayoutUtilities($class)) {
+                continue;
+            }
             $shells[] = $element;
         }
 
@@ -1281,6 +1400,16 @@ final class EditorDynamicBlockRenderer
                 str_contains($class, 'voodbuilder-editor-container')
                 || preg_match('/(^|\s)container(\s|$)/', $class) === 1
             ) {
+                /*
+                 * A pre-1.11.76 save stamped the shell markers on the inner preview
+                 * layout row of a dynamic block. Copying that class list back onto the
+                 * regenerated shell would re-publish the block's own flex row as the
+                 * author measure and hide the real shell from the width patch.
+                 */
+                if (EditorBlockClasses::hasLayoutUtilities($class)) {
+                    continue;
+                }
+
                 $containers[] = $class;
             }
         }

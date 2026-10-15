@@ -49,6 +49,11 @@ import { registerDropzoneTypes } from '../dropzone-types.js';
 import { registerInnerDropSlots } from '../inner-drop-slots.js';
 import { stripInvalidDomAttributesFromHtml } from '../core/html-sanitize.js';
 import {
+    CONTENT_SHELL_SELECTOR,
+    isGenuineContentShellNode,
+    unstampLayoutContentShellNode,
+} from '../core/content-shell-classes.js';
+import {
     isClearedBackground,
     isClearedBackgroundImage,
     restoreBackgroundClasses,
@@ -1519,8 +1524,21 @@ function mergeAuthorStructuralClasses(author, fresh) {
 }
 
 function captureContainerAuthorClasses(component) {
-    return safeFindComponents(component, '.voodbuilder-editor-container, .container, [data-voodbuilder-role="content"]')
+    return safeFindComponents(component, CONTENT_SHELL_SELECTOR)
         .map((node) => {
+            /*
+             * A dynamic block's inner layout node can still carry the shell stamps a
+             * pre-1.11.76 save wrote. It is the block's own preview row, not an author
+             * measure: keeping the slot (null) preserves the index alignment
+             * `restoreContainerAuthorClasses()` relies on, while the poison is unstamped
+             * so it can never be re-stamped onto the freshly rendered markup.
+             */
+            if (! isGenuineContentShellNode(node)) {
+                unstampLayoutContentShellNode(node);
+
+                return null;
+            }
+
             const attrs = node.getAttributes?.() ?? {};
 
             return {
@@ -1650,12 +1668,20 @@ function restoreContainerAuthorClasses(component, authorClassLists) {
         return;
     }
 
-    const containers = safeFindComponents(component, '.voodbuilder-editor-container, .container, [data-voodbuilder-role="content"]');
+    const containers = safeFindComponents(component, CONTENT_SHELL_SELECTOR);
 
     containers.forEach((node, index) => {
         const author = authorClassLists[index];
 
         if (! author) {
+            return;
+        }
+
+        // Never restamp a measured shell onto a layout node of the fresh preview:
+        // that is exactly how the poisoned wrapper survived dynamic refresh.
+        if (! isGenuineContentShellNode(node)) {
+            unstampLayoutContentShellNode(node);
+
             return;
         }
 

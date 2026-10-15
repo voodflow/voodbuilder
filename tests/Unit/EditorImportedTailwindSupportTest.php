@@ -367,7 +367,7 @@ HTML;
 
         libxml_use_internal_errors(true);
         $document = new \DOMDocument;
-        $document->loadHTML('<?xml encoding="utf-8" ?>'.$healed, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $document->loadHTML('<?xml encoding="utf-8" ?>' . $healed, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         $xpath = new \DOMXPath($document);
         $stages = $xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " vb-hero-plasma__stage ")]');
 
@@ -439,7 +439,7 @@ HTML;
 
         libxml_use_internal_errors(true);
         $document = new \DOMDocument;
-        $document->loadHTML('<?xml encoding="utf-8" ?>'.$healed, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $document->loadHTML('<?xml encoding="utf-8" ?>' . $healed, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         $xpath = new \DOMXPath($document);
         $stage = $xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " vb-hero-plasma__stage ")]')->item(0);
         $cta = $xpath->query('//*[@data-voodbuilder-cta="true"]')->item(0);
@@ -509,5 +509,71 @@ HTML;
         $this->assertStringContainsString('voodbuilder-editor-container', $prepared);
         $this->assertStringContainsString('How it fits together', $prepared);
         $this->assertStringContainsString('max-w-5xl', $prepared);
+    }
+
+    public function test_heal_dynamic_block_content_shells_unstamps_layout_nodes(): void
+    {
+        $html = <<<'HTML'
+<section data-voodbuilder-block="demo_pages_explorer" data-voodbuilder-config="{}" class="rounded-2xl border border-vp-divider bg-vp-bg-elv p-6 voodbuilder-editor-section voodbuilder-editor-dynamic dark:lg:my-20"><div data-voodbuilder-role="content" data-voodbuilder-content-width="normal" class="voodbuilder-editor-container flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mx-auto w-full max-w-[80rem]"><h2>Explore the site</h2><ul class="mt-5 grid gap-3"><li>Home</li></ul></div></section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::healDynamicBlockContentShells($html);
+
+        // The measure stamps are gone…
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $healed);
+        $this->assertStringNotContainsString('data-voodbuilder-role="content"', $healed);
+        $this->assertStringNotContainsString('data-voodbuilder-content-width', $healed);
+        $this->assertStringNotContainsString('mx-auto', $healed);
+        $this->assertStringNotContainsString('max-w-[80rem]', $healed);
+
+        // …the row keeps its own layout, and the block keeps its author root.
+        $this->assertStringContainsString('flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between', $healed);
+        $this->assertStringContainsString('dark:lg:my-20', $healed);
+        $this->assertStringContainsString('data-voodbuilder-block="demo_pages_explorer"', $healed);
+        $this->assertStringContainsString('Explore the site', $healed);
+        $this->assertStringContainsString('Home', $healed);
+    }
+
+    public function test_heal_dynamic_block_content_shells_keeps_a_genuine_author_shell(): void
+    {
+        $html = <<<'HTML'
+<section data-voodbuilder-block="demo_pages_explorer" data-voodbuilder-config="{}" class="voodbuilder-editor-dynamic"><div data-voodbuilder-role="content" data-voodbuilder-content-width="normal" class="voodbuilder-editor-container mx-auto w-full max-w-[80rem] px-6"><h2>Explore the site</h2></div></section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::healDynamicBlockContentShells($html);
+
+        $this->assertStringContainsString('voodbuilder-editor-container', $healed);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $healed);
+        $this->assertStringContainsString('data-voodbuilder-content-width="normal"', $healed);
+        $this->assertStringContainsString('px-6', $healed);
+    }
+
+    public function test_heal_existing_editor_sections_never_creates_a_shell_inside_a_dynamic_block(): void
+    {
+        $html = <<<'HTML'
+<section data-voodbuilder-block="demo_pages_explorer" data-voodbuilder-config="{}" class="rounded-2xl bg-vp-bg-elv p-6 voodbuilder-editor-section voodbuilder-editor-dynamic"><div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><h2>Explore the site</h2></div><ul class="mt-5 grid gap-3"><li>Home</li></ul></section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::healExistingEditorSections($html);
+
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $healed);
+        $this->assertStringNotContainsString('data-voodbuilder-role="content"', $healed);
+        $this->assertStringNotContainsString('max-w-[80rem]', $healed);
+        $this->assertStringContainsString('flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between', $healed);
+        $this->assertStringContainsString('Explore the site', $healed);
+        $this->assertStringContainsString('Home', $healed);
+    }
+
+    public function test_heal_existing_editor_sections_still_wraps_static_sections(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section bg-vp-bg py-20"><h2>Static</h2></section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::healExistingEditorSections($html);
+
+        $this->assertStringContainsString('voodbuilder-editor-container', $healed);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $healed);
+        $this->assertStringContainsString('Static', $healed);
     }
 }

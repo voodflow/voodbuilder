@@ -795,9 +795,139 @@ final class EditorImportedTailwindSupport
     }
 
     /**
-     * Ensure imported snippets expose the standard section → content shell so the
-     * canvas content-width ("resize") toolbar and Layers stay compliant.
+     * Heal content-width shell stamps that landed on a *layout* node inside a
+     * dynamic block.
+     *
+     * Before 1.11.76 the width toolbar treated a dynamic block as a section that
+     * still needed a content shell: it stamped the block's own preview layout row
+     * (`voodbuilder-editor-container flex … mx-auto w-full max-w-[80rem]`,
+     * `data-voodbuilder-role="content"`, `data-voodbuilder-content-width`) and moved
+     * the rest of the block (its `<ul>`) inside it. A dynamic block's inner markup is
+     * regenerated from the Blade / Livewire render on every editor load and on every
+     * publish, so the stamps are the only part that has to go: dropping them restores
+     * the layout node to its preview identity and stops
+     * {@see EditorDynamicBlockRenderer::wrapRenderedInAuthorContentWidthShell()} from
+     * wrapping the whole block in its own flex row.
+     *
+     * Runs before {@see healExistingEditorSections()}, which would otherwise restamp
+     * the very node this removes.
      */
+    public static function healDynamicBlockContentShells(string $html): string
+    {
+        $html = trim($html);
+
+        if ($html === '' || ! str_contains($html, 'data-voodbuilder-block')) {
+            return $html;
+        }
+
+        $document = self::loadDocument($html);
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        if ($body === null) {
+            return $html;
+        }
+
+        $healed = false;
+
+        foreach ($body->getElementsByTagName('*') as $block) {
+            if (! $block instanceof DOMElement || ! $block->hasAttribute('data-voodbuilder-block')) {
+                continue;
+            }
+
+            $healed = self::unstampLayoutShellsInDynamicBlock($block) || $healed;
+        }
+
+        return $healed ? (self::extractBodyHtml($document) ?? $html) : $html;
+    }
+
+    /**
+     * Unstamp every layout node inside one `data-voodbuilder-block` subtree that was
+     * saved as a content-width shell (a no-op on a healthy payload).
+     *
+     * @return bool whether anything was healed
+     */
+    protected static function unstampLayoutShellsInDynamicBlock(DOMElement $block): bool
+    {
+        $healed = false;
+
+        foreach ($block->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement || ! self::isContentShellElement($element)) {
+                continue;
+            }
+
+            if (! EditorBlockClasses::hasLayoutUtilities($element->getAttribute('class'))) {
+                continue;
+            }
+
+            self::unstampLayoutContentShell($element);
+            $healed = true;
+        }
+
+        return $healed;
+    }
+
+    /**
+     * Remove the content-width stamps from a block layout node, keeping the layout
+     * itself (flex/grid classes, its children) untouched — the render is canonical.
+     */
+    protected static function unstampLayoutContentShell(DOMElement $element): void
+    {
+        $classes = preg_split('/\s+/', trim($element->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        $classes = array_values(array_filter(
+            $classes,
+            static fn (string $token): bool => ! in_array($token, [
+                'voodbuilder-editor-container',
+                'mx-auto',
+                'w-full',
+                'max-w-none',
+                'max-w-[80rem]',
+            ], true) && ! str_starts_with($token, 'max-w-['),
+        ));
+
+        if ($classes === []) {
+            $element->removeAttribute('class');
+        } else {
+            $element->setAttribute('class', implode(' ', $classes));
+        }
+
+        if (trim($element->getAttribute('data-voodbuilder-role')) === 'content') {
+            $element->removeAttribute('data-voodbuilder-role');
+        }
+
+        $element->removeAttribute('data-voodbuilder-content-width');
+
+        $style = trim($element->getAttribute('style'));
+
+        if ($style === '') {
+            return;
+        }
+
+        $kept = [];
+
+        foreach (explode(';', $style) as $part) {
+            $part = trim($part);
+
+            if ($part === '' || ! str_contains($part, ':')) {
+                continue;
+            }
+
+            [$property] = array_map('trim', explode(':', $part, 2));
+
+            if (in_array(strtolower($property), ['max-width', 'margin-left', 'margin-right', 'margin-inline', 'width'], true)) {
+                continue;
+            }
+
+            $kept[] = $part;
+        }
+
+        if ($kept === []) {
+            $element->removeAttribute('style');
+        } else {
+            $element->setAttribute('style', implode('; ', $kept) . ';');
+        }
+    }
+
     /**
      * Heal already-saved page HTML (multi-section): unwrap content nested in
      * decorative plasma/aurora layers and restamp content shells — never wrap
@@ -1393,6 +1523,20 @@ final class EditorImportedTailwindSupport
     protected static function ensureContentWrapperOnSection(DOMDocument $document, DOMElement $section): void
     {
         self::unwrapContentNestedInDecorativeStages($section);
+
+        /*
+         * A dynamic block owns its inner markup: the Blade / Livewire render is the
+         * canonical source and is regenerated on every editor load and publish. The
+         * wrapper this method synthesizes would be captured as the block's content
+         * shell at publish (`wrapRenderedInAuthorContentWidthShell()`) and would wrap
+         * the whole mount, shrinking it. So only the stamps a legacy save left on the
+         * block's own layout node are healed here — never a shell is created.
+         */
+        if ($section->hasAttribute('data-voodbuilder-block')) {
+            self::unstampLayoutShellsInDynamicBlock($section);
+
+            return;
+        }
 
         $existing = null;
 

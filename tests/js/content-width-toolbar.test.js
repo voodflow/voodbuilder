@@ -205,4 +205,48 @@ describe('content-width helpers and dynamic blocks', () => {
         expect(shouldShowContentWidthToolbar(withShell, editor)).toBe(true);
         expect(flexRow.getClasses()).toEqual(['flex', 'gap-4']);
     });
+
+    /*
+     * Regression (1.11.77): a pre-1.11.76 save stamped the shell markers on the
+     * block's own preview flex row. `findSectionContentWrapper()` handed that row to
+     * `ensureSectionContentWrapper()`, which then absorbed the rest of the block into
+     * it — the published block shrank and lost its identity.
+     */
+    it('never treats a stamped layout row inside a dynamic block as the content wrapper', () => {
+        const section = dynamicSection();
+        const poisoned = attach(section, makeComponent({
+            tagName: 'div',
+            classes: ['voodbuilder-editor-container', 'flex', 'flex-col', 'gap-4', 'sm:flex-row', 'sm:items-center', 'sm:justify-between', 'mx-auto', 'w-full', 'max-w-[80rem]'],
+            attrs: {
+                'data-voodbuilder-role': 'content',
+                'data-voodbuilder-content-width': 'normal',
+            },
+        }));
+        const list = attach(section, makeComponent({ tagName: 'ul', classes: ['mt-5', 'grid', 'gap-3'] }));
+
+        expect(findSectionContentWrapper(section)).toBeNull();
+
+        const wrapper = ensureSectionContentWrapper(section);
+
+        expect(wrapper).toBeNull();
+        // Nothing was absorbed: the list is still a direct child of the block root.
+        expect(section.__models()).toEqual([poisoned, list]);
+        expect(poisoned.getClasses()).toEqual(['flex', 'flex-col', 'gap-4', 'sm:flex-row', 'sm:items-center', 'sm:justify-between']);
+        expect(poisoned.getAttributes()['data-voodbuilder-role']).toBeUndefined();
+        expect(poisoned.getAttributes()['data-voodbuilder-content-width']).toBeUndefined();
+    });
+
+    it('keeps a genuine author content-width shell inside a dynamic block', () => {
+        const section = dynamicSection('vb-bg-image');
+        const shell = attach(section, makeComponent({
+            tagName: 'div',
+            classes: ['voodbuilder-editor-container', 'mx-auto', 'max-w-[48rem]'],
+            attrs: { 'data-voodbuilder-role': 'content', 'data-voodbuilder-content-width': 'custom' },
+        }));
+
+        expect(findSectionContentWrapper(section)).toBe(shell);
+        expect(ensureSectionContentWrapper(section)).toBe(shell);
+        expect(shell.getClasses()).toEqual(['voodbuilder-editor-container', 'mx-auto', 'max-w-[48rem]']);
+        expect(shell.getAttributes()['data-voodbuilder-content-width']).toBe('custom');
+    });
 });

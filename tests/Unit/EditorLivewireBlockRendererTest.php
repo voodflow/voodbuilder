@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use DOMDocument;
+use DOMElement;
 use Livewire\Component;
 use Livewire\Livewire;
 use Voodflow\Voodbuilder\Contracts\EditorLivewireBlock;
@@ -38,10 +39,66 @@ class EditorLivewireBlockRendererTest extends TestCase
     {
         $html = $this->renderBlock();
 
-        $this->assertStringNotContainsString('data-voodbuilder-block', $html);
         $this->assertStringContainsString('wire:id', $html);
         $this->assertStringContainsString('wire:snapshot', $html);
         $this->assertSame('voodbuilder-test-counter', $this->snapshotComponentName($html));
+        // Block identity survives so the published node still says what it is.
+        $this->assertStringContainsString('data-voodbuilder-block="test_livewire_counter"', $html);
+    }
+
+    public function test_published_mount_keeps_template_classes_and_appends_author_root_utilities(): void
+    {
+        $html = $this->publishedPoisonedRender();
+        $classes = $this->rootClasses($html);
+
+        // Blade template classes stay, author root utilities ride along.
+        $this->assertContains('voodbuilder-livewire-counter', $classes);
+        $this->assertContains('rounded-lg', $classes);
+        $this->assertContains('bg-vp-bg-elv', $classes);
+        $this->assertContains('lg:my-20', $classes);
+
+        // Editor plumbing is never published: it would make the publish healer wrap the mount.
+        $this->assertNotContains('voodbuilder-editor-section', $classes);
+        $this->assertNotContains('voodbuilder-editor-dynamic', $classes);
+        $this->assertNotContains('voodbuilder-editor-container', $classes);
+    }
+
+    public function test_published_mount_keeps_author_root_identity_and_chrome_attributes(): void
+    {
+        $html = $this->publishedPoisonedRender();
+
+        $this->assertStringContainsString('id="ifmoo4"', $html);
+        $this->assertStringContainsString('data-voodbuilder-block="test_livewire_counter"', $html);
+        $this->assertStringContainsString('data-voodbuilder-content-width="normal"', $html);
+        $this->assertStringContainsString('data-vb-style-bg-src="/storage/hero.jpg"', $html);
+        $this->assertStringContainsString('data-vb-style-bg-opacity="0.55"', $html);
+    }
+
+    public function test_published_mount_is_never_wrapped_by_the_blocks_own_layout_node(): void
+    {
+        $html = $this->publishedPoisonedRender();
+
+        /*
+         * A pre-1.11.76 save stamped the shell markers on the block's inner preview
+         * row, so the publish wrapper used to copy `flex … max-w-[80rem]` around the
+         * whole mount (the shrink the author saw) and drop the block identity.
+         */
+        $this->assertStringNotContainsString('data-voodbuilder-role="content"', $html);
+        $this->assertStringNotContainsString('voodbuilder-editor-container', $html);
+        $this->assertStringNotContainsString('max-w-[80rem]', $html);
+        $this->assertStringNotContainsString('sm:justify-between', $html);
+
+        // The mount is the only top-level node: no wrapper around it.
+        $document = new DOMDocument;
+        libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8"><body>' . $html . '</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        $this->assertNotNull($body);
+        $this->assertSame(1, $body->childNodes->length);
+        $this->assertSame('section', strtolower($body->firstChild->nodeName));
+        $this->assertStringContainsString('wire:snapshot', $body->firstChild->ownerDocument->saveHTML($body->firstChild));
     }
 
     public function test_published_mount_is_rebuilt_inside_the_author_content_width_shell(): void
@@ -161,6 +218,46 @@ class EditorLivewireBlockRendererTest extends TestCase
             . '</div></section>';
 
         return $saved;
+    }
+
+    /**
+     * The author node a pre-1.11.76 save produced for a Livewire block: the width
+     * toolbar stamped the block's own preview layout row as the content shell.
+     */
+    private function poisonedWithLayoutShell(): string
+    {
+        return '<section id="ifmoo4" data-voodbuilder-block="test_livewire_counter"'
+            . ' data-voodbuilder-config=\'{"start":1,"secret":"never-forwarded"}\''
+            . ' data-voodbuilder-content-width="normal"'
+            . ' data-vb-style-bg-src="/storage/hero.jpg" data-vb-style-bg-opacity="0.55"'
+            . ' class="rounded-lg bg-vp-bg-elv p-6 voodbuilder-editor-section voodbuilder-editor-dynamic lg:my-20">'
+            . '<div data-voodbuilder-role="content" data-voodbuilder-content-width="normal"'
+            . ' class="voodbuilder-editor-container flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mx-auto w-full max-w-[80rem]">'
+            . '<p>Livewire preview</p></div></section>';
+    }
+
+    private function publishedPoisonedRender(): string
+    {
+        $renderer = new EditorDynamicBlockRenderer(new EditorDynamicBlockRegistry, $this->registry());
+
+        return $renderer->render($this->poisonedWithLayoutShell());
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function rootClasses(string $html): array
+    {
+        $document = new DOMDocument;
+        libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8"><body>' . $html . '</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        $body = $document->getElementsByTagName('body')->item(0);
+
+        $this->assertNotNull($body);
+        $this->assertTrue($body->firstChild instanceof DOMElement);
+
+        return preg_split('/\s+/', trim($body->firstChild->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
     }
 
     private function snapshotComponentName(string $html): ?string

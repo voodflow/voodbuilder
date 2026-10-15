@@ -138,7 +138,7 @@ final class EditorGate
         return [
             'pageId' => $page->getKey(),
             'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.pages.update', $page)
-                ?? '/voodbuilder/editor/pages/'.$page->getKey(),
+                ?? '/voodbuilder/editor/pages/' . $page->getKey(),
             'csrf' => csrf_token(),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
@@ -256,7 +256,7 @@ final class EditorGate
                 ...$appTypography['stylesheetUrls'],
             ]))),
             'canvasScripts' => EditorCanvas::scriptTags(),
-            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)."\n".$appTypography['editorCanvasCss'],
+            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme) . "\n" . $appTypography['editorCanvasCss'],
             'appTypography' => [
                 'bodyFont' => $appTypography['bodyFont'],
                 'headingFont' => $appTypography['headingFont'],
@@ -1253,6 +1253,10 @@ final class EditorGate
         $html = EditorHtmlSecuritySanitizer::sanitize($html);
         $html = EditorCodeBlockNormalizer::normalize($html);
         $html = EditorImportedTailwindSupport::stripForcedDarkScope($html);
+        // Dynamic blocks own their inner markup: unstamp the content-width shell a
+        // pre-1.11.76 save left on their layout row *before* the section healer below,
+        // which would otherwise restamp that very node and re-poison the payload.
+        $html = EditorImportedTailwindSupport::healDynamicBlockContentShells($html);
         $html = EditorImportedTailwindSupport::healExistingEditorSections($html);
         $css = (string) ($payload['css'] ?? '');
         // Withheld at write time as well as at render: an installation that may not run
