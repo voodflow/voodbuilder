@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.73] - 2026-10-15
+
+### Added
+
+- Declarative Content-panel fields inside **dynamic** blocks. A `data-vb-field` marker that sits inside a block rendering from `data-voodbuilder-config` now writes into the block config and re-renders the preview (debounced), instead of patching the canvas DOM: the old behaviour was discarded on the next refresh and never reached `toHtml()` on the published page. Static sections keep writing into the HTML exactly as before. The marker's `data-vb-field-type` drives the config type — `number` → number, `status` → boolean, everything else → string. Server blocks and the Livewire tier can therefore expose editor settings with markup only, no plugin JS.
+
 ## [1.11.72] - 2026-10-15
 
 ### Fixed

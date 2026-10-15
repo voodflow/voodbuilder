@@ -16,6 +16,8 @@
 
 import { debugSwallowed } from './debug-swallowed.js';
 import { registerBlockSettings } from './blocks/settings/index.js';
+import { findBlockRoot } from './core/block-tree.js';
+import { encodeBlockConfig, parseBlockConfig } from './voodbuilder-dynamic-config.js';
 import {
     applyIconToComponent,
     createIconPicker,
@@ -48,6 +50,9 @@ const FIELD_TYPE_ATTR = 'data-vb-field-type';
 const FIELD_LABEL_ATTR = 'data-vb-field-label';
 const STATUS_ATTR = 'data-vb-status';
 const ITEM_ATTR = 'data-vb-item';
+const BLOCK_CONFIG_ATTR = 'data-voodbuilder-config';
+
+const dynamicRefreshTimers = new WeakMap();
 
 // Fixed semantic colors — never follow site brand (✓ green / ✕ red).
 const STATUS_YES_HTML = '<span class="inline-flex items-center justify-center text-emerald-500" aria-label="Yes"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>';
@@ -394,12 +399,119 @@ export function readStatusValue(component) {
 }
 
 /**
+ * Nearest block root that renders its markup from `data-voodbuilder-config`.
+ *
+ * @param {object|null|undefined} component
+ * @returns {object|null}
+ */
+function dynamicConfigOwner(component) {
+    const root = findBlockRoot(component);
+
+    if (! root) {
+        return null;
+    }
+
+    const raw = root.getAttributes?.()?.[BLOCK_CONFIG_ATTR];
+
+    return typeof raw === 'string' && raw.trim() !== '' ? root : null;
+}
+
+/**
+ * Coerce a field value to the block config type declared by the marker.
+ *
+ * @param {object} component
+ * @param {unknown} value
+ * @returns {string|number|boolean}
+ */
+function coerceFieldValue(component, value) {
+    const type = String(component.getAttributes?.()?.[FIELD_TYPE_ATTR] ?? '').trim().toLowerCase();
+
+    if (type === 'number') {
+        const numeric = Number(String(value ?? '').trim());
+
+        return Number.isFinite(numeric) ? numeric : 0;
+    }
+
+    if (type === 'status') {
+        return String(value ?? '').trim().toLowerCase() === 'yes';
+    }
+
+    return String(value ?? '');
+}
+
+/**
+ * Re-render the dynamic block preview after a config change.
+ *
+ * Debounced: a keystroke per field would otherwise re-render the block per character.
+ *
+ * @param {object} root
+ * @param {object|null} editor
+ */
+function scheduleDynamicPreviewRefresh(root, editor) {
+    if (! editor?.trigger) {
+        return;
+    }
+
+    const pending = dynamicRefreshTimers.get(root);
+
+    if (pending) {
+        window.clearTimeout(pending);
+    }
+
+    dynamicRefreshTimers.set(root, window.setTimeout(() => {
+        dynamicRefreshTimers.delete(root);
+        delete root.__voodbuilderLastDynamicRenderFingerprint;
+        delete root.__voodbuilderLastDynamicRenderHtml;
+        editor.trigger('voodbuilder:refresh-dynamic-block', root);
+    }, 160));
+}
+
+/**
+ * Route a declarative field write into the dynamic block config.
+ *
+ * A dynamic block re-renders its preview from `data-voodbuilder-config`, so the value
+ * written into the preview DOM by the static-section path (see `writeFieldText`) is
+ * discarded on the next refresh — and never reaches `toHtml()` on the published page.
+ *
+ * @param {object} component
+ * @param {unknown} value
+ * @param {object|null} editor
+ * @returns {boolean} true when the value was routed to the block config.
+ */
+function writeFieldToDynamicConfig(component, value, editor) {
+    const owner = dynamicConfigOwner(component);
+
+    if (! owner) {
+        return false;
+    }
+
+    const key = String(component.getAttributes?.()?.[FIELD_ATTR] ?? '').trim();
+
+    if (key === '') {
+        return false;
+    }
+
+    const config = parseBlockConfig(owner.getAttributes?.()?.[BLOCK_CONFIG_ATTR] ?? '{}');
+    config[key] = coerceFieldValue(component, value);
+
+    owner.set?.('voodbuilderConfig', config, { silent: true });
+    owner.addAttributes?.({ [BLOCK_CONFIG_ATTR]: encodeBlockConfig(config) }, { silent: true });
+    scheduleDynamicPreviewRefresh(owner, editor);
+
+    return true;
+}
+
+/**
  * @param {object} component
  * @param {'yes'|'no'|string} value
  * @param {object|null} [editor]
  */
 export function writeStatusValue(component, value, editor = null) {
     if (! component) {
+        return;
+    }
+
+    if (writeFieldToDynamicConfig(component, value, editor)) {
         return;
     }
 
@@ -594,6 +706,10 @@ function releaseCanvasRteIfEditing(editor, component) {
  */
 export function writeFieldText(component, value, editor = null) {
     const text = String(value ?? '');
+
+    if (writeFieldToDynamicConfig(component, text, editor)) {
+        return;
+    }
 
     const apply = () => {
         releaseCanvasRteIfEditing(editor, component);

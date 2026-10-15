@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
     findClosestItem,
     findDeclarativeFields,
@@ -9,6 +9,7 @@ import {
     writeFieldText,
     writeStatusValue,
 } from '../../resources/js/editor/declarative-fields.js';
+import { parseBlockConfig } from '../../resources/js/editor/voodbuilder-dynamic-config.js';
 
 function mockComponent({ attrs = {}, content = '', children = [], cid = null } = {}) {
     let storedContent = content;
@@ -286,5 +287,120 @@ describe('declarative-fields', () => {
         bodyRow.getEl = () => rowEl;
 
         expect(resolveFocusedItem([bodyRow], orphanCell)).toEqual({ item: bodyRow, index: 0 });
+    });
+});
+
+describe('declarative-fields → dynamic block config', () => {
+    const originalDocument = globalThis.document;
+
+    beforeAll(() => {
+        // parseBlockConfig decodes entities through a throwaway <textarea>; this suite
+        // runs in the node environment, so provide the narrowest faithful stand-in.
+        globalThis.document = {
+            createElement: () => {
+                let html = '';
+
+                return {
+                    set innerHTML(value) {
+                        html = String(value);
+                    },
+                    get value() {
+                        return html
+                            .replace(/&quot;/g, '"')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&amp;/g, '&');
+                    },
+                };
+            },
+        };
+    });
+
+    afterAll(() => {
+        if (originalDocument === undefined) {
+            delete globalThis.document;
+
+            return;
+        }
+
+        globalThis.document = originalDocument;
+    });
+
+    function mockBlockRoot({ blockId = 'demo_pages_explorer', config = {} } = {}) {
+        const attrs = {
+            'data-voodbuilder-block': blockId,
+            'data-voodbuilder-config': JSON.stringify(config),
+        };
+
+        const root = {
+            attrs,
+            getAttributes: () => ({ ...attrs }),
+            get: () => undefined,
+            set: (key, value) => {
+                root.lastSet = { key, value };
+            },
+            addAttributes: (next) => {
+                Object.assign(attrs, next);
+            },
+            parent: () => null,
+        };
+
+        return root;
+    }
+
+    function configOf(root) {
+        return parseBlockConfig(root.attrs['data-voodbuilder-config']);
+    }
+
+    it('routes a marker value into the block config and leaves the preview DOM alone', () => {
+        const root = mockBlockRoot({ config: { heading: 'Old heading', per_page: 4 } });
+        const heading = mockComponent({ attrs: { 'data-vb-field': 'heading' }, content: 'Old heading' });
+        heading.parent = () => root;
+        heading.components = (next) => {
+            if (typeof next === 'string') {
+                heading.rewritten = next;
+            }
+
+            return [];
+        };
+
+        writeFieldText(heading, 'New heading', null);
+
+        expect(configOf(root)).toEqual({ heading: 'New heading', per_page: 4 });
+        expect(root.lastSet?.key).toBe('voodbuilderConfig');
+        // The block re-renders from the server: patching the canvas DOM would be lost.
+        expect(heading.rewritten).toBeUndefined();
+    });
+
+    it('coerces number and status markers to config types', () => {
+        const root = mockBlockRoot({ config: { per_page: 4, show_search: false } });
+
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '4',
+        });
+        perPage.parent = () => root;
+
+        const toggle = mockComponent({
+            attrs: { 'data-vb-field': 'show_search', 'data-vb-field-type': 'status' },
+            content: '',
+        });
+        toggle.parent = () => root;
+
+        writeFieldText(perPage, '9', null);
+        writeStatusValue(toggle, 'yes', null);
+
+        expect(configOf(root)).toEqual({ per_page: 9, show_search: true });
+    });
+
+    it('keeps static sections writing into the preview DOM', () => {
+        const section = mockComponent({ attrs: { 'data-voodbuilder-section-block': 'demo_static' } });
+        section.parent = () => null;
+        const heading = mockComponent({ attrs: { 'data-vb-field': 'heading' }, content: 'Old' });
+        heading.parent = () => section;
+
+        writeFieldText(heading, 'New', null);
+
+        expect(readFieldText(heading)).toBe('New');
     });
 });
