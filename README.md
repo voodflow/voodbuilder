@@ -231,6 +231,8 @@ Per page you can combine:
 
 **Dynamic blocks** (pricing, companion data blocks, …) are re-rendered from Blade: Style Manager can persist backgrounds/borders on the block shell and on **anchored** nodes (`data-voodbuilder-dropzone` / `data-voodbuilder-layer-name`). Regenerated titles, plan cards, and unanchored markup are wiped on remount. See [docs/dynamic-blocks.md](docs/dynamic-blocks.md).
 
+**Livewire blocks** (`EditorLivewireBlock`, registered with `Voodbuilder::editorServerBlock()`) publish a mounted Livewire component — live search, load-more, server-validated forms — while the canvas keeps showing the static preview. Requires `livewire/livewire` (already pulled in by Filament v5).
+
 ---
 
 ## Documentation

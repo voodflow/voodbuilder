@@ -63,6 +63,7 @@ final class EditorRenderer
         $payload = $page->builder_payload ?? [];
         $html = EditorLibraryLayoutNormalizer::normalize((string) ($payload['html'] ?? ''));
         $componentCss = ComponentRuntimeBridge::componentCssForHtml($html);
+        $livewireBlockCss = app(EditorLivewireBlockCss::class)->cssForHtml($html);
 
         $artifactCss = PageCssArtifactStore::resolveCss($payload);
         $hasArtifact = PageCssArtifactStore::metaFromPayload($payload) !== null
@@ -75,7 +76,7 @@ final class EditorRenderer
             $wallpaper = EditorCssSanitizer::sanitize(
                 PageSurfaceCssPublish::publicWallpaperOverlay($artifactCss, $html),
             );
-            $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $wallpaper])));
+            $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $livewireBlockCss, $wallpaper])));
 
             return $combined !== '' ? $combined : null;
         }
@@ -92,7 +93,7 @@ final class EditorRenderer
         $pageCss = PageSurfaceCssPublish::remapForPublic((string) ($pageCss ?? ''), $html);
         $pageCss = EditorCssSanitizer::sanitize($pageCss);
 
-        $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $pageCss])));
+        $combined = trim(implode("\n", array_filter([$globalCss, $componentCss, $livewireBlockCss, $pageCss])));
 
         return $combined !== '' ? $combined : null;
     }

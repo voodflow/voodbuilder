@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.71] - 2026-10-15
+
+### Added
+
+- `EditorLivewireBlock` contract, registered with `Voodbuilder::editorServerBlock()`: a server block whose published output is a mounted Livewire component. The canvas keeps rendering the static `toPreviewHtml()` — the editor never mounts Livewire, so save/load, anchoring and Tailwind compilation are unchanged — while the published page mounts through `Livewire::mount()`, keyed by the author node id so the same block twice on a page yields two components. Props reach the component only through `propsFromConfig()`, which keeps the config→component mapping an allowlist.
+- Livewire block styling: utilities that appear only inside the component view are compiled into the published stylesheet from the block preview markup (`EditorLivewireBlockCss`), cached by markup. Share utilities between the component and preview views — ideally the same partial — or the mount renders unstyled.
+- A missing or unregistered component degrades to the static preview instead of breaking the page. `livewire/livewire` is listed under `suggest` (already installed transitively by Filament v5).
+- Livewire blocks deliberately bypass `EditorRichContentBlockAdapter::prepareBlockHtml()`, whose class / placeholder / button normalizers rewrite regenerated markup (interactive `<button>` controls morphed into anchors, migrated class names) and break hydration; author root classes are likewise not re-applied over the mounted component root.
+
 ## [1.11.70] - 2026-10-14
 
 ### Changed

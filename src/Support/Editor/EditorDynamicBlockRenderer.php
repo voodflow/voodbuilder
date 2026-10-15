@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMElement;
 use DOMNode;
 use Voodflow\Vevents\Support\EventRichContentContext;
+use Voodflow\Voodbuilder\Contracts\EditorLivewireBlock;
 use Voodflow\Voodbuilder\Models\SitePage;
 
 /**
@@ -148,6 +149,22 @@ final class EditorDynamicBlockRenderer
             $this->hoistMisplacedChromeBlocksFromNav($document, $node);
         }
 
+        /*
+         * Livewire blocks own their markup: the mounted component root ships, not the
+         * editor wrapper. Re-applying the captured author chrome would overwrite the
+         * component's own classes with the wrapper's, so this path inserts the mount
+         * as-is. Author styling of the shell stays a component/props concern.
+         */
+        if (! $canvasPreview && $this->isLivewireBlock($blockId)) {
+            $rendered = $this->renderBlockId($blockId, $config, $renderData, false, $this->livewireInstanceKey($node));
+
+            if ($rendered !== null) {
+                $this->replaceNodeWithRenderedHtml($document, $node, $rendered);
+            }
+
+            return;
+        }
+
         $authorStructuralClasses = $this->captureAuthorStructuralClasses($node);
         $authorRootChrome = $this->captureAuthorRootChrome($node);
         $authorContentWidthShells = $this->captureAuthorContentWidthShells($node);
@@ -165,7 +182,7 @@ final class EditorDynamicBlockRenderer
             );
         }
 
-        $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview);
+        $rendered = $this->renderBlockId($blockId, $config, $renderData, $canvasPreview, $this->livewireInstanceKey($node));
 
         if ($rendered === null) {
             return;
@@ -1315,7 +1332,7 @@ final class EditorDynamicBlockRenderer
      * @param  array<string, mixed>  $config
      * @param  array<string, mixed>  $data
      */
-    protected function renderBlockId(string $blockId, array $config, array $data, bool $canvasPreview = false): ?string
+    protected function renderBlockId(string $blockId, array $config, array $data, bool $canvasPreview = false, ?string $instanceKey = null): ?string
     {
         $richBlockClass = $this->registry->resolve($blockId);
 
@@ -1331,6 +1348,18 @@ final class EditorDynamicBlockRenderer
 
         if ($serverBlockClass !== null) {
             $mergedConfig = $config !== [] ? $config : $serverBlockClass::defaultConfig();
+
+            /*
+             * Livewire blocks bypass prepareBlockHtml(): the editor normalizers
+             * rewrite regenerated markup and would break component hydration
+             * (buttons morphed into anchors, migrated class names, …).
+             */
+            if (is_subclass_of($serverBlockClass, EditorLivewireBlock::class)) {
+                return $canvasPreview
+                    ? EditorLivewireBlockRenderer::preview($serverBlockClass, $mergedConfig)
+                    : EditorLivewireBlockRenderer::mount($serverBlockClass, $mergedConfig, $instanceKey);
+            }
+
             $html = $canvasPreview
                 ? $serverBlockClass::toPreviewHtml($mergedConfig, $data)
                 : $serverBlockClass::toHtml($mergedConfig, $data);
@@ -1339,6 +1368,24 @@ final class EditorDynamicBlockRenderer
         }
 
         return null;
+    }
+
+    /**
+     * Author node id (Grapes assigns one per dropped element) used as the Livewire
+     * component key, so the same block twice on a page yields two components.
+     */
+    protected function livewireInstanceKey(DOMElement $node): ?string
+    {
+        $authorId = trim((string) $node->getAttribute('id'));
+
+        return $authorId !== '' ? $authorId : null;
+    }
+
+    protected function isLivewireBlock(string $blockId): bool
+    {
+        $blockClass = $this->serverRegistry->resolve($blockId);
+
+        return $blockClass !== null && is_subclass_of($blockClass, EditorLivewireBlock::class);
     }
 
     /**
