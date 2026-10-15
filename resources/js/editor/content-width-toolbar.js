@@ -468,6 +468,16 @@ export function findSectionContentWrapper(section) {
         return explicit;
     }
 
+    // A dynamic block (companion / Livewire) owns its inner markup: its children
+    // are the block's own preview tree, never a section content wrapper. The
+    // "any div" fallback used to grab the block's layout div (e.g. the preview
+    // flex row) and `ensureSectionContentWrapper` then absorbed the rest of the
+    // block into it — the published block shrank and the list landed inside the
+    // flex row.
+    if (isDynamicRichContentHost(section)) {
+        return null;
+    }
+
     return children.find((child) => {
         if (isDecorativeSectionChild(child)) {
             return false;
@@ -539,6 +549,14 @@ export function ensureSectionContentWrapper(section) {
         absorbSectionContentIntoWrapper(section, existing);
 
         return existing;
+    }
+
+    // Dynamic blocks own their markup: never synthesize a content wrapper. An
+    // empty `voodbuilder-editor-container` inside the block would be captured as
+    // the block's content shell at publish (`wrapRenderedInAuthorContentWidthShell`)
+    // and would wrap/shrink the mounted component.
+    if (isDynamicRichContentHost(section)) {
+        return null;
     }
 
     if (! section?.components?.()?.add) {
@@ -792,6 +810,15 @@ export function shouldShowContentWidthToolbar(component, editor) {
 
     if (isComponentInstanceHost(component) && findNestedContentWidthSection(component)) {
         return true;
+    }
+
+    // A dynamic block with no real content shell has nowhere to apply a measure
+    // (its inner markup must not be wrapped). Hide the control instead of
+    // offering a cycle that would mutate the block. Dynamic blocks that do
+    // carry a shell (`voodbuilder-editor-container` / `role=content`) or wrap a
+    // nested section keep the toolbar.
+    if (isDynamicRichContentHost(component) && ! findSectionContentWrapper(component)) {
+        return false;
     }
 
     if (isContentWidthSection(component)) {

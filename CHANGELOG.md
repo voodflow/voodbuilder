@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.76] - 2026-10-15
+
+### Fixed
+
+- **Dynamic (Livewire) blocks are no longer restructured in the editor.** The content-width toolbar treated a dynamic block as a section that still needed a content shell: `findSectionContentWrapper()` falls back to "any non-decorative `div` / `article` / `main` child", which for a dynamic block is its own inner preview layout (e.g. the `flex … sm:justify-between` header row). `ensureSectionContentWrapper()` then stamped that row as the section content wrapper (`voodbuilder-editor-container`, `mx-auto`, `max-w-[80rem]`, `data-voodbuilder-role="content"`) and `absorbSectionContentIntoWrapper()` moved the rest of the block — its `<ul>` list — inside it. That is why the block shifted and shrank in the canvas and looked shrunken on the published page: the broken markup was what got saved. Dynamic blocks own their DOM, so they are now excluded from the wrapper fallback, from shell synthesis, and from offering the width cycle when the block has no explicit shell. Livewire content width at publish time still belongs to `EditorDynamicBlockRenderer`.
+
+### Changed
+
+- **Style panel: only background paints are theme-scoped.** The Dark toggle used to prefix *every* group with `dark:`, which meant an author editing spacing in dark mode produced `dark:lg:my-20`. The canvas forces `.dark` from the editor theme so the margin showed there, but a published page starts light and never applied it — the author had to repeat the same edit twice. Background color (and its opacity), background image layout and gradients are the only values that legitimately differ per theme; they keep `dark:` exactly as before. Typography, spacing, dimensions, borders, radius, shadows and text color are now authored theme-neutral at the plain breakpoint prefix, and rewriting one of those groups also drops the stale `dark:` siblings an earlier policy left behind. A save-time pass (`healNonThemeScopedThemeClassesForExport`) strips `dark:` from non-background utilities still sitting in existing pages, so a page carrying `dark:lg:my-20` self-corrects on the first Save; shared names that belong to both background and text gradients (`from-*`, `to-*`, `via-*`, `bg-gradient-*`, `bg-none`) are left alone because their paint cannot be inferred.
+- **Dark-scope warning scoped to what it can affect.** With theme variants now limited to backgrounds, the generic "dark: variants will not apply" copy was too broad for a warning that only ever matters for paints. The `never` / `only-dark` messages and the viewport cascade hint now say explicitly that the theme applies to background paints, in both `resources/lang/en/pro.php` and `resources/lang/it/pro.php` (the Italian file was also missing the two warning keys).
+
 ## [1.11.75] - 2026-10-15
 
 ### Fixed

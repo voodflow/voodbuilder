@@ -122,6 +122,7 @@ import {
 } from './style-tailwind-class-groups.js';
 import {
     STYLE_BREAKPOINT_PREFIXES,
+    currentStyleBreakpointPrefix,
     currentStyleVariantPrefix,
     isStyleEditingDark,
     publishedDarkWarningKind,
@@ -132,6 +133,11 @@ import {
     resolveGroupValueAtBreakpoint,
     resolveGroupValueExact,
 } from './style-tailwind-breakpoints.js';
+import {
+    healNonThemeScopedThemeClassesForExport,
+    isThemeScopedStyleGroupId,
+    styleGroupVariantPrefix,
+} from './style-theme-scope.js';
 import { pageCssCoversClass } from './page-tailwind-autobuild.js';
 import {
     PAGE_SURFACE_FOCUS_EVENT,
@@ -661,38 +667,57 @@ function resolveBackgroundLayoutGroupValue(classes, group, component, editor, bp
  * @param {Iterable<string>|string[]} classes
  * @param {Array<{value: string, label?: string}>} options
  * @param {object|null|undefined} editor
+ * @param {string|null} [prefix] explicit variant prefix (defaults to the active theme+breakpoint)
  * @returns {string}
  */
-function resolveStyleGroup(classes, options, editor = null) {
-    return resolveGroupValueAtBreakpoint(classes, options, currentStyleVariantPrefix(editor));
-}
-
-/**
- * @param {object|null|undefined} component
- * @param {Set<string>} groupSet
- * @param {string|null|undefined} nextClass
- * @param {object|null|undefined} editor
- * @param {{ alsoClear?: Iterable<Set<string>> }} [options]
- */
-function replaceStyleGroup(component, groupSet, nextClass, editor = null, options = {}) {
-    replaceClassGroupAtBreakpoint(
-        component,
-        groupSet,
-        nextClass,
-        currentStyleVariantPrefix(editor),
+function resolveStyleGroup(classes, options, editor = null, prefix = null) {
+    return resolveGroupValueAtBreakpoint(
+        classes,
         options,
+        prefix == null ? currentStyleVariantPrefix(editor) : prefix,
     );
 }
 
 /**
- * Background gradients follow the active Style variant. Pass
- * `options.forceBase = true` for text-gradient groups (JIT / stops).
+ * Write one exclusive group at the prefix its scope dictates: theme + breakpoint
+ * for background paints, breakpoint only for every other group (see
+ * {@link styleGroupVariantPrefix}).
  *
  * @param {object|null|undefined} component
  * @param {Set<string>} groupSet
  * @param {string|null|undefined} nextClass
  * @param {object|null|undefined} editor
- * @param {{ alsoClear?: Iterable<Set<string>>, forceBase?: boolean }} [options]
+ * @param {{ alsoClear?: Iterable<Set<string>>, groupId?: string }} [options]
+ */
+function replaceStyleGroup(component, groupSet, nextClass, editor = null, options = {}) {
+    // Theme-neutral group: drop stale `dark:` siblings an earlier policy wrote, so
+    // rewriting the value cannot leave a dark-only utility behind (it rendered in
+    // the canvas — forced .dark — and never on a light published page).
+    if (! isThemeScopedStyleGroupId(options.groupId)) {
+        for (const darkBp of STYLE_BREAKPOINT_PREFIXES) {
+            replaceClassGroupAtBreakpoint(component, groupSet, null, `dark:${darkBp}`);
+        }
+    }
+
+    replaceClassGroupAtBreakpoint(
+        component,
+        groupSet,
+        nextClass,
+        styleGroupVariantPrefix(editor, options.groupId),
+        options,
+    );
+}
+
+/**
+ * Background gradients follow the active Style variant (`options.groupId`).
+ * Pass `options.forceBase = true` for text-gradient groups (JIT / stops) — text
+ * gradients are theme-neutral and always write at base.
+ *
+ * @param {object|null|undefined} component
+ * @param {Set<string>} groupSet
+ * @param {string|null|undefined} nextClass
+ * @param {object|null|undefined} editor
+ * @param {{ alsoClear?: Iterable<Set<string>>, forceBase?: boolean, groupId?: string }} [options]
  */
 function replaceGradientStyleGroup(component, groupSet, nextClass, editor = null, options = {}) {
     if (options.forceBase) {
@@ -1374,12 +1399,18 @@ function syncSelectsFromComponent(root, component, editor = null, options = {}) 
     }
 
     const classes = componentClassList(component);
-    const bp = currentStyleVariantPrefix(editor);
 
     for (const group of STYLE_UTILITY_GROUPS) {
         const el = root.querySelector(`[data-voodbuilder-tw-group="${group.id}"]`);
 
         if (el) {
+            // Only background paints are theme-scoped: resolve them at `dark:` too,
+            // every other group at the plain breakpoint so a dark-only value is not
+            // reported as the authored one.
+            const bp = isThemeScopedStyleGroupId(group.id)
+                ? currentStyleVariantPrefix(editor)
+                : currentStyleBreakpointPrefix(editor);
+
             if (group.id === 'text-color') {
                 el.value = hasTextGradientClasses(classes)
                     ? TEXT_COLOR_GRADIENT_VALUE
@@ -1968,7 +1999,16 @@ function paintBackgroundColorOpacity(editor, component, color, opacityPercent) {
     }
 }
 
-function applyGroup(editor, component, groupId, value, options = {}) {
+/**
+ * Apply one Style group value (exported for tests + spacing panel wiring).
+ *
+ * @param {object|null|undefined} editor
+ * @param {object|null|undefined} component
+ * @param {string} groupId
+ * @param {string} value
+ * @param {{ opacityHint?: string }} [options]
+ */
+export function applyGroup(editor, component, groupId, value, options = {}) {
     const groupSet = GROUP_SETS[groupId];
 
     if (! component) {
@@ -2147,13 +2187,13 @@ function applyGroup(editor, component, groupId, value, options = {}) {
                 ensureTextGradientPaint(editor, component);
             } else if (value) {
                 clearTextGradientUtilities(component);
-                replaceStyleGroup(component, groupSet, value, editor, { alsoClear: [] });
+                replaceStyleGroup(component, groupSet, value, editor, { alsoClear: [], groupId });
                 clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             } else if (hasTextGradientClasses(componentClassList(component))) {
                 clearTextGradientUtilities(component);
                 clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             } else {
-                replaceStyleGroup(component, groupSet, null, editor, { alsoClear: [] });
+                replaceStyleGroup(component, groupSet, null, editor, { alsoClear: [], groupId });
                 clearInlineProps(editor, component, GROUP_INLINE[groupId] ?? []);
             }
 
@@ -2296,9 +2336,13 @@ function applyGroup(editor, component, groupId, value, options = {}) {
 
         if (isGradientStyleGroupId(groupId)) {
             const forceBase = TEXT_GRADIENT_GROUP_IDS.includes(groupId);
-            replaceGradientStyleGroup(component, groupSet, value || null, editor, { alsoClear, forceBase });
+            replaceGradientStyleGroup(component, groupSet, value || null, editor, {
+                alsoClear,
+                forceBase,
+                groupId,
+            });
         } else {
-            replaceStyleGroup(component, groupSet, value || null, editor, { alsoClear });
+            replaceStyleGroup(component, groupSet, value || null, editor, { alsoClear, groupId });
         }
 
         if (groupId === 'gradient-direction' && (! value || value === 'bg-none')) {
@@ -2330,7 +2374,7 @@ function applyGroup(editor, component, groupId, value, options = {}) {
                     posSet,
                     'from-0%',
                     editor,
-                    { forceBase: groupId.startsWith('text-') },
+                    { forceBase: groupId.startsWith('text-'), groupId: posId },
                 );
             }
         }
@@ -2887,9 +2931,11 @@ function syncTypographyTextGradient(root, component, editor = null) {
 
 function syncTypographySegments(root, component, editor = null) {
     const classes = componentClassList(component);
+    // Segments are theme-neutral typography / border style: read at the breakpoint.
+    const bp = currentStyleBreakpointPrefix(editor);
 
     for (const [groupId, options] of Object.entries(PANEL_SEGMENT_GROUPS)) {
-        const value = resolveStyleGroup(classes, options, editor);
+        const value = resolveStyleGroup(classes, options, editor, bp);
         const wrap = root.querySelector(`[data-voodbuilder-typo-seg="${groupId}"]`);
 
         if (! wrap) {
@@ -2932,7 +2978,12 @@ function wireTypographySegments(editor, sector) {
                 return;
             }
 
-            const current = resolveStyleGroup(componentClassList(component), PANEL_SEGMENT_GROUPS[groupId] ?? [], editor);
+            const current = resolveStyleGroup(
+                componentClassList(component),
+                PANEL_SEGMENT_GROUPS[groupId] ?? [],
+                editor,
+                currentStyleBreakpointPrefix(editor),
+            );
 
             // Toggle off when re-clicking the active utility.
             if (value !== '' && value === current) {
@@ -4057,31 +4108,33 @@ function syncDecorationBlocks(root, component, options = {}, editor = null) {
         || gradTo,
     );
 
-    const borderAll = resolveStyleGroup(classes, BORDER_WIDTH_OPTIONS, editor);
-    const borderT = resolveStyleGroup(classes, BORDER_T_WIDTH_OPTIONS, editor);
-    const borderR = resolveStyleGroup(classes, BORDER_R_WIDTH_OPTIONS, editor);
-    const borderB = resolveStyleGroup(classes, BORDER_B_WIDTH_OPTIONS, editor);
-    const borderL = resolveStyleGroup(classes, BORDER_L_WIDTH_OPTIONS, editor);
-    const borderStyle = resolveStyleGroup(classes, BORDER_STYLE_OPTIONS, editor);
-    const borderColor = resolveStyleGroup(classes, BORDER_COLOR_OPTIONS, editor);
+    // Borders / radius / shadows are theme-neutral: read them at the breakpoint.
+    const neutralBp = currentStyleBreakpointPrefix(editor);
+    const borderAll = resolveStyleGroup(classes, BORDER_WIDTH_OPTIONS, editor, neutralBp);
+    const borderT = resolveStyleGroup(classes, BORDER_T_WIDTH_OPTIONS, editor, neutralBp);
+    const borderR = resolveStyleGroup(classes, BORDER_R_WIDTH_OPTIONS, editor, neutralBp);
+    const borderB = resolveStyleGroup(classes, BORDER_B_WIDTH_OPTIONS, editor, neutralBp);
+    const borderL = resolveStyleGroup(classes, BORDER_L_WIDTH_OPTIONS, editor, neutralBp);
+    const borderStyle = resolveStyleGroup(classes, BORDER_STYLE_OPTIONS, editor, neutralBp);
+    const borderColor = resolveStyleGroup(classes, BORDER_COLOR_OPTIONS, editor, neutralBp);
     const hasBorderSides = Boolean(borderT || borderR || borderB || borderL);
     const hasBorder = Boolean(borderAll || hasBorderSides || borderStyle || borderColor);
 
-    const roundedAll = resolveStyleGroup(classes, ROUNDED_OPTIONS, editor);
-    const roundedTl = resolveStyleGroup(classes, ROUNDED_TL_OPTIONS, editor);
-    const roundedTr = resolveStyleGroup(classes, ROUNDED_TR_OPTIONS, editor);
-    const roundedBr = resolveStyleGroup(classes, ROUNDED_BR_OPTIONS, editor);
-    const roundedBl = resolveStyleGroup(classes, ROUNDED_BL_OPTIONS, editor);
+    const roundedAll = resolveStyleGroup(classes, ROUNDED_OPTIONS, editor, neutralBp);
+    const roundedTl = resolveStyleGroup(classes, ROUNDED_TL_OPTIONS, editor, neutralBp);
+    const roundedTr = resolveStyleGroup(classes, ROUNDED_TR_OPTIONS, editor, neutralBp);
+    const roundedBr = resolveStyleGroup(classes, ROUNDED_BR_OPTIONS, editor, neutralBp);
+    const roundedBl = resolveStyleGroup(classes, ROUNDED_BL_OPTIONS, editor, neutralBp);
     const hasRoundedCorners = Boolean(roundedTl || roundedTr || roundedBr || roundedBl);
     const hasRounded = Boolean(roundedAll || hasRoundedCorners
-        || resolveStyleGroup(classes, ROUNDED_T_OPTIONS, editor)
-        || resolveStyleGroup(classes, ROUNDED_R_OPTIONS, editor)
-        || resolveStyleGroup(classes, ROUNDED_B_OPTIONS, editor)
-        || resolveStyleGroup(classes, ROUNDED_L_OPTIONS, editor));
+        || resolveStyleGroup(classes, ROUNDED_T_OPTIONS, editor, neutralBp)
+        || resolveStyleGroup(classes, ROUNDED_R_OPTIONS, editor, neutralBp)
+        || resolveStyleGroup(classes, ROUNDED_B_OPTIONS, editor, neutralBp)
+        || resolveStyleGroup(classes, ROUNDED_L_OPTIONS, editor, neutralBp));
 
-    const shadow = resolveStyleGroup(classes, SHADOW_OPTIONS, editor);
-    const shadowColor = resolveStyleGroup(classes, SHADOW_COLOR_OPTIONS, editor);
-    const dropShadow = resolveStyleGroup(classes, DROP_SHADOW_OPTIONS, editor);
+    const shadow = resolveStyleGroup(classes, SHADOW_OPTIONS, editor, neutralBp);
+    const shadowColor = resolveStyleGroup(classes, SHADOW_COLOR_OPTIONS, editor, neutralBp);
+    const dropShadow = resolveStyleGroup(classes, DROP_SHADOW_OPTIONS, editor, neutralBp);
     const hasBgImage = Boolean(readDisplayedBackgroundImageUrl(component, editor));
 
     const setDot = (key, on) => {

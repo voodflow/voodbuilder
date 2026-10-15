@@ -23,7 +23,7 @@ import {
     componentClassList,
 } from './style-tailwind-class-groups.js';
 import {
-    currentStyleVariantPrefix,
+    currentStyleBreakpointPrefix,
     resolveGroupValueAtBreakpoint,
     resolveGroupValueExact,
     stripVariantPrefixes,
@@ -283,7 +283,12 @@ function expandSpacingShorthandToAxes(editor, component, kind) {
         return false;
     }
 
-    const all = resolveStyleGroup(componentClassList(component), cfg.all, editor);
+    const all = resolveStyleGroup(
+        componentClassList(component),
+        cfg.all,
+        editor,
+        currentStyleBreakpointPrefix(editor),
+    );
 
     if (! all) {
         return false;
@@ -319,7 +324,8 @@ export function applySpacingToken(editor, component, kind, side, rawToken, linkM
 }
 
 export function setSpacingLinkMode(editor, component, kind, nextLink) {
-    const bp = currentStyleVariantPrefix(editor);
+    // Spacing is theme-neutral: never read (or write) a `dark:` variant.
+    const bp = currentStyleBreakpointPrefix(editor);
     const state = resolveSpacingState(kind, componentClassList(component), bp);
     const { sides } = state;
     const token = sides.t || sides.r || sides.b || sides.l || '';
@@ -408,7 +414,8 @@ function mirrorLinkedSpacingInputs(block, side, value, linkMode) {
 
 export function syncSpacingBox(root, component, options = {}, editor = null) {
     const resetLinkPref = options.resetLinkPref === true;
-    const bp = currentStyleVariantPrefix(editor);
+    // Spacing is theme-neutral: read the breakpoint prefix the panel writes.
+    const bp = currentStyleBreakpointPrefix(editor);
     const inheritedHint = options.inheritedHint
         ?? 'Inherited from a smaller viewport — change to override here';
 
@@ -527,7 +534,12 @@ function openSpacingScalePopover(editor, sector, anchor, kind, side, labels = {}
 
     const selected = editor.getSelected();
     const currentToken = spacingTokenFromClass(
-        resolveStyleGroup(componentClassList(selected), target.options, editor),
+        resolveStyleGroup(
+            componentClassList(selected),
+            target.options,
+            editor,
+            currentStyleBreakpointPrefix(editor),
+        ),
     );
 
     const pop = document.createElement('div');

@@ -6,9 +6,12 @@
  *   Tablet                          → md:
  *   Desktop                         → lg:
  *
- * Theme comes from the top-bar toggle (not a second Style strip):
+ * Theme comes from the top-bar toggle (not a second Style strip). Only background
+ * paints are theme-scoped (see style-theme-scope.js), so the `dark:` prefixes below
+ * are used for background color/image/gradients — never for typography, spacing,
+ * borders, shadows or layout:
  *   Light → base / md: / lg:
- *   Dark  → dark: / dark:md: / dark:lg:
+ *   Dark  → dark: / dark:md: / dark:lg:   (background paints only)
  */
 
 import { debugSwallowed } from './debug-swallowed.js';
@@ -114,14 +117,14 @@ export function isStyleEditingDark(editor = null) {
 /**
  * Which dark-scope warning the Style panel should show, if any.
  *
- * The canvas forces `.dark` from the editor theme, so `dark:` variants always
- * look right while authoring — even on a page that publishes light. Two cases
- * are worth telling the author about:
+ * Only background paints carry a `dark:` variant, and the canvas forces `.dark`
+ * from the editor theme, so those paints always look right while authoring — even
+ * on a page that publishes light. Two cases are worth telling the author about:
  *
  * - `never`: the site has no way to render a dark page (theme toggle hidden and
- *   a light/solid default) — the variants are dead code.
- * - `only-dark`: the page *can* be dark but does not start dark, so the values
- *   are dark-only overrides that the normal published view never uses.
+ *   a light/solid default) — the dark background paints are dead code.
+ * - `only-dark`: the page *can* be dark but does not start dark, so the paint is
+ *   a dark-only override the normal published view never uses.
  *
  * @param {object|null|undefined} editor
  * @returns {''|'never'|'only-dark'}

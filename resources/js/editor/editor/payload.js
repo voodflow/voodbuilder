@@ -61,6 +61,7 @@ import {
 } from '../page-surface-styles.js';
 import { STYLE_BG_SRC_ATTR, STYLE_BG_SRC_DARK_ATTR } from '../style-background-image.js';
 import { stripLeakedAncestorDecorationBackgrounds } from '../style-tailwind-panel.js';
+import { healNonThemeScopedThemeClassesForExport } from '../style-theme-scope.js';
 import { collectDarkIdStylesCssForPersist } from '../dark-id-styles.js';
 
 /**
@@ -958,6 +959,13 @@ export function buildPayload(editor, options = {}) {
                 runExportStep('normalizeDynamicBlockComponents', () => normalizeDynamicBlockComponents(editor));
                 runExportStep('stripLeakedAncestorDecorationBackgrounds', () => {
                     stripLeakedAncestorDecorationBackgrounds(editor, scoped);
+                });
+
+                // Only background paints are theme-scoped: strip `dark:` from
+                // typography / spacing / border utilities an earlier policy wrote,
+                // so a page carrying `dark:lg:my-20` self-corrects on Save.
+                runExportStep('healNonThemeScopedThemeClassesForExport', () => {
+                    healNonThemeScopedThemeClassesForExport(editor, scoped);
                 });
 
                 // Light Save still needs paint on instances / #id — skipping these
