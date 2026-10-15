@@ -112,6 +112,37 @@ export function isStyleEditingDark(editor = null) {
 }
 
 /**
+ * Which dark-scope warning the Style panel should show, if any.
+ *
+ * The canvas forces `.dark` from the editor theme, so `dark:` variants always
+ * look right while authoring — even on a page that publishes light. Two cases
+ * are worth telling the author about:
+ *
+ * - `never`: the site has no way to render a dark page (theme toggle hidden and
+ *   a light/solid default) — the variants are dead code.
+ * - `only-dark`: the page *can* be dark but does not start dark, so the values
+ *   are dark-only overrides that the normal published view never uses.
+ *
+ * @param {object|null|undefined} editor
+ * @returns {''|'never'|'only-dark'}
+ */
+export function publishedDarkWarningKind(editor = null) {
+    if (! isStyleEditingDark(editor)) {
+        return '';
+    }
+
+    if (editor?.__voodbuilderPublishedDarkScope === false) {
+        return 'never';
+    }
+
+    if (editor?.__voodbuilderPublishedDefaultDark === false) {
+        return 'only-dark';
+    }
+
+    return '';
+}
+
+/**
  * Pin Style theme to the top-bar toggle (avoids Filament/localStorage races).
  *
  * @param {object|null|undefined} editor

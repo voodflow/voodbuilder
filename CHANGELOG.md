@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.75] - 2026-10-15
+
+### Fixed
+
+- **Content inspector empty on chrome-shell pages.** The chrome-shell editor branch skipped the initial dynamic-block refresh entirely, so page-content blocks never received the rendered editor preview. Declarative `data-vb-field` markers exist **only** in that preview — never in the saved page HTML — so the Content tab had no fields to build and fell back to "No settings for this element" for every configurable block. Chrome parts (nav/header/footer) stay untouched, as before: re-fetching them only remounts Maps embeds. Page-content blocks now refresh through `selectContentRefreshBlocks()`.
+- **Orphan `#id` rules are dropped on Save.** Rules persist by id, so an id that no longer exists could only come from an earlier render: it painted nothing on the published page while still matching the canvas right after Save. `stripOrphanIdRules()` now removes bare `#id` / `html.dark #id` rules whose id is absent from both the saved HTML and the live tree, keeping the page-surface wallpaper id that chrome-shell Save writes without HTML. Pseudo and descendant selectors are never touched.
+
+### Added
+
+- **Dark-scope warning in the Style panel.** The canvas forces `.dark` from the editor theme, so `dark:` variants always look right while authoring even on a page that publishes light — the trap behind "I set a margin, it showed in the editor and did nothing on the site". The viewport strip now names the case: `never` (theme toggle hidden + light/solid default → the variants are dead code) or `only-dark` (the page can be dark but starts light → the values are dark-only overrides). Server flags: `publishedDarkScope` + `publishedDefaultDark`.
+
 ## [1.11.74] - 2026-10-15
 
 ### Fixed

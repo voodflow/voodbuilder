@@ -55,6 +55,7 @@ import {
     readPageSurfaceDarkWallpaperStyles,
     readPageSurfaceWallpaperStyles,
     stripStalePageSurfaceWallpaperRules,
+    stripOrphanIdRules,
     collectEditorComponentIds,
     withWallpaperLayoutDefaults,
 } from '../page-surface-styles.js';
@@ -1120,6 +1121,14 @@ export function buildPayload(editor, options = {}) {
         if (css.length > maxCssBytes) {
             css = '';
         }
+
+        // Dead `#id` rules (id gone from the tree *and* the saved HTML) paint
+        // nothing on publish, but they do match the canvas right after Save —
+        // the white block that only came back dark on reload. Drop them last.
+        css = stripOrphanIdRules(css, {
+            html,
+            keepIds: [...(stripOptions.knownIds ?? []), wrapperId, ...(stripOptions.replaceIds ?? [])],
+        });
 
         const payload = {
             html,

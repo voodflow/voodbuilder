@@ -749,6 +749,66 @@ export function stripStalePageSurfaceWallpaperRules(css, keepId = '', options = 
 }
 
 /**
+ * Drop `#id` / `html.dark #id` rules whose id is gone from both the saved HTML
+ * and the live component tree.
+ *
+ * Rules persist across Save by id, so an id that no longer exists can only come
+ * from an earlier render: it paints nothing on the published page, yet it *does*
+ * match the canvas right after Save (the nodes still carry the id until the
+ * editor re-parses the payload). That is the white block that came back dark
+ * only after a reload. Dead rules are safe to drop — a rule with no element is
+ * unreachable by definition.
+ *
+ * Conservative by construction: only bare `#id { … }` and `html.dark #id { … }`
+ * with no pseudo/descendant selector are considered, and `keepIds` protects the
+ * page-surface wallpaper id that chrome-shell Save writes without HTML.
+ *
+ * @param {string} css
+ * @param {{ html?: string, keepIds?: Iterable<string>|Set<string> }} [options]
+ * @returns {string}
+ */
+export function stripOrphanIdRules(css, options = {}) {
+    const source = String(css ?? '');
+
+    if (source === '' || ! source.includes('#')) {
+        return source;
+    }
+
+    const known = new Set(
+        [...(options.keepIds ?? [])].map((id) => String(id ?? '').trim()).filter(Boolean),
+    );
+
+    for (const match of String(options.html ?? '').matchAll(/\bid=["']([A-Za-z][\w-]*)["']/g)) {
+        known.add(match[1]);
+    }
+
+    // Never discard a whole sheet just because the HTML was unavailable.
+    if (known.size === 0) {
+        return source;
+    }
+
+    let next = source.replace(
+        /html\.dark\s+#([A-Za-z][\w-]*)\s*\{[^{}]*\}/gi,
+        (match, id) => (known.has(id) ? match : ' '),
+    );
+
+    next = next.replace(
+        /#([A-Za-z][\w-]*)\s*\{([^{}]*)\}/g,
+        (match, id, body, offset) => {
+            const before = next.slice(Math.max(0, offset - 16), offset).toLowerCase();
+
+            if (before.includes('html.dark')) {
+                return match;
+            }
+
+            return known.has(id) ? match : ' ';
+        },
+    );
+
+    return next.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/**
  * Best page-wallpaper candidate from any `#id` rule.
  * Used when the wrapper is empty but a prior Save left the paint on a content
  * ghost or a regenerated-id orphan that is still "known" in the tree.

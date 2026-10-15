@@ -138,7 +138,7 @@ final class EditorGate
         return [
             'pageId' => $page->getKey(),
             'saveUrl' => self::optionalEditorRoute('voodbuilder.editor.pages.update', $page)
-                ?? '/voodbuilder/editor/pages/' . $page->getKey(),
+                ?? '/voodbuilder/editor/pages/'.$page->getKey(),
             'csrf' => csrf_token(),
             'exitUrl' => $page->getUrl(),
             'viewPageUrl' => $page->getUrl(),
@@ -150,6 +150,8 @@ final class EditorGate
             ] : null,
             'routeEntityPatterns' => app(DynamicPageRegistry::class)->editorRouteEntityPatterns(),
             'chromeShellMode' => $chromeShellMode,
+            'publishedDarkScope' => self::publishedDarkScope(),
+            'publishedDefaultDark' => VoodbuilderTheme::serverInitialDark(),
             'chromeShellName' => $chromeLayout?->name,
             'chromeShellParts' => $chromeShellParts,
             'chromeLayoutCss' => $chromeLayoutCss,
@@ -254,7 +256,7 @@ final class EditorGate
                 ...$appTypography['stylesheetUrls'],
             ]))),
             'canvasScripts' => EditorCanvas::scriptTags(),
-            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme) . "\n" . $appTypography['editorCanvasCss'],
+            'canvasFrameStyle' => EditorCanvas::frameStyle($subTheme)."\n".$appTypography['editorCanvasCss'],
             'appTypography' => [
                 'bodyFont' => $appTypography['bodyFont'],
                 'headingFont' => $appTypography['headingFont'],
@@ -668,6 +670,8 @@ final class EditorGate
             'classStyleViewportCascade' => __('voodbuilder::pro.editor_ui.class_style_viewport_cascade'),
             'classStyleViewportInherited' => __('voodbuilder::pro.editor_ui.class_style_viewport_inherited'),
             'classStyleViewportAria' => __('voodbuilder::pro.editor_ui.class_style_viewport_aria'),
+            'classStyleViewportNoPublishedDark' => __('voodbuilder::pro.editor_ui.class_style_viewport_no_published_dark'),
+            'classStyleViewportDarkOnly' => __('voodbuilder::pro.editor_ui.class_style_viewport_dark_only'),
             'classStyleThemeLight' => __('voodbuilder::pro.editor_ui.class_style_theme_light'),
             'classStyleThemeDark' => __('voodbuilder::pro.editor_ui.class_style_theme_dark'),
             'undo' => __('voodbuilder::pro.editor_ui.undo'),
@@ -1379,6 +1383,22 @@ final class EditorGate
         }
 
         return $options;
+    }
+
+    /**
+     * Whether a published page can ever carry the `.dark` root class.
+     *
+     * The Style panel writes `dark:` variants while its Dark toggle is on, so
+     * authors happily produce `dark:lg:my-20` on a site whose front end never
+     * gets `html.dark` — dead classes that look right in the canvas (the canvas
+     * forces `.dark` from the editor theme) and do nothing once published.
+     *
+     * With the theme toggle shown a visitor can always pick dark; with the
+     * toggle hidden only an explicit dark default can.
+     */
+    public static function publishedDarkScope(): bool
+    {
+        return VoodbuilderTheme::showToggle() || VoodbuilderTheme::defaultMode() === 'dark';
     }
 
     /**

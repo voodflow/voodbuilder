@@ -45,6 +45,7 @@ import voodbuilderEditorPlugin, {
     syncSiteFooterConfig,
 } from '../plugins/voodbuilder.js';
 import { stripInvalidDomAttributes } from '../core/html-sanitize.js';
+import { selectContentRefreshBlocks } from './dynamic-block-scope.js';
 import { configureEditorPlugins, resolveEditorPlugins } from '../editor-plugins.js';
 import { configureLinkableButtons, registerLinkableButtonTypes, scanLinkableButtons } from '../editor-button-link.js';
 import { configureRichTextEditor } from '../rich-text-editor.js';
@@ -1160,6 +1161,11 @@ export function initVoodbuilderEditor(container, options = {}) {
     registerImageCanvasDblClick(editor);
     editor.__voodbuilderChromeShellMode = options.chromeShellMode ?? false;
     editor.__voodbuilderChromeLayoutMode = options.chromeLayoutMode ?? false;
+    // Whether a published page can ever carry `html.dark` — gates the Style panel
+    // warning about dark: variants on a site that never renders a dark page.
+    editor.__voodbuilderPublishedDarkScope = options.publishedDarkScope !== false;
+    // Page does not start dark: dark: edits are overrides the default view never uses.
+    editor.__voodbuilderPublishedDefaultDark = options.publishedDefaultDark !== false;
     editor.__voodbuilderChromeShellName = options.chromeShellName ?? options.chromeLayoutName ?? null;
     editor.__voodbuilderChromeLayoutName = options.chromeLayoutName ?? options.chromeShellName ?? null;
     editor.__voodbuilderServerRenderableBlockIds = new Set(
@@ -1176,6 +1182,8 @@ export function initVoodbuilderEditor(container, options = {}) {
     if (editor.em) {
         editor.em.__voodbuilderChromeShellMode = editor.__voodbuilderChromeShellMode;
         editor.em.__voodbuilderChromeLayoutMode = editor.__voodbuilderChromeLayoutMode;
+        editor.em.__voodbuilderPublishedDarkScope = editor.__voodbuilderPublishedDarkScope;
+        editor.em.__voodbuilderPublishedDefaultDark = editor.__voodbuilderPublishedDefaultDark;
     }
 
     gateGrapesAutoscrollToRealDrags(editor);
@@ -1661,7 +1669,16 @@ export function initVoodbuilderEditor(container, options = {}) {
             const runShellDynamicRefresh = () => {
                 // Chrome shell parts already ship server-rendered nav/footer HTML.
                 // Re-fetching remounts Maps embeds and retriggers Layers.render (console spam).
-                return Promise.resolve();
+                //
+                // Page-content blocks still need the round-trip: declarative
+                // `data-vb-field` markers exist only in the rendered editor preview,
+                // so skipping it left the Content inspector empty
+                // ("No settings for this element") for every configurable block.
+                const contentBlocks = selectContentRefreshBlocks(
+                    safeFindComponents(editor.getWrapper?.(), '[data-voodbuilder-block]'),
+                );
+
+                return refreshDynamicBlockList(editor, options.blocksRenderUrl, contentBlocks);
             };
 
             const refresh = new Promise((resolve) => {
@@ -2612,6 +2629,8 @@ function mountFrontendEditor() {
         pageId: config.pageId ?? null,
         pageTitle: config.pageTitle ?? null,
         chromeShellMode: config.chromeShellMode ?? false,
+        publishedDarkScope: config.publishedDarkScope !== false,
+        publishedDefaultDark: config.publishedDefaultDark !== false,
         chromeShellName: config.chromeShellName ?? null,
         chromeShellParts: config.chromeShellParts ?? null,
         chromeLayoutCss: config.chromeLayoutCss ?? '',

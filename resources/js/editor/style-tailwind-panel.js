@@ -124,6 +124,7 @@ import {
     STYLE_BREAKPOINT_PREFIXES,
     currentStyleVariantPrefix,
     isStyleEditingDark,
+    publishedDarkWarningKind,
     setStyleEditingDark,
     prefixedUtility,
     replaceClassGroupAllBreakpoints,
@@ -1137,6 +1138,7 @@ function buildViewportStrip(labels) {
             <button type="button" class="voodbuilder-editor-style-viewport__btn" data-voodbuilder-style-viewport="desktop" title="${escapeAttr(desktop)}">${escapeHtml(desktop)}</button>
         </div>
         <p class="voodbuilder-editor-style-viewport__cascade" data-voodbuilder-style-viewport-cascade>${escapeHtml(cascade)}</p>
+        <p class="voodbuilder-editor-style-viewport__warning hidden" data-voodbuilder-style-viewport-no-dark></p>
     `;
 
     return strip;
@@ -1200,6 +1202,27 @@ function syncViewportStrip(root, editor, labels = {}) {
         hintEl.textContent = String(template)
             .replace('{device}', deviceLabel)
             .replace('{theme}', themeLabel);
+    }
+
+    // The canvas forces `.dark` from the editor theme, so dark: variants always
+    // look right here even on a site that never renders a dark page. Say so.
+    const warningEl = strip.querySelector('[data-voodbuilder-style-viewport-no-dark]');
+
+    if (warningEl) {
+        const kind = publishedDarkWarningKind(editor);
+        const outOfScope = kind !== '';
+
+        if (kind === 'never') {
+            warningEl.textContent = labels.classStyleViewportNoPublishedDark
+                ?? 'This site never renders a dark page: dark: variants you add here will not apply on the live site.';
+        } else if (kind === 'only-dark') {
+            warningEl.textContent = labels.classStyleViewportDarkOnly
+                ?? 'Editing the dark theme: these values only apply while the page is dark, and this page starts light. Use the Light theme to change the default look.';
+        } else {
+            warningEl.textContent = '';
+        }
+
+        warningEl.classList.toggle('hidden', ! outOfScope);
     }
 
     strip.querySelectorAll('button[data-voodbuilder-style-viewport]').forEach((button) => {

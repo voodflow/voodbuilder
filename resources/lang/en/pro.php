@@ -270,6 +270,8 @@ return [
         'class_style_viewport_cascade' => 'Edits apply to the selected viewport (Mobile = base for all; Tablet = md:; Desktop = lg:). Theme (Light/Dark) comes from the top bar and authors dark: variants.',
         'class_style_viewport_inherited' => 'Inherited from a smaller viewport — change to override here',
         'class_style_viewport_aria' => 'Style viewport',
+        'class_style_viewport_no_published_dark' => 'This site never renders a dark page: dark: variants you add here will not apply on the live site.',
+        'class_style_viewport_dark_only' => 'Editing the dark theme: these values apply only while the page is dark, and this page starts light. Use the Light theme to change the default look.',
         'class_style_theme_light' => 'Light',
         'class_style_theme_dark' => 'Dark',
         'undo' => 'Undo',
