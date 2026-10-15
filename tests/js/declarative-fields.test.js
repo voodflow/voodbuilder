@@ -6,6 +6,7 @@ import {
     readFieldText,
     readStatusValue,
     resolveFocusedItem,
+    scopeHasDeclarativeFields,
     writeFieldText,
     writeStatusValue,
 } from '../../resources/js/editor/declarative-fields.js';
@@ -174,8 +175,7 @@ describe('declarative-fields', () => {
         expect(readFieldText(host)).toBe('After');
     });
 
-    it('treats table cells as text fields even without data-vb-field', () => {
-        const cell = mockComponent({ content: '15 GB', cid: 'td1' });
+    it('treats table cells as text fields even without data-vb-field', () => {        const cell = mockComponent({ content: '15 GB', cid: 'td1' });
         const originalGet = cell.get;
         cell.get = (key) => (key === 'tagName' ? 'td' : originalGet(key));
         const row = mockComponent({ children: [cell], cid: 'tr1' });
@@ -287,6 +287,44 @@ describe('declarative-fields', () => {
         bodyRow.getEl = () => rowEl;
 
         expect(resolveFocusedItem([bodyRow], orphanCell)).toEqual({ item: bodyRow, index: 0 });
+    });
+
+    it('matches the descriptor scope of a freshly rendered block preview', () => {
+        const heading = mockComponent({
+            attrs: { 'data-vb-field': 'heading', 'data-vb-field-type': 'text', 'data-vb-field-label': 'Heading' },
+            content: 'Explore the site',
+        });
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '4',
+        });
+        const section = mockComponent({
+            attrs: { 'data-voodbuilder-block': 'demo_pages_explorer', 'data-voodbuilder-config': '{}' },
+            children: [heading, perPage],
+        });
+        heading.parent = () => section;
+        perPage.parent = () => section;
+
+        // The Content panel gate (`matchesRoot`): markers must live on the root tree.
+        expect(scopeHasDeclarativeFields(section)).toBe(true);
+        expect(findDeclarativeFields(section).map((field) => field.key)).toEqual(['heading', 'per_page']);
+    });
+
+    it('has no scope when only saved page HTML is on the canvas', () => {
+        // Saved HTML never carries the editor-only markers, which is why the
+        // canvas must refresh page-content blocks: without the round-trip the
+        // Content inspector stays empty ("No settings for this element").
+        const heading = mockComponent({
+            attrs: { class: 'text-xl font-semibold text-vp-text-1' },
+            content: 'Explore the site',
+        });
+        const section = mockComponent({
+            attrs: { 'data-voodbuilder-block': 'demo_pages_explorer', 'data-voodbuilder-config': '{}' },
+            children: [heading],
+        });
+        heading.parent = () => section;
+
+        expect(scopeHasDeclarativeFields(section)).toBe(false);
     });
 });
 
