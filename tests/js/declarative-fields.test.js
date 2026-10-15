@@ -657,3 +657,148 @@ describe('declarative-fields → dynamic block render freshness', () => {
         expect(isDynamicRefreshBusy({ __voodbuilderDynamicBlockRefreshing: 1 }, {})).toBe(true);
     });
 });
+
+describe('declarative-fields → dynamic block config element sync', () => {
+    const originalDocument = globalThis.document;
+
+    beforeAll(() => {
+        globalThis.document = {
+            createElement: () => {
+                let html = '';
+
+                return {
+                    set innerHTML(value) {
+                        html = String(value);
+                    },
+                    get value() {
+                        return html
+                            .replace(/&quot;/g, '"')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&amp;/g, '&');
+                    },
+                };
+            },
+        };
+    });
+
+    afterAll(() => {
+        if (originalDocument === undefined) {
+            delete globalThis.document;
+
+            return;
+        }
+
+        globalThis.document = originalDocument;
+    });
+
+    /**
+     * Block root whose canvas element ("view") has its own attribute map, like the
+     * real DOM: the model's `attributes` and the element's attributes are separate,
+     * and only a view render / explicit write makes them agree.
+     */
+    function mockBlockRootWithView({ blockId = 'demo_pages_explorer', config = {} } = {}) {
+        const attrs = {
+            'data-voodbuilder-block': blockId,
+            'data-voodbuilder-config': JSON.stringify(config),
+        };
+        // Starts equal (as after the initial render) and must be re-synced on edit.
+        const elementAttrs = { ...attrs };
+
+        return {
+            attrs,
+            elementAttrs,
+            getAttributes: () => ({ ...attrs }),
+            get: () => undefined,
+            set: () => {},
+            addAttributes: (next) => {
+                Object.assign(attrs, next);
+            },
+            getView: () => ({
+                el: {
+                    setAttribute: (name, value) => {
+                        elementAttrs[name] = String(value);
+                    },
+                },
+            }),
+            parent: () => null,
+        };
+    }
+
+    function configOf(root) {
+        return parseBlockConfig(root.attrs['data-voodbuilder-config']);
+    }
+
+    it('mirrors the new config onto the canvas element right after the silent write', () => {
+        const root = mockBlockRootWithView({ config: { heading: 'Explore the site', per_page: 5 } });
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '5',
+        });
+        perPage.parent = () => root;
+
+        writeFieldText(perPage, '3', null);
+
+        // Model updated …
+        expect(configOf(root)).toEqual({ heading: 'Explore the site', per_page: 3 });
+        // … and the element agrees without waiting for an unrelated Grapes resync:
+        // before the fix the canvas kept `per_page: 5` while the model had `3`.
+        expect(root.elementAttrs['data-voodbuilder-config'])
+            .toBe(root.attrs['data-voodbuilder-config']);
+        expect(parseBlockConfig(root.elementAttrs['data-voodbuilder-config']))
+            .toEqual({ heading: 'Explore the site', per_page: 3 });
+    });
+
+    it('mirrors status writes too', () => {
+        const root = mockBlockRootWithView({ config: { show_search: false } });
+        const toggle = mockComponent({
+            attrs: { 'data-vb-field': 'show_search', 'data-vb-field-type': 'status' },
+            content: '',
+        });
+        toggle.parent = () => root;
+
+        writeStatusValue(toggle, 'yes', null);
+
+        expect(configOf(root)).toEqual({ show_search: true });
+        expect(parseBlockConfig(root.elementAttrs['data-voodbuilder-config']))
+            .toEqual({ show_search: true });
+    });
+
+    it('leaves the element alone when the write is swallowed (emptied number box)', () => {
+        const root = mockBlockRootWithView({ config: { per_page: 5 } });
+        const elementBefore = root.elementAttrs['data-voodbuilder-config'];
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '5',
+        });
+        perPage.parent = () => root;
+
+        writeFieldText(perPage, '', null);
+
+        expect(configOf(root)).toEqual({ per_page: 5 });
+        expect(root.elementAttrs['data-voodbuilder-config']).toBe(elementBefore);
+    });
+
+    it('writes the model even when the block has no view yet (nothing to sync)', () => {
+        const attrs = { 'data-voodbuilder-block': 'demo_pages_explorer', 'data-voodbuilder-config': JSON.stringify({ per_page: 5 }) };
+        const root = {
+            attrs,
+            getAttributes: () => ({ ...attrs }),
+            get: () => undefined,
+            set: () => {},
+            addAttributes: (next) => {
+                Object.assign(attrs, next);
+            },
+            // No getView: importing a detached block must not throw.
+            parent: () => null,
+        };
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '5',
+        });
+        perPage.parent = () => root;
+
+        expect(() => writeFieldText(perPage, '3', null)).not.toThrow();
+        expect(configOf(root)).toEqual({ per_page: 3 });
+    });
+});

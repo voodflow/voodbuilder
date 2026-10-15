@@ -477,6 +477,32 @@ function scheduleDynamicPreviewRefresh(root, editor) {
 }
 
 /**
+ * Mirror the just-written block config onto the canvas element.
+ *
+ * The model write below is `silent` on purpose: a real `change:attributes` would run
+ * Grapes' own `attrUpdated` / `changesUp` on every keystroke — the undo entry, the
+ * editor `update` and the dynamic-block attribute re-sync that 1.11.80 had to
+ * stabilise — and the view side of that event (`updateAttributes()`) clears and
+ * re-stamps *every* attribute of the element, dropping runtime-only ones such as the
+ * Livewire `wire:*` on a mount root. `silent` also means the view never redraws, so
+ * `data-voodbuilder-config` on the element kept the pre-edit value until an unrelated
+ * Grapes resync happened along: the model (and every later save) already carried the
+ * new value while the canvas showed the old one.
+ *
+ * This writes exactly that one attribute on the element, from the value the model now
+ * holds — the narrow half of what `change:attributes` does, without emitting anything.
+ * No refresh is scheduled here, so the 1.11.80 debounce/queue is untouched.
+ *
+ * @param {object|null|undefined} owner
+ * @param {string} encoded
+ */
+function syncBlockConfigAttrToView(owner, encoded) {
+    const el = owner?.getView?.()?.el ?? null;
+
+    el?.setAttribute?.(BLOCK_CONFIG_ATTR, encoded);
+}
+
+/**
  * Route a declarative field write into the dynamic block config.
  *
  * A dynamic block re-renders its preview from `data-voodbuilder-config`, so the value
@@ -516,8 +542,14 @@ function writeFieldToDynamicConfig(component, value, editor) {
     const changed = ! Object.is(config[key], next);
     config[key] = next;
 
+    const encoded = encodeBlockConfig(config);
+
     owner.set?.('voodbuilderConfig', config, { silent: true });
-    owner.addAttributes?.({ [BLOCK_CONFIG_ATTR]: encodeBlockConfig(config) }, { silent: true });
+    owner.addAttributes?.({ [BLOCK_CONFIG_ATTR]: encoded }, { silent: true });
+
+    // Sync the element from the model now: the silent write updated the attribute
+    // behind the view's back, so the canvas kept the pre-edit config.
+    syncBlockConfigAttrToView(owner, encoded);
 
     // `{ silent: true }` raises no Grapes change event, so anything listening for one
     // (the save gate, the dirty badge) never saw this edit: the page stayed "clean" and

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.82] - 2026-10-15
+
+### Fixed
+
+- **The canvas element of a dynamic block now carries the config the author just typed, without a re-render.** A declarative Content field wrote the block config with `{ silent: true }` (since 1.11.73) on purpose: a real Grapes `change:attributes` would run the model-side cascade per keystroke — `attrUpdated` re-syncing the block attributes and `changesUp` pushing an undo entry plus an editor `update` — and the view side of that event, `ComponentView.updateAttributes()`, clears and re-stamps *every* attribute of the element, which is where 1.11.81's `wire:ignore.self` freeze would be lost on a Livewire mount root. The price was that no view render ran either, so `data-voodbuilder-config` on the canvas element kept the pre-edit snapshot (e.g. `per_page: 5`) while the model, the rendered preview and every later Save already carried the new one (`3`); the canvas only caught up on a later, unrelated Grapes resync — a visibly contradictory value in the editor with no persistence consequence, because the payload is serialised from the model. `writeFieldToDynamicConfig` now mirrors the freshly written config onto that single element attribute from the model (`syncBlockConfigAttrToView`, through `component.getView().el`), so the canvas and the model agree the moment the field changes. The sync emits no Grapes event and schedules no refresh, so the 1.11.80 debounce/queue is untouched and the preview request count stays one per edit, never one per keystroke. The write is deliberately the narrow half of a change — the one attribute that was written — not a full `updateAttributes()`, so the element is not cleared and re-stamped and any other attribute still relies on Grapes' own resync exactly as before.
+
 ## [1.11.81] - 2026-10-15
 
 ### Fixed
