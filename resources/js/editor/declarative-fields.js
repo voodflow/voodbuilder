@@ -417,6 +417,86 @@ function dynamicConfigOwner(component) {
 }
 
 /**
+ * Is the component still hanging under the editor root?
+ *
+ * A dynamic preview refresh replaces a block's children with the freshly rendered
+ * markup (`component.components(fresh.innerHTML)`), so every component below the block
+ * root is detached afterwards: its element is gone and its parent chain no longer
+ * reaches the wrapper. A Content control keeps the field component it was created with,
+ * so without this check it writes into a component Grapes has already thrown away — the
+ * write lands nowhere (no config change, no preview refresh, no dirty mark) while the
+ * panel keeps showing what the author typed.
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function isComponentAttachedToCanvas(component) {
+    let current = component;
+    let guard = 0;
+
+    while (current && guard < 200) {
+        if (String(current.get?.('type') ?? '') === 'wrapper') {
+            return true;
+        }
+
+        current = current.parent?.();
+        guard += 1;
+    }
+
+    return false;
+}
+
+/**
+ * Component a declarative field must be written into right now.
+ *
+ * Fast path: the field the control was rendered with is still on the canvas, so nothing
+ * changes. Only a field the remount detached asks the control's locator for the live
+ * component that replaced it. When the locator cannot find one (a block the server
+ * reshaped, a control already replaced) the bound component is returned, which keeps the
+ * previous behaviour rather than writing into an unrelated field.
+ *
+ * @param {object|null|undefined} component
+ * @param {(() => object|null)|null} [locate] Null when the field has no live counterpart.
+ * @returns {object|null|undefined}
+ */
+export function resolveDeclarativeFieldComponent(component, locate = null) {
+    if (isComponentAttachedToCanvas(component)) {
+        return component;
+    }
+
+    const live = typeof locate === 'function' ? locate() : null;
+
+    return live ?? component;
+}
+
+/**
+ * Locator for the control at `index` of a field list that is recomputed on the live tree.
+ *
+ * Controls are built from the same ordered field list the settings panel renders, and a
+ * dynamic render only rewrites the values inside the same markup shape: the same key at
+ * the same position is the same field. The key is checked so a reshaped block falls back
+ * to the bound component instead of writing into a different field.
+ *
+ * @param {{ key: string }} field
+ * @param {number} index
+ * @param {() => object[]|null} liveFields
+ * @returns {() => object|null}
+ */
+function createFieldLocator(field, index, liveFields) {
+    return () => {
+        const fresh = liveFields();
+
+        if (! Array.isArray(fresh)) {
+            return null;
+        }
+
+        const next = fresh[index];
+
+        return next && next.key === field.key ? (next.component ?? null) : null;
+    };
+}
+
+/**
  * Marker-declared field type (`data-vb-field-type`), lower-cased.
  *
  * @param {object|null|undefined} component
@@ -894,7 +974,7 @@ export function writeFieldText(component, value, editor = null) {
  * @param {HTMLElement} mount
  * @param {object[]} fields
  * @param {object} editor
- * @param {{ heading?: string }} [options]
+ * @param {{ heading?: string, liveFields?: (() => object[]|null)|null }} [options]
  */
 export function appendDeclarativeFields(mount, fields, editor, options = {}) {
     if (! mount || fields.length === 0) {
@@ -902,10 +982,15 @@ export function appendDeclarativeFields(mount, fields, editor, options = {}) {
     }
 
     const { section, fields: host } = createFormSection(options.heading ?? 'Content');
+    const liveFields = typeof options.liveFields === 'function' ? options.liveFields : null;
 
-    for (const field of fields) {
-        host.appendChild(renderFieldControl(field, editor));
-    }
+    fields.forEach((field, index) => {
+        host.appendChild(renderFieldControl(
+            field,
+            editor,
+            liveFields ? createFieldLocator(field, index, liveFields) : null,
+        ));
+    });
 
     mount.appendChild(section);
 }
@@ -913,19 +998,24 @@ export function appendDeclarativeFields(mount, fields, editor, options = {}) {
 /**
  * @param {{ key: string, type: string, label: string, component: object }} field
  * @param {object} editor
+ * @param {(() => object|null)|null} [locate] Live counterpart of `field.component`.
  * @returns {HTMLElement}
  */
-function renderFieldControl(field, editor) {
+function renderFieldControl(field, editor, locate = null) {
+    // Resolved on every write: a dynamic preview refresh remounts the block children,
+    // so the component captured here is detached after the first render.
+    const target = () => resolveDeclarativeFieldComponent(field.component, locate);
+
     if (field.type === 'icon') {
-        return renderIconField(field, editor);
+        return renderIconField(field, editor, target);
     }
 
     if (field.type === 'status') {
-        return renderStatusField(field, editor);
+        return renderStatusField(field, editor, target);
     }
 
     if (field.type === 'rich') {
-        return renderRichField(field, editor);
+        return renderRichField(field, editor, target);
     }
 
     if (field.type === 'textarea') {
@@ -936,7 +1026,7 @@ function renderFieldControl(field, editor) {
             rows: 3,
         });
 
-        input.addEventListener('input', () => writeFieldText(field.component, input.value, editor));
+        input.addEventListener('input', () => writeFieldText(target(), input.value, editor));
 
         return wrap;
     }
@@ -948,7 +1038,7 @@ function renderFieldControl(field, editor) {
         type: field.type === 'number' ? 'number' : 'text',
     });
 
-    input.addEventListener('input', () => writeFieldText(field.component, input.value, editor));
+    input.addEventListener('input', () => writeFieldText(target(), input.value, editor));
 
     return wrap;
 }
@@ -956,10 +1046,11 @@ function renderFieldControl(field, editor) {
 /**
  * @param {{ key: string, label: string, component: object }} field
  * @param {object} editor
+ * @param {() => object|null|undefined} target
  * @returns {HTMLElement}
  */
-function renderStatusField(field, editor) {
-    const current = readStatusValue(field.component);
+function renderStatusField(field, editor, target) {
+    const current = readStatusValue(target());
     const wrap = document.createElement('div');
     wrap.className = 'voodbuilder-editor-form-field';
     wrap.setAttribute('data-vb-status-field', field.key);
@@ -999,7 +1090,7 @@ function renderStatusField(field, editor) {
                 node.classList.toggle('is-active', active);
                 node.setAttribute('aria-checked', active ? 'true' : 'false');
             });
-            writeStatusValue(field.component, option.value, editor);
+            writeStatusValue(target(), option.value, editor);
         });
 
         buttons.push(btn);
@@ -1014,10 +1105,16 @@ function renderStatusField(field, editor) {
 /**
  * @param {{ key: string, label: string, component: object }} field
  * @param {object} editor
+ * @param {() => object|null|undefined} target
  * @returns {HTMLElement}
  */
-function renderRichField(field, editor) {
+function renderRichField(field, editor, target) {
     const host = findRichTextHost(field.component) ?? field.component;
+    const liveHost = () => {
+        const component = target();
+
+        return findRichTextHost(component) ?? component;
+    };
     const wrap = document.createElement('div');
     wrap.className = 'voodbuilder-editor-form-field';
     wrap.setAttribute('data-vb-rich-field', field.key);
@@ -1034,7 +1131,7 @@ function renderRichField(field, editor) {
             writeTimer = 0;
         }
 
-        writeComponentHtml(host, html, editor);
+        writeComponentHtml(liveHost(), html, editor);
     };
 
     const editorUi = createLightRichTextEditor({
@@ -1049,7 +1146,7 @@ function renderRichField(field, editor) {
 
             writeTimer = window.setTimeout(() => {
                 writeTimer = 0;
-                writeComponentHtml(host, html, editor);
+                writeComponentHtml(liveHost(), html, editor);
             }, 120);
         },
     });
@@ -1068,11 +1165,17 @@ function renderRichField(field, editor) {
 /**
  * @param {{ key: string, label: string, component: object }} field
  * @param {object} editor
+ * @param {() => object|null|undefined} target
  * @returns {HTMLElement}
  */
-function renderIconField(field, editor) {
+function renderIconField(field, editor, target) {
     const host = findIconHost(field.component) ?? field.component;
     const attrs = host.getAttributes?.() ?? {};
+    const liveHost = () => {
+        const component = target();
+
+        return findIconHost(component) ?? component;
+    };
     const wrap = document.createElement('div');
     wrap.className = 'voodbuilder-editor-form-field';
 
@@ -1085,12 +1188,15 @@ function renderIconField(field, editor) {
             iconName: field.label,
         },
         onChange: ({ name, style, stroke, color }) => {
-            applyIconToComponent(host, editor, {
+            const current = liveHost();
+            const liveAttrs = current?.getAttributes?.() ?? {};
+
+            applyIconToComponent(current, editor, {
                 name,
                 style,
                 stroke,
                 color,
-                sizeClass: attrs['data-vb-icon-size'] || 'size-5',
+                sizeClass: liveAttrs['data-vb-icon-size'] || attrs['data-vb-icon-size'] || 'size-5',
                 forceGlyph: true,
             });
         },
@@ -1183,7 +1289,7 @@ function withTableColumnLabels(fields, item) {
  * @param {HTMLElement} mount
  * @param {object[]} items
  * @param {object} editor
- * @param {{ selected?: object|null, focusOnly?: boolean, selectHint?: string, itemSingular?: string }} [options]
+ * @param {{ selected?: object|null, focusOnly?: boolean, selectHint?: string, itemSingular?: string, liveItems?: (() => object[]|null)|null }} [options]
  */
 export function appendDeclarativeItemEditors(mount, items, editor, options = {}) {
     if (! mount || items.length === 0) {
@@ -1193,6 +1299,20 @@ export function appendDeclarativeItemEditors(mount, items, editor, options = {})
     const focusOnly = options.focusOnly !== false;
     const selected = options.selected ?? editor?.getSelected?.() ?? null;
     const focused = focusOnly ? resolveFocusedItem(items, selected) : null;
+    const liveItems = typeof options.liveItems === 'function' ? options.liveItems : null;
+
+    // Item controls are positional too: the live list is recomputed after a remount and
+    // the same index is the same row (see createFieldLocator for the key guard).
+    const fieldsForItemAt = (index) => () => {
+        if (! liveItems) {
+            return null;
+        }
+
+        const live = liveItems();
+        const item = Array.isArray(live) ? (live[index] ?? null) : null;
+
+        return item ? withTableColumnLabels(findItemDeclarativeFields(item), item) : null;
+    };
 
     if (focusOnly) {
         if (! focused) {
@@ -1211,6 +1331,7 @@ export function appendDeclarativeItemEditors(mount, items, editor, options = {})
 
         appendDeclarativeFields(mount, fields, editor, {
             heading: `${singular} ${focused.index + 1}`,
+            liveFields: fieldsForItemAt(focused.index),
         });
 
         return;
@@ -1227,6 +1348,7 @@ export function appendDeclarativeItemEditors(mount, items, editor, options = {})
 
         appendDeclarativeFields(mount, fields, editor, {
             heading: `${singular} ${index + 1}`,
+            liveFields: fieldsForItemAt(index),
         });
     });
 }
@@ -1304,28 +1426,37 @@ export function registerDeclarativeFieldSettings(editor) {
         findRoot: (component) => findDeclarativeSettingsRoot(component),
         matchesRoot: (root) => Boolean(root) && scopeHasDeclarativeFields(root),
         render: ({ mount, root, editor: ed, selected }) => {
-            const itemsRoot = root.find?.('[data-vb-items-root]')?.[0] ?? null;
-            const items = itemsRoot
-                ? [...(itemsRoot.components?.() ?? [])].filter((child) => hasItemAttr(child))
-                : (hasItemAttr(root) ? [root] : []);
-            const selection = selected ?? ed?.getSelected?.() ?? null;
-            const focused = resolveFocusedItem(items, selection);
+            // The block root survives a dynamic preview refresh (only its children are
+            // replaced), so it is the stable anchor the live field lookup hangs from.
+            const liveItems = () => {
+                const itemsRoot = root.find?.('[data-vb-items-root]')?.[0] ?? null;
 
-            // Selecting a repeating item: show only that item's fields.
-            if (focused) {
-                appendDeclarativeItemEditors(mount, items, ed, { selected: selection });
-
-                return;
-            }
-
-            const sectionFields = findDeclarativeFields(root).filter((field) => {
+                return itemsRoot
+                    ? [...(itemsRoot.components?.() ?? [])].filter((child) => hasItemAttr(child))
+                    : (hasItemAttr(root) ? [root] : []);
+            };
+            const liveSectionFields = () => findDeclarativeFields(root).filter((field) => {
                 const owner = findClosestItem(field.component);
 
                 return ! owner || owner === root;
             });
 
-            appendDeclarativeFields(mount, sectionFields, ed, { heading: 'Content' });
-            appendDeclarativeItemEditors(mount, items, ed, { selected: selection });
+            const items = liveItems();
+            const selection = selected ?? ed?.getSelected?.() ?? null;
+            const focused = resolveFocusedItem(items, selection);
+
+            // Selecting a repeating item: show only that item's fields.
+            if (focused) {
+                appendDeclarativeItemEditors(mount, items, ed, { selected: selection, liveItems });
+
+                return;
+            }
+
+            appendDeclarativeFields(mount, liveSectionFields(), ed, {
+                heading: 'Content',
+                liveFields: liveSectionFields,
+            });
+            appendDeclarativeItemEditors(mount, items, ed, { selected: selection, liveItems });
         },
     });
 }
