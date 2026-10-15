@@ -10,7 +10,12 @@ import {
     writeFieldText,
     writeStatusValue,
 } from '../../resources/js/editor/declarative-fields.js';
-import { parseBlockConfig } from '../../resources/js/editor/voodbuilder-dynamic-config.js';
+import {
+    dynamicBlockRenderFingerprint,
+    isDynamicRefreshBusy,
+    isStaleDynamicRender,
+    parseBlockConfig,
+} from '../../resources/js/editor/voodbuilder-dynamic-config.js';
 
 function mockComponent({ attrs = {}, content = '', children = [], cid = null } = {}) {
     let storedContent = content;
@@ -32,6 +37,18 @@ function mockComponent({ attrs = {}, content = '', children = [], cid = null } =
     };
 
     return self;
+}
+
+/**
+ * Editor stand-in that only records the save-gate "page is dirty" signal.
+ */
+function mockDirtyTrackingEditor() {
+    return {
+        unsavedMarks: 0,
+        __voodbuilderMarkPageUnsaved() {
+            this.unsavedMarks += 1;
+        },
+    };
 }
 
 describe('declarative-fields', () => {
@@ -440,5 +457,203 @@ describe('declarative-fields → dynamic block config', () => {
         writeFieldText(heading, 'New', null);
 
         expect(readFieldText(heading)).toBe('New');
+    });
+
+    it('marks the page unsaved when a dynamic field really changes the config', () => {
+        const root = mockBlockRoot({ config: { heading: 'Explore the site', per_page: 5 } });
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '5',
+        });
+        perPage.parent = () => root;
+
+        const editor = mockDirtyTrackingEditor();
+
+        writeFieldText(perPage, '3', editor);
+
+        expect(configOf(root)).toEqual({ heading: 'Explore the site', per_page: 3 });
+        // The config write is silent: without this the page stayed "clean" and a Save
+        // could take the read-only path and never post the value.
+        expect(editor.unsavedMarks).toBe(1);
+    });
+
+    it('does not mark the page unsaved when the write repeats the stored value', () => {
+        const root = mockBlockRoot({ config: { per_page: 5 } });
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '5',
+        });
+        perPage.parent = () => root;
+
+        const editor = mockDirtyTrackingEditor();
+
+        writeFieldText(perPage, '5', editor);
+
+        expect(editor.unsavedMarks).toBe(0);
+    });
+
+    it('ignores an emptied number field instead of writing 0 into the config', () => {
+        const root = mockBlockRoot({ config: { heading: 'Explore the site', per_page: 5 } });
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '5',
+        });
+        perPage.parent = () => root;
+        perPage.components = (next) => {
+            if (typeof next === 'string') {
+                perPage.rewritten = next;
+            }
+
+            return [];
+        };
+
+        const editor = mockDirtyTrackingEditor();
+
+        writeFieldText(perPage, '', editor);
+
+        // Clearing the box is a moment of typing: coercing it wrote per_page: 0, rendered
+        // the block with a count nobody asked for and persisted that 0 on the next Save.
+        expect(configOf(root)).toEqual({ heading: 'Explore the site', per_page: 5 });
+        expect(perPage.rewritten).toBeUndefined();
+        expect(editor.unsavedMarks).toBe(0);
+    });
+});
+
+describe('declarative-fields → dynamic block render freshness', () => {
+    const originalDocument = globalThis.document;
+
+    beforeAll(() => {
+        globalThis.document = {
+            createElement: () => {
+                let html = '';
+
+                return {
+                    set innerHTML(value) {
+                        html = String(value);
+                    },
+                    get value() {
+                        return html
+                            .replace(/&quot;/g, '"')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&amp;/g, '&');
+                    },
+                };
+            },
+        };
+    });
+
+    afterAll(() => {
+        if (originalDocument === undefined) {
+            delete globalThis.document;
+
+            return;
+        }
+
+        globalThis.document = originalDocument;
+    });
+
+    function mockBlockRoot({ blockId = 'demo_pages_explorer', config = {} } = {}) {
+        const attrs = {
+            'data-voodbuilder-block': blockId,
+            'data-voodbuilder-config': JSON.stringify(config),
+        };
+
+        const root = {
+            attrs,
+            getAttributes: () => ({ ...attrs }),
+            get: () => undefined,
+            set: () => {},
+            addAttributes: (next) => {
+                Object.assign(attrs, next);
+            },
+            parent: () => null,
+        };
+
+        return root;
+    }
+
+    it('drops the response of a render the author already outran', () => {
+        const requestFingerprint = dynamicBlockRenderFingerprint('demo_pages_explorer', {
+            heading: 'Explore the site',
+            per_page: 5,
+        });
+
+        const liveConfig = { heading: 'Explore the site', per_page: 3 };
+
+        expect(isStaleDynamicRender({
+            requestFingerprint,
+            blockId: 'demo_pages_explorer',
+            liveConfig,
+        })).toBe(true);
+
+        expect(isStaleDynamicRender({
+            requestFingerprint,
+            blockId: 'demo_pages_explorer',
+            liveConfig: { heading: 'Explore the site', per_page: 5 },
+        })).toBe(false);
+
+        // A different block id never matches a fingerprint of this block.
+        expect(isStaleDynamicRender({
+            requestFingerprint,
+            blockId: 'voodflow_other_block',
+            liveConfig: { heading: 'Explore the site', per_page: 5 },
+        })).toBe(true);
+    });
+
+    it('keeps the newest value through the clear → type → response cycle', () => {
+        const root = mockBlockRoot({ config: { heading: 'Explore the site', per_page: 5 } });
+        const perPage = mockComponent({
+            attrs: { 'data-vb-field': 'per_page', 'data-vb-field-type': 'number' },
+            content: '5',
+        });
+        perPage.parent = () => root;
+
+        const editor = {
+            unsavedMarks: 0,
+            __voodbuilderMarkPageUnsaved() {
+                this.unsavedMarks += 1;
+            },
+        };
+
+        const configOf = () => parseBlockConfig(root.attrs['data-voodbuilder-config']);
+        const fingerprintOf = () => dynamicBlockRenderFingerprint('demo_pages_explorer', configOf());
+
+        // The render for the saved config is already in flight …
+        const inFlightFingerprint = fingerprintOf();
+
+        // … the author clears the box (no value to write) …
+        writeFieldText(perPage, '', editor);
+
+        expect(configOf().per_page).toBe(5);
+
+        // … and types the real value while that render is still running.
+        writeFieldText(perPage, '3', editor);
+
+        expect(configOf()).toEqual({ heading: 'Explore the site', per_page: 3 });
+        expect(editor.unsavedMarks).toBe(1);
+
+        // Merging the in-flight response (pre-1.11.80 behaviour) put the old value back:
+        // 3 reverted to 5 in the canvas, in the payload and in the database.
+        expect(isStaleDynamicRender({
+            requestFingerprint: inFlightFingerprint,
+            blockId: 'demo_pages_explorer',
+            liveConfig: configOf(),
+        })).toBe(true);
+
+        // The pass queued by the edit renders the newest config, so it is applied.
+        expect(isStaleDynamicRender({
+            requestFingerprint: fingerprintOf(),
+            blockId: 'demo_pages_explorer',
+            liveConfig: configOf(),
+        })).toBe(false);
+    });
+
+    it('treats a running render — this block or another — as busy', () => {
+        const editor = { __voodbuilderDynamicBlockRefreshing: 0 };
+
+        expect(isDynamicRefreshBusy(editor, {})).toBe(false);
+        expect(isDynamicRefreshBusy(editor, { __voodbuilderRefreshing: true })).toBe(true);
+        expect(isDynamicRefreshBusy({ __voodbuilderDynamicBlockRefreshing: 1 }, {})).toBe(true);
     });
 });

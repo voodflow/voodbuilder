@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.80] - 2026-10-15
+
+### Fixed
+
+- **The value an author types into a dynamic block's Content field is no longer reverted by the re-render that very keystroke triggers.** Setting "Results per page" on the `demo_pages_explorer` Livewire block to `3` reverted to `5` on reload, in the canvas, in `builder_payload['html']` and in the published Livewire snapshot. Three parts of one round trip were at fault. (1) The preview refresh is a network call: the config it renders is captured when the request starts and merged back into the component when the response lands (`refreshDynamicBlockComponent`), so an author who kept editing while that call was in flight had a **pre-edit snapshot applied over the newer value** — the render that had been asked for *before* the change silently overwrote the change, with no error anywhere. Responses are now dropped when the component no longer carries the config they were rendered for (`isStaleDynamicRender`), and the refresh queued by the edit is the one that renders the newest value. (2) A refresh requested while any render was running was **dropped** by `scheduleDynamicBlockRefresh` / the in-flight guard, so the newest config never even reached the server and the reverted value stuck: those requests are queued per component and drained as soon as the last running render finishes (`dynamicBlockRefreshQueue` / `flushQueuedDynamicBlockRefreshes`). (3) `writeFieldToDynamicConfig` writes the config with `{ silent: true }`, which raises no Grapes change event, so nothing told the save gate the page had changed; the write now calls `__voodbuilderMarkPageUnsaved()` when it really changes a value, and a save of the author's edit can no longer take the read-only path.
+- **An emptied number field is a moment of typing, not a value.** `coerceFieldValue()` mapped an empty box to `0`, so backspacing "5" before typing "3" wrote `per_page: 0` — a render with a count nobody chose, and a `0` persisted in the payload when the author saved right after clearing. An empty number box now writes nothing (and is still reported as handled, so the static-section fallback never paints the emptied marker text into the preview DOM). Reporters: "imposto 3, salvo e ricarico: il campo torna a 5", plus the same loss on the `heading` text field.
+
 ## [1.11.79] - 2026-10-15
 
 ### Fixed

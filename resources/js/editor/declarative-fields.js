@@ -417,6 +417,16 @@ function dynamicConfigOwner(component) {
 }
 
 /**
+ * Marker-declared field type (`data-vb-field-type`), lower-cased.
+ *
+ * @param {object|null|undefined} component
+ * @returns {string}
+ */
+function declaredFieldType(component) {
+    return String(component?.getAttributes?.()?.[FIELD_TYPE_ATTR] ?? '').trim().toLowerCase();
+}
+
+/**
  * Coerce a field value to the block config type declared by the marker.
  *
  * @param {object} component
@@ -424,7 +434,7 @@ function dynamicConfigOwner(component) {
  * @returns {string|number|boolean}
  */
 function coerceFieldValue(component, value) {
-    const type = String(component.getAttributes?.()?.[FIELD_TYPE_ATTR] ?? '').trim().toLowerCase();
+    const type = declaredFieldType(component);
 
     if (type === 'number') {
         const numeric = Number(String(value ?? '').trim());
@@ -492,10 +502,31 @@ function writeFieldToDynamicConfig(component, value, editor) {
     }
 
     const config = parseBlockConfig(owner.getAttributes?.()?.[BLOCK_CONFIG_ATTR] ?? '{}');
-    config[key] = coerceFieldValue(component, value);
+
+    // An emptied number box is a moment of typing, not a value: coercing it writes `0`
+    // into the config, which renders the block with a per-page count nobody asked for and
+    // — if the author saves right after clearing — persists that `0`. Swallow the write
+    // and report it as handled so the static fallback never paints the emptied marker
+    // text into the preview DOM either.
+    if (declaredFieldType(component) === 'number' && String(value ?? '').trim() === '') {
+        return true;
+    }
+
+    const next = coerceFieldValue(component, value);
+    const changed = ! Object.is(config[key], next);
+    config[key] = next;
 
     owner.set?.('voodbuilderConfig', config, { silent: true });
     owner.addAttributes?.({ [BLOCK_CONFIG_ATTR]: encodeBlockConfig(config) }, { silent: true });
+
+    // `{ silent: true }` raises no Grapes change event, so anything listening for one
+    // (the save gate, the dirty badge) never saw this edit: the page stayed "clean" and
+    // a Save could take the read-only path and never post the value. The config the
+    // author just changed is precisely what the page has to know about.
+    if (changed) {
+        editor?.__voodbuilderMarkPageUnsaved?.();
+    }
+
     scheduleDynamicPreviewRefresh(owner, editor);
 
     return true;

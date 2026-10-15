@@ -149,7 +149,14 @@ import { registerBlocksContextMenu } from '../blocks-context-menu.js';
 import { registerBlocksLibraryRenderHook } from '../blocks-library-sync.js';
 import { registerSectionBlockTagging } from '../section-block-tagging.js';
 import { registerSectionNestingGuard } from '../section-nesting-guard.js';
-import { encodeBlockConfig, parseBlockConfig, serializeBlockConfig } from '../voodbuilder-dynamic-config.js';
+import {
+    dynamicBlockRenderFingerprint,
+    encodeBlockConfig,
+    isDynamicRefreshBusy,
+    isStaleDynamicRender,
+    parseBlockConfig,
+    serializeBlockConfig,
+} from '../voodbuilder-dynamic-config.js';
 import { registerDropzoneTypes } from '../dropzone-types.js';
 import { registerInnerDropSlots } from '../inner-drop-slots.js';
 
@@ -1833,18 +1840,34 @@ export function initVoodbuilderEditor(container, options = {}) {
 
 const dynamicBlockRefreshTimers = new WeakMap();
 
+/**
+ * Blocks whose refresh was requested while a render was already running.
+ *
+ * A request made in that window used to be dropped, so the newest config never reached
+ * the server: the in-flight response then re-applied its pre-edit snapshot and the
+ * declarative field the author had just typed into reverted (Content panel showing the
+ * new value, canvas / payload / DB keeping the old one). The queue is drained as soon as
+ * the last running render finishes, so the newest config always gets rendered.
+ */
+const dynamicBlockRefreshQueue = new Map();
+
+let dynamicBlockRefreshQueueTimer = null;
+
 function scheduleDynamicBlockRefresh(editor, renderUrl, component) {
     if (! component || component.isRemoved?.()) {
-        return;
+        return false;
     }
 
-    if (
-        component.__voodbuilderRefreshing
-        || editor.__voodbuilderDynamicBlockRefreshing
-        || editor.__voodbuilderLayoutStructureRefreshing
-        || editor.__voodbuilderBulkStructureUpdate
-    ) {
-        return;
+    // Structural rewrites own the DOM right now: a render would fight them. Unchanged
+    // from the pre-queue behaviour — the caller re-asks when the rewrite is done.
+    if (editor.__voodbuilderLayoutStructureRefreshing || editor.__voodbuilderBulkStructureUpdate) {
+        return false;
+    }
+
+    if (isDynamicRefreshBusy(editor, component)) {
+        dynamicBlockRefreshQueue.set(component, { editor, renderUrl });
+
+        return false;
     }
 
     const existing = dynamicBlockRefreshTimers.get(component);
@@ -1857,10 +1880,42 @@ function scheduleDynamicBlockRefresh(editor, renderUrl, component) {
         dynamicBlockRefreshTimers.delete(component);
         void refreshDynamicBlockComponent(editor, renderUrl, component);
     }, 80));
+
+    return true;
 }
 
-function dynamicBlockRenderFingerprint(blockId, config) {
-    return `${blockId}::${serializeBlockConfig(config ?? {})}`;
+/**
+ * Re-ask for every refresh that a running render used to swallow.
+ *
+ * A retry is armed only when the structural guards still refuse: the flags are cleared
+ * by whoever set them, and until then a render would fight that rewrite.
+ */
+function flushQueuedDynamicBlockRefreshes() {
+    if (dynamicBlockRefreshQueue.size === 0 || dynamicBlockRefreshQueueTimer !== null) {
+        return;
+    }
+
+    const queued = [...dynamicBlockRefreshQueue.entries()];
+
+    dynamicBlockRefreshQueue.clear();
+
+    let refused = false;
+
+    queued.forEach(([component, { editor, renderUrl }]) => {
+        if (! scheduleDynamicBlockRefresh(editor, renderUrl, component)) {
+            refused = true;
+            dynamicBlockRefreshQueue.set(component, { editor, renderUrl });
+        }
+    });
+
+    if (! refused) {
+        return;
+    }
+
+    dynamicBlockRefreshQueueTimer = window.setTimeout(() => {
+        dynamicBlockRefreshQueueTimer = null;
+        flushQueuedDynamicBlockRefreshes();
+    }, 300);
 }
 
 function isServerRenderableBlockId(editor, blockId) {
@@ -1893,6 +1948,11 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
     }
 
     if (component.__voodbuilderRefreshing) {
+        // Direct callers (initial refresh list, chrome boots) bypass the scheduler: a
+        // render asked for while this block is already rendering is the newest config,
+        // so queue it rather than let the running response outrank it.
+        dynamicBlockRefreshQueue.set(component, { editor, renderUrl });
+
         return;
     }
 
@@ -1988,9 +2048,26 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             return;
         }
 
+        /*
+         * The author may have kept editing the block config while this render was in
+         * flight (declarative Content field). This response carries the config the block
+         * had *before* that edit, and merging it back would silently revert the last
+         * keystroke — the canvas re-renders with the old value and every later Save
+         * ships it. Drop the response instead: the refresh queued by the edit renders
+         * the newest config.
+         */
+        const liveConfig = component.get('voodbuilderConfig')
+            ?? parseBlockConfig(component.getAttributes?.()?.['data-voodbuilder-config'] ?? '{}');
+
+        if (isStaleDynamicRender({ requestFingerprint: fingerprint, blockId, liveConfig })) {
+            dynamicBlockRefreshQueue.set(component, { editor, renderUrl });
+
+            return;
+        }
+
         const freshConfig = {
             ...parseBlockConfig(fresh.getAttribute('data-voodbuilder-config') ?? '{}'),
-            ...config,
+            ...liveConfig,
         };
         const freshFingerprint = dynamicBlockRenderFingerprint(
             fresh.getAttribute('data-voodbuilder-block') ?? blockId,
@@ -2163,6 +2240,10 @@ async function refreshDynamicBlockComponent(editor, renderUrl, component) {
             0,
             (editor.__voodbuilderDynamicBlockRefreshing ?? 1) - 1,
         );
+
+        if (editor.__voodbuilderDynamicBlockRefreshing === 0) {
+            flushQueuedDynamicBlockRefreshes();
+        }
 
         if (editor.__voodbuilderChromeLayoutMode) {
             rebuildLayoutChromeBlockRegistry(editor);

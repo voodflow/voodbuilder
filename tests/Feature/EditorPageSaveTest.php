@@ -117,6 +117,70 @@ class EditorPageSaveTest extends TestCase
         $this->assertNull($again->json('css'));
     }
 
+    public function test_dynamic_block_config_change_is_persisted_on_save(): void
+    {
+        $user = new class extends User implements FilamentUser
+        {
+            protected $table = 'users';
+
+            public function canAccessPanel(Panel $panel): bool
+            {
+                return true;
+            }
+        };
+
+        $user->forceFill([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+        ])->save();
+
+        $page = SitePage::query()->create([
+            'title' => 'Dynamic block page',
+            'slug' => 'dynamic-block-page',
+            'builder' => PageBuilder::Visual,
+            'layout' => 'landing',
+            'published' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        $block = static fn (int $perPage): string => '<section data-voodbuilder-block="demo_pages_explorer"'
+            . ' data-voodbuilder-config=\'{"heading":"Explore the site","per_page":' . $perPage . '}\''
+            . ' class="rounded-2xl bg-vp-bg">'
+            . '<h2 class="text-lg">Explore the site</h2>'
+            . '<span class="sr-only" data-vb-field="per_page" data-vb-field-type="number">' . $perPage . '</span>'
+            . '</section>';
+
+        $this->putJson(route('voodbuilder.editor.pages.update', $page), [
+            'html' => $block(5),
+            'css' => '',
+            'project' => ['pages' => []],
+        ])->assertOk();
+
+        $page->refresh();
+        $this->assertStringContainsString('"per_page":5', (string) $page->builder_payload['html']);
+
+        // The declarative Content field writes a new config and the editor posts the page:
+        // the stored payload is what the published Livewire mount is built from, so a
+        // config the save drops is a field that silently reverts on reload.
+        $this->putJson(route('voodbuilder.editor.pages.update', $page), [
+            'html' => $block(3),
+            'css' => '',
+            'project' => ['pages' => []],
+        ])->assertOk();
+
+        $page->refresh();
+        $this->assertStringContainsString('"per_page":3', (string) $page->builder_payload['html']);
+        $this->assertStringNotContainsString('"per_page":5', (string) $page->builder_payload['html']);
+
+        // Posting that same payload again is the documented no-op: nothing to rewrite.
+        $this->putJson(route('voodbuilder.editor.pages.update', $page), [
+            'html' => $block(3),
+            'css' => '',
+            'project' => ['pages' => []],
+        ])->assertOk()->assertJson(['saved' => true, 'css_unchanged' => true]);
+    }
+
     public function test_admin_can_save_editor_component_scripts(): void
     {
         $user = new class extends User implements FilamentUser
