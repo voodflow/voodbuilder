@@ -170,19 +170,22 @@
 .vb-fl-nav__links .voodbuilder-mobile-nav__link,
 .vb-fl-nav__links [data-voodbuilder-nav-mobile-toggle] {
     display: inline-flex;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.35rem 0;
+    justify-content: flex-start;
+    gap: 0.55rem;
+    padding: 0.4rem 0.35rem;
+    margin-inline: -0.35rem;
     font-size: 1.5rem;
     font-weight: 600;
     line-height: 1.25;
-    color: #111;
-    text-decoration: none;
-    transition: color 0.15s ease;
+    color: #111 !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease, background-color 0.15s ease;
     background: transparent;
     border: 0;
+    border-radius: 0.4rem;
     text-align: left;
     cursor: pointer;
 }
@@ -192,7 +195,7 @@
     font-size: inherit;
     font-weight: inherit;
     line-height: inherit;
-    color: inherit;
+    color: inherit !important;
 }
 
 .vb-fl-nav__links .voodbuilder-mobile-nav__link:hover,
@@ -201,7 +204,50 @@
 .vb-fl-nav__links [data-voodbuilder-nav-mobile-toggle]:focus-visible,
 .vb-fl-nav__links .voodbuilder-mobile-nav__link.is-active,
 .vb-fl-nav__links [data-voodbuilder-nav-mobile-toggle].is-active {
-    color: var(--color-vp-brand-1, #7c5cff);
+    color: #111 !important;
+    background: rgba(17, 17, 17, 0.06);
+    text-decoration: underline !important;
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 2px;
+}
+
+/* Keep accordion chevron next to the label (not pinned to the far right). */
+.vb-fl-nav__links [data-voodbuilder-nav-mobile-toggle] .voodbuilder-nav-menu-item__text {
+    flex: 0 1 auto;
+}
+
+.vb-fl-nav__links [data-voodbuilder-nav-mobile-chevron] {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex-shrink: 0;
+    opacity: 0.55;
+    color: #111;
+}
+
+.vb-fl-nav__links [data-voodbuilder-nav-mobile-toggle]:hover [data-voodbuilder-nav-mobile-chevron],
+.vb-fl-nav__links [data-voodbuilder-nav-mobile-item].is-open > [data-voodbuilder-nav-mobile-toggle] [data-voodbuilder-nav-mobile-chevron] {
+    opacity: 1;
+}
+
+.vb-fl-nav__links [data-voodbuilder-nav-mobile-item] > [data-voodbuilder-nav-mobile-toggle]::after {
+    content: "";
+    display: inline-block;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-left: 0.1rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-1px);
+    opacity: 0.45;
+}
+
+.vb-fl-nav__links [data-voodbuilder-nav-mobile-item].is-open > [data-voodbuilder-nav-mobile-toggle]::after {
+    transform: rotate(-135deg) translateY(-1px);
+    opacity: 0.7;
+}
+
+.vb-fl-nav__links [data-voodbuilder-nav-mobile-item] > [data-voodbuilder-nav-mobile-toggle] [data-voodbuilder-nav-mobile-chevron] {
+    display: none;
 }
 
 .vb-fl-nav__links [data-voodbuilder-nav-mobile-panel] {
@@ -235,7 +281,12 @@
 .vb-fl-nav__links .voodbuilder-mobile-nav__link--secondary {
     font-size: 1.05rem;
     font-weight: 500;
-    color: #444;
+    color: #444 !important;
+}
+
+.vb-fl-nav__links .voodbuilder-mobile-nav__link--secondary:hover,
+.vb-fl-nav__links .voodbuilder-mobile-nav__link--secondary:focus-visible {
+    color: #111 !important;
 }
 
 .vb-fl-nav__placeholder {
