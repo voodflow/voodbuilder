@@ -39,6 +39,9 @@ class EditorChromeLayoutEditorGateTest extends TestCase
         $this->assertArrayHasKey('mediaLibraryUrl', $config);
         $this->assertArrayHasKey('mediaGalleriesUrl', $config);
         $this->assertArrayHasKey('mediaReplaceUrl', $config);
+        $this->assertArrayHasKey('elementsCatalogs', $config);
+        $this->assertArrayHasKey('elementsSourceUrl', $config);
+        $this->assertIsArray($config['elementsCatalogs']);
     }
 
     public function test_layout_editor_config_wires_vmedia_browser_when_routes_exist(): void

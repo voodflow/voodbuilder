@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.84] - 2026-10-27
+
+### Fixed
+
+- **Chrome Layout editor can open the remote Elements catalog (nav blocks included).** The page editor already passed `elementsCatalogs` / `elementsSourceUrl` into the Grapes config; the layout editor gate never did, so Library stayed on local foundation blocks only even when Elements was installed and the remote catalog token was set. `EditorChromeLayoutEditorGate::config()` now wires the same Source API as the page editor, with `includeTemplates: false` so the Templates bundle stays out of chrome shells.
+
 ## [1.11.83] - 2026-10-15
 
 ### Fixed

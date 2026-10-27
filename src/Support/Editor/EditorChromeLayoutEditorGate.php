@@ -79,6 +79,12 @@ final class EditorChromeLayoutEditorGate
             'initial' => self::initialPayload($layout),
             'blocksUrl' => (self::optionalEditorRoute('voodbuilder.editor.blocks') ?? '/voodbuilder/editor/blocks') . '?chrome=1',
             'blockAllowlist' => EditorCommunityBlockCatalog::sidebarAllowlist(chromeLayoutEditor: true),
+            // Same remote Elements library as the page editor; templates stay hidden
+            // for chrome layouts (includeTemplates: false).
+            'elementsCatalogs' => ($libraryCatalogs = EditorGate::sharedElementsCatalogOptions(includeTemplates: false)),
+            'elementsSourceUrl' => $libraryCatalogs !== []
+                ? self::optionalEditorRoute('voodbuilder.editor.elements.source')
+                : null,
             'bindingsUrl' => self::dynamicDataEnabled()
                 ? self::optionalEditorRoute('voodbuilder.editor.bindings')
                 : null,
