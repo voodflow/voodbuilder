@@ -2,6 +2,15 @@
  * Fullscreen two-column overlay nav (site_nav_fullscreen / Faselunare-style).
  */
 
+.vb-fl-nav {
+    width: 100%;
+}
+
+.vb-fl-nav__bar {
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .vb-fl-nav__overlay {
     position: fixed;
     inset: 0;
@@ -24,6 +33,40 @@
 
 .vb-fl-nav__overlay.is-open[hidden] {
     display: block !important;
+}
+
+.vb-fl-nav__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 80;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    height: 2.75rem;
+    padding: 0 0.95rem 0 0.85rem;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, #000 45%, transparent);
+    color: #fff;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.vb-fl-nav__close:hover,
+.vb-fl-nav__close:focus-visible {
+    background: color-mix(in srgb, #000 65%, transparent);
+    outline: 2px solid color-mix(in srgb, #fff 55%, transparent);
+    outline-offset: 2px;
+}
+
+.vb-fl-nav__close-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 .vb-fl-nav__panel {
@@ -87,18 +130,13 @@
     gap: 1.5rem;
     background: var(--color-vp-bg, #111);
     color: var(--color-vp-text-1, #fff);
-    padding: 1.25rem 1.5rem 2rem;
+    padding: 4.5rem 1.5rem 2rem;
     transform: translateX(6%);
     transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .vb-fl-nav__overlay.is-open .vb-fl-nav__menu {
     transform: translateX(0);
-}
-
-.vb-fl-nav__menu-toolbar {
-    display: flex;
-    justify-content: flex-end;
 }
 
 .vb-fl-nav__columns {
@@ -195,9 +233,28 @@ body.vb-fl-nav-lock {
         opacity: 1;
     }
 
-    .vb-fl-nav__menu {
-        max-width: 42rem;
-        padding: 2rem 2.5rem 2.5rem;
+    /* Faselunare / half page: image 50% · menus 50% (two placement columns). */
+    .vb-fl-nav__overlay--split .vb-fl-nav__visual,
+    .vb-fl-nav__overlay--split .vb-fl-nav__menu {
+        flex: 0 0 50%;
+        max-width: 50%;
+        width: 50%;
+    }
+
+    .vb-fl-nav__overlay--split .vb-fl-nav__menu {
+        padding: 4.5rem 2.5rem 2.5rem;
+    }
+
+    /* Aside panel: image grows, menus sit in a narrower right panel. */
+    .vb-fl-nav__overlay--aside .vb-fl-nav__visual {
+        flex: 1 1 auto;
+    }
+
+    .vb-fl-nav__overlay--aside .vb-fl-nav__menu {
+        flex: 0 0 min(42rem, 42%);
+        max-width: min(42rem, 42%);
+        width: min(42rem, 42%);
+        padding: 4.5rem 2.5rem 2.5rem;
     }
 
     .vb-fl-nav__columns {
@@ -210,5 +267,10 @@ body.vb-fl-nav-lock {
         font-size: 1.15rem;
         font-weight: 500;
         color: var(--color-vp-text-2, #ccc);
+    }
+
+    .vb-fl-nav__close {
+        top: 1.25rem;
+        right: 1.25rem;
     }
 }

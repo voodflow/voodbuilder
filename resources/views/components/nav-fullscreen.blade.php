@@ -4,12 +4,15 @@
     'showSearch' => true,
     'showProfileMenu' => true,
     'uppercaseFirstLevel' => false,
+    'overlayLayout' => 'split',
+    'overlayImage' => null,
     'brandConfig' => [],
 ])
 
 @php
     use Illuminate\Support\Facades\Route;
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+    use Voodflow\Voodbuilder\Support\Editor\SiteNavConfig;
     use Voodflow\Voodbuilder\Support\Navigation;
     use Voodflow\Voodbuilder\Support\NavigationMenuResolver;
     use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
@@ -29,6 +32,8 @@
     $searchEnabled = $showSearch && Route::has('voodbuilder.search');
     $loginUrl = VoodbuilderUrls::login();
     $overlayId = 'vb-fl-overlay';
+    $overlayLayout = in_array($overlayLayout, ['split', 'aside'], true) ? $overlayLayout : 'split';
+    $overlayImage = trim((string) ($overlayImage ?: SiteNavConfig::DEFAULT_OVERLAY_IMAGE));
 @endphp
 
 <header
@@ -41,8 +46,10 @@
     role="banner"
     data-vb-fl-nav
     data-voodbuilder-nav-variant="fullscreen"
+    data-vb-fl-overlay-layout="{{ $overlayLayout }}"
 >
-    <div class="mx-auto flex w-full max-w-[var(--width-vp-layout)] items-center justify-between gap-4 px-5 py-4 md:px-8">
+    {{-- Full-bleed bar: background spans the viewport; only the row padding insets content. --}}
+    <div class="vb-fl-nav__bar flex w-full items-center justify-between gap-4 px-5 py-4 md:px-8 lg:px-10">
         <div class="min-w-0 shrink-0" data-voodbuilder-chrome="brand">
             <x-voodbuilder::nav-title :config="$brandConfig" :preview="$canvasPreview" />
         </div>
@@ -101,16 +108,34 @@
 
     <div
         id="{{ $overlayId }}"
-        class="vb-fl-nav__overlay"
+        @class([
+            'vb-fl-nav__overlay',
+            'vb-fl-nav__overlay--split' => $overlayLayout === 'split',
+            'vb-fl-nav__overlay--aside' => $overlayLayout === 'aside',
+        ])
         data-vb-fl-overlay
+        data-vb-fl-overlay-layout="{{ $overlayLayout }}"
         hidden
         aria-hidden="true"
     >
+        {{-- Explicit floating close — always visible over image + menu. --}}
+        <button
+            type="button"
+            class="vb-fl-nav__close"
+            data-vb-fl-close
+            data-gjs-type="voodbuilder-chrome-button"
+            data-gjs-selectable="false"
+            aria-label="{{ __('Close menu') }}"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/></svg>
+            <span class="vb-fl-nav__close-label">{{ __('Close') }}</span>
+        </button>
+
         <div class="vb-fl-nav__panel">
             <aside class="vb-fl-nav__visual" aria-hidden="true">
                 <div
                     class="vb-fl-nav__visual-bg"
-                    style="background-image:url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1600&q=80');"
+                    style="background-image:url('{{ e($overlayImage) }}');"
                 ></div>
                 <div class="vb-fl-nav__visual-shade"></div>
                 <div class="vb-fl-nav__visual-copy">
@@ -124,19 +149,6 @@
             </aside>
 
             <div class="vb-fl-nav__menu">
-                <div class="vb-fl-nav__menu-toolbar">
-                    <button
-                        type="button"
-                        class="voodbuilder-header-icon-btn"
-                        data-vb-fl-close
-                        data-gjs-type="voodbuilder-chrome-button"
-                        data-gjs-selectable="false"
-                        aria-label="{{ __('Close menu') }}"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/></svg>
-                    </button>
-                </div>
-
                 <div class="vb-fl-nav__columns">
                     <nav class="vb-fl-nav__column" aria-label="{{ $mainPlacementLabel }}">
                         <p class="vb-fl-nav__column-label">{{ $mainPlacementLabel }}</p>

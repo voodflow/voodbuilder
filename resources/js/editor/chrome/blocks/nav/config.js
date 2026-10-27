@@ -27,9 +27,13 @@ import { isNavBlock } from '../../ids.js';
 import { migrateNavId } from './preview.js';
 
 /** Logo URL changes need a server re-render to inject new <img> variants. */
-const SITE_NAV_SERVER_REFRESH_PROPS = new Set(
-    chromeLogoFieldDefs().map((def) => def.prop),
-);
+const SITE_NAV_SERVER_REFRESH_PROPS = new Set([
+    ...chromeLogoFieldDefs().map((def) => def.prop),
+    'voodbuilderOverlayLayout',
+    'voodbuilderOverlayImage',
+]);
+
+const DEFAULT_OVERLAY_IMAGE = 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1600&q=80';
 
 const siteNavRefreshTimers = new WeakMap();
 
@@ -414,6 +418,8 @@ export function syncSiteHeaderConfig(component) {
     const showLogoMobile = component.get('voodbuilderShowLogoMobile') !== false;
     const showNameDesktop = component.get('voodbuilderShowSiteNameDesktop') !== false;
     const showNameMobile = component.get('voodbuilderShowSiteNameMobile') !== false;
+    const overlayLayout = component.get('voodbuilderOverlayLayout') === 'aside' ? 'aside' : 'split';
+    const overlayImage = String(component.get('voodbuilderOverlayImage') ?? '').trim() || DEFAULT_OVERLAY_IMAGE;
     const config = {
         ...(component.get('voodbuilderConfig') ?? {}),
         variant: 'simple',
@@ -423,6 +429,8 @@ export function syncSiteHeaderConfig(component) {
         show_notifications: component.get('voodbuilderShowNotifications') === true,
         show_profile_menu: component.get('voodbuilderShowProfileMenu') === true,
         uppercase_first_level: component.get('voodbuilderUppercaseFirstLevel') === true,
+        overlay_layout: overlayLayout,
+        overlay_image: overlayImage,
         show_logo_desktop: showLogoDesktop,
         show_logo_mobile: showLogoMobile,
         show_site_name_desktop: showNameDesktop,
@@ -512,6 +520,16 @@ export function configureSiteNavTraits(component, editor) {
     component.set('voodbuilderShowNotifications', config.show_notifications === true, { silent: true });
     component.set('voodbuilderShowProfileMenu', config.show_profile_menu === true, { silent: true });
     component.set('voodbuilderUppercaseFirstLevel', config.uppercase_first_level === true, { silent: true });
+    component.set(
+        'voodbuilderOverlayLayout',
+        config.overlay_layout === 'aside' ? 'aside' : 'split',
+        { silent: true },
+    );
+    component.set(
+        'voodbuilderOverlayImage',
+        String(config.overlay_image ?? '').trim() || DEFAULT_OVERLAY_IMAGE,
+        { silent: true },
+    );
     component.set('voodbuilderShowLogoDesktop', showLogoDesktop, { silent: true });
     component.set('voodbuilderShowLogoMobile', showLogoMobile, { silent: true });
     component.set('voodbuilderShowSiteNameDesktop', showNameDesktop, { silent: true });

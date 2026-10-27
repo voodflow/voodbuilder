@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.87] - 2026-10-27
+
+### Added
+
+- **Fullscreen nav overlay settings + full-bleed bar + explicit Close.** The top bar no longer boxes to `--width-vp-layout` (edge-to-edge with padding). Overlay layout is configurable: `split` (50/50 image + two menu columns) or `aside` (wide image, compact panel), plus an overlay image picker. A floating Close (X + label) sits on the overlay so authors always have an obvious dismiss control.
+
 ## [1.11.86] - 2026-10-27
 
 ### Changed

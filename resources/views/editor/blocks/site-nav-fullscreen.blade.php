@@ -29,6 +29,8 @@
         :show-search="(bool) ($config['show_search'] ?? true)"
         :show-profile-menu="(bool) ($config['show_profile_menu'] ?? true)"
         :uppercase-first-level="(bool) ($config['uppercase_first_level'] ?? false)"
+        :overlay-layout="$config['overlay_layout'] ?? 'split'"
+        :overlay-image="$config['overlay_image'] ?? null"
         :brand-config="$config"
     />
 </div>

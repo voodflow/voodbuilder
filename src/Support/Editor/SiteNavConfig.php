@@ -61,8 +61,17 @@ final class SiteNavConfig
             ? $normalized['sticky_nav']
             : 'inherit';
 
+        $normalized['overlay_layout'] = in_array($normalized['overlay_layout'] ?? null, ['split', 'aside'], true)
+            ? $normalized['overlay_layout']
+            : 'split';
+
+        $overlayImage = trim((string) ($normalized['overlay_image'] ?? ''));
+        $normalized['overlay_image'] = $overlayImage !== '' ? $overlayImage : self::DEFAULT_OVERLAY_IMAGE;
+
         return $normalized;
     }
+
+    public const DEFAULT_OVERLAY_IMAGE = 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1600&q=80';
 
     /**
      * @return array<string, mixed>
@@ -77,6 +86,9 @@ final class SiteNavConfig
             'show_notifications' => true,
             'show_profile_menu' => true,
             'uppercase_first_level' => false,
+            // Fullscreen overlay (used by site_nav_fullscreen).
+            'overlay_layout' => 'split',
+            'overlay_image' => self::DEFAULT_OVERLAY_IMAGE,
             'show_logo' => true,
             'show_site_name' => true,
             'show_logo_desktop' => true,

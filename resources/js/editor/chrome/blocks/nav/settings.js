@@ -10,6 +10,7 @@ import {
     createCheckboxGrid,
     createFormSection,
     createFormTabs,
+    createImageUrlField,
     createSelectField,
 } from '../../../editor-form-ui.js';
 import { configureSiteNavTraits, applySiteNavSettingChange, navSettingLabel } from './config.js';
@@ -80,6 +81,32 @@ export function registerNavSettings(editor) {
                             { value: 'center', label: label('navMenuCenter', 'Center') },
                         ],
                         onChange: (value) => applyChange('voodbuilderMainNavAlign', value),
+                    }),
+                );
+            } else {
+                panels.layout.append(
+                    createSelectField({
+                        label: label('navOverlayLayout', 'Overlay layout'),
+                        name: 'voodbuilderOverlayLayout',
+                        value: root.get('voodbuilderOverlayLayout') === 'aside' ? 'aside' : 'split',
+                        options: [
+                            {
+                                value: 'split',
+                                label: label('navOverlayLayoutSplit', '50 / 50 — image left, two menu columns right'),
+                            },
+                            {
+                                value: 'aside',
+                                label: label('navOverlayLayoutAside', 'Wide image — compact menu panel'),
+                            },
+                        ],
+                        onChange: (value) => applyChange('voodbuilderOverlayLayout', value),
+                    }),
+                    createImageUrlField({
+                        label: label('navOverlayImage', 'Overlay image'),
+                        name: 'voodbuilderOverlayImage',
+                        value: root.get('voodbuilderOverlayImage') ?? '',
+                        editor: gjsEditor,
+                        onChange: (value) => applyChange('voodbuilderOverlayImage', value),
                     }),
                 );
             }
