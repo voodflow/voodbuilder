@@ -60,8 +60,12 @@ final class EditorSmartButtonAnnotator
 
             // Theme / nav chrome controls must stay <button type="button"> —
             // promoting them to <a href="#"> appends "#" and scrolls the page up.
+            // Menu item links reuse data-mobile-nav-close so the drawer closes on
+            // navigate — those must stay <a href>, same as restoreChromeControlElements().
             if (self::isChromeControl($anchor)) {
-                $chromeAnchors[] = $anchor;
+                if (! self::isNavigableMenuCloseLink($anchor)) {
+                    $chromeAnchors[] = $anchor;
+                }
 
                 continue;
             }

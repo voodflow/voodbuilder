@@ -28,7 +28,7 @@
                 ])
                 aria-expanded="{{ $isActive ? 'true' : 'false' }}"
             >
-                <span>{{ __($item->label) }}</span>
+                <x-voodbuilder::menu-nav-item-content :item="$item" />
                 <svg
                     data-voodbuilder-nav-mobile-chevron
                     @class([
