@@ -452,6 +452,33 @@ function isChromeNavOrFooterTree(component) {
 }
 
 /**
+ * Footer block root (or a direct content shell under it) may use the width toolbar.
+ *
+ * @param {object} component
+ * @returns {boolean}
+ */
+function isFooterContentWidthTarget(component) {
+    let current = component;
+
+    while (current) {
+        const attrs = componentAttrs(current);
+        const blockId = String(attrs['data-voodbuilder-block'] ?? '');
+
+        if (blockId && isFooterBlock(blockId)) {
+            return true;
+        }
+
+        if (blockId && (isNavBlock(blockId) || isHeaderBlock(blockId))) {
+            return false;
+        }
+
+        current = current.parent?.() ?? null;
+    }
+
+    return false;
+}
+
+/**
  * First boxed content child under a section (skips hero-media / decorative layers).
  *
  * @param {object} section
@@ -861,7 +888,9 @@ export function shouldShowContentWidthToolbar(component, editor) {
         return false;
     }
 
-    if (isChromeNavOrFooterTree(component)) {
+    // Nav/header chrome stay excluded. Footer blocks can cycle width so authors
+    // can box the bar contents when chrome_width=full (edge-to-edge shell).
+    if (isChromeNavOrFooterTree(component) && ! isFooterContentWidthTarget(component)) {
         return false;
     }
 
