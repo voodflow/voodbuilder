@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.88] - 2026-10-27
+
+### Fixed
+
+- **Fullscreen / mobile menu links navigate again, and nested items accordion.** `restoreChromeControlElements()` was demoting every `data-mobile-nav-close` anchor to a `<button>`, so Home/About/etc. lost their `href`. Real destinations are now kept as links; only dummy `#` / empty control anchors become buttons. The overlay click handler no longer `preventDefault`s navigable menu links. Nested CSS for Cosmolab-style dropdown children is wired in the fullscreen panel.
+
 ## [1.11.87] - 2026-10-27
 
 ### Added

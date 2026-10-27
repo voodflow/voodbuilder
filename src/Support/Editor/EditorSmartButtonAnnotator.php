@@ -178,6 +178,12 @@ final class EditorSmartButtonAnnotator
         }
 
         foreach ($anchors as $anchor) {
+            // Menu item links reuse data-mobile-nav-close so the drawer closes on
+            // navigate — those must stay <a href>. Only demote fake control links.
+            if (self::isNavigableMenuCloseLink($anchor)) {
+                continue;
+            }
+
             self::demoteChromeControlToButton($anchor);
         }
 
@@ -205,6 +211,25 @@ final class EditorSmartButtonAnnotator
         $class = ' ' . $element->getAttribute('class') . ' ';
 
         return str_contains($class, ' voodbuilder-header-icon-btn ');
+    }
+
+    /**
+     * Real navigation targets that also close the mobile/fullscreen drawer.
+     */
+    private static function isNavigableMenuCloseLink(\DOMElement $anchor): bool
+    {
+        if (! $anchor->hasAttribute('data-mobile-nav-close')) {
+            return false;
+        }
+
+        $href = trim($anchor->getAttribute('href'));
+
+        if ($href === '' || $href === '#' || str_starts_with(strtolower($href), 'javascript:')) {
+            return false;
+        }
+
+        // Icon-only close controls never carry a resolvable destination.
+        return true;
     }
 
     private static function demoteChromeControlToButton(\DOMElement $anchor): void

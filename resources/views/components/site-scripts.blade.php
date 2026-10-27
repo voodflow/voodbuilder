@@ -298,8 +298,27 @@
                         return;
                     }
 
-                    if (target.closest('[data-vb-fl-close], [data-mobile-nav-close]')) {
+                    if (target.closest('[data-vb-fl-close]')) {
                         event.preventDefault();
+                        setOpen(false);
+
+                        return;
+                    }
+
+                    const menuClose = target.closest('[data-mobile-nav-close]');
+
+                    if (menuClose) {
+                        const href = menuClose instanceof HTMLAnchorElement
+                            ? String(menuClose.getAttribute('href') ?? '').trim()
+                            : '';
+                        const isNavigable = href !== ''
+                            && href !== '#'
+                            && ! href.toLowerCase().startsWith('javascript:');
+
+                        if (! isNavigable) {
+                            event.preventDefault();
+                        }
+
                         setOpen(false);
 
                         return;
