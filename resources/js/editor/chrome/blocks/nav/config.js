@@ -37,7 +37,7 @@ export function navSettingLabel(editor, key, fallback) {
     return editor?.__voodbuilderLabels?.[key] ?? fallback;
 }
 
-function siteHeaderTraitOptions(editor = null) {
+function siteHeaderTraitOptions(editor = null, { fullscreen = false } = {}) {
     const label = (key, fallback) => navSettingLabel(editor, key, fallback);
 
     return [
@@ -65,16 +65,18 @@ function siteHeaderTraitOptions(editor = null) {
             name: 'voodbuilderShowSiteNameMobile',
             changeProp: true,
         },
-        {
-            type: 'select',
-            label: label('navMenuPosition', 'Menu position'),
-            name: 'voodbuilderMainNavAlign',
-            changeProp: true,
-            options: [
-                { value: 'start', id: 'start', name: label('navMenuLeft', 'Left (next to logo)') },
-                { value: 'center', id: 'center', name: label('navMenuCenter', 'Center') },
-            ],
-        },
+        ...(fullscreen
+            ? []
+            : [{
+                type: 'select',
+                label: label('navMenuPosition', 'Menu position'),
+                name: 'voodbuilderMainNavAlign',
+                changeProp: true,
+                options: [
+                    { value: 'start', id: 'start', name: label('navMenuLeft', 'Left (next to logo)') },
+                    { value: 'center', id: 'center', name: label('navMenuCenter', 'Center') },
+                ],
+            }]),
         {
             type: 'select',
             label: label('navSticky', 'Sticky'),
@@ -92,12 +94,14 @@ function siteHeaderTraitOptions(editor = null) {
             name: 'voodbuilderShowSearch',
             changeProp: true,
         },
-        {
-            type: 'checkbox',
-            label: label('navShowNotifications', 'Show notifications'),
-            name: 'voodbuilderShowNotifications',
-            changeProp: true,
-        },
+        ...(fullscreen
+            ? []
+            : [{
+                type: 'checkbox',
+                label: label('navShowNotifications', 'Show notifications'),
+                name: 'voodbuilderShowNotifications',
+                changeProp: true,
+            }]),
         {
             type: 'checkbox',
             label: label('navShowProfile', 'Show account menu'),
@@ -537,10 +541,15 @@ export function configureSiteNavTraits(component, editor) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });
     }
 
+    const blockId = String(component.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
+    const traitOptions = siteHeaderTraitOptions(editor, {
+        fullscreen: blockId === 'site_nav_fullscreen',
+    });
+
     if (typeof component.setTraits === 'function') {
-        component.setTraits(siteHeaderTraitOptions(editor));
+        component.setTraits(traitOptions);
     } else {
-        component.set('traits', siteHeaderTraitOptions(editor));
+        component.set('traits', traitOptions);
         component.getTraits?.();
     }
 

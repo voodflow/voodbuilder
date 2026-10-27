@@ -43,6 +43,8 @@ export function registerNavSettings(editor) {
             };
 
             const label = (key, fallback) => navSettingLabel(gjsEditor, key, fallback);
+            const blockId = String(root.getAttributes?.()?.['data-voodbuilder-block'] ?? '');
+            const isFullscreenNav = blockId === 'site_nav_fullscreen';
             const tabKey = `site_nav:${root.cid ?? root.getId?.() ?? 'nav'}`;
             const rememberedTab = gjsEditor.__voodbuilderBlockSettingsTab?.[tabKey];
             const tabDefs = [
@@ -65,17 +67,24 @@ export function registerNavSettings(editor) {
                 },
             });
 
+            // Fullscreen overlay owns left/right columns via Admin menu placements
+            // (main + header_extra) — no desktop inline "menu position".
+            if (! isFullscreenNav) {
+                panels.layout.append(
+                    createSelectField({
+                        label: label('navMenuPosition', 'Menu position'),
+                        name: 'voodbuilderMainNavAlign',
+                        value: root.get('voodbuilderMainNavAlign') === 'center' ? 'center' : 'start',
+                        options: [
+                            { value: 'start', label: label('navMenuLeft', 'Left (next to logo)') },
+                            { value: 'center', label: label('navMenuCenter', 'Center') },
+                        ],
+                        onChange: (value) => applyChange('voodbuilderMainNavAlign', value),
+                    }),
+                );
+            }
+
             panels.layout.append(
-                createSelectField({
-                    label: label('navMenuPosition', 'Menu position'),
-                    name: 'voodbuilderMainNavAlign',
-                    value: root.get('voodbuilderMainNavAlign') === 'center' ? 'center' : 'start',
-                    options: [
-                        { value: 'start', label: label('navMenuLeft', 'Left (next to logo)') },
-                        { value: 'center', label: label('navMenuCenter', 'Center') },
-                    ],
-                    onChange: (value) => applyChange('voodbuilderMainNavAlign', value),
-                }),
                 createSelectField({
                     label: label('navSticky', 'Sticky'),
                     name: 'voodbuilderStickyNav',
@@ -93,12 +102,16 @@ export function registerNavSettings(editor) {
                     checked: root.get('voodbuilderShowSearch') === true,
                     onChange: (checked) => applyChange('voodbuilderShowSearch', checked),
                 }),
-                createCheckboxField({
-                    label: label('navShowNotifications', 'Show notifications'),
-                    name: 'voodbuilderShowNotifications',
-                    checked: root.get('voodbuilderShowNotifications') === true,
-                    onChange: (checked) => applyChange('voodbuilderShowNotifications', checked),
-                }),
+                ...(isFullscreenNav
+                    ? []
+                    : [
+                        createCheckboxField({
+                            label: label('navShowNotifications', 'Show notifications'),
+                            name: 'voodbuilderShowNotifications',
+                            checked: root.get('voodbuilderShowNotifications') === true,
+                            onChange: (checked) => applyChange('voodbuilderShowNotifications', checked),
+                        }),
+                    ]),
                 createCheckboxField({
                     label: label('navShowProfile', 'Show account menu'),
                     name: 'voodbuilderShowProfileMenu',

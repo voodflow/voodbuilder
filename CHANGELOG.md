@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.86] - 2026-10-27
+
+### Changed
+
+- **Fullscreen navbar settings no longer show Menu position (or notifications).** Those controls belong to the classic inline navbar; `site_nav_fullscreen` places links in the open overlay via Admin placements `main` / `header_extra`. Content-width / “riduci” stays hidden on chrome navs by design — the shell is already full-bleed.
+
 ## [1.11.85] - 2026-10-27
 
 ### Added
