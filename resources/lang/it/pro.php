@@ -753,6 +753,9 @@ return [
         'context_convert_rich_text' => 'Rich Text',
         'blocks' => [
             'site_nav_simple' => 'Navbar',
+            'site_nav_fullscreen' => 'Navbar · Menu a schermo intero',
+            'site_nav_fullscreen_tagline' => 'Strumenti modulari e open hardware',
+            'site_nav_menu_placeholder' => 'Nessuna voce in “:menu”. Aggiungi i link in Admin → Menu per questo placement.',
             'site_footer_columns_simple' => 'Footer · 4 colonne semplici',
             'site_footer_columns_newsletter' => 'Footer · 4 colonne con newsletter',
             'chrome_content_slot' => 'Area contenuto pagine',

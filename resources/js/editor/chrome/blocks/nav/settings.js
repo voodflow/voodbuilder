@@ -29,7 +29,7 @@ export function registerNavSettings(editor) {
     registerBlockSettings({
         id: 'site_nav',
         layoutOnly: true,
-        blockIds: ['site_nav_simple', 'site_header'],
+        blockIds: ['site_nav_simple', 'site_nav_fullscreen', 'site_header'],
         matchBlockId: (blockId) => typeof blockId === 'string' && blockId.startsWith('site_nav_'),
         findRoot: findLayoutChromeZoneBlockRoot,
         render: ({ mount: settingsMount, root, editor: gjsEditor }) => {

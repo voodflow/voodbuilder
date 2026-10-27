@@ -23,6 +23,7 @@ final class SiteNavBlocks
     {
         return [
             SiteNavSimpleBlock::class,
+            SiteNavFullscreenBlock::class,
         ];
     }
 }

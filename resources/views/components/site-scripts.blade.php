@@ -241,6 +241,83 @@
                 }
             });
         }, 0);
+
+        // Fallback for site_nav_fullscreen when the Vite site-runtime chunk is unavailable.
+        window.setTimeout(() => {
+            document.querySelectorAll('[data-vb-fl-nav]').forEach((root) => {
+                if (! (root instanceof Element) || root.dataset.vbFlNavBound === 'true') {
+                    return;
+                }
+
+                const overlay = root.querySelector('[data-vb-fl-overlay]');
+
+                if (! overlay) {
+                    return;
+                }
+
+                root.dataset.vbFlNavBound = 'true';
+
+                const setOpen = (open) => {
+                    if (open) {
+                        overlay.hidden = false;
+                        overlay.removeAttribute('hidden');
+                        overlay.setAttribute('aria-hidden', 'false');
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                overlay.classList.add('is-open');
+                                document.body.classList.add('vb-fl-nav-lock');
+                            });
+                        });
+                    } else {
+                        overlay.classList.remove('is-open');
+                        document.body.classList.remove('vb-fl-nav-lock');
+                        overlay.setAttribute('aria-hidden', 'true');
+                        window.setTimeout(() => {
+                            if (! overlay.classList.contains('is-open')) {
+                                overlay.hidden = true;
+                            }
+                        }, 400);
+                    }
+
+                    root.querySelectorAll('[data-vb-fl-open]').forEach((button) => {
+                        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    });
+                };
+
+                root.querySelectorAll('[data-vb-fl-open]').forEach((button) => {
+                    button.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        setOpen(true);
+                    });
+                });
+
+                root.addEventListener('click', (event) => {
+                    const target = event.target instanceof Element ? event.target : null;
+
+                    if (! target) {
+                        return;
+                    }
+
+                    if (target.closest('[data-vb-fl-close], [data-mobile-nav-close]')) {
+                        event.preventDefault();
+                        setOpen(false);
+
+                        return;
+                    }
+
+                    if (overlay.classList.contains('is-open') && target.closest('[data-vb-fl-overlay] a[href]')) {
+                        setOpen(false);
+                    }
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && overlay.classList.contains('is-open')) {
+                        setOpen(false);
+                    }
+                });
+            });
+        }, 0);
+
         const article = document.querySelector(
             '[data-tutorial-article], [data-doc-article], [data-vdocs-article], [data-voodbuilder-article]',
         );

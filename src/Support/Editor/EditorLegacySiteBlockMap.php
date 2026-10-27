@@ -11,12 +11,13 @@ final class EditorLegacySiteBlockMap
 {
     public static function resolve(string $blockId): ?string
     {
-        if ($blockId !== 'site_nav_simple' && str_starts_with($blockId, 'site_nav_')) {
-            return 'site_nav_simple';
-        }
-
         return match ($blockId) {
-            'site_header' => 'site_nav_simple',
+            // Retired nav variants collapsed onto simple (fullscreen is a live id).
+            'site_header',
+            'site_nav_centered_links',
+            'site_nav_with_action',
+            'site_nav_with_search',
+            'site_nav_menu_left' => 'site_nav_simple',
             'site_footer' => 'site_footer_columns_simple',
             'site_footer_a', 'site_footer_columns_mission' => 'site_footer_columns_simple',
             'site_footer_b', 'site_footer_columns_brand_end' => 'site_footer_columns_simple',

@@ -1,0 +1,214 @@
+/**
+ * Fullscreen two-column overlay nav (site_nav_fullscreen / Faselunare-style).
+ */
+
+.vb-fl-nav__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    background: var(--color-vp-bg, #0b0b0b);
+}
+
+.vb-fl-nav__overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.vb-fl-nav__overlay[hidden] {
+    display: none !important;
+}
+
+.vb-fl-nav__overlay.is-open[hidden] {
+    display: block !important;
+}
+
+.vb-fl-nav__panel {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    width: 100%;
+    flex-direction: column;
+    transform: translateY(-1.25rem);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vb-fl-nav__overlay.is-open .vb-fl-nav__panel {
+    transform: translateY(0);
+}
+
+.vb-fl-nav__visual {
+    position: relative;
+    display: none;
+    min-height: 40vh;
+    flex: 1;
+    overflow: hidden;
+}
+
+.vb-fl-nav__visual-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.vb-fl-nav__visual-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.2));
+}
+
+.vb-fl-nav__visual-copy {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2rem;
+    color: #fff;
+}
+
+.vb-fl-nav__visual-tagline {
+    max-width: 20rem;
+    font-size: 1.125rem;
+    line-height: 1.5;
+    opacity: 0.9;
+}
+
+.vb-fl-nav__menu {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 1.5rem;
+    background: var(--color-vp-bg, #111);
+    color: var(--color-vp-text-1, #fff);
+    padding: 1.25rem 1.5rem 2rem;
+    transform: translateX(6%);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vb-fl-nav__overlay.is-open .vb-fl-nav__menu {
+    transform: translateX(0);
+}
+
+.vb-fl-nav__menu-toolbar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.vb-fl-nav__columns {
+    display: grid;
+    min-height: 0;
+    flex: 1;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    overflow: auto;
+}
+
+.vb-fl-nav__column-label {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-vp-text-3, #888);
+}
+
+.vb-fl-nav__links {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.vb-fl-nav__links .voodbuilder-mobile-nav__link {
+    display: inline-flex;
+    width: 100%;
+    align-items: center;
+    padding: 0.35rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.15s ease;
+    background: transparent;
+    border: 0;
+    text-align: left;
+}
+
+.vb-fl-nav__links .voodbuilder-mobile-nav__link:hover,
+.vb-fl-nav__links .voodbuilder-mobile-nav__link:focus-visible {
+    color: var(--color-vp-brand-1, #7c5cff);
+}
+
+.vb-fl-nav__placeholder {
+    margin: 0;
+    border: 1px dashed color-mix(in srgb, var(--color-vp-text-3, #888) 55%, transparent);
+    border-radius: 0.75rem;
+    padding: 1rem 1.1rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--color-vp-text-3, #888);
+    background: color-mix(in srgb, var(--color-vp-bg-alt, #1a1a1a) 70%, transparent);
+}
+
+.vb-fl-nav__auth {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-vp-text-3, #888) 25%, transparent);
+}
+
+.vb-fl-nav__auth-link {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-vp-brand-1, #7c5cff);
+    text-decoration: none;
+}
+
+body.vb-fl-nav-lock {
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .vb-fl-nav__panel {
+        flex-direction: row;
+    }
+
+    .vb-fl-nav__visual {
+        display: block;
+        min-height: 0;
+        transform: translateX(-8%);
+        opacity: 0.85;
+        transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
+    }
+
+    .vb-fl-nav__overlay.is-open .vb-fl-nav__visual {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .vb-fl-nav__menu {
+        max-width: 42rem;
+        padding: 2rem 2.5rem 2.5rem;
+    }
+
+    .vb-fl-nav__columns {
+        grid-template-columns: 1.2fr 1fr;
+        gap: 2.5rem;
+        align-content: start;
+    }
+
+    .vb-fl-nav__column--extra .voodbuilder-mobile-nav__link {
+        font-size: 1.15rem;
+        font-weight: 500;
+        color: var(--color-vp-text-2, #ccc);
+    }
+}

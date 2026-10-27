@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.85] - 2026-10-27
+
+### Added
+
+- **`site_nav_fullscreen` — Faselunare-style fullscreen two-column overlay nav for Chrome Layouts.** Remote Library HTML headers cannot own the Header zone, keep scripts through save, or bind Admin menus; this server block does. Hamburger opens a full-bleed overlay: left column from placement `main`, right column from `header_extra`, with dashed placeholders when a placement has no items. Registered in the layout Site sidebar next to Navbar; JS boots via `site-chrome-runtime` (with a site-scripts fallback).
+
 ## [1.11.84] - 2026-10-27
 
 ### Fixed

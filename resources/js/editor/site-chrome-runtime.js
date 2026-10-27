@@ -453,11 +453,97 @@ export function initReadingLocalNav(scope = document) {
     });
 }
 
+/**
+ * Faselunare-style fullscreen overlay (`site_nav_fullscreen`).
+ */
+export function initFullscreenNav(scope = document) {
+    const roots = scope.querySelectorAll
+        ? scope.querySelectorAll('[data-vb-fl-nav]')
+        : [];
+
+    roots.forEach((root) => {
+        if (! (root instanceof Element) || root.dataset.vbFlNavBound === 'true') {
+            return;
+        }
+
+        root.dataset.vbFlNavBound = 'true';
+
+        const overlay = root.querySelector('[data-vb-fl-overlay]');
+        const doc = root.ownerDocument ?? document;
+
+        if (! overlay) {
+            return;
+        }
+
+        const setOpen = (open) => {
+            if (open) {
+                overlay.hidden = false;
+                overlay.removeAttribute('hidden');
+                overlay.setAttribute('aria-hidden', 'false');
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        overlay.classList.add('is-open');
+                        doc.body?.classList?.add('vb-fl-nav-lock');
+                    });
+                });
+            } else {
+                overlay.classList.remove('is-open');
+                doc.body?.classList?.remove('vb-fl-nav-lock');
+                overlay.setAttribute('aria-hidden', 'true');
+                window.setTimeout(() => {
+                    if (! overlay.classList.contains('is-open')) {
+                        overlay.hidden = true;
+                        overlay.setAttribute('hidden', '');
+                    }
+                }, 400);
+            }
+
+            root.querySelectorAll('[data-vb-fl-open]').forEach((button) => {
+                button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        };
+
+        root.querySelectorAll('[data-vb-fl-open]').forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setOpen(true);
+            });
+        });
+
+        root.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+
+            if (! target) {
+                return;
+            }
+
+            if (target.closest('[data-vb-fl-close], [data-mobile-nav-close]')) {
+                event.preventDefault();
+                setOpen(false);
+
+                return;
+            }
+
+            if (overlay.classList.contains('is-open') && target.closest('[data-vb-fl-overlay] a[href]')) {
+                setOpen(false);
+            }
+        });
+
+        doc.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && overlay.classList.contains('is-open')) {
+                setOpen(false);
+            }
+        });
+    });
+}
+
 export function initSiteChrome(scope = document) {
     initProfileMenus(scope);
     initNavDropdowns(scope);
     initMobileNavSections(scope);
     initMobileNav(scope);
+    initFullscreenNav(scope);
     initReadingLocalNav(scope);
     scrollActiveReadingSidebarLinkIntoView(scope);
 }

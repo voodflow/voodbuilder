@@ -14,12 +14,19 @@ export function isFooterBlock(blockId) {
  * @param {string} blockId
  * @returns {string}
  */
+const LIVE_NAV_IDS = new Set(['site_nav_simple', 'site_nav_fullscreen']);
+
 export function resolveNavId(blockId) {
     if (typeof blockId !== 'string' || blockId === '') {
         return blockId;
     }
 
-    if (blockId === 'site_header' || (blockId.startsWith('site_nav_') && blockId !== 'site_nav_simple')) {
+    if (LIVE_NAV_IDS.has(blockId)) {
+        return blockId;
+    }
+
+    // Retired chrome nav ids collapse onto the default simple navbar.
+    if (blockId === 'site_header' || blockId.startsWith('site_nav_')) {
         return 'site_nav_simple';
     }
 
@@ -31,7 +38,11 @@ export function resolveNavId(blockId) {
  * @returns {boolean}
  */
 export function isNavBlock(blockId) {
-    return resolveNavId(blockId) === 'site_nav_simple';
+    if (typeof blockId !== 'string' || blockId === '') {
+        return false;
+    }
+
+    return LIVE_NAV_IDS.has(resolveNavId(blockId)) || blockId.startsWith('site_nav_');
 }
 
 /**

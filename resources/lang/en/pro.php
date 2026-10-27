@@ -753,6 +753,9 @@ return [
         'context_convert_rich_text' => 'Rich Text',
         'blocks' => [
             'site_nav_simple' => 'Navbar',
+            'site_nav_fullscreen' => 'Navbar · Fullscreen menu',
+            'site_nav_fullscreen_tagline' => 'Modular instruments & open hardware',
+            'site_nav_menu_placeholder' => 'No items in “:menu” yet. Add links in Admin → Menus for this placement.',
             'site_footer_columns_simple' => 'Footer · 4-column simple',
             'site_footer_columns_newsletter' => 'Footer · 4-column with newsletter',
             'chrome_content_slot' => 'Page content area',

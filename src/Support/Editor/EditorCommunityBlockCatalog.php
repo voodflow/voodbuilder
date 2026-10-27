@@ -55,6 +55,7 @@ final class EditorCommunityBlockCatalog
         'voodbuilder-anchor',
         // Site (no chrome_content_slot — chrome layout editor only)
         'site_nav_simple',
+        'site_nav_fullscreen',
         'site_footer_columns_simple',
         'site_footer_columns_newsletter',
         'site_footer_centered',
@@ -111,6 +112,7 @@ final class EditorCommunityBlockCatalog
      */
     public const CHROME_LAYOUT_SIDEBAR_BLOCK_IDS = [
         'site_nav_simple',
+        'site_nav_fullscreen',
         'site_footer_columns_simple',
         'site_footer_columns_newsletter',
         'site_footer_centered',
