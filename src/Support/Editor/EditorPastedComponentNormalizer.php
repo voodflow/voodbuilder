@@ -248,9 +248,6 @@ final class EditorPastedComponentNormalizer
         return trim(implode("\n", $chunks));
     }
 
-    /**
-     * @param  string  $rule
-     */
     private static function normalizeCssRuleKey(string $rule): string
     {
         $normalized = preg_replace('/\s+/', ' ', trim($rule)) ?? trim($rule);

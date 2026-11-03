@@ -164,7 +164,7 @@ final class EditorSmartButtonAnnotator
         $anchors = [];
 
         foreach (self::chromeControlAttributes() as $attribute) {
-            foreach ($xpath->query('.//a[@'.$attribute.']', $body) ?: [] as $anchor) {
+            foreach ($xpath->query('.//a[@' . $attribute . ']', $body) ?: [] as $anchor) {
                 if ($anchor instanceof \DOMElement) {
                     $anchors[spl_object_id($anchor)] = $anchor;
                 }

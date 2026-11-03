@@ -94,7 +94,7 @@ class SiteLanguageSwitcherTest extends TestCase
     }
 
     #[Test]
-    public function an_untranslated_page_keeps_its_url_and_switches_the_locale_query(): void
+    public function an_untranslated_page_marks_the_other_language_unavailable(): void
     {
         SitePage::query()->create([
             'title' => 'Laboratori',
@@ -108,10 +108,35 @@ class SiteLanguageSwitcherTest extends TestCase
 
         $this->get(route('voodbuilder.pages.show', ['slug' => 'laboratori']));
 
+        $this->assertTrue(SiteLanguageSwitcher::isAvailable('it'));
+        $this->assertFalse(SiteLanguageSwitcher::isAvailable('en'));
+
+        // The URL builder still degrades to `?locale=` (used by non-page routes).
         $url = SiteLanguageSwitcher::urlFor('en');
 
         $this->assertStringContainsString('laboratori', $url);
         $this->assertStringContainsString('locale=en', $url);
+    }
+
+    #[Test]
+    public function the_home_page_offers_a_language_only_when_it_has_a_home(): void
+    {
+        SitePage::query()->create([
+            'title' => 'Home IT',
+            'slug' => 'home-it',
+            'locale' => 'it',
+            'content' => [],
+            'layout' => 'home',
+            'is_home' => true,
+            'published' => true,
+            'published_at' => now(),
+        ]);
+
+        $this->get('/');
+
+        $this->assertTrue(SiteLanguageSwitcher::isAvailable('it'));
+        $this->assertFalse(SiteLanguageSwitcher::isAvailable('en'));
+        $this->assertSame(url('/'), SiteLanguageSwitcher::urlFor('en'));
     }
 
     #[Test]
@@ -125,6 +150,26 @@ class SiteLanguageSwitcherTest extends TestCase
         $this->get(route('locale.probe'))
             ->assertOk()
             ->assertSee('en');
+    }
+
+    #[Test]
+    public function a_missing_localised_home_falls_back_once_without_a_redirect_loop(): void
+    {
+        SitePage::query()->create([
+            'title' => 'Home IT',
+            'slug' => 'home-it',
+            'locale' => 'it',
+            'content' => [],
+            'layout' => 'home',
+            'is_home' => true,
+            'published' => true,
+            'published_at' => now(),
+        ]);
+
+        $this->get('/?locale=en')->assertRedirect(url('/'));
+
+        // The stale language choice must be dropped, otherwise `/` redirects to itself.
+        $this->get('/')->assertOk();
     }
 
     #[Test]

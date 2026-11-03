@@ -6,11 +6,12 @@ namespace Voodflow\Voodbuilder\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitWorkflowRunner;
 
 /**
  * Fired when a public visitor lands on (or navigates to) a site path.
  *
- * Prefer {@see \Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitWorkflowRunner}
+ * Prefer {@see SiteVisitWorkflowRunner}
  * for path/page/menu matching; this event is the audit/extension hook.
  *
  * @phpstan-type VisitPayload array{

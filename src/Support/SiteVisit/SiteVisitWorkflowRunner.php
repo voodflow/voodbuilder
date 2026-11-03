@@ -182,7 +182,7 @@ final class SiteVisitWorkflowRunner
         mixed $workflowId,
         string $nodeId,
         array $visit,
-    ): string|int|null {
+    ): string | int | null {
         try {
             /** @var Model|null $workflow */
             $workflow = $workflowClass::query()

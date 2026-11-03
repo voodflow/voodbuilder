@@ -352,7 +352,7 @@ final class PageSurfaceCssPublish
 
             $out[] = preg_match('/!important\s*$/i', $part) === 1
                 ? $part
-                : $part.' !important';
+                : $part . ' !important';
         }
 
         return implode(';', $out);

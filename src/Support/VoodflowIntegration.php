@@ -30,6 +30,6 @@ final class VoodflowIntegration
 
     public static function nodesPath(): string
     {
-        return dirname(__DIR__).'/Nodes';
+        return dirname(__DIR__) . '/Nodes';
     }
 }

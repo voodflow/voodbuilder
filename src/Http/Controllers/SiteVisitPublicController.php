@@ -8,11 +8,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Voodflow\Vcookiebar\Vcookiebar;
 use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitPath;
 use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitWorkflowRunner;
 use Voodflow\Voodbuilder\Support\VoodflowIntegration;
-use Voodflow\Vcookiebar\Vcookiebar;
 
 final class SiteVisitPublicController extends Controller
 {
@@ -56,7 +57,7 @@ final class SiteVisitPublicController extends Controller
             'locale' => $validated['locale'] ?? app()->getLocale(),
         ]);
 
-        \Illuminate\Support\Facades\Log::info('Voodbuilder: site visit beacon', [
+        Log::info('Voodbuilder: site visit beacon', [
             'path' => $path,
             'page_id' => $validated['page_id'] ?? null,
             'queued' => count($queued),

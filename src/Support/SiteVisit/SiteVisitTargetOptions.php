@@ -53,7 +53,7 @@ final class SiteVisitTargetOptions
                     $label .= ' (Home)';
                 }
 
-                $options[(string) $page->getKey()] = $label.' · '.$path;
+                $options[(string) $page->getKey()] = $label . ' · ' . $path;
             }
 
             return $options;
@@ -93,7 +93,7 @@ final class SiteVisitTargetOptions
                 }
 
                 $menuName = $item->menu?->name ?? 'Menu';
-                $options[(string) $item->getKey()] = $item->label.' · '.$path.' ('.$menuName.')';
+                $options[(string) $item->getKey()] = $item->label . ' · ' . $path . ' (' . $menuName . ')';
             }
 
             return $options;

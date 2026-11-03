@@ -45,7 +45,7 @@
                         <span class="inline-flex rounded-md bg-vp-gray-soft px-2.5 py-1 text-xs font-semibold text-vp-brand-1" aria-current="true" title="{{ $localeLabel }}">
                             {{ strtoupper($code) }}
                         </span>
-                    @else
+                    @elseif (SiteLanguageSwitcher::isAvailable($code))
                         <a
                             href="{{ SiteLanguageSwitcher::urlFor($code) }}"
                             class="inline-flex rounded-md px-2.5 py-1 text-xs font-medium text-vp-text-2 transition-colors hover:bg-vp-gray-soft hover:text-vp-brand-1"
@@ -56,6 +56,14 @@
                         >
                             {{ strtoupper($code) }}
                         </a>
+                    @else
+                        <span
+                            class="inline-flex cursor-not-allowed rounded-md px-2.5 py-1 text-xs font-medium text-vp-text-3 opacity-50"
+                            aria-disabled="true"
+                            title="{{ __('voodbuilder::nav.language_unavailable', ['language' => $localeLabel]) }}"
+                        >
+                            {{ strtoupper($code) }}
+                        </span>
                     @endif
                 @endforeach
             </div>
@@ -71,7 +79,7 @@
                                 <span class="inline-flex h-8 items-center rounded-md px-2 text-xs font-semibold text-vp-brand-1" aria-current="true" title="{{ $localeLabel }}">
                                     {{ strtoupper($code) }}
                                 </span>
-                            @else
+                            @elseif (SiteLanguageSwitcher::isAvailable($code))
                                 <a
                                     href="{{ SiteLanguageSwitcher::urlFor($code) }}"
                                     class="inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-vp-text-2 transition-colors hover:text-vp-brand-1"
@@ -82,6 +90,14 @@
                                 >
                                     {{ strtoupper($code) }}
                                 </a>
+                            @else
+                                <span
+                                    class="inline-flex h-8 cursor-not-allowed items-center rounded-md px-2 text-xs font-medium text-vp-text-3 opacity-50"
+                                    aria-disabled="true"
+                                    title="{{ __('voodbuilder::nav.language_unavailable', ['language' => $localeLabel]) }}"
+                                >
+                                    {{ strtoupper($code) }}
+                                </span>
                             @endif
                         </li>
                     @endforeach
@@ -101,7 +117,7 @@
                             <span class="inline-flex h-8 items-center rounded-md px-2 text-xs font-semibold text-vp-brand-1" aria-current="true" title="{{ $localeLabel }}">
                                 {{ strtoupper($code) }}
                             </span>
-                        @else
+                        @elseif (SiteLanguageSwitcher::isAvailable($code))
                             <a
                                 href="{{ SiteLanguageSwitcher::urlFor($code) }}"
                                 class="inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-vp-text-2 transition-colors hover:text-vp-brand-1"
@@ -112,6 +128,14 @@
                             >
                                 {{ strtoupper($code) }}
                             </a>
+                        @else
+                            <span
+                                class="inline-flex h-8 cursor-not-allowed items-center rounded-md px-2 text-xs font-medium text-vp-text-3 opacity-50"
+                                aria-disabled="true"
+                                title="{{ __('voodbuilder::nav.language_unavailable', ['language' => $localeLabel]) }}"
+                            >
+                                {{ strtoupper($code) }}
+                            </span>
                         @endif
                     </li>
                 @endforeach

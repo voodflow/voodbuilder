@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 use Throwable;
+use Voodflow\Vcookiebar\Vcookiebar;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Voodbuilder\Support\VoodflowIntegration;
-use Voodflow\Vcookiebar\Vcookiebar;
 
 /**
  * Record a public site visit for Voodflow Site Visit triggers.
@@ -47,7 +47,7 @@ final class SiteVisitRecorder
 
         try {
             $visitorKey = self::resolveVisitorKey($request);
-            $path = SiteVisitPath::normalize('/'.$request->path());
+            $path = SiteVisitPath::normalize('/' . $request->path());
             $pageId = $page instanceof SitePage ? (string) $page->getKey() : null;
 
             if ($page instanceof SitePage) {

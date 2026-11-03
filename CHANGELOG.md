@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.10] - 2026-11-03
+
+### Fixed
+
+- **Only offer languages that have somewhere to land.** The 1.12.9 switcher offered every `APP_LOCALES` entry, but clicking one with no target sent the visitor to `/?locale=xx` and the home controller bounced them back to the default home — which, with the choice kept in the session, redirected `/` to itself forever. A language is now a link only when the current page has its sibling translation (or, on the home, its own home page); otherwise it renders as a disabled chip with the “not available yet” title, exactly like vtuts' switcher did. The fallback-to-default-home redirect also drops the visitor language choice, so a stale session can no longer loop.
+
 ## [1.12.9] - 2026-11-03
 
 ### Added

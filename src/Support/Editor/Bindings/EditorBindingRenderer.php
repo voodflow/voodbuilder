@@ -446,7 +446,7 @@ final class EditorBindingRenderer
         $previous = libxml_use_internal_errors(true);
 
         try {
-            $wrapped = '<?xml encoding="UTF-8"><div id="__vb_html_bind">'.$sanitized.'</div>';
+            $wrapped = '<?xml encoding="UTF-8"><div id="__vb_html_bind">' . $sanitized . '</div>';
             $fragment->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         } finally {
             libxml_clear_errors();

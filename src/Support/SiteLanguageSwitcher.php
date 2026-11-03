@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
+use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
  * Language switcher for the content translations VoodBuilder owns.
@@ -57,6 +58,46 @@ final class SiteLanguageSwitcher
     }
 
     /**
+     * A language is only offered when the visitor has somewhere to land: the home
+     * needs its own home page, a content page needs its sibling translation. Other
+     * routes can switch freely through `?locale=` (no landing redirect involved).
+     */
+    public static function isAvailable(string $locale): bool
+    {
+        if (! SiteLocales::isValid($locale)) {
+            return false;
+        }
+
+        $page = self::currentPage();
+
+        if ($page === null) {
+            return true;
+        }
+
+        if ($page->is_home) {
+            return SitePage::homePage($locale) !== null;
+        }
+
+        return $page->translationFor($locale) !== null;
+    }
+
+    /**
+     * Drops the visitor language choice (both switchers' session keys).
+     */
+    public static function forgetVisitorLocale(): void
+    {
+        $keys = [self::SESSION_LOCALE_KEY];
+
+        if (class_exists(LocaleSwitcher::class)) {
+            $keys[] = LocaleSwitcher::SESSION_LOCALE_KEY;
+        }
+
+        foreach (array_unique($keys) as $key) {
+            request()->session()->forget($key);
+        }
+    }
+
+    /**
      * Same page in `$locale` when a sibling translation exists, otherwise the current
      * URL with `?locale=` so the visitor keeps their place while the site switches.
      */
@@ -75,12 +116,10 @@ final class SiteLanguageSwitcher
                 return $translation->getUrl();
             }
 
-            if ($page->is_home && $locale !== self::current()) {
-                $home = SitePage::homePage($locale);
-
-                if ($home instanceof SitePage) {
-                    return $home->getUrl();
-                }
+            if ($page->is_home) {
+                // No home in that language: staying put is the only safe target, a
+                // `?locale=` landing would bounce right back to the default home.
+                return request()->url();
             }
         }
 

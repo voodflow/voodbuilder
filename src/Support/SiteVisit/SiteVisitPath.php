@@ -22,7 +22,7 @@ final class SiteVisitPath
             $trimmed = is_string($parsed) ? $parsed : '/';
         }
 
-        $normalized = '/'.trim($trimmed, '/');
+        $normalized = '/' . trim($trimmed, '/');
 
         if ($normalized === '/') {
             return '/';

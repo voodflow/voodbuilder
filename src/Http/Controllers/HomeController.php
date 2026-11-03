@@ -12,6 +12,7 @@ use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\EmptySiteGuidance;
+use Voodflow\Voodbuilder\Support\SiteLanguageSwitcher;
 use Voodflow\Voodbuilder\Support\SiteLocales;
 use Voodflow\Voodbuilder\Support\SitePageAccess;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
@@ -34,6 +35,9 @@ class HomeController extends Controller
             $defaultHome = SitePage::homePage(SiteLocales::default());
 
             if ($defaultHome !== null) {
+                // Drop the visitor choice: keeping it would redirect `/` to itself.
+                SiteLanguageSwitcher::forgetVisitorLocale();
+
                 return redirect(VoodbuilderUrls::home(SiteLocales::default()));
             }
         }

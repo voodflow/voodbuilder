@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Nodes\SiteVisitTriggerNode;
 
+use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitTargetOptions;
 use Voodflow\Voodflow\Execution\ExecutionContext;
 use Voodflow\Voodflow\Execution\ExecutionResult;
 use Voodflow\Voodflow\Nodes\AbstractNode;
 use Voodflow\Voodflow\Support\NodeDefinitionBuilder;
-use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitTargetOptions;
 
 /**
  * Start a workflow when a visitor lands on a site page, menu URL, or custom path.
