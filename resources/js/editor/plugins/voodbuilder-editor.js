@@ -235,6 +235,21 @@ function isHeroCatalogSection(section) {
 }
 
 /**
+ * Element-level twin of `isMediaHeroComponent`, used while the editor is still
+ * parsing markup (no component model yet).
+ */
+function isMediaHeroElement(element) {
+    if (! element?.tagName) {
+        return false;
+    }
+
+    return element.hasAttribute?.('data-vb-bg-src')
+        || element.hasAttribute?.('data-vb-video-src')
+        || element.hasAttribute?.('data-vb-video-provider')
+        || element.querySelector?.(':scope > .voodbuilder-hero-media, :scope > [data-voodbuilder-role="media"]') != null;
+}
+
+/**
  * Full-bleed media heroes are editable catalog sections (copy / CTAs / Layers),
  * not companion dynamic previews. Flattening their tree hid Layers children and
  * blocked text selection after chrome-shell lockDynamicPreviewContent passes.
@@ -307,6 +322,12 @@ function registerLayoutSectionType(editor) {
                 return false;
             }
 
+            // Media heroes own their trait set (background picker). Let their
+            // dedicated type claim the element instead of a bare layout section.
+            if (isMediaHeroElement(element)) {
+                return false;
+            }
+
             // Intentional layout / catalog sections — not every companion section shell.
             return element.getAttribute?.('data-voodbuilder-layout') === 'section'
                 || Boolean(element.getAttribute?.('data-voodbuilder-section-block'))
@@ -330,7 +351,7 @@ function registerLayoutSectionType(editor) {
                 },
             },
             init() {
-                if (isHeroCatalogSection(this)) {
+                if (isHeroCatalogSection(this) && ! isMediaHeroSection(this)) {
                     this.set('traits', []);
                 }
             },
@@ -358,7 +379,7 @@ function registerLayoutSectionType(editor) {
             init() {
                 const parentSection = this.parent();
 
-                if (parentSection && isHeroCatalogSection(parentSection)) {
+                if (parentSection && isHeroCatalogSection(parentSection) && ! isMediaHeroSection(parentSection)) {
                     this.set('traits', []);
                 }
             },
@@ -2007,6 +2028,11 @@ function ensureLayoutSectionTraits(editor) {
             return;
         }
 
+        // Media heroes keep their own type and traits.
+        if (isMediaHeroSection(section)) {
+            return;
+        }
+
         if (section.get('type') === 'default') {
             section.set('type', 'voodbuilder-section');
         }
@@ -2033,7 +2059,7 @@ function ensureLayoutSectionTraits(editor) {
             return;
         }
 
-        if (isHeroCatalogSection(parentSection)) {
+        if (isHeroCatalogSection(parentSection) && ! isMediaHeroSection(parentSection)) {
             container.set('traits', []);
         }
     });

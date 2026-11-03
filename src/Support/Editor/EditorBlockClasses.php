@@ -76,13 +76,23 @@ final class EditorBlockClasses
      *
      * @var list<string>
      */
-    protected const MEDIA_HERO_BLOCK_IDS = ['vb-bg-image', 'vb-hero-cinematic', 'vb-bg-video'];
+    protected const LEGACY_MEDIA_HERO_BLOCK_IDS = ['vb-bg-image', 'vb-hero-cinematic', 'vb-bg-video'];
 
     /**
      * Whether the element is a static media hero block root.
      */
     public static function isMediaHeroBlock(\DOMElement $element): bool
     {
+        // Authoring contract first: any block that opts into a hero background is
+        // a media hero, whatever its id.
+        if (
+            $element->hasAttribute('data-vb-bg-src')
+            || $element->hasAttribute('data-vb-video-src')
+            || $element->hasAttribute('data-vb-video-provider')
+        ) {
+            return true;
+        }
+
         $blockId = trim(
             $element->getAttribute('data-voodbuilder-block')
             ?: $element->getAttribute('data-voodbuilder-section-block'),
@@ -92,7 +102,7 @@ final class EditorBlockClasses
             return false;
         }
 
-        foreach (self::MEDIA_HERO_BLOCK_IDS as $heroId) {
+        foreach (self::LEGACY_MEDIA_HERO_BLOCK_IDS as $heroId) {
             if ($blockId === $heroId || str_contains($blockId, $heroId)) {
                 return true;
             }

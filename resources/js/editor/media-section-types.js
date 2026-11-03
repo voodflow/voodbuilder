@@ -4,6 +4,7 @@
  */
 
 import {
+    isBackgroundImageHeroComponent,
     isBackgroundImageHeroId,
     mediaHeroSectionSelector,
 } from './media-hero.js';
@@ -463,15 +464,21 @@ function syncBackgroundVideoSection(section) {
  * @param {() => void} sync
  * @param {Array<Record<string, unknown>>} traits
  */
-function registerMediaHeroType(editor, typeId, blockId, name, sync, traits) {
+function registerMediaHeroType(editor, typeId, blockId, name, sync, traits, options = null) {
     if (editor.DomComponents.getType(typeId)) {
         return;
     }
+
+    const matches = options?.matches ?? null;
 
     editor.DomComponents.addType(typeId, {
         isComponent: (element) => {
             if (element?.tagName !== 'SECTION') {
                 return false;
+            }
+
+            if (typeof matches === 'function' && matches(element)) {
+                return true;
             }
 
             const sectionBlock = element.getAttribute?.('data-voodbuilder-section-block');
@@ -574,6 +581,31 @@ function registerBackgroundImageType(editor) {
         syncBackgroundImageSection,
         BACKGROUND_IMAGE_TRAITS,
     );
+
+    // Any section that opted into a hero background gets the same background
+    // traits (URL, fit, position, opacity, min-height) even when its block id
+    // is unknown here — catalog and project blocks stay self-describing.
+    registerMediaHeroType(
+        editor,
+        'voodbuilder-bg-image-section',
+        '',
+        'Hero · background image',
+        syncBackgroundImageSection,
+        BACKGROUND_IMAGE_TRAITS,
+        {
+            matches: (element) => {
+                const sectionBlock = String(element.getAttribute?.('data-voodbuilder-section-block') ?? '').trim();
+
+                // Dedicated types stay authoritative for the bundled heroes.
+                if (sectionBlock === 'vb-bg-image' || sectionBlock === 'vb-hero-cinematic') {
+                    return false;
+                }
+
+                return element.hasAttribute?.('data-vb-bg-src')
+                    || element.querySelector?.(':scope > .voodbuilder-hero-media, :scope > [data-voodbuilder-role="media"]') !== null;
+            },
+        },
+    );
 }
 
 function registerBackgroundVideoType(editor) {
@@ -673,16 +705,17 @@ export function resyncMediaHeroSections(editor) {
         wrapper,
         mediaHeroSectionSelector(),
     ).forEach((section) => {
-        const id = String(
-            section.getAttributes?.()?.['data-voodbuilder-section-block']
-            ?? section.getAttributes?.()?.['data-voodbuilder-block']
-            ?? section.get?.('type')
-            ?? '',
-        ).trim();
+        if (! findHeroMediaHost(section)) {
+            return;
+        }
 
-        if (id === 'vb-bg-video' || id.includes('vb-bg-video')) {
+        if (findHeroMediaVideo(section)) {
             syncBackgroundVideoSection(section);
-        } else if (isBackgroundImageHeroId(id)) {
+
+            return;
+        }
+
+        if (isBackgroundImageHeroComponent(section)) {
             syncBackgroundImageSection(section);
         }
     });
