@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Voodflow\Voodbuilder\Filament\Resources\CustomFontResource;
 use Voodflow\Voodbuilder\Models\CustomFont;
 use Voodflow\Voodbuilder\Support\Fonts\CustomFontInstaller;
 use Voodflow\Voodbuilder\Support\Fonts\CustomFontStylesheet;
@@ -173,6 +174,19 @@ class CustomFontTest extends TestCase
         $this->assertSame('', CustomFontInstaller::detectFamily('4bf-l-qa-lh-zcb-a-l-ki8-m-r-vx-p9c-td5-qw-b5ilh-oh-a-x-rh1'));
         $this->assertSame('', CustomFontInstaller::detectFamily('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0'));
         $this->assertSame('IBM Plex Sans', CustomFontInstaller::detectFamily('IBMPlexSans-Bold'));
+    }
+
+    public function test_family_is_detected_from_uploaded_paths(): void
+    {
+        $source = $this->makeTrueTypeFile('acme-grotesk-regular.ttf', [1 => 'Wotfard']);
+        $path = 'voodbuilder/fonts/tmp/wotfard-regular.ttf';
+
+        Storage::disk('public')->put($path, (string) file_get_contents($source));
+
+        $this->assertSame(
+            'Wotfard',
+            CustomFontResource::detectFamilyFromUploads([$path], 'public'),
+        );
     }
 
     public function test_stylesheets_include_custom_font_css_url(): void

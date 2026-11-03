@@ -20,6 +20,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Throwable;
 use Voodflow\Voodbuilder\Filament\Resources\CustomFontResource\Pages\CreateCustomFont;
 use Voodflow\Voodbuilder\Filament\Resources\CustomFontResource\Pages\EditCustomFont;
@@ -228,6 +229,16 @@ class CustomFontResource extends Resource
         $files = [];
 
         foreach ($paths as $path) {
+            if ($path instanceof TemporaryUploadedFile) {
+                $realPath = $path->getRealPath();
+
+                if ($realPath !== '' && is_file($realPath)) {
+                    $files[] = $realPath;
+                }
+
+                continue;
+            }
+
             if (! is_string($path) || trim($path) === '') {
                 continue;
             }

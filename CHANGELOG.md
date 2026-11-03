@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.2] - 2026-11-03
+
+### Fixed
+
+- **Family auto-fill also works with Livewire temporary uploads.** The Admin → Fonts form reads the selected files from either stored paths or `TemporaryUploadedFile` instances, so the family and slug fields fill in as soon as files are picked.
+
 ## [1.12.1] - 2026-11-03
 
 ### Fixed
