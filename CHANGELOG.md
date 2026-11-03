@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.13.1] - 2026-11-03
+
+### Fixed
+
+- **Chrome-layout editor boot.** The registry refactor dropped two gate helpers (`optionalEditorRoute`, `dynamicDataEnabled`) that the chrome-layout editor still calls, so `?edit=1` on a layout 500'd; both are back.
+- **Admin navigation group** reads `VoodBuilder` again instead of `Voodbuilder`.
+- `voodbuilder:install` no longer references the removed `ConfigureVtutsForVoodbuilder` hook.
+
+### Added
+
+- Feature test proving `/?locale=en&edit=1` mounts the English home record instead of the default-language one.
+
 ## [1.13.0] - 2026-11-03
 
 ### Changed
