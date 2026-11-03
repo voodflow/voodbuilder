@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.6] - 2026-11-03
+
+### Added
+
+- **Anchor menu items.** A new `Anchor` type sits besides Site page / App route / External URL: type the anchor id (`contatti`, `#contatti` or `/laboratori#contatti`), and the item resolves to the fragment without any http noise. The `Anchor` -> `#` normalization is shared (`NavigationMenuItem::normalizeAnchorTarget()`), the new-tab toggle is hidden because it makes no sense for an in-page target, and anchors stay valid inside dropdown children. Pair it with the editor's Utilities → Anchor block, which writes `data-vb-anchor-id`.
+
+### Fixed
+
+- **In-page anchors no longer get the external-link arrow.** `isExternal()` treated every `External URL` item as off-site, so a `#contatti` item was decorated with the ↗ icon even though it only scrolls the current page. Externality is now measured on the target itself: fragments and relative site paths (`/docs/`) are internal, a same-host absolute URL is internal, `mailto:`/`tel:`/foreign hosts (and `open_in_new_tab`) still get the arrow. The rule lives in `NavigationMenuItem::isExternal()` / `urlPointsOutsideSite()`, so every nav render (header, mobile, dropdown, sidebar) is fixed at once.
+
 ## [1.12.5] - 2026-11-03
 
 ### Fixed

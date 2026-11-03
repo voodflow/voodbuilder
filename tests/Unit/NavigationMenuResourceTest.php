@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use ReflectionMethod;
+use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Models\SitePage;
@@ -36,5 +37,14 @@ class NavigationMenuResourceTest extends TestCase
         $this->assertArrayHasKey('grapes-page', $options);
         $this->assertStringContainsString('Grapes page', $options['grapes-page']);
         $this->assertArrayNotHasKey('rich-page', $options);
+    }
+
+    public function test_menu_item_types_include_anchor(): void
+    {
+        $method = new ReflectionMethod(NavigationMenuResource::class, 'menuItemTypeOptions');
+        $options = $method->invoke(null, false);
+
+        $this->assertArrayHasKey(MenuItemType::Anchor->value, $options);
+        $this->assertSame('Anchor', $options[MenuItemType::Anchor->value]);
     }
 }

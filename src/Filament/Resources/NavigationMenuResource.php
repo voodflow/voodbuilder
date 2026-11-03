@@ -35,6 +35,7 @@ use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\CreateN
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\EditNavigationMenu;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource\Pages\ListNavigationMenus;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
+use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\MenuRouteCatalog;
@@ -69,6 +70,16 @@ class NavigationMenuResource extends Resource
     protected static function isMenuItemType(Get $get, MenuItemType $expected): bool
     {
         return static::resolveMenuItemType($get) === $expected;
+    }
+
+    /**
+     * Persist anchors in their canonical target form (`#contatti`, `/page#contatti`).
+     */
+    protected static function normalizeAnchorTarget(?string $state): ?string
+    {
+        $target = NavigationMenuItem::normalizeAnchorTarget((string) $state);
+
+        return $target === '#' ? null : $target;
     }
 
     protected static function isRegisteredMenuItemType(Get $get): bool
@@ -379,9 +390,18 @@ class NavigationMenuResource extends Resource
             TextInput::make('link')
                 ->key($isChild ? 'menu_child_link_url' : 'menu_item_link_url')
                 ->label(__('URL'))
-                ->helperText(__('Absolute URL (https://…) or site path (/docs/)'))
+                ->helperText(__('voodbuilder::admin.helpers.menu_url'))
                 ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url))
                 ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Url)),
+            TextInput::make('link')
+                ->key($isChild ? 'menu_child_link_anchor' : 'menu_item_link_anchor')
+                ->label(__('voodbuilder::admin.fields.menu_anchor'))
+                ->placeholder('#contatti')
+                ->maxLength(2048)
+                ->dehydrateStateUsing(fn (?string $state): ?string => static::normalizeAnchorTarget($state))
+                ->visible(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Anchor))
+                ->required(fn (Get $get): bool => static::isMenuItemType($get, MenuItemType::Anchor))
+                ->helperText(__('voodbuilder::admin.helpers.menu_anchor')),
             TextInput::make('link')
                 ->key($isChild ? 'menu_child_link_mail' : 'menu_item_link_mail')
                 ->label(__('Email'))
@@ -397,6 +417,7 @@ class NavigationMenuResource extends Resource
             Toggle::make('open_in_new_tab')
                 ->label(__('Open in new tab'))
                 ->visible(fn (Get $get): bool => ! static::isMenuItemType($get, MenuItemType::Group)
+                    && ! static::isMenuItemType($get, MenuItemType::Anchor)
                     && ! static::isRegisteredMenuItemType($get)),
         ];
     }

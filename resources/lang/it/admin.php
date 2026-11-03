@@ -44,6 +44,7 @@ return [
         'menu_dropdown_layout' => 'Layout dropdown',
         'menu_route' => 'Route applicazione',
         'menu_route_match' => 'Pattern route attiva',
+        'menu_anchor' => 'Anchor',
         'sub_theme' => 'Tema visivo',
         'sub_theme_inherit' => 'Predefinito sito',
         'layout_auto' => 'Automatico',
@@ -169,6 +170,8 @@ return [
     'helpers' => [
         'menu_route' => 'Route GET pubbliche registrate nell\'app. Lo stato attivo viene impostato automaticamente. Se la route richiede parametri, compila i campi mostrati sotto.',
         'menu_route_match' => 'Opzionale. Usato solo per URL esterni quando serve una regola di evidenziazione personalizzata.',
+        'menu_url' => 'URL assoluto (https://…), percorso del sito (/docs/) o anchor interno (#contatti). I percorsi interni e gli anchor non mostrano mai la freccia del link esterno.',
+        'menu_anchor' => 'Id dell\'anchor dalla pagina (blocco Utilities → Anchor, o l\'id di un elemento). Scrivi "contatti" o "#contatti" per scorrere dentro la pagina corrente, oppure "/pagina#contatti" per atterrare su una sezione di un\'altra pagina.',
         'menu_sub_items' => 'Mostrate in un menu a tendina come Docs. Usa "Gruppo dropdown" per titoli di sezione senza link proprio.',
         'menu_icon' => 'Cerca le icone Tabler con anteprima. Varianti outline e filled quando disponibili (salvate come name o name:filled).',
         'menu_description' => 'Sottotitolo breve opzionale sotto la label nei dropdown e mega menu.',

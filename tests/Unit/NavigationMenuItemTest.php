@@ -187,6 +187,116 @@ class NavigationMenuItemTest extends TestCase
         $this->assertSame('External URL', $tree[0]['children'][0]['type_label']);
     }
 
+    public function test_in_page_anchor_urls_are_not_external(): void
+    {
+        $item = new NavigationMenuItem([
+            'label' => 'Contatti',
+            'type' => MenuItemType::Url,
+            'link' => '#contatti',
+        ]);
+
+        $this->assertSame('#contatti', $item->resolveUrl());
+        $this->assertTrue($item->isInPageAnchor());
+        $this->assertFalse($item->isExternal());
+    }
+
+    public function test_anchor_items_resolve_a_bare_id_to_a_fragment(): void
+    {
+        $item = new NavigationMenuItem([
+            'label' => 'Contatti',
+            'type' => MenuItemType::Anchor,
+            'link' => 'contatti',
+        ]);
+
+        $this->assertSame('#contatti', $item->resolveUrl());
+        $this->assertTrue($item->isInPageAnchor());
+        $this->assertTrue($item->hasResolvableLink());
+        $this->assertFalse($item->isExternal());
+    }
+
+    public function test_anchor_items_keep_cross_page_targets(): void
+    {
+        $item = new NavigationMenuItem([
+            'label' => 'FAQ laboratori',
+            'type' => MenuItemType::Anchor,
+            'link' => '/laboratori#faq',
+        ]);
+
+        $this->assertSame('/laboratori#faq', $item->resolveUrl());
+        $this->assertFalse($item->isExternal());
+    }
+
+    public function test_anchor_items_without_a_target_are_not_resolvable(): void
+    {
+        $item = new NavigationMenuItem([
+            'label' => 'Contatti',
+            'type' => MenuItemType::Anchor,
+            'link' => '   ',
+        ]);
+
+        $this->assertSame('#', $item->resolveUrl());
+        $this->assertFalse($item->hasResolvableLink());
+    }
+
+    public function test_internal_site_paths_are_not_external(): void
+    {
+        $item = new NavigationMenuItem([
+            'label' => 'Docs',
+            'type' => MenuItemType::Url,
+            'link' => '/docs/',
+        ]);
+
+        $this->assertFalse($item->isInPageAnchor());
+        $this->assertFalse($item->isExternal());
+    }
+
+    public function test_absolute_foreign_and_mail_urls_are_external(): void
+    {
+        $external = new NavigationMenuItem([
+            'label' => 'Docs',
+            'type' => MenuItemType::Url,
+            'link' => 'https://example.com/docs',
+        ]);
+
+        $mail = new NavigationMenuItem([
+            'label' => 'Email',
+            'type' => MenuItemType::Mail,
+            'link' => 'info@example.com',
+        ]);
+
+        $this->assertTrue($external->isExternal());
+        $this->assertTrue($mail->isExternal());
+    }
+
+    public function test_anchor_menu_items_render_without_the_external_link_arrow(): void
+    {
+        $hashLink = new NavigationMenuItem([
+            'label' => 'Contatti',
+            'type' => MenuItemType::Url,
+            'link' => '#contatti',
+        ]);
+
+        $anchorType = new NavigationMenuItem([
+            'label' => 'FAQ',
+            'type' => MenuItemType::Anchor,
+            'link' => 'faq',
+        ]);
+
+        $external = new NavigationMenuItem([
+            'label' => 'Docs',
+            'type' => MenuItemType::Url,
+            'link' => 'https://example.com/docs',
+        ]);
+
+        $hashHtml = view('voodbuilder::components.menu-nav-item', ['item' => $hashLink])->render();
+        $anchorHtml = view('voodbuilder::components.menu-nav-item', ['item' => $anchorType])->render();
+        $externalHtml = view('voodbuilder::components.menu-nav-item', ['item' => $external])->render();
+
+        $this->assertStringNotContainsString('w-[11px]', $hashHtml);
+        $this->assertStringNotContainsString('w-[11px]', $anchorHtml);
+        $this->assertStringContainsString('w-[11px]', $externalHtml);
+    }
+
     public function test_nestable_tree_node_row_override_includes_drag_handle_icon(): void
     {
         $path = view('filament-nestable-tree::components.tree.node-row')->getPath();

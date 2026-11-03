@@ -44,6 +44,7 @@ return [
         'menu_dropdown_layout' => 'Dropdown layout',
         'menu_route' => 'App route',
         'menu_route_match' => 'Active route pattern',
+        'menu_anchor' => 'Anchor',
         'sub_theme' => 'Visual theme',
         'sub_theme_inherit' => 'Site default',
         'layout_auto' => 'Automatic',
@@ -169,6 +170,8 @@ return [
     'helpers' => [
         'menu_route' => 'Public GET routes registered in your app. The active state is set automatically. If the route needs parameters, fill in the fields shown below.',
         'menu_route_match' => 'Optional. Used only for external URLs when you need custom highlight rules.',
+        'menu_url' => 'Absolute URL (https://…), site path (/docs/) or in-page anchor (#contatti). Internal paths and anchors never show the external-link arrow.',
+        'menu_anchor' => 'Anchor id from the page (Utilities → Anchor block, or any element id). Type "contatti" or "#contatti" to scroll inside the current page, or "/page#contatti" to land on a section of another page.',
         'menu_sub_items' => 'Shown in a dropdown like Docs. Use "Dropdown group" for section titles without their own link.',
         'menu_icon' => 'Search Tabler icons with live preview. Outline and filled variants appear when available (stored as name or name:filled).',
         'menu_description' => 'Optional short subtitle under the label in dropdowns and mega menus.',

@@ -15,6 +15,7 @@ enum MenuItemType: string implements HasLabel
     case Page = 'page';
     case Route = 'route';
     case Url = 'url';
+    case Anchor = 'anchor';
     case Mail = 'mail';
 
     public function getLabel(): string
@@ -24,6 +25,7 @@ enum MenuItemType: string implements HasLabel
             self::Page => __('Site page'),
             self::Route => __('App route'),
             self::Url => __('External URL'),
+            self::Anchor => __('Anchor'),
             self::Mail => __('Email'),
         };
     }

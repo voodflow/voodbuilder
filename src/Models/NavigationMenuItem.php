@@ -236,6 +236,7 @@ class NavigationMenuItem extends Model
             MenuItemType::Page => $this->resolvePageUrl(),
             MenuItemType::Route => $this->resolveRouteUrl(),
             MenuItemType::Url => (string) ($this->link ?? '#'),
+            MenuItemType::Anchor => $this->resolveAnchorUrl(),
             MenuItemType::Mail => $this->resolveMailUrl(),
             MenuItemType::Group => '#',
         };
@@ -278,9 +279,114 @@ class NavigationMenuItem extends Model
         );
     }
 
+    /**
+     * Anchor targets that scroll inside the site itself (`#section`, `Anchor` items,
+     * or a site path carrying a fragment). They never leave the site, so the views
+     * must not decorate them with the external-link arrow.
+     */
+    public function isInPageAnchor(): bool
+    {
+        if ($this->type === MenuItemType::Anchor) {
+            return true;
+        }
+
+        if ($this->type !== MenuItemType::Url) {
+            return false;
+        }
+
+        $link = trim((string) $this->link);
+
+        return $link !== '#' && str_starts_with($link, '#');
+    }
+
     public function isExternal(): bool
     {
-        return in_array($this->type, [MenuItemType::Url, MenuItemType::Mail], true) || $this->open_in_new_tab;
+        if ($this->open_in_new_tab) {
+            return true;
+        }
+
+        if ($this->type === MenuItemType::Mail) {
+            return true;
+        }
+
+        if ($this->isInPageAnchor()) {
+            return false;
+        }
+
+        // Page/Route/Group resolve to this site's own routes.
+        if ($this->type !== MenuItemType::Url) {
+            return false;
+        }
+
+        return self::urlPointsOutsideSite((string) $this->link);
+    }
+
+    /**
+     * A `Url` item can hold an absolute URL, a site path or a fragment: only the
+     * first two resolve inside the site, and only a foreign host is "external".
+     */
+    public static function urlPointsOutsideSite(string $url): bool
+    {
+        $url = trim($url);
+
+        if ($url === '' || str_starts_with($url, '#')) {
+            return false;
+        }
+
+        if (str_starts_with($url, '//')) {
+            return ! self::hostBelongsToSite(parse_url('https:' . $url, PHP_URL_HOST));
+        }
+
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        // No scheme: a relative site path such as `/docs/`.
+        if (! is_string($scheme) || $scheme === '') {
+            return false;
+        }
+
+        $scheme = strtolower($scheme);
+
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            return true;
+        }
+
+        return ! self::hostBelongsToSite(parse_url($url, PHP_URL_HOST));
+    }
+
+    protected static function hostBelongsToSite(mixed $host): bool
+    {
+        if (! is_string($host) || $host === '') {
+            return false;
+        }
+
+        $host = strtolower($host);
+        $siteHosts = [];
+
+        foreach ([config('app.url'), url('/')] as $candidate) {
+            $candidateHost = is_string($candidate) ? parse_url($candidate, PHP_URL_HOST) : null;
+
+            if (is_string($candidateHost) && $candidateHost !== '') {
+                $siteHosts[] = strtolower($candidateHost);
+            }
+        }
+
+        if (app()->bound('request')) {
+            $requestHost = request()->getHost();
+
+            if (is_string($requestHost) && $requestHost !== '') {
+                $siteHosts[] = strtolower($requestHost);
+            }
+        }
+
+        foreach (array_unique($siteHosts) as $siteHost) {
+            if ($host === $siteHost
+                || 'www.' . $host === $siteHost
+                || $host === 'www.' . $siteHost) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isActive(): bool
@@ -346,6 +452,32 @@ class NavigationMenuItem extends Model
         $page = SitePageResolver::publishedForMenu((string) $this->link);
 
         return $page?->getUrl() ?? '#';
+    }
+
+    /**
+     * Anchor items accept a bare id (`contatti`), an explicit fragment (`#contatti`),
+     * or a cross-page target (`/laboratori#contatti`).
+     */
+    protected function resolveAnchorUrl(): string
+    {
+        return self::normalizeAnchorTarget((string) ($this->link ?? ''));
+    }
+
+    public static function normalizeAnchorTarget(string $anchor): string
+    {
+        $anchor = trim($anchor);
+
+        if ($anchor === '' || $anchor === '#') {
+            return '#';
+        }
+
+        if (str_starts_with($anchor, '#')
+            || str_starts_with($anchor, '/')
+            || preg_match('#^[a-z][a-z0-9+.-]*://#i', $anchor) === 1) {
+            return $anchor;
+        }
+
+        return '#' . $anchor;
     }
 
     protected function resolveMailUrl(): string
