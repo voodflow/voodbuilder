@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-11-03
+
+### Added
+
+- **Language switcher in the editor header.** The page title now carries one chip per configured language: the language being edited is filled with the brand colour, a sibling translation is a link that opens that page's own editor session (`?edit=1&locale=…`), and a language without a translation stays visible but disabled. The previous static locale badge is replaced whenever the switcher is available.
+
+### Fixed
+
+- **Hero vertical space is removable.** The hero "Minimum height" control gained `Auto (fit content)` and `80vh` (the value older pages already stored, which matched no option and left the select blank). Choosing `Auto` clears the inline `min-height` from both the section and its content column, so the forced empty space actually goes away.
+- **Hero background image can be dimmed further.** Opacity floors dropped from 30% to 0% for section and video heroes, with 0/15/25% presets in the image settings panel.
+
 ## [1.13.1] - 2026-11-03
 
 ### Fixed

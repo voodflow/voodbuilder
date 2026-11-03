@@ -102,6 +102,46 @@ class EditorLocaleResolutionTest extends TestCase
         $this->assertStringContainsString('"pageId":' . $italian->getKey(), $response->getContent());
     }
 
+    public function test_the_editor_lists_every_language_and_links_the_translation(): void
+    {
+        $italian = $this->homePage('it', 'Home IT');
+        $english = $this->homePage('en', 'Home EN');
+
+        $this->actingAs($this->admin());
+
+        $config = EditorGate::config($english);
+        $switcher = $config['localeSwitcher'];
+
+        $this->assertSame('en', $config['pageLocale']);
+        $this->assertSame('EN', $switcher['current']);
+        $this->assertCount(2, $switcher['options']);
+
+        $byCode = collect($switcher['options'])->keyBy('code');
+
+        $this->assertTrue($byCode['EN']['current']);
+        $this->assertNull($byCode['EN']['url']);
+        $this->assertSame($italian->editorUrl(), $byCode['IT']['url']);
+        $this->assertStringContainsString('edit=1', (string) $byCode['IT']['url']);
+    }
+
+    public function test_the_switcher_is_hidden_when_there_is_nothing_to_switch_to(): void
+    {
+        $page = SitePage::query()->create([
+            'title' => 'About',
+            'slug' => 'about',
+            'locale' => 'it',
+            'builder' => PageBuilder::Visual,
+            'builder_payload' => ['html' => '<section class="voodbuilder-editor-section">About</section>', 'css' => ''],
+            'layout' => 'page',
+            'published' => true,
+            'published_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin());
+
+        $this->assertNull(EditorGate::config($page)['localeSwitcher']);
+    }
+
     private function homePage(string $locale, string $title): SitePage
     {
         return SitePage::query()->create([

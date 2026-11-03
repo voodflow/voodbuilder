@@ -656,21 +656,31 @@ export function renderVideoContentSettings({ mount, traitsMount = null, componen
             name: 'bgVideoMinHeight',
             value: minHeight,
             options: [
+                { value: 'auto', label: labels.videoSettingsMinHeightAuto ?? 'Auto (fit content)' },
                 { value: '50vh', label: '50vh' },
                 { value: '70vh', label: '70vh' },
+                { value: '80vh', label: '80vh' },
                 { value: '100vh', label: '100vh' },
             ],
             onChange: (value) => {
                 minHeight = value;
                 runWithSettingsChangeGuard(editor, () => {
                     section.addAttributes({ 'data-vb-min-height': value });
-                    section.addStyle({ 'min-height': value });
 
                     const content = safeFindComponents(
                         section,
                         '[data-voodbuilder-role="content"], [data-voodbuilder-dropzone="content"]',
                     )[0];
 
+                    // "Auto" clears the inline height on section + content column.
+                    if (value === 'auto') {
+                        section.removeStyle?.('min-height');
+                        content?.removeStyle?.('min-height');
+
+                        return;
+                    }
+
+                    section.addStyle({ 'min-height': value });
                     content?.addStyle?.({ 'min-height': value });
                 });
             },

@@ -1532,6 +1532,9 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                 name: 'bgOpacity',
                 value: opacity,
                 options: [
+                    { value: '0', label: '0%' },
+                    { value: '0.15', label: '15%' },
+                    { value: '0.25', label: '25%' },
                     { value: '0.35', label: '35%' },
                     { value: '0.45', label: '45%' },
                     { value: '0.55', label: '55%' },
@@ -1593,8 +1596,10 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                 name: 'bgMinHeight',
                 value: minHeight,
                 options: [
+                    { value: 'auto', label: labels.imageSettingsMinHeightAuto ?? 'Auto (fit content)' },
                     { value: '50vh', label: '50vh' },
                     { value: '70vh', label: '70vh' },
+                    { value: '80vh', label: '80vh' },
                     { value: '100vh', label: '100vh' },
                 ],
                 onChange: (value) => {
@@ -1605,13 +1610,22 @@ export function renderImageContentSettings({ mount, traitsMount = null, componen
                         }
 
                         section.addAttributes({ 'data-vb-min-height': value });
-                        section.addStyle({ 'min-height': value });
 
                         const content = safeFindComponents(
                             section,
                             '[data-voodbuilder-role="content"], [data-voodbuilder-dropzone="content"]',
                         )[0];
 
+                        // "Auto" must clear the inline style on both nodes — an empty
+                        // min-height key would still keep the gap the author is removing.
+                        if (value === 'auto') {
+                            section.removeStyle?.('min-height');
+                            content?.removeStyle?.('min-height');
+
+                            return;
+                        }
+
+                        section.addStyle({ 'min-height': value });
                         content?.addStyle?.({ 'min-height': value });
                     });
                 },

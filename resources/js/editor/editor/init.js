@@ -915,6 +915,7 @@ export function initVoodbuilderEditor(container, options = {}) {
         hideTemplates,
         popupMode: Boolean(options.popupMode),
         editingContext: resolveEditingContext(options, labels),
+        localeSwitcher: options.localeSwitcher ?? null,
         editionSummary: options.editionSummary ?? null,
     }) : null;
 
@@ -2711,6 +2712,7 @@ function mountFrontendEditor() {
         pageId: config.pageId ?? null,
         pageTitle: config.pageTitle ?? null,
         pageLocale: config.pageLocale ?? null,
+        localeSwitcher: config.localeSwitcher ?? null,
         chromeShellMode: config.chromeShellMode ?? false,
         publishedDarkScope: config.publishedDarkScope !== false,
         publishedDefaultDark: config.publishedDefaultDark !== false,

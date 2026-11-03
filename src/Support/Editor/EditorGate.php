@@ -30,6 +30,8 @@ use Voodflow\Voodbuilder\Support\Fonts\FontStylesheets;
 use Voodflow\Voodbuilder\Support\GlobalTextTags;
 use Voodflow\Voodbuilder\Support\PageBuilderAccess;
 use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
+use Voodflow\Voodbuilder\Support\SiteLocales;
+use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\ThemePalette;
 use Voodflow\Voodbuilder\Support\VoodbuilderPackageVersion;
 use Voodflow\Voodbuilder\Support\VoodbuilderTheme;
@@ -144,6 +146,7 @@ final class EditorGate
             'viewPageUrl' => $page->getUrl(),
             'pageTitle' => (string) ($page->title ?? ''),
             'pageLocale' => (string) ($page->locale ?? ''),
+            'localeSwitcher' => self::localeSwitcher($page),
             'dynamicPage' => $page->is_dynamic ? [
                 'channel' => (string) ($page->dynamic_channel ?? ''),
                 'currentSourceIds' => DynamicPageBindingCatalog::currentSourceIds($page),
@@ -426,6 +429,7 @@ final class EditorGate
             'videoSettingsFit' => __('voodbuilder::pro.editor.video_settings.fit'),
             'videoSettingsPosition' => __('voodbuilder::pro.editor.video_settings.position'),
             'videoSettingsMinHeight' => __('voodbuilder::pro.editor.video_settings.min_height'),
+            'videoSettingsMinHeightAuto' => __('voodbuilder::pro.editor.video_settings.min_height_auto'),
             'videoSettingsAutoplay' => __('voodbuilder::pro.editor.video_settings.autoplay'),
             'videoSettingsMuted' => __('voodbuilder::pro.editor.video_settings.muted'),
             'videoSettingsLoop' => __('voodbuilder::pro.editor.video_settings.loop'),
@@ -659,6 +663,9 @@ final class EditorGate
             'editingContextLayout' => __('voodbuilder::pro.frontend.editing_context_layout'),
             'editingContextPopup' => __('voodbuilder::pro.frontend.editing_context_popup'),
             'editingContextUntitled' => __('voodbuilder::pro.frontend.editing_context_untitled'),
+            'editingLocaleSwitcher' => __('voodbuilder::pro.frontend.editing_locale_switcher'),
+            'editingLocaleSwitchTo' => __('voodbuilder::pro.frontend.editing_locale_switch_to'),
+            'editingLocaleMissing' => __('voodbuilder::pro.frontend.editing_locale_missing'),
             'previewTheme' => __('voodbuilder::pro.frontend.preview_theme'),
             'previewThemeHint' => __('voodbuilder::pro.frontend.preview_theme_hint'),
             'deviceDesktop' => __('voodbuilder::pro.editor_ui.device_desktop'),
@@ -1491,6 +1498,60 @@ final class EditorGate
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    /**
+     * Languages the editor can jump between without leaving the builder.
+     *
+     * Every configured locale is listed so the author sees the full picture; the one
+     * being edited is flagged as current, a sibling translation links to its own editor
+     * URL, and a language without a translation renders as a disabled chip. Null when
+     * the site is not localized or there is nowhere to switch to.
+     *
+     * @return array{current: string, options: list<array{code: string, label: string, current: bool, url: string|null}>}|null
+     */
+    private static function localeSwitcher(SitePage $page): ?array
+    {
+        $locales = SiteLocales::options();
+
+        if (! SitePageResolver::localizationEnabled() || count($locales) < 2) {
+            return null;
+        }
+
+        $current = (string) ($page->locale ?? '');
+        $options = [];
+
+        foreach ($locales as $code => $label) {
+            $code = (string) $code;
+            $isCurrent = $code === $current;
+
+            $target = $isCurrent ? null : $page->translationFor($code);
+
+            if ($target === null && ! $isCurrent && (bool) $page->getAttribute('is_home')) {
+                $target = SitePage::homePage($code);
+            }
+
+            $options[] = [
+                'code' => strtoupper($code),
+                'label' => (string) $label,
+                'current' => $isCurrent,
+                'url' => $target?->editorUrl(),
+            ];
+        }
+
+        $switchable = array_filter(
+            $options,
+            static fn (array $option): bool => $option['current'] === true || $option['url'] !== null,
+        );
+
+        if (count($switchable) < 2) {
+            return null;
+        }
+
+        return [
+            'current' => strtoupper($current),
+            'options' => $options,
+        ];
     }
 
     /**

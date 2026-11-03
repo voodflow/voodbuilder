@@ -100,7 +100,6 @@ function editingContextMarkup(context) {
     if (! context?.kind && ! context?.name) {
         return '';
     }
-
     const kind = String(context.kind ?? '').trim();
     const name = String(context.name ?? '').trim();
     const locale = String(context.locale ?? '').trim();
@@ -116,6 +115,78 @@ function editingContextMarkup(context) {
             <span class="voodbuilder-editor-topbar__editing-name">${escapeHtml(title)}</span>
             ${locale !== '' ? `<span class="voodbuilder-editor-topbar__editing-locale">${escapeHtml(locale)}</span>` : ''}
             ${kind !== '' && name !== '' ? `<span class="voodbuilder-editor-topbar__editing-kind sr-only">${escapeHtml(kind)}</span>` : ''}
+        </div>
+    `;
+}
+
+/**
+ * Language chips in the editor header: the language being edited is highlighted, a
+ * sibling translation links straight to its own editor session, and a language with
+ * no translation stays visible but disabled — so the author always knows both where
+ * they are and what else exists.
+ *
+ * @param {{ current?: string, options?: Array<Record<string, unknown>> }|null|undefined} switcher
+ * @param {Record<string, string>} labels
+ * @returns {string}
+ */
+export function localeSwitcherMarkup(switcher, labels = {}) {
+    const options = Array.isArray(switcher?.options) ? switcher.options : [];
+
+    if (options.length < 2) {
+        return '';
+    }
+
+    const groupLabel = labels.editingLocaleSwitcher ?? 'Editing language';
+
+    const chips = options.map((option) => {
+        const code = String(option.code ?? '').trim().toUpperCase();
+        const label = String(option.label ?? code).trim();
+        const isCurrent = Boolean(option.current);
+        const url = String(option.url ?? '').trim();
+
+        if (code === '') {
+            return '';
+        }
+
+        if (isCurrent) {
+            return `<span
+                class="voodbuilder-editor-topbar__locale voodbuilder-editor-topbar__locale--current"
+                aria-current="true"
+                title="${escapeHtml(`${groupLabel}: ${label}`)}"
+            >${escapeHtml(code)}</span>`;
+        }
+
+        if (url === '') {
+            const missing = String(labels.editingLocaleMissing ?? '{language} has no translation yet')
+                .replace('{language}', label);
+
+            return `<span
+                class="voodbuilder-editor-topbar__locale voodbuilder-editor-topbar__locale--unavailable"
+                aria-disabled="true"
+                title="${escapeHtml(missing)}"
+            >${escapeHtml(code)}</span>`;
+        }
+
+        const switchTo = String(labels.editingLocaleSwitchTo ?? 'Switch to {language}')
+            .replace(':language', label)
+            .replace('{language}', label);
+
+        return `<a
+            class="voodbuilder-editor-topbar__locale"
+            href="${escapeHtml(url)}"
+            hreflang="${escapeHtml(code.toLowerCase())}"
+            title="${escapeHtml(switchTo)}"
+            data-voodbuilder-editor-locale="${escapeHtml(code.toLowerCase())}"
+        >${escapeHtml(code)}</a>`;
+    }).join('');
+
+    if (chips === '') {
+        return '';
+    }
+
+    return `
+        <div class="voodbuilder-editor-topbar__locales" role="group" aria-label="${escapeHtml(groupLabel)}" data-voodbuilder-editor-locales>
+            ${chips}
         </div>
     `;
 }
@@ -484,6 +555,9 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
     const hideTemplates = Boolean(meta.hideTemplates);
     const popupMode = Boolean(meta.popupMode);
     const brand = String(meta.brand ?? 'VoodBuilder').trim() || 'VoodBuilder';
+    const localeSwitcher = meta.localeSwitcher && typeof meta.localeSwitcher === 'object'
+        ? meta.localeSwitcher
+        : null;
     const editingContext = meta.editingContext
         ?? (meta.editingBadgeTitle
             ? { kind: meta.editingBadgeTitle, name: '' }
@@ -506,7 +580,8 @@ export function buildEditorShell(container, labels = {}, meta = {}) {
                         <span class="voodbuilder-editor-topbar__brand-sr">${escapeHtml(brand)}</span>
                     </div>
                     <div class="voodbuilder-editor-topbar__brand-meta">
-                        ${editingContextMarkup(editingContext)}
+                        ${editingContextMarkup(localeSwitcher ? { ...editingContext, locale: '' } : editingContext)}
+                        ${localeSwitcherMarkup(localeSwitcher, labels)}
                         ${editionChromeMarkup(editionSummary, labels)}
                     </div>
                 </div>

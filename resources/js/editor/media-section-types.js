@@ -31,8 +31,10 @@ const BG_POSITION_OPTIONS = [
 ];
 
 const MIN_HEIGHT_OPTIONS = [
+    { id: 'auto', label: 'Auto (fit content)' },
     { id: '50vh', label: '50vh' },
     { id: '70vh', label: '70vh' },
+    { id: '80vh', label: '80vh' },
     { id: '100vh', label: '100vh' },
 ];
 
@@ -214,6 +216,33 @@ function normalizeHeroContentAlignment(content) {
 }
 
 /**
+ * Hero minimum height: the section and its content column both carry the inline
+ * style, so "Auto" has to clear both — clearing only the section leaves the content
+ * column holding the empty space open.
+ *
+ * @param {import('grapesjs').Component} section
+ * @param {import('grapesjs').Component|null|undefined} content
+ * @param {unknown} value
+ */
+function applyHeroMinHeight(section, content, value) {
+    const minHeight = String(value ?? '').trim();
+    const clear = minHeight === '' || minHeight === 'auto';
+
+    for (const target of [section, content]) {
+        if (! target) {
+            continue;
+        }
+
+        if (clear) {
+            target.removeStyle?.('min-height');
+            continue;
+        }
+
+        target.addStyle?.({ 'min-height': minHeight });
+    }
+}
+
+/**
  * @param {import('grapesjs').Component} section
  */
 function syncBackgroundImageSection(section) {
@@ -224,12 +253,11 @@ function syncBackgroundImageSection(section) {
     const objectFit = String(attrs['data-vb-bg-size'] ?? 'cover');
     const objectPosition = objectPositionValue(String(attrs['data-vb-bg-position'] ?? 'center'));
 
-    section.addStyle({ 'min-height': minHeight });
-
     const content = findHeroContentContainer(section);
 
+    applyHeroMinHeight(section, content, minHeight);
+
     if (content) {
-        content.addStyle({ 'min-height': minHeight });
         normalizeHeroContentAlignment(content);
     }
 
@@ -435,13 +463,9 @@ function syncBackgroundVideoSection(section) {
     const objectFit = String(attrs['data-vb-bg-size'] ?? 'cover');
     const objectPosition = objectPositionValue(String(attrs['data-vb-bg-position'] ?? 'center'));
 
-    section.addStyle({ 'min-height': minHeight });
-
     const content = findHeroContentContainer(section);
 
-    if (content) {
-        content.addStyle({ 'min-height': minHeight });
-    }
+    applyHeroMinHeight(section, content, minHeight);
 
     if (! findHeroMediaHost(section)) {
         return;
@@ -548,7 +572,7 @@ const BACKGROUND_IMAGE_TRAITS = [
         type: 'number',
         name: 'data-vb-bg-opacity',
         label: 'Image opacity',
-        min: 0.3,
+        min: 0,
         max: 1,
         step: 0.05,
         changeProp: true,
@@ -644,7 +668,7 @@ function registerBackgroundVideoType(editor) {
                 type: 'number',
                 name: 'data-vb-bg-opacity',
                 label: 'Video opacity',
-                min: 0.3,
+                min: 0,
                 max: 1,
                 step: 0.05,
                 changeProp: true,
