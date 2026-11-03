@@ -18,7 +18,9 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 use Voodflow\Voodbuilder\Filament\Resources\CustomFontResource\Pages\CreateCustomFont;
 use Voodflow\Voodbuilder\Filament\Resources\CustomFontResource\Pages\EditCustomFont;
 use Voodflow\Voodbuilder\Filament\Resources\CustomFontResource\Pages\ListCustomFonts;
@@ -155,6 +157,21 @@ class CustomFontResource extends Resource
                             ->rules(['extensions:woff2,woff,ttf,otf'])
                             ->maxSize((int) config('voodbuilder.fonts.custom.max_size', 8192))
                             ->required(fn (string $operation): bool => $operation === 'create')
+                            ->live()
+                            ->afterStateUpdated(function (?array $state, callable $set, callable $get, ?CustomFont $record) use ($disk): void {
+                                if ($record !== null || filled($get('family'))) {
+                                    return;
+                                }
+
+                                $family = static::detectFamilyFromUploads((array) $state, $disk);
+
+                                if ($family === null) {
+                                    return;
+                                }
+
+                                $set('family', $family);
+                                $set('slug', CustomFont::makeSlug($family));
+                            })
                             ->helperText(__('voodbuilder::admin.custom_fonts.fields.files_help')),
                     ]),
             ]);
@@ -199,6 +216,56 @@ class CustomFontResource extends Resource
                     DeleteAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Resolve a family name from freshly uploaded (temporary) font files.
+     *
+     * @param  array<int|string, mixed>  $paths
+     */
+    public static function detectFamilyFromUploads(array $paths, string $disk): ?string
+    {
+        $files = [];
+
+        foreach ($paths as $path) {
+            if (! is_string($path) || trim($path) === '') {
+                continue;
+            }
+
+            $absolute = static::resolveStoragePath($path, $disk);
+
+            if ($absolute !== null) {
+                $files[] = $absolute;
+            }
+        }
+
+        return $files === [] ? null : CustomFontInstaller::detectFamilyFromFiles($files);
+    }
+
+    /**
+     * Locate a file on the upload disk or the Livewire temporary disk.
+     */
+    public static function resolveStoragePath(string $path, string $disk): ?string
+    {
+        $candidates = array_filter([
+            $disk,
+            (string) config('livewire.temporary_file_upload.disk', ''),
+            (string) config('filesystems.default', ''),
+        ]);
+
+        foreach (array_unique($candidates) as $candidate) {
+            try {
+                $storage = Storage::disk($candidate);
+
+                if ($storage->exists($path)) {
+                    return $storage->path($path);
+                }
+            } catch (Throwable) {
+                continue;
+            }
+        }
+
+        return null;
     }
 
     /**

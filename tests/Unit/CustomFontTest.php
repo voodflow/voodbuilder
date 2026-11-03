@@ -113,6 +113,68 @@ class CustomFontTest extends TestCase
         $this->assertSame('wotfard', $font->slug);
     }
 
+    public function test_family_name_is_read_from_the_font_metadata(): void
+    {
+        $path = $this->makeTrueTypeFile('acme-grotesk-regular.ttf', [1 => 'Wotfard', 16 => 'Wotfard']);
+
+        $font = app(CustomFontInstaller::class)->installFromPath($path);
+
+        $this->assertSame('Wotfard', $font->family);
+        $this->assertSame('wotfard', $font->slug);
+    }
+
+    public function test_style_words_in_a_family_name_are_kept(): void
+    {
+        $path = $this->makeTrueTypeFile('acme-regular.ttf', [1 => 'Black Han Sans']);
+
+        $font = app(CustomFontInstaller::class)->installFromPath($path);
+
+        $this->assertSame('Black Han Sans', $font->family);
+    }
+
+    public function test_broken_family_records_fall_back_to_the_full_name(): void
+    {
+        // Webfont builds often leave nameID 1/16 empty or garbled.
+        $path = $this->makeTrueTypeFile('acme-regular.ttf', [1 => '.', 4 => 'Wotfard Regular Webfont']);
+
+        $font = app(CustomFontInstaller::class)->installFromPath($path);
+
+        $this->assertSame('Wotfard', $font->family);
+    }
+
+    public function test_family_name_is_read_from_woff_metadata(): void
+    {
+        $path = $this->makeWoffFile('acme-grotesk-regular.woff', [1 => 'Wotfard Extra Grotesk Display Super Family']);
+
+        $font = app(CustomFontInstaller::class)->installFromPath($path);
+
+        $this->assertSame('Wotfard Extra Grotesk Display Super Family', $font->family);
+    }
+
+    public function test_hashed_upload_names_fall_back_to_the_font_files(): void
+    {
+        if (! class_exists(ZipArchive::class)) {
+            $this->markTestSkipped('The zip extension is not available.');
+        }
+
+        $zipPath = $this->makeZipArchive([
+            'wotfard-regular-webfont.woff2' => 'FAKE-WOFF2',
+            'wotfard-regular.otf' => 'FAKE-OTF',
+        ], '4bf-l-qa-lh-zcb-a-l-ki8-m-r-vx-p9c-td5-qw-b5ilh-oh-a-x-rh1.zip');
+
+        $font = app(CustomFontInstaller::class)->installFromPath($zipPath);
+
+        $this->assertSame('Wotfard', $font->family);
+        $this->assertSame('wotfard', $font->slug);
+    }
+
+    public function test_hashed_names_are_never_used_as_a_family_name(): void
+    {
+        $this->assertSame('', CustomFontInstaller::detectFamily('4bf-l-qa-lh-zcb-a-l-ki8-m-r-vx-p9c-td5-qw-b5ilh-oh-a-x-rh1'));
+        $this->assertSame('', CustomFontInstaller::detectFamily('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0'));
+        $this->assertSame('IBM Plex Sans', CustomFontInstaller::detectFamily('IBMPlexSans-Bold'));
+    }
+
     public function test_stylesheets_include_custom_font_css_url(): void
     {
         $path = $this->makeFontFile('Wotfard-Regular.woff2');
@@ -178,9 +240,80 @@ class CustomFontTest extends TestCase
     }
 
     /**
+     * Build a minimal, readable TrueType file that only carries a `name` table.
+     *
+     * @param  array<int, string>  $names  name IDs mapped to their value.
+     */
+    private function makeTrueTypeFile(string $name, array $names): string
+    {
+        $nameTable = $this->buildNameTable($names);
+        $offset = 12 + 16;
+
+        $contents = pack('N', 0x00010000)
+            . pack('n4', 1, 16, 0, 0)
+            . 'name'
+            . pack('N', 0)
+            . pack('N', $offset)
+            . pack('N', strlen($nameTable))
+            . $nameTable;
+
+        return $this->makeFontFile($name, $contents);
+    }
+
+    /**
+     * Build a minimal WOFF 1.0 file with a zlib-compressed `name` table.
+     *
+     * @param  array<int, string>  $names  name IDs mapped to their value.
+     */
+    private function makeWoffFile(string $name, array $names): string
+    {
+        $nameTable = $this->buildNameTable($names);
+        $compressed = (string) gzcompress($nameTable);
+        $offset = 44 + 20;
+        $length = $offset + strlen($compressed);
+
+        $contents = 'wOFF'
+            . pack('N', 0x00010000)
+            . pack('N', $length)
+            . pack('n2', 1, 0)
+            . pack('N', 12 + strlen($nameTable))
+            . pack('n2', 1, 0)
+            . pack('N', 0)
+            . pack('N', 0)
+            . pack('N', 0)
+            . pack('N', 0)
+            . pack('N', 0)
+            . 'name'
+            . pack('N', $offset)
+            . pack('N', strlen($compressed))
+            . pack('N', strlen($nameTable))
+            . pack('N', 0)
+            . $compressed;
+
+        return $this->makeFontFile($name, $contents);
+    }
+
+    /**
+     * @param  array<int, string>  $entries
+     */
+    private function buildNameTable(array $entries): string
+    {
+        $storage = '';
+        $records = '';
+
+        foreach ($entries as $nameId => $value) {
+            $encoded = (string) mb_convert_encoding($value, 'UTF-16BE', 'UTF-8');
+            $records .= pack('n6', 3, 1, 0x0409, $nameId, strlen($encoded), strlen($storage));
+            $storage .= $encoded;
+        }
+
+        return pack('n3', 0, count($entries), 6 + (12 * count($entries))) . $records . $storage;
+    }
+
+    /**
      * @param  array<string, string>  $entries
      */
-    private function makeZipArchive(array $entries): string
+    private function makeZipArchive(array $entries, string $archiveName = 'font-package.zip'): string
     {
         $directory = sys_get_temp_dir() . '/voodbuilder-test-fonts-' . Str::random(8);
 
@@ -188,7 +321,7 @@ class CustomFontTest extends TestCase
             mkdir($directory, 0777, true);
         }
 
-        $path = $directory . '/font-package.zip';
+        $path = $directory . '/' . $archiveName;
         $zip = new ZipArchive;
 
         $this->assertTrue($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE));

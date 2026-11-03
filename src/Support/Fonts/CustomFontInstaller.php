@@ -61,9 +61,10 @@ final class CustomFontInstaller
         string $category = 'sans-serif',
         ?string $stack = null,
         bool $active = true,
+        ?string $originalName = null,
     ): CustomFont {
         if (is_dir($source)) {
-            return $this->installFromFiles($this->fontFilesInDirectory($source), $family, $category, $stack, $active);
+            return $this->installFromFiles($this->fontFilesInDirectory($source), $family, $category, $stack, $active, $originalName);
         }
 
         if (! is_file($source)) {
@@ -71,10 +72,10 @@ final class CustomFontInstaller
         }
 
         if (self::extension($source) === 'zip') {
-            return $this->installFromArchive($source, $family, $category, $stack, $active);
+            return $this->installFromArchive($source, $family, $category, $stack, $active, $originalName);
         }
 
-        return $this->installFromFiles([$source], $family, $category, $stack, $active);
+        return $this->installFromFiles([$source], $family, $category, $stack, $active, $originalName);
     }
 
     public function installFromArchive(
@@ -83,6 +84,7 @@ final class CustomFontInstaller
         string $category = 'sans-serif',
         ?string $stack = null,
         bool $active = true,
+        ?string $originalName = null,
     ): CustomFont {
         if (! is_file($zipPath)) {
             throw new InvalidArgumentException("Font archive not found: {$zipPath}");
@@ -91,9 +93,14 @@ final class CustomFontInstaller
         [$directory, $files] = $this->extractArchive($zipPath);
 
         try {
-            $family ??= self::detectFamily(pathinfo($zipPath, PATHINFO_FILENAME));
-
-            return $this->installFromFiles($files, $family, $category, $stack, $active);
+            return $this->installFromFiles(
+                $files,
+                $family,
+                $category,
+                $stack,
+                $active,
+                $originalName ?? pathinfo($zipPath, PATHINFO_FILENAME),
+            );
         } finally {
             foreach ($files as $file) {
                 @unlink($file);
@@ -112,6 +119,7 @@ final class CustomFontInstaller
         string $category = 'sans-serif',
         ?string $stack = null,
         bool $active = true,
+        ?string $originalName = null,
     ): CustomFont {
         $sourceFiles = array_values(array_filter(
             $sourceFiles,
@@ -125,7 +133,7 @@ final class CustomFontInstaller
         $family = trim((string) $family);
 
         if ($family === '') {
-            $family = self::detectFamily(basename($sourceFiles[0]));
+            $family = (string) self::detectFamilyFromFiles($sourceFiles, $originalName);
         }
 
         if ($family === '') {
@@ -211,9 +219,58 @@ final class CustomFontInstaller
         return $weights !== [] ? $weights : [400];
     }
 
+    /**
+     * Resolve a family name: embedded font metadata first, then file names.
+     *
+     * @param  list<string>  $files
+     */
+    public static function detectFamilyFromFiles(array $files, ?string $sourceName = null): ?string
+    {
+        foreach ($files as $file) {
+            $record = FontNameReader::familyRecord($file);
+
+            if ($record === null) {
+                continue;
+            }
+
+            // nameID 1/16 are real family names ("Black Han Sans" must stay
+            // intact); nameID 4/6 also carry style words that need stripping.
+            $family = in_array($record['nameId'], FontNameReader::styleBearingNameIds(), true)
+                ? self::detectFamily($record['value'])
+                : self::sanitizeFamily($record['value']);
+
+            if ($family !== '') {
+                return $family;
+            }
+        }
+
+        foreach ($files as $file) {
+            $family = self::detectFamily(basename($file));
+
+            if ($family !== '') {
+                return $family;
+            }
+        }
+
+        if ($sourceName !== null) {
+            $family = self::detectFamily($sourceName);
+
+            if ($family !== '') {
+                return $family;
+            }
+        }
+
+        return null;
+    }
+
     public static function detectFamily(string $name): string
     {
-        $name = pathinfo($name, PATHINFO_FILENAME);
+        if (preg_match('/\.(?:woff2?|ttf|otf|eot|zip)$/i', $name) === 1) {
+            $name = pathinfo($name, PATHINFO_FILENAME);
+        }
+
+        // Split camelCase words so "IBMPlexSans" and "WotfardRegular" read well.
+        $name = preg_replace('/(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/', ' ', $name) ?? $name;
         $name = str_replace(['_', '-'], ' ', $name);
         $name = preg_replace('/\b(?:' . implode('|', self::FAMILY_NOISE) . ')\b/i', ' ', $name) ?? $name;
         $name = preg_replace('/\b(?:' . implode('|', array_keys(self::WEIGHT_KEYWORDS)) . ')\b/i', ' ', $name) ?? $name;
@@ -221,7 +278,52 @@ final class CustomFontInstaller
         $name = preg_replace('/\b(?:100|200|300|400|500|600|700|800|900)\b/', ' ', $name) ?? $name;
         $name = trim((string) preg_replace('/\s+/', ' ', $name));
 
-        return Str::headline($name);
+        if ($name === '' || self::looksRandom($name)) {
+            return '';
+        }
+
+        return ucwords($name);
+    }
+
+    /**
+     * Keep an embedded family name as-is, dropping only hashed junk.
+     */
+    private static function sanitizeFamily(string $value): string
+    {
+        $value = trim((string) preg_replace('/\s+/', ' ', $value));
+
+        return $value === '' || self::looksRandom($value) ? '' : $value;
+    }
+
+    /**
+     * Uploads are stored under generated names (UUID-like strings). Detect them
+     * so a hashed file name never becomes a font family label.
+     */
+    public static function looksRandom(string $name): bool
+    {
+        $name = trim($name);
+
+        if ($name === '') {
+            return false;
+        }
+
+        if (preg_match('/^[0-9a-f]{16,}$/i', $name) === 1) {
+            return true;
+        }
+
+        $segments = (array) preg_split('/\s+/', $name);
+
+        if (count($segments) < 3) {
+            return preg_match('/^[a-z0-9]{24,}$/i', $name) === 1;
+        }
+
+        foreach ($segments as $segment) {
+            if (preg_match('/[A-Za-z]{4,}/', (string) $segment) === 1) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static function detectWeight(string $name): int

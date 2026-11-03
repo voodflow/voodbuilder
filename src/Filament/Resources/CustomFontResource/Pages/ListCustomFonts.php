@@ -44,6 +44,7 @@ class ListCustomFonts extends ListRecords
                         ->directory(trim($directory . '/packages', '/'))
                         ->visibility('public')
                         ->storeFiles()
+                        ->storeFileNamesIn('archive_names')
                         ->previewable(false)
                         ->acceptedFileTypes([
                             'application/zip',
@@ -81,11 +82,15 @@ class ListCustomFonts extends ListRecords
                         return;
                     }
 
+                    $names = is_array($data['archive_names'] ?? null) ? $data['archive_names'] : [];
+                    $originalName = trim((string) ($names[$path] ?? ''));
+
                     try {
                         $font = app(CustomFontInstaller::class)->installFromPath(
                             Storage::disk($disk)->path($path),
                             filled($data['family'] ?? null) ? (string) $data['family'] : null,
                             (string) ($data['category'] ?? 'sans-serif'),
+                            originalName: $originalName !== '' ? $originalName : null,
                         );
 
                         Notification::make()

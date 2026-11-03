@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-11-03
+
+### Fixed
+
+- **Custom font family names are now read from the font itself.** When no family is typed, the installer reads the embedded `name` table (TTF/OTF, and WOFF via zlib) instead of trusting the uploaded file name, so a ZIP saved by Filament under a generated name (e.g. `4bf-l-qa-lh-…-rh1.zip`) no longer produces a family like `4 Bf L Qa Lh Zcb …`. Fallback order is: font metadata → names of the font files inside the archive/folder → the original upload name. Hash-like names are rejected outright, and camelCase names (`IBMPlexSans-Bold`) are split into words.
+- **Family auto-fill on upload.** Selecting font files in Admin → Fonts now fills the family (and slug) fields from the font metadata, so new records no longer need the name typed by hand.
+
 ## [1.12.0] - 2026-11-03
 
 ### Added
