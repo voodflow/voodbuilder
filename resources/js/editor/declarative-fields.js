@@ -50,6 +50,8 @@ const FIELD_TYPE_ATTR = 'data-vb-field-type';
 const FIELD_LABEL_ATTR = 'data-vb-field-label';
 const STATUS_ATTR = 'data-vb-status';
 const ITEM_ATTR = 'data-vb-item';
+const SECTION_BLOCK_ATTR = 'data-voodbuilder-section-block';
+const LEGACY_SECTION_BLOCK_ATTR = 'data-voodbuilder-block';
 const BLOCK_CONFIG_ATTR = 'data-voodbuilder-config';
 
 const dynamicRefreshTimers = new WeakMap();
@@ -78,6 +80,23 @@ function hasItemAttr(component) {
     };
 
     return Object.prototype.hasOwnProperty.call(attrs, ITEM_ATTR);
+}
+
+/**
+ * Catalog section root (top-level block). Duplicated blocks can end up nested
+ * inside another copy; their fields must never leak into the outer panel.
+ *
+ * @param {object} component
+ * @returns {boolean}
+ */
+function isSectionBlockComponent(component) {
+    const attrs = {
+        ...(component?.get?.('attributes') ?? {}),
+        ...(component?.getAttributes?.() ?? {}),
+    };
+
+    return Object.prototype.hasOwnProperty.call(attrs, SECTION_BLOCK_ATTR)
+        || Object.prototype.hasOwnProperty.call(attrs, LEGACY_SECTION_BLOCK_ATTR);
 }
 
 function isTableRowComponent(component) {
@@ -167,7 +186,28 @@ function walkComponents(root, visit) {
 export function findDeclarativeFields(scope) {
     // Always stop at nested data-vb-item trees so section/category panels
     // never dump child item fields (e.g. FAQ questions inside a category).
-    return collectFields(scope, { stopAtNestedItems: true });
+    const fields = collectFields(scope, { stopAtNestedItems: true, stopAtNestedSections: true });
+
+    // A duplicated block can nest its own copy (or a copy of its header) inside
+    // the original scope: the same data-vb-field keys would then render twice and
+    // edits would hit the wrong element. Keep the first (outermost) occurrence.
+    const seen = new Set();
+
+    return fields.filter((field) => {
+        const key = String(field?.key ?? '').trim();
+
+        if (key === '') {
+            return true;
+        }
+
+        if (seen.has(key)) {
+            return false;
+        }
+
+        seen.add(key);
+
+        return true;
+    });
 }
 
 /**
@@ -182,10 +222,10 @@ export function findItemDeclarativeFields(item) {
 
 /**
  * @param {object} scope
- * @param {{ stopAtNestedItems?: boolean }} [options]
+ * @param {{ stopAtNestedItems?: boolean, stopAtNestedSections?: boolean }} [options]
  * @returns {object[]}
  */
-function collectFields(scope, { stopAtNestedItems = false } = {}) {
+function collectFields(scope, { stopAtNestedItems = false, stopAtNestedSections = false } = {}) {
     const fields = [];
 
     const walk = (component) => {
@@ -213,6 +253,10 @@ function collectFields(scope, { stopAtNestedItems = false } = {}) {
 
         for (const child of [...(component.components?.() ?? [])]) {
             if (stopAtNestedItems && child !== scope && (hasItemAttr(child) || isTableBodyRow(child))) {
+                continue;
+            }
+
+            if (stopAtNestedSections && child !== scope && isSectionBlockComponent(child)) {
                 continue;
             }
 

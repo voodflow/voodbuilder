@@ -104,6 +104,15 @@ function syncSettingsFormValues(mount, root) {
         }
 
         if (input instanceof HTMLInputElement && input.type === 'checkbox') {
+            // Declarative optional blocks (data-vb-optional) own their visibility through
+            // `data-vb-show-<key>` on the block element; the checkbox is initialised from
+            // there when the panel renders. The generic prop sync below has no matching
+            // model property, so it would force these back to "off" (or "on") and desync
+            // the UI from the canvas — leave them alone.
+            if (name.startsWith('vbShow-')) {
+                return;
+            }
+
             let raw = root.get(name);
 
             if ((raw === undefined || raw === null) && config && Object.prototype.hasOwnProperty.call(config, name)) {

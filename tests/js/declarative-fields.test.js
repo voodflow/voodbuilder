@@ -82,6 +82,64 @@ describe('declarative-fields', () => {
         expect(findItemDeclarativeFields(item).map((field) => field.key)).toEqual(['title']);
     });
 
+    it('never renders duplicated block fields twice after a cloned copy is nested', () => {
+        const heading = mockComponent({
+            attrs: { 'data-vb-field': 'heading', 'data-vb-field-label': 'Heading' },
+            content: 'Labs',
+        });
+        const intro = mockComponent({
+            attrs: { 'data-vb-field': 'intro', 'data-vb-field-label': 'Intro' },
+            content: 'Intro copy',
+        });
+        const cloneHeading = mockComponent({
+            attrs: { 'data-vb-field': 'heading', 'data-vb-field-label': 'Heading' },
+            content: '',
+        });
+        const cloneIntro = mockComponent({
+            attrs: { 'data-vb-field': 'intro', 'data-vb-field-label': 'Intro' },
+            content: 'Cloned intro',
+        });
+        // A second catalog block dropped inside the original one.
+        const nestedBlock = mockComponent({
+            attrs: { 'data-voodbuilder-section-block': 'demo-clone' },
+            children: [cloneHeading, cloneIntro],
+        });
+        const section = mockComponent({
+            attrs: { 'data-voodbuilder-section-block': 'demo' },
+            children: [heading, intro, nestedBlock],
+        });
+
+        const keys = findDeclarativeFields(section).map((field) => field.key);
+
+        expect(keys).toEqual(['heading', 'intro']);
+    });
+
+    it('keeps only the first field when a duplicated header lives inside the same block', () => {
+        const heading = mockComponent({
+            attrs: { 'data-vb-field': 'heading', 'data-vb-field-label': 'Heading' },
+            content: 'Labs',
+        });
+        const duplicateHeading = mockComponent({
+            attrs: { 'data-vb-field': 'heading', 'data-vb-field-label': 'Heading' },
+            content: '',
+        });
+        const duplicateIntro = mockComponent({
+            attrs: { 'data-vb-field': 'intro', 'data-vb-field-label': 'Intro' },
+            content: 'Cloned intro',
+        });
+        const headerCopy = mockComponent({ children: [duplicateHeading, duplicateIntro] });
+        const section = mockComponent({
+            attrs: { 'data-voodbuilder-section-block': 'demo' },
+            children: [heading, headerCopy],
+        });
+
+        const fields = findDeclarativeFields(section);
+
+        expect(fields.map((field) => field.key)).toEqual(['heading', 'intro']);
+        expect(fields[0].component).toBe(heading);
+        expect(fields[1].component).toBe(duplicateIntro);
+    });
+
     it('resolves the focused repeating item from a nested selection', () => {
         const titleA = mockComponent({ attrs: { 'data-vb-field': 'title' }, content: 'A' });
         const titleB = mockComponent({ attrs: { 'data-vb-field': 'title' }, content: 'B' });
