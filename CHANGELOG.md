@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-11-03
+
+### Added
+
+- **Regenerate a translation from the page you are editing.** The page edit header gained "Regenerate translation": pick an existing sibling language and its authored content is replaced with this page's, while slug, locale, URL, publish state and translation group stay untouched — rebuilding a stale translation no longer means deleting the page and creating it again. The title can be copied too, off by default.
+- `SitePageTranslation` helper `cloneContentInto()` / `findTarget()` / `existingTargetLocales()` so the same rebuild can be triggered from code or a console command.
+- `SitePage` now ships `@property` annotations for its columns.
+
+### Fixed
+
+- **Layers eye-hide no longer deletes the section on save.** `stripOrphanPageContentText()` (part of the save pipeline) reused the publishing strip, which removes every `data-vb-layer-hidden` node: a hidden section was written out of the stored payload, so after a reload it was gone from the canvas *and* from Layers with no way back. Hidden nodes are now only dropped when publishing; the save path keeps them.
+- **Hidden layers stay reachable.** A component carrying the hidden marker is forced back to `layerable: true`, so a chrome/dynamic lock pass cannot drop it out of the Layers tree.
+- **Deleting translations no longer crashes.** The shared helper called `forceDeleteQuietly()`, which does not exist in Laravel (`deleteQuietly()` is a soft delete and `forceDelete()` only exists on SoftDeletes models), so "delete translation" ended in a `BadMethodCallException`. Members are now removed with a bulk force delete on their own query: quiet, hard, and valid for both soft-deleting and plain models.
+- **Editor labels follow the UI language.** ~40 strings that only had English fallbacks (Anchors, Reading progress / table of contents, Social share, class panel shadow + hover popover, page templates, counters, media browser subtitles…) now resolve from the dictionaries; media hero traits (background image/video, fit, position, opacity, minimum height, source, controls, muted, autoplay, loop), their select options (Cover/Contain/Fill, Center/Top/Bottom, Yes/No, Auto fit content) and the section item-count panel (Number of items/rows, Columns) are translated too, as are the hero layer names.
+
 ## [1.14.0] - 2026-11-03
 
 ### Added

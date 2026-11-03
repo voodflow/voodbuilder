@@ -172,6 +172,22 @@ class EditorHtmlSanitizerTest extends TestCase
         $this->assertStringNotContainsString('id="pricing"', $cleaned);
     }
 
+    public function test_save_path_keeps_hidden_layer_elements(): void
+    {
+        // The save pipeline used to run the publishing strip: a Layers eye-hidden
+        // section was deleted from the stored payload, so it vanished from Layers
+        // (and from the page) on the next editor load.
+        $html = '<section id="keep"><h2>Visible</h2></section>'
+            . '<section id="pricing" data-vb-layer-hidden="1" style="display:none"><div class="pricing">Hidden pricing</div></section>';
+
+        $saved = EditorHtmlSanitizer::stripOrphanPageContentText($html);
+
+        $this->assertStringContainsString('id="pricing"', $saved);
+        $this->assertStringContainsString('data-vb-layer-hidden="1"', $saved);
+        $this->assertStringContainsString('Hidden pricing', $saved);
+        $this->assertStringNotContainsString('data-voodbuilder-inner-drop', $saved);
+    }
+
     public function test_normalizes_inline_camel_case_styles(): void
     {
         $html = '<span style="maxWidth:40px; flexShrink:0; alignItems:center">icon</span>';

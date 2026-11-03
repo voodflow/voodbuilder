@@ -847,6 +847,11 @@ final class EditorHtmlSanitizer
     /**
      * Drop page HTML that is only bare text (no block markup). Often left after deleting
      * a section when Grapes serializes orphan textnodes — visible on canvas, not in Layers.
+     *
+     * Layers eye-hidden nodes are author content, not editor scaffolding: the save path
+     * runs this (see {@see EditorGate::normalizePayload()}), so stripping them here
+     * deleted hidden sections from the stored payload and they vanished from Layers
+     * after a reload. Hidden nodes are only dropped when *publishing*.
      */
     public static function stripOrphanPageContentText(string $html): string
     {
@@ -854,7 +859,7 @@ final class EditorHtmlSanitizer
             return '';
         }
 
-        $html = self::stripEditorOnlyElements($html);
+        $html = self::stripEditorOnlyElements($html, stripHiddenLayers: false);
 
         if (trim($html) === '') {
             return '';
@@ -905,7 +910,7 @@ final class EditorHtmlSanitizer
         return trim($clean);
     }
 
-    public static function stripEditorOnlyElements(string $html): string
+    public static function stripEditorOnlyElements(string $html, bool $stripHiddenLayers = true): string
     {
         if ($html === '') {
             return $html;
@@ -941,7 +946,9 @@ final class EditorHtmlSanitizer
             $html = is_string($stripped) ? $stripped : $html;
         }
 
-        $html = self::stripHiddenLayerElements($html);
+        if ($stripHiddenLayers) {
+            $html = self::stripHiddenLayerElements($html);
+        }
 
         return self::stripEditorOnlyAttributes($html);
     }

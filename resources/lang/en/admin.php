@@ -84,6 +84,7 @@ return [
 
     'actions' => [
         'translate_page' => 'Create translation',
+        'regenerate_translation' => 'Regenerate translation',
         'translate_menu' => 'Translate to…',
         'clone_menu' => 'Clone menu',
         'clone_menu_placement' => 'Copy to placement…',
@@ -103,6 +104,11 @@ return [
         'delete_translations_heading' => 'Delete translations',
         'delete_translations_modal_description' => 'Select which translations to remove. The canonical row in the group is always kept.',
         'canonical_kept_notice' => 'Original kept: :locale — :title',
+        'regenerate_tooltip' => 'Push this version onto another language, replacing its content',
+        'regenerate_heading' => 'Regenerate translation',
+        'regenerate_description' => 'The selected language content is replaced with this page\'s. Slug, language, URL and publish state stay untouched.',
+        'copy_title' => 'Copy the title too',
+        'copy_title_help' => 'Use it when the title needs no translation; leave it off to keep the title already set for the target language.',
     ],
 
     'menu_translation' => [
@@ -121,6 +127,8 @@ return [
     'notifications' => [
         'translation_created' => 'Translation created',
         'translation_created_body' => 'Edit the :locale version and publish when ready.',
+        'translation_regenerated' => 'Translation regenerated',
+        'translation_regenerated_body' => 'The :locale version now holds this content. Review the translated copy before publishing.',
         'menu_translation_created' => 'Menu translation created',
         'menu_translation_created_body' => 'Edit the :locale menu and adjust labels and links.',
         'menu_cloned' => 'Menu cloned',

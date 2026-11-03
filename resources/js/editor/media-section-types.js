@@ -591,7 +591,7 @@ function registerBackgroundImageType(editor) {
         editor,
         'vb-bg-image',
         'vb-bg-image',
-        'Hero · background image',
+        heroName(editor, 'mediaHeroBackgroundImage', 'Hero · background image'),
         syncBackgroundImageSection,
         BACKGROUND_IMAGE_TRAITS,
     );
@@ -601,7 +601,7 @@ function registerBackgroundImageType(editor) {
         editor,
         'vb-hero-cinematic',
         'vb-hero-cinematic',
-        'Hero · cinematic full-bleed',
+        heroName(editor, 'mediaHeroCinematic', 'Hero · cinematic full-bleed'),
         syncBackgroundImageSection,
         BACKGROUND_IMAGE_TRAITS,
     );
@@ -613,7 +613,7 @@ function registerBackgroundImageType(editor) {
         editor,
         'voodbuilder-bg-image-section',
         '',
-        'Hero · background image',
+        heroName(editor, 'mediaHeroBackgroundImage', 'Hero · background image'),
         syncBackgroundImageSection,
         BACKGROUND_IMAGE_TRAITS,
         {
@@ -632,86 +632,186 @@ function registerBackgroundImageType(editor) {
     );
 }
 
+const BACKGROUND_VIDEO_TRAITS = [
+    {
+        type: 'select',
+        name: 'data-vb-video-provider',
+        label: 'Source',
+        options: PROVIDER_OPTIONS,
+        changeProp: true,
+    },
+    { type: 'text', name: 'data-vb-video-id', label: 'YouTube / Vimeo ID', changeProp: true },
+    { type: 'text', name: 'data-vb-video-src', label: 'Video URL', changeProp: true },
+    { type: 'text', name: 'data-vb-video-poster', label: 'Poster image URL', changeProp: true },
+    {
+        type: 'select',
+        name: 'data-vb-bg-size',
+        label: 'Video fit',
+        options: BG_SIZE_OPTIONS,
+        changeProp: true,
+    },
+    {
+        type: 'select',
+        name: 'data-vb-bg-position',
+        label: 'Video position',
+        options: BG_POSITION_OPTIONS,
+        changeProp: true,
+    },
+    {
+        type: 'number',
+        name: 'data-vb-bg-opacity',
+        label: 'Video opacity',
+        min: 0,
+        max: 1,
+        step: 0.05,
+        changeProp: true,
+    },
+    {
+        type: 'select',
+        name: 'data-vb-controls',
+        label: 'Show controls',
+        options: ON_OFF_OPTIONS,
+        changeProp: true,
+    },
+    {
+        type: 'select',
+        name: 'data-vb-muted',
+        label: 'Muted',
+        options: ON_OFF_OPTIONS,
+        changeProp: true,
+    },
+    {
+        type: 'select',
+        name: 'data-vb-autoplay',
+        label: 'Autoplay',
+        options: ON_OFF_OPTIONS,
+        changeProp: true,
+    },
+    {
+        type: 'select',
+        name: 'data-vb-loop',
+        label: 'Loop',
+        options: ON_OFF_OPTIONS,
+        changeProp: true,
+    },
+    {
+        type: 'select',
+        name: 'data-vb-min-height',
+        label: 'Minimum height',
+        options: MIN_HEIGHT_OPTIONS,
+        changeProp: true,
+    },
+];
 function registerBackgroundVideoType(editor) {
     registerMediaHeroType(
         editor,
         'vb-bg-video',
         'vb-bg-video',
-        'Hero · background video',
+        heroName(editor, 'mediaHeroBackgroundVideo', 'Hero · background video'),
         syncBackgroundVideoSection,
-        [
-            {
-                type: 'select',
-                name: 'data-vb-video-provider',
-                label: 'Source',
-                options: PROVIDER_OPTIONS,
-                changeProp: true,
-            },
-            { type: 'text', name: 'data-vb-video-id', label: 'YouTube / Vimeo ID', changeProp: true },
-            { type: 'text', name: 'data-vb-video-src', label: 'Video URL', changeProp: true },
-            { type: 'text', name: 'data-vb-video-poster', label: 'Poster image URL', changeProp: true },
-            {
-                type: 'select',
-                name: 'data-vb-bg-size',
-                label: 'Video fit',
-                options: BG_SIZE_OPTIONS,
-                changeProp: true,
-            },
-            {
-                type: 'select',
-                name: 'data-vb-bg-position',
-                label: 'Video position',
-                options: BG_POSITION_OPTIONS,
-                changeProp: true,
-            },
-            {
-                type: 'number',
-                name: 'data-vb-bg-opacity',
-                label: 'Video opacity',
-                min: 0,
-                max: 1,
-                step: 0.05,
-                changeProp: true,
-            },
-            {
-                type: 'select',
-                name: 'data-vb-controls',
-                label: 'Show controls',
-                options: ON_OFF_OPTIONS,
-                changeProp: true,
-            },
-            {
-                type: 'select',
-                name: 'data-vb-muted',
-                label: 'Muted',
-                options: ON_OFF_OPTIONS,
-                changeProp: true,
-            },
-            {
-                type: 'select',
-                name: 'data-vb-autoplay',
-                label: 'Autoplay',
-                options: ON_OFF_OPTIONS,
-                changeProp: true,
-            },
-            {
-                type: 'select',
-                name: 'data-vb-loop',
-                label: 'Loop',
-                options: ON_OFF_OPTIONS,
-                changeProp: true,
-            },
-            {
-                type: 'select',
-                name: 'data-vb-min-height',
-                label: 'Minimum height',
-                options: MIN_HEIGHT_OPTIONS,
-                changeProp: true,
-            },
-        ],
+        BACKGROUND_VIDEO_TRAITS,
     );
 }
 
+/**
+ * Layer display name for a media hero, in the active UI language.
+ *
+ * @param {object} editor
+ * @param {string} key
+ * @param {string} fallback
+ * @returns {string}
+ */
+function heroName(editor, key, fallback) {
+    const value = editor?.__voodbuilderLabels?.[key];
+
+    return typeof value === 'string' && value.trim() !== '' ? value : fallback;
+}
+
+/**
+ * Traits and select options are module-level objects created before the editor knows
+ * the active UI language. Mutating them in place keeps a single definition while the
+ * Inspector shows Italian labels for Italian authors.
+ */
+function applyMediaSectionLabels(editor) {
+    const labels = editor?.__voodbuilderLabels ?? {};
+    const t = (key, fallback) => {
+        const value = labels[key];
+
+        return typeof value === 'string' && value.trim() !== '' ? value : fallback;
+    };
+    const translateOptions = (options, map) => {
+        for (const option of options) {
+            const key = map[option.id];
+
+            if (key) {
+                option.label = t(key, option.label);
+            }
+        }
+    };
+
+    translateOptions(BG_SIZE_OPTIONS, {
+        cover: 'imageSettingsFitCover',
+        contain: 'imageSettingsFitContain',
+        fill: 'imageSettingsFitFill',
+    });
+    translateOptions(BG_POSITION_OPTIONS, {
+        center: 'imageSettingsPositionCenter',
+        top: 'imageSettingsPositionTop',
+        bottom: 'imageSettingsPositionBottom',
+    });
+    translateOptions(MIN_HEIGHT_OPTIONS, {
+        auto: 'imageSettingsMinHeightAuto',
+    });
+    translateOptions(ON_OFF_OPTIONS, {
+        1: 'commonYes',
+        0: 'commonNo',
+    });
+    translateOptions(PROVIDER_OPTIONS, {
+        file: 'videoSettingsSourceFile',
+        yt: 'videoSettingsSourceYoutube',
+        ytnc: 'videoSettingsSourceYoutube',
+        vi: 'videoSettingsSourceVimeo',
+    });
+
+    const imageLabels = {
+        'data-vb-bg-src': 'imageSettingsHeroSrc',
+        'data-vb-bg-size': 'imageSettingsFit',
+        'data-vb-bg-position': 'imageSettingsPosition',
+        'data-vb-bg-opacity': 'imageSettingsOpacity',
+        'data-vb-min-height': 'imageSettingsMinHeight',
+    };
+
+    for (const trait of BACKGROUND_IMAGE_TRAITS) {
+        const key = imageLabels[trait.name];
+
+        if (key) {
+            trait.label = t(key, trait.label);
+        }
+    }
+
+    const videoLabels = {
+        'data-vb-video-provider': 'videoSettingsSource',
+        'data-vb-video-id': 'videoSettingsYoutubeId',
+        'data-vb-video-src': 'videoSettingsFileSrc',
+        'data-vb-video-poster': 'videoSettingsPoster',
+        'data-vb-bg-size': 'videoSettingsFit',
+        'data-vb-bg-position': 'videoSettingsPosition',
+        'data-vb-bg-opacity': 'videoSettingsOpacity',
+        'data-vb-controls': 'videoSettingsControls',
+        'data-vb-muted': 'videoSettingsMuted',
+        'data-vb-autoplay': 'videoSettingsAutoplay',
+        'data-vb-loop': 'videoSettingsLoop',
+        'data-vb-min-height': 'videoSettingsMinHeight',
+    };
+
+    for (const trait of BACKGROUND_VIDEO_TRAITS) {
+        const key = videoLabels[trait.name];
+
+        if (key) {
+            trait.label = t(key, trait.label);
+        }
+    }
+}
 /**
  * Re-apply media-hero inline presentation (min-height, object-fit, …) after CSS JIT
  * so compile/style sync cannot leave a collapsed section.
@@ -749,6 +849,7 @@ export function resyncMediaHeroSections(editor) {
  * @param {import('grapesjs').Editor} editor
  */
 export function registerMediaSectionTypes(editor) {
+    applyMediaSectionLabels(editor);
     registerBackgroundImageType(editor);
     registerBackgroundVideoType(editor);
 

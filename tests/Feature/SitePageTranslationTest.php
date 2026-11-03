@@ -11,6 +11,7 @@ use Voodflow\Voodbuilder\Http\Controllers\SitePageController;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\SitePageResolver;
 use Voodflow\Voodbuilder\Support\SitePageTranslation;
+use Voodflow\Voodbuilder\Support\TranslationGroupDeletion;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Voodbuilder\Tests\TestCase;
 use Voodflow\Vtuts\Support\Locales;
@@ -74,6 +75,75 @@ class SitePageTranslationTest extends TestCase
         $this->assertFalse($italian->published);
         $this->assertSame('about-us', $italian->slug);
         $this->assertSame('About us', $italian->title);
+    }
+
+    public function test_it_regenerates_an_existing_translation_from_the_source_page(): void
+    {
+        $italian = SitePage::query()->create([
+            'title' => 'Chi siamo',
+            'slug' => 'chi-siamo',
+            'locale' => 'it',
+            'content' => [],
+            'builder' => 'visual',
+            'builder_payload' => ['html' => '<section id="it">Nuovo</section>', 'css' => '', 'js' => ''],
+            'layout' => 'page',
+            'published' => true,
+            'published_at' => now(),
+        ]);
+
+        $english = SitePageTranslation::createFrom($italian, 'en');
+        $english->forceFill([
+            'title' => 'About us',
+            'slug' => 'about-us',
+            'published' => true,
+            'published_at' => now(),
+        ])->save();
+
+        $this->assertSame(
+            ['en' => 'English'],
+            SitePageTranslation::existingTargetLocales($italian),
+        );
+
+        $target = SitePageTranslation::findTarget($italian, 'en');
+
+        $this->assertNotNull($target);
+
+        SitePageTranslation::cloneContentInto($italian, $target, copyTitle: false);
+
+        $target->refresh();
+
+        $this->assertSame('<section id="it">Nuovo</section>', $target->builder_payload['html'] ?? null);
+        // Identity of the translation is untouched: only the authored content moves.
+        $this->assertSame('en', $target->locale);
+        $this->assertSame('about-us', $target->slug);
+        $this->assertSame('About us', $target->title);
+        $this->assertTrue($target->published);
+        $this->assertSame($italian->translation_group_id, $target->translation_group_id);
+    }
+
+    public function test_it_force_deletes_a_translation_and_keeps_the_canonical_page(): void
+    {
+        $italian = SitePage::query()->create([
+            'title' => 'Chi siamo',
+            'slug' => 'chi-siamo',
+            'locale' => 'it',
+            'content' => [],
+            'builder' => 'visual',
+            'layout' => 'page',
+            'published' => true,
+            'published_at' => now(),
+        ]);
+
+        $english = SitePageTranslation::createFrom($italian, 'en');
+
+        // The canonical member must survive: only siblings can be removed.
+        $this->assertSame([], TranslationGroupDeletion::deleteByIds(SitePage::class, [$italian->getKey()]));
+
+        $deleted = TranslationGroupDeletion::deleteByIds(SitePage::class, [$english->getKey()]);
+
+        $this->assertSame([$english->getKey()], $deleted);
+        $this->assertDatabaseMissing('site_pages', ['id' => $english->getKey()]);
+        $this->assertDatabaseHas('site_pages', ['id' => $italian->getKey()]);
     }
 
     public function test_menu_resolution_returns_linked_translation_for_current_locale(): void

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use RalphJSmit\Laravel\SEO\Schema\ArticleSchema;
 use RalphJSmit\Laravel\SEO\Schema\BreadcrumbListSchema;
@@ -35,6 +36,32 @@ use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 
 /**
  * Site Page.
+ *
+ * @property int $id
+ * @property string $title
+ * @property string|null $slug
+ * @property array<string, mixed>|null $content
+ * @property PageBuilder $builder
+ * @property array<string, mixed>|null $builder_payload
+ * @property string|null $layout
+ * @property int|null $chrome_layout_id
+ * @property bool $hide_site_footer
+ * @property bool $hide_site_nav
+ * @property string|null $sub_theme
+ * @property string|null $section
+ * @property string|null $excerpt
+ * @property bool $section_home
+ * @property bool $is_home
+ * @property bool $is_dynamic
+ * @property string|null $dynamic_channel
+ * @property array<int, string>|null $dynamic_routes
+ * @property int|null $dynamic_priority
+ * @property string $locale
+ * @property string|null $translation_group_id
+ * @property bool $published
+ * @property Carbon|null $published_at
+ * @property PageVisibility $visibility
+ * @property bool $password_protected
  */
 class SitePage extends Model implements HasRichContent
 {

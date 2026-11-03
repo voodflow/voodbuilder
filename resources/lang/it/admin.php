@@ -84,6 +84,7 @@ return [
 
     'actions' => [
         'translate_page' => 'Crea traduzione',
+        'regenerate_translation' => 'Rigenera traduzione',
         'translate_menu' => 'Traduci in…',
         'clone_menu' => 'Clona menu',
         'clone_menu_placement' => 'Copia in placement…',
@@ -103,6 +104,11 @@ return [
         'delete_translations_heading' => 'Elimina traduzioni',
         'delete_translations_modal_description' => 'Seleziona quali traduzioni rimuovere. La riga canonica del gruppo viene sempre mantenuta.',
         'canonical_kept_notice' => 'Originale mantenuto: :locale — :title',
+        'regenerate_tooltip' => 'Riporta questa versione su un’altra lingua, sostituendone il contenuto',
+        'regenerate_heading' => 'Rigenera traduzione',
+        'regenerate_description' => 'Il contenuto della lingua scelta viene sostituito con quello di questa pagina. Slug, lingua, URL e stato di pubblicazione restano invariati.',
+        'copy_title' => 'Copia anche il titolo',
+        'copy_title_help' => 'Utile se il titolo non va tradotto; lascialo spento per mantenere il titolo già presente nella lingua di destinazione.',
     ],
 
     'menu_translation' => [
@@ -121,6 +127,8 @@ return [
     'notifications' => [
         'translation_created' => 'Traduzione creata',
         'translation_created_body' => 'Modifica la versione :locale e pubblica quando pronta.',
+        'translation_regenerated' => 'Traduzione rigenerata',
+        'translation_regenerated_body' => 'La versione :locale ora contiene questo contenuto. Rivedi i testi tradotti prima di pubblicare.',
         'menu_translation_created' => 'Traduzione menu creata',
         'menu_translation_created_body' => 'Modifica il menu :locale e aggiorna etichette e link.',
         'menu_cloned' => 'Menu clonato',

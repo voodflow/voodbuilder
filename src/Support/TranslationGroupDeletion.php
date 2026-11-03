@@ -65,7 +65,7 @@ final class TranslationGroupDeletion
     /**
      * @param  class-string<Model>  $modelClass
      * @param  list<int|string>  $ids
-     * @return list<int>
+     * @return list<int|string>
      */
     public static function deleteByIds(string $modelClass, array $ids): array
     {
@@ -82,11 +82,26 @@ final class TranslationGroupDeletion
                 continue;
             }
 
-            $member->forceDeleteQuietly();
-            $deleted[] = (int) $member->getKey();
+            self::forceDeleteMember($member);
+            $deleted[] = $member->getKey();
         }
 
         return $deleted;
+    }
+
+    /**
+     * Hard-delete a member without firing model events.
+     *
+     * Laravel ships `deleteQuietly()` (a soft delete) but no `forceDeleteQuietly()`,
+     * and `forceDelete()` only exists on models using SoftDeletes. A bulk force
+     * delete on the model's own query is the quiet equivalent for both cases:
+     * it bypasses events and scopes and always removes the row.
+     */
+    protected static function forceDeleteMember(Model $member): void
+    {
+        $member->newModelQuery()
+            ->whereKey($member->getKey())
+            ->forceDelete();
     }
 
     public static function localeLabel(Model $record): string

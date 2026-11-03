@@ -282,6 +282,11 @@ export function persistLayerHiddenMarker(component, hidden) {
     if (hidden) {
         component.addAttributes({ [LAYER_HIDDEN_ATTR]: '1' });
         component.addStyle?.({ display: 'none' }, SILENT_HIDE_STYLE);
+        // A hidden layer must stay reachable in Layers (and on canvas) or the author has
+        // no way back: never inherit layerable:false from a chrome/dynamic lock pass.
+        if (component.get?.('layerable') === false) {
+            component.set?.({ layerable: true }, { silent: true });
+        }
 
         const id = component.getId?.();
 

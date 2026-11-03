@@ -1086,6 +1086,12 @@ function renderSectionItemCountPanel({
     itemSingular: singularArg,
 }) {
     const attrs = attrsArg ?? root.getAttributes?.() ?? {};
+    const uiLabels = editor?.__voodbuilderLabels ?? {};
+    const uiLabel = (key, fallback) => {
+        const value = uiLabels[key];
+
+        return typeof value === 'string' && value.trim() !== '' ? value : fallback;
+    };
     const resolved = (itemsArg && minArg != null && maxArg != null)
         ? {
             items: itemsArg,
@@ -1128,9 +1134,17 @@ function renderSectionItemCountPanel({
             const { min: tableColMin } = tableColumnBounds(root);
             const tableColumns = currentTableColumnCount(root, findTableHeadRow(root));
 
-            const itemsLabel = String(
-                attrs['data-vb-items-label'] || (table ? 'Number of rows' : 'Number of items'),
-            ).trim() || (table ? 'Number of rows' : 'Number of items');
+            // data-vb-items-label may carry the English default from the block catalog:
+            // treat those as "no custom label" so the panel follows the UI language.
+            const customItemsLabel = String(attrs['data-vb-items-label'] ?? '').trim();
+            const defaultItemsLabel = table
+                ? uiLabel('sectionItemsCountRows', 'Number of rows')
+                : uiLabel('sectionItemsCount', 'Number of items');
+            const itemsLabel = customItemsLabel !== ''
+                && customItemsLabel !== 'Number of items'
+                && customItemsLabel !== 'Number of rows'
+                ? customItemsLabel
+                : defaultItemsLabel;
             const { section, fields } = createFormSection(itemsLabel);
 
             if (table) {
@@ -1142,7 +1156,7 @@ function renderSectionItemCountPanel({
                     onCommit: (nextCount) => applySectionItemCount(root, nextCount),
                 });
                 appendCountInput(fields, {
-                    label: 'Number of columns',
+                    label: uiLabel('sectionItemsColumnsCount', 'Number of columns'),
                     name: 'vbTableColumns',
                     value: tableColumns,
                     min: tableColMin,
@@ -1182,7 +1196,7 @@ function renderSectionItemCountPanel({
 
                     fields.append(
                         createSelectField({
-                            label: 'Columns',
+                            label: uiLabel('sectionItemsColumns', 'Columns'),
                             name: 'vbItemColumns',
                             value: String(currentColumns),
                             options: columnOptions,

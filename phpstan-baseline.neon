@@ -2827,12 +2827,6 @@ parameters:
 			path: src/Support/ThemePresenter.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:forceDeleteQuietly\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Support/TranslationGroupDeletion.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getQualifiedDeletedAtColumn\(\)\.$#'
 			identifier: method.notFound
 			count: 1

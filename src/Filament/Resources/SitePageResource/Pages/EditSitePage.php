@@ -10,6 +10,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use Voodflow\Voodbuilder\Filament\Actions\CreateSitePageTranslationAction;
+use Voodflow\Voodbuilder\Filament\Actions\RegenerateSitePageTranslationAction;
 use Voodflow\Voodbuilder\Filament\Concerns\ConfirmsSitePageHomeTakeover;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 use Voodflow\Voodbuilder\Models\SitePage;
@@ -77,6 +78,7 @@ class EditSitePage extends EditRecord
     {
         return [
             CreateSitePageTranslationAction::make(),
+            RegenerateSitePageTranslationAction::make(),
             Action::make('openVisualEditor')
                 ->label(__('voodbuilder::pro.actions.open_visual_editor'))
                 ->icon('heroicon-o-paint-brush')
