@@ -79,6 +79,22 @@ final class NavigationMenuResolver
                     }
                 }
 
+                /*
+                 * Menus stored with a locale that has no translation yet (or before the
+                 * site switched languages) must not make the navigation disappear: fall
+                 * back to the placement itself, preferring the site default. The author
+                 * can then create the missing translation from the menu list.
+                 */
+                $menu = NavigationMenu::query()
+                    ->where('slug', $alias)
+                    ->orderByRaw('CASE WHEN locale = ? THEN 0 ELSE 1 END', [$defaultLocale])
+                    ->orderBy('id')
+                    ->first();
+
+                if ($menu !== null) {
+                    return $menu;
+                }
+
                 continue;
             }
 

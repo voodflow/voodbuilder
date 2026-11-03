@@ -7,6 +7,7 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
  * Site Page Resolver.
@@ -116,11 +117,28 @@ final class SitePageResolver
         return $source->translationFor($locale) ?? $source;
     }
 
+    /**
+     * Content translations (page/menu rows linked by `translation_group_id`) are a
+     * VoodBuilder feature: they only need the locale columns and more than one locale
+     * in `config('app.locales')`. `voodflow/vtuts` is a separate tutorials package and
+     * only owns locale *routing* (URL prefix, request locale), so requiring its config
+     * flag here removed the "translate page/menu" actions from sites that manage
+     * languages without it.
+     */
     public static function localizationEnabled(): bool
     {
-        return self::hasLocalizationColumns()
-            && (bool) config('vtuts.features.localization', false)
-            && count(SiteLocales::codes()) > 1;
+        return self::hasLocalizationColumns() && count(SiteLocales::codes()) > 1;
+    }
+
+    /**
+     * Whether URLs are localised per language (prefix or `?locale=`). That routing is
+     * provided by voodflow/vtuts: without it the site serves one locale at a time.
+     */
+    public static function localeRoutingEnabled(): bool
+    {
+        return self::localizationEnabled()
+            && class_exists(LocaleSwitcher::class)
+            && (bool) config('vtuts.features.localization', false);
     }
 
     public static function preferredLocale(): string

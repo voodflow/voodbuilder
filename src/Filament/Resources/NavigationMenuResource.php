@@ -96,17 +96,31 @@ class NavigationMenuResource extends Resource
     /** @return array<string, string> */
     protected static function sitePageOptions(?string $locale = null): array
     {
-        $query = SitePage::query()
+        $pages = SitePage::query()
             ->where('builder', PageBuilder::Visual)
             ->orderByDesc('is_home')
-            ->orderBy('title');
+            ->orderBy('title')
+            ->get();
 
         if ($locale !== null && SitePageResolver::localizationEnabled()) {
-            $query->where('locale', $locale);
+            /*
+             * A menu can be stored under a locale that has no pages yet (a fresh
+             * translation, or a site that switched default language). Filtering hard
+             * left the Page dropdown empty, so fall back to the site default and then
+             * to every page.
+             */
+            $preferred = $pages->where('locale', $locale);
+
+            if ($preferred->isEmpty()) {
+                $preferred = $pages->where('locale', SiteLocales::default());
+            }
+
+            if ($preferred->isNotEmpty()) {
+                $pages = $preferred;
+            }
         }
 
-        return $query
-            ->get()
+        return $pages
             ->mapWithKeys(function (SitePage $page): array {
                 $label = $page->title;
 

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.7] - 2026-11-03
+
+### Fixed
+
+- **Page and menu translations no longer require `voodflow/vtuts`.** `SitePageResolver::localizationEnabled()` also required `config('vtuts.features.localization')`, so on a site that installs only VoodBuilder the “Translate page” / “Translate menu” actions never appeared and the Language / Translations fields stayed hidden — even with two languages configured in `APP_LOCALES`. Content localization now depends on what it actually needs: the `locale` + `translation_group_id` columns and more than one entry in `config('app.locales')`. vtuts keeps owning locale *routing* (URL prefix and `?locale=`), exposed as the new `SitePageResolver::localeRoutingEnabled()`, which also guards `VoodbuilderUrls::home()` so a missing `LocaleSwitcher` class can no longer fatal.
+- **A locale mismatch no longer hides the navigation.** With localization enabled, `NavigationMenuResolver::forPlacement()` only fell back to the site default locale, so menus stored under another locale (rows created as `en` on an `it` site) resolved to `null` and the whole nav disappeared. It now falls back to the placement itself, preferring the default locale, and the menu editor’s Page dropdown falls back to the default locale’s pages instead of showing an empty list.
+
 ## [1.12.6] - 2026-11-03
 
 ### Added

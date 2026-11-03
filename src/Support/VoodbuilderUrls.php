@@ -29,7 +29,7 @@ final class VoodbuilderUrls
         $url = Route::has('home') ? route('home') : url('/');
 
         if (
-            SitePageResolver::localizationEnabled()
+            SitePageResolver::localeRoutingEnabled()
             && ! SiteLocales::usesUrlPrefix()
         ) {
             return LocaleSwitcher::appendLocaleQuery($url, $locale);
