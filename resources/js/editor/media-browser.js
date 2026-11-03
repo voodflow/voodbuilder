@@ -93,6 +93,32 @@ export async function openMediaBrowser(args) {
         ? 'video'
         : (wantsImage && ! wantsVideo ? 'image' : null);
 
+    /**
+     * Translated label with `:token` interpolation; English default last.
+     *
+     * @param {string} key
+     * @param {string} fallback
+     * @param {Record<string, string|number>} [replacements]
+     * @returns {string}
+     */
+    const t = (key, fallback, replacements = {}) => {
+        let text = String(labels[key] ?? fallback);
+
+        for (const [token, value] of Object.entries(replacements)) {
+            text = text.split(`:${token}`).join(String(value ?? ''));
+        }
+
+        return text;
+    };
+
+    const itemCountText = (total) => {
+        const template = labels.mediaBrowserItemCount ?? ':total item|:total items';
+        const forms = String(template).split('|');
+        const plural = Number(total) === 1 ? 0 : Math.min(forms.length - 1, 1);
+
+        return String(forms[plural] ?? forms[0] ?? '').split(':total').join(String(total));
+    };
+
     const title = labelKind === 'video' || (wantsVideo && ! wantsImage)
         ? (labels.assetManagerVideoTitle ?? labels.videoSettingsTitle ?? 'Select video')
         : (labels.assetManagerImageTitle ?? 'Select image');
@@ -127,39 +153,39 @@ export async function openMediaBrowser(args) {
                     <h2 class="voodbuilder-editor-modal__title" id="voodbuilder-media-browser-title">${escapeHtml(title)}</h2>
                     <p class="voodbuilder-media-browser__subtitle" data-mb-subtitle></p>
                 </div>
-                <button type="button" class="voodbuilder-editor-modal__close" data-mb-close aria-label="Close">×</button>
+                <button type="button" class="voodbuilder-editor-modal__close" data-mb-close aria-label="${escapeHtml(t('mediaBrowserClose', 'Close'))}">×</button>
             </header>
             <div class="voodbuilder-media-browser__layout">
-                <aside class="voodbuilder-media-browser__sidebar" data-mb-sidebar aria-label="Galleries"></aside>
+                <aside class="voodbuilder-media-browser__sidebar" data-mb-sidebar aria-label="${escapeHtml(t('mediaBrowserGalleries', 'Galleries'))}"></aside>
                 <div class="voodbuilder-media-browser__main">
                     <div class="voodbuilder-media-browser__toolbar">
-                        <div class="voodbuilder-media-browser__type-toggle" role="group" aria-label="Media type" data-mb-types>
-                            <button type="button" class="voodbuilder-media-browser__seg" data-mb-type="" aria-pressed="true">All</button>
-                            <button type="button" class="voodbuilder-media-browser__seg" data-mb-type="image" aria-pressed="false">Photos</button>
-                            <button type="button" class="voodbuilder-media-browser__seg" data-mb-type="video" aria-pressed="false">Videos</button>
+                        <div class="voodbuilder-media-browser__type-toggle" role="group" aria-label="${escapeHtml(t('mediaBrowserMediaType', 'Media type'))}" data-mb-types>
+                            <button type="button" class="voodbuilder-media-browser__seg" data-mb-type="" aria-pressed="true">${escapeHtml(t('mediaBrowserAll', 'All'))}</button>
+                            <button type="button" class="voodbuilder-media-browser__seg" data-mb-type="image" aria-pressed="false">${escapeHtml(t('mediaBrowserPhotos', 'Photos'))}</button>
+                            <button type="button" class="voodbuilder-media-browser__seg" data-mb-type="video" aria-pressed="false">${escapeHtml(t('mediaBrowserVideos', 'Videos'))}</button>
                         </div>
                         <label class="voodbuilder-media-browser__search">
-                            <span class="voodbuilder-media-browser__sr">Search</span>
-                            <input type="search" data-mb-search placeholder="Search by name…" autocomplete="off" />
+                            <span class="voodbuilder-media-browser__sr">${escapeHtml(t('mediaBrowserSearch', 'Search'))}</span>
+                            <input type="search" data-mb-search placeholder="${escapeHtml(t('mediaBrowserSearchPlaceholder', 'Search by name…'))}" autocomplete="off" />
                         </label>
-                        <select class="voodbuilder-media-browser__gallery-select" data-mb-gallery-select aria-label="Gallery"></select>
+                        <select class="voodbuilder-media-browser__gallery-select" data-mb-gallery-select aria-label="${escapeHtml(t('mediaBrowserGallery', 'Gallery'))}"></select>
                     </div>
                     <div class="voodbuilder-media-browser__dropzone" data-mb-dropzone>
-                        <input type="file" data-mb-file multiple hidden aria-label="Upload files" />
+                        <input type="file" data-mb-file multiple hidden aria-label="${escapeHtml(t('mediaBrowserUploadFiles', 'Upload files'))}" />
                         <div class="voodbuilder-media-browser__dropzone-inner">
-                            <strong data-mb-drop-title>Upload</strong>
-                            <span data-mb-drop-hint>Select a gallery to set the upload destination</span>
+                            <strong data-mb-drop-title>${escapeHtml(t('mediaBrowserUpload', 'Upload'))}</strong>
+                            <span data-mb-drop-hint>${escapeHtml(t('mediaBrowserUploadDefaultHint', 'Select a gallery to set the upload destination'))}</span>
                         </div>
                         <div class="voodbuilder-media-browser__upload-progress" data-mb-progress hidden></div>
                     </div>
                     <div class="voodbuilder-media-browser__grid-wrap">
-                        <div class="voodbuilder-media-browser__grid" data-mb-grid role="listbox" aria-label="Media"></div>
+                        <div class="voodbuilder-media-browser__grid" data-mb-grid role="listbox" aria-label="${escapeHtml(t('mediaBrowserMedia', 'Media'))}"></div>
                         <div class="voodbuilder-media-browser__status" data-mb-status></div>
                         <div class="voodbuilder-media-browser__sentinel" data-mb-sentinel aria-hidden="true"></div>
                     </div>
                     <div class="voodbuilder-media-browser__url-row">
-                        <input type="url" data-mb-url class="voodbuilder-editor-input" aria-label="External media URL" placeholder="Or paste an external URL…" />
-                        <button type="button" class="voodbuilder-editor-btn" data-mb-url-add>Add URL</button>
+                        <input type="url" data-mb-url class="voodbuilder-editor-input" aria-label="${escapeHtml(t('mediaBrowserExternalUrl', 'External media URL'))}" placeholder="${escapeHtml(t('mediaBrowserUrlPlaceholder', 'Or paste an external URL…'))}" />
+                        <button type="button" class="voodbuilder-editor-btn" data-mb-url-add>${escapeHtml(t('mediaBrowserUrlAdd', 'Add URL'))}</button>
                     </div>
                 </div>
             </div>
@@ -271,23 +297,21 @@ export async function openMediaBrowser(args) {
     const uploadContextGalleryId = () => state.uploadGalleryId ?? state.galleryId;
 
     const updateUploadHint = () => {
-        const path = state.uploadGallery?.path || state.uploadGallery?.name;
+        // Prefer the human album label over the technical slug path.
+        const path = state.uploadGallery?.name || state.uploadGallery?.path;
         const browsingGroup = selectedGallery()?.kind === 'group';
 
         if (path) {
             els.subtitle.textContent = browsingGroup
-                ? (labels.mediaBrowserFolderUploadSubtitle
-                    ?? `Browsing a folder · uploads go to ${path}`)
-                : (labels.mediaBrowserUploadSubtitle
-                    ?? `Uploads go to ${path} · browse any gallery to choose`);
-            els.dropHint.textContent = labels.mediaBrowserUploadDropHint
-                ?? `Uploads → ${path}`;
+                ? t('mediaBrowserFolderUploadSubtitle', 'Browsing a folder · uploads go to :path', { path })
+                : t('mediaBrowserUploadSubtitle', 'Uploads go to :path · browse any gallery to choose', { path });
+            els.dropHint.textContent = t('mediaBrowserUploadDropHint', 'Uploads → :path', { path });
 
             return;
         }
 
-        els.subtitle.textContent = labels.mediaBrowserBrowseSubtitle ?? 'Browse and choose media';
-        els.dropHint.textContent = labels.mediaBrowserUploadDropDefault ?? 'Uploads → default gallery';
+        els.subtitle.textContent = t('mediaBrowserBrowseSubtitle', 'Browse and choose media');
+        els.dropHint.textContent = t('mediaBrowserUploadDropDefault', 'Uploads → default gallery');
     };
 
     const galleryLabel = (gallery) => {
@@ -303,7 +327,7 @@ export async function openMediaBrowser(args) {
     };
 
     const renderGalleries = () => {
-        const allLabel = 'All media';
+        const allLabel = t('mediaBrowserAllMedia', 'All media');
         const items = [
             { id: null, name: allLabel, label: allLabel, depth: 0, media_count: state.total || null, is_default: false },
             ...state.galleries,
@@ -314,7 +338,9 @@ export async function openMediaBrowser(args) {
             const active = (id == null && state.galleryId == null)
                 || (id != null && Number(id) === Number(state.galleryId));
             const count = gallery.media_count != null ? `<span>${escapeHtml(String(gallery.media_count))}</span>` : '';
-            const badge = gallery.is_default ? '<em>default</em>' : '';
+            const badge = gallery.is_default
+                ? `<em>${escapeHtml(t('mediaBrowserDefaultBadge', 'default'))}</em>`
+                : '';
             const depth = Number(gallery.depth ?? 0);
             const kindClass = gallery.kind === 'group' ? ' is-group' : (gallery.kind === 'album' ? ' is-album' : '');
             const label = galleryLabel(gallery);
@@ -385,7 +411,7 @@ export async function openMediaBrowser(args) {
 
         const html = state.items.map((item) => {
             const isVideo = item.type === 'video' || isVideoAssetSrc(item.src);
-            const name = escapeHtml(item.name || 'Media');
+            const name = escapeHtml(item.name || t('mediaBrowserItemFallbackName', 'Media'));
             const thumb = item.thumb || (! isVideo ? (item.display || item.src) : null);
             const caption = escapeHtml(String(item.caption ?? ''));
             const alt = escapeHtml(String(item.alt ?? ''));
@@ -409,7 +435,7 @@ export async function openMediaBrowser(args) {
                 <span class="voodbuilder-media-browser__tile-preview">${preview}</span>
                 <span class="voodbuilder-media-browser__tile-meta">
                     <span class="voodbuilder-media-browser__tile-name">${name}</span>
-                    <span class="voodbuilder-media-browser__tile-kind">${isVideo ? 'Video' : 'Photo'}</span>
+                    <span class="voodbuilder-media-browser__tile-kind">${escapeHtml(isVideo ? t('mediaBrowserKindVideo', 'Video') : t('mediaBrowserKindPhoto', 'Photo'))}</span>
                 </span>
             </button>`;
         }).join('');
@@ -424,10 +450,10 @@ export async function openMediaBrowser(args) {
 
         const empty = state.items.length === 0 && ! state.loading;
         els.status.textContent = empty
-            ? 'No media in this view.'
+            ? t('mediaBrowserEmpty', 'No media in this view.')
             : (state.loading
-                ? 'Loading…'
-                : `${state.total} item${state.total === 1 ? '' : 's'}${state.hasMore ? ' · scroll for more' : ''}`);
+                ? t('mediaBrowserLoading', 'Loading…')
+                : `${itemCountText(state.total)}${state.hasMore ? ` · ${t('mediaBrowserScrollMore', 'scroll for more')}` : ''}`);
         updateUploadHint();
     };
 
@@ -476,7 +502,7 @@ export async function openMediaBrowser(args) {
         state.loading = true;
 
         if (reset) {
-            els.status.textContent = 'Loading…';
+            els.status.textContent = t('mediaBrowserLoading', 'Loading…');
         }
 
         try {
@@ -556,7 +582,10 @@ export async function openMediaBrowser(args) {
         let done = 0;
 
         for (const file of files) {
-            els.progress.textContent = `Uploading ${done + 1}/${files.length}…`;
+            els.progress.textContent = t('mediaBrowserUploading', 'Uploading :current/:total…', {
+                current: done + 1,
+                total: files.length,
+            });
 
             try {
                 const body = new FormData();
@@ -583,7 +612,7 @@ export async function openMediaBrowser(args) {
                     throw new Error('upload failed');
                 }
             } catch {
-                els.progress.textContent = `Failed: ${file.name}`;
+                els.progress.textContent = t('mediaBrowserUploadFailed', 'Failed: :name', { name: file.name });
             }
 
             done += 1;

@@ -58,6 +58,7 @@ use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\ModelIntegration;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Modules\Conditions\ConditionsModule;
 use Voodflow\Voodbuilder\Modules\History\HistoryModule;
 use Voodflow\Voodbuilder\Modules\Layouts\LayoutsModule;
@@ -324,7 +325,9 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $vault::register(
             'voodbuilder',
             'voodbuilder',
-            static fn (): string => (string) __('voodbuilder::settings.brand.site_name'),
+            // The vault root is the site's own library: name it after the brand the
+            // admin configured, never a raw translation key.
+            static fn (): string => VoodbuilderSettings::brandName(),
         );
 
         if (method_exists($vault, 'ensureOnBoot')) {
