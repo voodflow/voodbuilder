@@ -8,6 +8,7 @@
 
 import { debugSwallowed } from './debug-swallowed.js';
 import { isFooterBlock, isNavBlock, isHeaderBlock } from './chrome/ids.js';
+import { isMediaHeroComponent } from './media-hero.js';
 import { tablerIcon } from './editor-icons.js';
 import { isLayoutContainer, isLayoutSection } from './layout-blocks.js';
 import { COMPONENT_ATTR } from './component-instance-type.js';
@@ -330,6 +331,28 @@ function componentClasses(component) {
 }
 
 /**
+ * Content shell that a media hero's own template ships on a layout row.
+ *
+ * `vb-bg-image` / `vb-hero-cinematic` wrap the copy dropzones in
+ * `.voodbuilder-editor-container` (`flex items-center` for vertical centring). That row
+ * is the author's measure target — unlike a mounted component's preview row, which is
+ * server-owned. Treating it as layout-only is what removed the width control from the
+ * hero and let its measure be unstamped on save.
+ *
+ * @param {object|null|undefined} node
+ * @returns {boolean}
+ */
+export function isMediaHeroContentShell(node) {
+    if (! node || isDecorativeSectionChild(node) || ! isContentWidthContainer(node)) {
+        return false;
+    }
+
+    const parent = node.parent?.() ?? null;
+
+    return parent !== null && isMediaHeroComponent(parent);
+}
+
+/**
  * @param {object} component
  * @returns {object[]}
  */
@@ -498,8 +521,12 @@ export function findSectionContentWrapper(section) {
          * markers on that very node; treating it as the wrapper made
          * `ensureSectionContentWrapper()` absorb the rest of the block into it, which
          * is why the published block shrank.
+         *
+         * Media heroes are the exception: their own template puts the content shell on
+         * a `flex items-center` row (vertical centring), so that row IS the author's
+         * measure target — skipping it left the hero with no width control at all.
          */
-        if (classListHasLayoutUtilities(componentClasses(child))) {
+        if (classListHasLayoutUtilities(componentClasses(child)) && ! isMediaHeroContentShell(child)) {
             return false;
         }
 
@@ -576,6 +603,11 @@ export function healStampedLayoutChildren(section) {
         }
 
         if (! classListHasLayoutUtilities(componentClasses(child))) {
+            continue;
+        }
+
+        // A media hero's content row is authored measure, not a poisoned preview row.
+        if (isMediaHeroContentShell(child)) {
             continue;
         }
 

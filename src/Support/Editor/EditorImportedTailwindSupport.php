@@ -834,6 +834,12 @@ final class EditorImportedTailwindSupport
                 continue;
             }
 
+            // A media hero (static catalog markup) ships the author content shell on its
+            // copy row: restore it when a heal wiped it, and never unstamp it below.
+            if (EditorBlockClasses::isMediaHeroBlock($block)) {
+                $healed = self::ensureMediaHeroContentShell($block) || $healed;
+            }
+
             $healed = self::unstampLayoutShellsInDynamicBlock($block) || $healed;
         }
 
@@ -849,9 +855,22 @@ final class EditorImportedTailwindSupport
     protected static function unstampLayoutShellsInDynamicBlock(DOMElement $block): bool
     {
         $healed = false;
+        $isMediaHero = EditorBlockClasses::isMediaHeroBlock($block);
 
         foreach ($block->getElementsByTagName('*') as $element) {
             if (! $element instanceof DOMElement || ! self::isContentShellElement($element)) {
+                continue;
+            }
+
+            /*
+             * A media hero's own content row IS the author's measure target: it is a
+             * layout row (`flex items-center` for vertical centring) by design, not the
+             * preview plumbing of a mounted component. Unstamping it removed the
+             * container class and the content-width attribute, which both wiped the
+             * boxed measure (the text spanned the full viewport) and hid the
+             * content-width toolbar on the row — the width could not be set again.
+             */
+            if ($isMediaHero && $element->parentNode === $block) {
                 continue;
             }
 
@@ -864,6 +883,76 @@ final class EditorImportedTailwindSupport
         }
 
         return $healed;
+    }
+
+    /**
+     * Restore the content shell markers on a media hero's copy row.
+     *
+     * The hero block's canonical markup wraps the copy dropzones in
+     * `<div class="voodbuilder-editor-container …" data-voodbuilder-role="content">`,
+     * which is what `theme.css` boxes (and what the content-width toolbar cycles on).
+     * A legacy save stripped those markers, leaving an anonymous `flex` row: the copy
+     * went edge-to-edge and the row stopped being a width target.
+     */
+    protected static function ensureMediaHeroContentShell(DOMElement $block): bool
+    {
+        $row = self::mediaHeroContentRow($block);
+
+        if (! $row instanceof DOMElement) {
+            return false;
+        }
+
+        $changed = false;
+        $classes = preg_split('/\s+/', trim($row->getAttribute('class')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (! in_array('voodbuilder-editor-container', $classes, true)) {
+            $classes[] = 'voodbuilder-editor-container';
+            $row->setAttribute('class', implode(' ', $classes));
+            $changed = true;
+        }
+
+        if (trim($row->getAttribute('data-voodbuilder-role')) === '') {
+            $row->setAttribute('data-voodbuilder-role', 'content');
+            $changed = true;
+        }
+
+        return $changed;
+    }
+
+    /**
+     * The single non-decorative content layer of a media hero block.
+     */
+    protected static function mediaHeroContentRow(DOMElement $block): ?DOMElement
+    {
+        $candidates = [];
+
+        foreach ($block->childNodes as $child) {
+            if (! $child instanceof DOMElement || strtolower($child->tagName) !== 'div') {
+                continue;
+            }
+
+            if (self::isDecorativeSectionChild($child)) {
+                continue;
+            }
+
+            $candidates[] = $child;
+        }
+
+        if ($candidates === []) {
+            return null;
+        }
+
+        foreach ($candidates as $candidate) {
+            $xpath = new \DOMXPath($candidate->ownerDocument);
+            $dropzones = $xpath->query('.//*[@data-voodbuilder-dropzone]', $candidate);
+
+            if ($dropzones !== false && $dropzones->length > 0) {
+                return $candidate;
+            }
+        }
+
+        // Copy authored without dropzones: a single content layer is still the row.
+        return count($candidates) === 1 ? $candidates[0] : null;
     }
 
     /**

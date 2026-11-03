@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.4] - 2026-11-03
+
+### Fixed
+
+- **The hero's copy keeps its boxed width, and the width control is back on the hero row.** `vb-bg-image` ships its content shell on a `flex items-center` row (that is how the copy is vertically centred), but the 1.11.77 healer treated *every* layout row inside a `data-voodbuilder-block` as a mounted component's preview plumbing: it stripped `voodbuilder-editor-container`, `data-voodbuilder-role="content"`, `data-voodbuilder-content-width` and the inline `max-width` / `margin` from the hero's own content row. The published copy then spanned the full viewport with the background image, exactly as a full-bleed section does, and because the row was no longer a content container the content-width toolbar disappeared from it — the measure could not be set again. Media heroes (`vb-bg-image`, `vb-hero-cinematic`, `vb-bg-video`) are static authored markup, not a Livewire mount, so the healer now leaves their content row alone and restores the missing shell markers on already-broken payloads (both on save and on render, so existing pages heal without a re-save). `findSectionContentWrapper()` applies the same exception, so the toolbar targets the hero row instead of the section root and can cycle full → normal again.
+
 ## [1.12.3] - 2026-11-03
 
 ### Fixed

@@ -304,4 +304,32 @@ describe('content-width helpers and dynamic blocks', () => {
         expect(shell.getClasses()).toEqual(['voodbuilder-editor-container', 'mx-auto', 'max-w-[48rem]']);
         expect(shell.getAttributes()['data-voodbuilder-content-width']).toBe('custom');
     });
+
+    /*
+     * Regression (1.12.4): `vb-bg-image` ships its content shell on a `flex
+     * items-center` row (vertical centring). Skipping every layout row as "preview
+     * plumbing" left the hero with no width control — the copy went edge-to-edge and
+     * the toolbar no longer appeared on the row, so the measure could not be restored.
+     */
+    it('treats a media hero content row as the author measure, layout utilities included', () => {
+        const editor = { __voodbuilderFullWidthPage: true };
+        const section = dynamicSection('vb-bg-image');
+        const copyRow = attach(section, makeComponent({
+            tagName: 'div',
+            classes: ['voodbuilder-editor-container', 'relative', 'z-10', 'flex', 'items-center', 'px-5', 'py-16'],
+            attrs: {
+                'data-voodbuilder-role': 'content',
+                'data-voodbuilder-content-width': 'normal',
+            },
+        }));
+        attach(attach(copyRow, makeComponent({ tagName: 'div', classes: ['max-w-3xl'] })), makeComponent({
+            tagName: 'div',
+            attrs: { 'data-voodbuilder-dropzone': 'copy' },
+        }));
+
+        expect(findSectionContentWrapper(section)).toBe(copyRow);
+        expect(resolveContentWidthTarget(section, editor)).toBe(copyRow);
+        expect(resolveContentWidthTarget(copyRow, editor)).toBe(copyRow);
+        expect(shouldShowContentWidthToolbar(copyRow, editor)).toBe(true);
+    });
 });

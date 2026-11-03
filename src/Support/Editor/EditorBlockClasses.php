@@ -67,6 +67,41 @@ final class EditorBlockClasses
     protected const ROOT_PLUMBING_CLASS_PREFIXES = ['voodbuilder-editor-'];
 
     /**
+     * Static media-hero blocks (Core + Elements catalog).
+     *
+     * Their markup is authored HTML (never re-rendered by a Blade/Livewire mount), and
+     * their own template puts the content shell on a layout row (`flex items-center`
+     * for vertical centring). That row is the author's width target, so it must not be
+     * unstamped as if it were a mounted component's preview plumbing.
+     *
+     * @var list<string>
+     */
+    protected const MEDIA_HERO_BLOCK_IDS = ['vb-bg-image', 'vb-hero-cinematic', 'vb-bg-video'];
+
+    /**
+     * Whether the element is a static media hero block root.
+     */
+    public static function isMediaHeroBlock(\DOMElement $element): bool
+    {
+        $blockId = trim(
+            $element->getAttribute('data-voodbuilder-block')
+            ?: $element->getAttribute('data-voodbuilder-section-block'),
+        );
+
+        if ($blockId === '') {
+            return false;
+        }
+
+        foreach (self::MEDIA_HERO_BLOCK_IDS as $heroId) {
+            if ($blockId === $heroId || str_contains($blockId, $heroId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * True when the class list describes a layout node rather than a measure shell.
      */
     public static function hasLayoutUtilities(string $classList): bool

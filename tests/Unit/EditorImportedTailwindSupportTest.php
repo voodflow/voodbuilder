@@ -548,6 +548,38 @@ HTML;
         $this->assertStringContainsString('px-6', $healed);
     }
 
+    public function test_heal_restores_the_media_hero_content_shell(): void
+    {
+        $html = <<<'HTML'
+<section data-voodbuilder-block="vb-bg-image" data-voodbuilder-section-block="vb-bg-image" class="voodbuilder-editor-section relative overflow-hidden bg-zinc-950 text-white"><div data-voodbuilder-role="media" aria-hidden="true" class="voodbuilder-hero-media"><img src="/hero.webp" class="voodbuilder-hero-media__img"></div><div id="ifikd3" class="relative z-10 flex items-center px-5 py-16 lg:py-24"><div class="max-w-3xl"><div data-voodbuilder-dropzone="copy"><h1>LED</h1></div></div></div></section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::healDynamicBlockContentShells($html);
+
+        // The copy row is the author's measure target: it gets the shell markers back…
+        $this->assertMatchesRegularExpression('/<div[^>]*id="ifikd3"[^>]*class="[^"]*voodbuilder-editor-container[^"]*"[^>]*>/', $healed);
+        $this->assertMatchesRegularExpression('/<div[^>]*id="ifikd3"[^>]*data-voodbuilder-role="content"[^>]*>/', $healed);
+        // …while the layout row keeps its own utilities and the media layer stays untouched.
+        $this->assertStringContainsString('flex items-center px-5 py-16 lg:py-24', $healed);
+        $this->assertStringContainsString('data-voodbuilder-role="media"', $healed);
+    }
+
+    public function test_heal_keeps_the_media_hero_content_shell_stamped(): void
+    {
+        $html = <<<'HTML'
+<section data-voodbuilder-block="vb-bg-image" data-voodbuilder-section-block="vb-bg-image" class="voodbuilder-editor-section relative overflow-hidden"><div data-voodbuilder-role="media" aria-hidden="true" class="voodbuilder-hero-media"><img src="/hero.webp" class="voodbuilder-hero-media__img"></div><div class="voodbuilder-editor-container relative z-10 flex items-center px-5" data-voodbuilder-role="content" data-voodbuilder-content-width="normal" style="width:100%;max-width:80rem;margin-left:auto;margin-right:auto"><div data-voodbuilder-dropzone="copy"><h1>LED</h1></div></div></section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::healDynamicBlockContentShells($html);
+
+        // A media hero's content row is a layout row by design — it must not be unstamped.
+        $this->assertStringContainsString('voodbuilder-editor-container', $healed);
+        $this->assertStringContainsString('data-voodbuilder-role="content"', $healed);
+        $this->assertStringContainsString('data-voodbuilder-content-width="normal"', $healed);
+        $this->assertStringContainsString('max-width:80rem', $healed);
+        $this->assertStringContainsString('flex items-center', $healed);
+    }
+
     public function test_heal_existing_editor_sections_never_creates_a_shell_inside_a_dynamic_block(): void
     {
         $html = <<<'HTML'
