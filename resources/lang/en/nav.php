@@ -3,6 +3,7 @@
 return [
     'menu_aria' => 'Account menu',
     'preferences_menu_aria' => 'Site preferences',
+    'languages' => 'Language',
     'cookie_settings' => 'Cookie settings',
     'cookie_policy' => 'Cookie policy',
     'enable_dark_mode' => 'Dark mode',

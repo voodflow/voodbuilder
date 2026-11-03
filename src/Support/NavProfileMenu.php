@@ -31,12 +31,31 @@ final class NavProfileMenu
         return (bool) VoodbuilderSettings::get('show_theme_toggle', true);
     }
 
-    public static function languageSwitcherVisible(): bool
+    /**
+     * vtuts ships a switcher for tutorial content; it also covers site pages when the
+     * package is installed.
+     */
+    public static function vtutsLanguageSwitcherVisible(): bool
     {
         return class_exists(LocaleSwitcher::class)
             && LocaleSwitcher::visible()
             && app()->providerIsLoaded(VtutsServiceProvider::class)
             && view()->exists('vtuts::components.language-switcher');
+    }
+
+    /**
+     * Page-translation switcher owned by VoodBuilder, used when vtuts is absent.
+     */
+    public static function nativeLanguageSwitcherVisible(): bool
+    {
+        return ! self::vtutsLanguageSwitcherVisible()
+            && SiteLanguageSwitcher::visible();
+    }
+
+    public static function languageSwitcherVisible(): bool
+    {
+        return self::vtutsLanguageSwitcherVisible()
+            || self::nativeLanguageSwitcherVisible();
     }
 
     public static function hasContent(?bool $authenticated = null): bool

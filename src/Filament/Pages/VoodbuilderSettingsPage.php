@@ -30,6 +30,7 @@ use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\AdminAuthorization;
 use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\Popups\PopupsOrphanStatus;
+use Voodflow\Voodbuilder\Support\SiteLanguageSwitcher;
 use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
@@ -228,8 +229,9 @@ class VoodbuilderSettingsPage extends Page
                                                     ->helperText(__('voodbuilder::settings.header_nav.language_switcher_help'))
                                                     ->default(true)
                                                     ->live()
-                                                    ->visible(fn (): bool => class_exists(LocaleSwitcher::class)
-                                                        && LocaleSwitcher::enabled()),
+                                                    ->visible(fn (): bool => (class_exists(LocaleSwitcher::class)
+                                                        && LocaleSwitcher::enabled())
+                                                        || SiteLanguageSwitcher::enabled()),
                                             ]),
                                     ]),
                                 Section::make(__('voodbuilder::settings.typography.section'))

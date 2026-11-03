@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.9] - 2026-11-03
+
+### Added
+
+- **Language switcher without `voodflow/vtuts`.** A site that installs only VoodBuilder still has two languages in `APP_LOCALES` and translated pages, but the header switcher was hard-wired to vtuts' `LocaleSwitcher`, so it never rendered and `?locale=` was ignored. New `SiteLanguageSwitcher` lists `config('app.locales')` and builds a target per language: a page with a sibling translation links straight to it, any other page keeps its URL and appends `?locale=`, so the visitor never loses their place. It shows up in the profile / preferences dropdown, the mobile drawer, and the Admin → Settings → Header nav toggle (visible whenever localization is available), and `ApplyVoodbuilderSiteConfig` now resolves the visitor locale from `?locale=` and the session on its own when vtuts is absent. When vtuts is installed its richer switcher keeps taking precedence.
+
 ## [1.12.8] - 2026-11-03
 
 ### Fixed
