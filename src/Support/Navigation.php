@@ -80,12 +80,12 @@ final class Navigation
 
         if ($menuSlug !== null) {
             foreach (self::slugAliases($menuSlug) as $slug) {
-                if ($locale !== null) {
-                    Cache::forget(self::cacheKey($slug, $locale));
-
-                    continue;
-                }
-
+                /*
+                 * A menu can be served for a locale it is not stored under (the resolver
+                 * falls back to the placement when no translation exists yet), so
+                 * invalidating only the menu's own locale key would leave the visitor's
+                 * cached items stale. Forget every configured locale instead.
+                 */
                 if (NavigationMenuResolver::localizationEnabled()) {
                     foreach (SiteLocales::codes() as $code) {
                         Cache::forget(self::cacheKey($slug, $code));
@@ -94,7 +94,7 @@ final class Navigation
                     continue;
                 }
 
-                Cache::forget(self::cacheKey($slug));
+                Cache::forget($locale !== null ? self::cacheKey($slug, $locale) : self::cacheKey($slug));
             }
 
             return;

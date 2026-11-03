@@ -573,7 +573,7 @@ class SitePage extends Model implements HasRichContent
             );
         }
 
-        return $alternates === [] ? null : $alternates;
+        return count($alternates) > 1 ? $alternates : null;
     }
 
     protected function excerptFromContent(): string

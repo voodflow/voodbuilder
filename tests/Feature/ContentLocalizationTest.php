@@ -116,6 +116,33 @@ class ContentLocalizationTest extends TestCase
     }
 
     #[Test]
+    public function editing_a_fallback_menu_invalidates_the_visitor_locale_cache(): void
+    {
+        $menu = NavigationMenu::query()->create([
+            'name' => 'Main',
+            'slug' => 'main',
+            'locale' => 'en',
+        ]);
+
+        $item = NavigationMenuItem::query()->create([
+            'menu_id' => $menu->id,
+            'label' => 'Home',
+            'type' => MenuItemType::Url,
+            'link' => '/',
+            'sort_order' => 0,
+        ]);
+
+        $this->assertSame('Home', Navigation::items('main')->first()?->label);
+
+        $item->update(['label' => 'Casa']);
+
+        // What the admin tree actions do after a save: invalidate the menu's own locale.
+        Navigation::clearCache($menu->slug, $menu->locale);
+
+        $this->assertSame('Casa', Navigation::items('main')->first()?->label);
+    }
+
+    #[Test]
     public function page_options_fall_back_when_the_menu_locale_has_no_pages(): void
     {
         SitePage::query()->create([

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.8] - 2026-11-03
+
+### Fixed
+
+- **Menu edits invalidate the fallback locale too.** When a menu is served for a locale it is not stored under (see 1.12.7), the reader caches the items under the visitor locale while the admin invalidated only the menu's own locale key — saving an item left the old labels in place. `Navigation::clearCache()` now forgets every configured locale for the placement.
+- **No self-referencing `hreflang`.** With content localization on, a page whose translation group has a single member emitted one `hreflang` pointing at itself; alternates are only emitted when at least two translations exist.
+
 ## [1.12.7] - 2026-11-03
 
 ### Fixed
