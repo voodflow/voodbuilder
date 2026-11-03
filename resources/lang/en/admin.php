@@ -10,6 +10,7 @@ return [
         'settings' => 'Settings',
         'theme_studio' => 'Theme Studio',
         'content_channels' => 'Channel themes',
+        'custom_fonts' => 'Fonts',
         'footer_column_placement' => 'Footer column :number',
         'link_display' => 'Link display',
         'link_display_help' => 'Applies to every link in this menu.',
@@ -199,6 +200,49 @@ return [
         'dynamic_routes' => 'Select one or more claimable routes. Each encodes its path parameters (1+n segments). The same template can own both /exhibitors/{slug} and /exhibitors/{slug}/events/{eventSlug}.',
         'dynamic_priority' => 'If multiple dynamic pages claim the same route, the highest priority wins.',
         'dynamic_preview_url' => 'Sample URL used for “Open visual editor” and binding previews.',
+    ],
+
+    'custom_fonts' => [
+        'model' => [
+            'label' => 'Custom font',
+            'plural' => 'Custom fonts',
+        ],
+        'sections' => [
+            'font' => 'Font family',
+            'files' => 'Font files',
+            'files_help' => 'Upload every weight and style you want to use. A single WOFF2 file is enough for most sites.',
+        ],
+        'fields' => [
+            'family' => 'Family name',
+            'slug' => 'Identifier',
+            'slug_help' => 'Used by the editor and in saved page styles. Keep it stable after publishing pages.',
+            'category' => 'Category',
+            'stack' => 'CSS stack',
+            'stack_help' => 'Optional. When empty, a safe generic fallback is appended automatically.',
+            'active' => 'Active',
+            'weights' => 'Weights',
+            'files' => 'Files',
+            'updated_at' => 'Updated',
+            'archive' => 'Font package',
+            'archive_help' => 'A ZIP archive (e.g. Wotfard-Regular.zip) or a single WOFF2/WOFF/TTF/OTF file.',
+            'files_help' => 'WOFF2 is recommended. File names are read to detect weight and style (e.g. MyFont-Bold-700.woff2, MyFont-Italic.woff2).',
+            'family_auto_help' => 'Leave empty to detect the family from the archive or file name.',
+        ],
+        'categories' => [
+            'sans_serif' => 'Sans serif',
+            'serif' => 'Serif',
+            'monospace' => 'Monospace',
+            'display' => 'Display',
+            'handwriting' => 'Handwriting',
+        ],
+        'actions' => [
+            'install' => 'Install font package',
+            'install_help' => 'Upload a ZIP or a single font file. Files are copied to the public disk and registered in the font catalog.',
+            'install_submit' => 'Install',
+            'installed' => 'Font installed',
+            'install_failed' => 'Font installation failed',
+            'no_upload' => 'No font package was uploaded.',
+        ],
     ],
 
 ];

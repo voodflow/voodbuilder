@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Fonts;
 
+use Illuminate\Support\Facades\Storage;
 use Voodflow\Voodbuilder\Voodbuilder;
 
 /**
@@ -31,7 +32,20 @@ final class FontStylesheets
         foreach ($fontIds as $id) {
             $key = trim((string) $id);
 
-            if ($key === '' || ! isset($manifest[$key])) {
+            if ($key === '') {
+                continue;
+            }
+
+            // Author-installed fonts ship their own generated @font-face CSS.
+            $customUrl = CustomFontStylesheet::urlForSlug($key);
+
+            if ($customUrl !== null) {
+                $urls[] = $customUrl;
+
+                continue;
+            }
+
+            if (! isset($manifest[$key])) {
                 continue;
             }
 
@@ -125,7 +139,27 @@ final class FontStylesheets
 
         $full = public_path(ltrim($path, '/'));
 
-        return is_file($full) ? $full : null;
+        if (is_file($full)) {
+            return $full;
+        }
+
+        // Custom fonts live on the storage disk: /storage/voodbuilder/fonts/… may
+        // not be reachable through public_path() when the symlink is missing.
+        if (str_starts_with($path, '/storage/')) {
+            try {
+                $diskPath = Storage::disk(
+                    (string) config('voodbuilder.fonts.custom.disk', 'public'),
+                )->path(ltrim(substr($path, strlen('/storage/')), '/'));
+
+                if (is_file($diskPath)) {
+                    return $diskPath;
+                }
+            } catch (\Throwable) {
+                // Remote disks have no local path; preloading is skipped.
+            }
+        }
+
+        return null;
     }
 
     private static function normalizeAssetUrl(string $raw, string $cssUrl): string

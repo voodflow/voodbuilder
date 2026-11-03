@@ -290,6 +290,17 @@ return [
         'sans' => 'Lato',
         'heading' => 'Montserrat',
         'mono' => 'JetBrains Mono',
+
+        /*
+        | Author-installed webfonts (Admin → Fonts, or `voodbuilder:fonts:install`).
+        | Files and the generated @font-face CSS live on this disk/directory.
+        */
+        'custom' => [
+            'enabled' => (bool) env('VOODBUILDER_CUSTOM_FONTS_ENABLED', true),
+            'disk' => env('VOODBUILDER_CUSTOM_FONTS_DISK', 'public'),
+            'directory' => env('VOODBUILDER_CUSTOM_FONTS_DIRECTORY', 'voodbuilder/fonts'),
+            'max_size' => (int) env('VOODBUILDER_CUSTOM_FONTS_MAX_KB', 8192),
+        ],
     ],
 
     /*

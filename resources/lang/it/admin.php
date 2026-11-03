@@ -10,6 +10,7 @@ return [
         'settings' => 'Impostazioni',
         'theme_studio' => 'Theme Studio',
         'content_channels' => 'Temi canali',
+        'custom_fonts' => 'Font',
         'footer_column_placement' => 'Footer colonna :number',
         'link_display' => 'Visualizzazione link',
         'link_display_help' => 'Vale per tutti i link di questo menu.',
@@ -199,6 +200,49 @@ return [
         'dynamic_routes' => 'Seleziona una o più route reclamabili. Ognuna definisce i propri parametri di path (1+n segmenti). Lo stesso template può coprire /exhibitors/{slug} e /exhibitors/{slug}/events/{eventSlug}.',
         'dynamic_priority' => 'Se più pagine dinamiche reclamano la stessa route, vince la priorità più alta.',
         'dynamic_preview_url' => 'URL di esempio per “Apri editor visuale” e anteprima binding.',
+    ],
+
+    'custom_fonts' => [
+        'model' => [
+            'label' => 'Font custom',
+            'plural' => 'Font custom',
+        ],
+        'sections' => [
+            'font' => 'Famiglia del font',
+            'files' => 'File del font',
+            'files_help' => 'Carica ogni peso e stile che vuoi usare. Per la maggior parte dei siti basta un singolo file WOFF2.',
+        ],
+        'fields' => [
+            'family' => 'Nome famiglia',
+            'slug' => 'Identificatore',
+            'slug_help' => 'Usato dall’editor e negli stili salvati delle pagine. Mantienilo stabile dopo la pubblicazione.',
+            'category' => 'Categoria',
+            'stack' => 'Stack CSS',
+            'stack_help' => 'Opzionale. Se vuoto, viene aggiunto automaticamente un fallback generico sicuro.',
+            'active' => 'Attivo',
+            'weights' => 'Pesi',
+            'files' => 'File',
+            'updated_at' => 'Aggiornato',
+            'archive' => 'Pacchetto font',
+            'archive_help' => 'Un archivio ZIP (es. Wotfard-Regular.zip) o un singolo file WOFF2/WOFF/TTF/OTF.',
+            'files_help' => 'Consigliato WOFF2. Il nome del file viene letto per rilevare peso e stile (es. MyFont-Bold-700.woff2, MyFont-Italic.woff2).',
+            'family_auto_help' => 'Lascia vuoto per rilevare la famiglia dal nome dell’archivio o del file.',
+        ],
+        'categories' => [
+            'sans_serif' => 'Sans serif',
+            'serif' => 'Serif',
+            'monospace' => 'Monospace',
+            'display' => 'Display',
+            'handwriting' => 'Corsivo',
+        ],
+        'actions' => [
+            'install' => 'Installa pacchetto font',
+            'install_help' => 'Carica uno ZIP o un singolo file font. I file vengono copiati sul disco pubblico e registrati nel catalogo font.',
+            'install_submit' => 'Installa',
+            'installed' => 'Font installato',
+            'install_failed' => 'Installazione del font non riuscita',
+            'no_upload' => 'Nessun pacchetto font caricato.',
+        ],
     ],
 
 ];

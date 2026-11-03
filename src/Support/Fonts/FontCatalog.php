@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Fonts;
 
+use Illuminate\Support\Facades\Schema;
+use Throwable;
+use Voodflow\Voodbuilder\Models\CustomFont;
+
 /**
  * Extensible font catalog. Core ships Fontsource (~50). Plugins call register().
  */
@@ -17,6 +21,8 @@ final class FontCatalog
 
     private bool $coreBooted = false;
 
+    private bool $customBooted = false;
+
     public function bootCore(): void
     {
         if ($this->coreBooted) {
@@ -25,6 +31,57 @@ final class FontCatalog
 
         $this->coreBooted = true;
 
+        $this->loadCoreCatalog();
+        $this->bootCustom();
+    }
+
+    /**
+     * Register author-installed fonts (Admin → Fonts or `voodbuilder:fonts:install`).
+     */
+    public function bootCustom(): void
+    {
+        if ($this->customBooted) {
+            return;
+        }
+
+        $this->customBooted = true;
+
+        if (! config('voodbuilder.fonts.custom.enabled', true)) {
+            return;
+        }
+
+        try {
+            if (! Schema::hasTable((new CustomFont)->getTable())) {
+                return;
+            }
+
+            $fonts = CustomFont::query()->where('is_active', true)->orderBy('family')->get();
+
+            foreach ($fonts as $font) {
+                $this->register($font->toFontDefinition());
+            }
+        } catch (Throwable) {
+            // Database not migrated yet (first install / tests booting the package).
+        }
+    }
+
+    /**
+     * Drop cached custom fonts and read them again (after install / edit / delete).
+     */
+    public function reloadCustom(): void
+    {
+        foreach ($this->fonts as $id => $font) {
+            if ($font->provider === 'custom') {
+                unset($this->fonts[$id]);
+            }
+        }
+
+        $this->customBooted = false;
+        $this->bootCustom();
+    }
+
+    private function loadCoreCatalog(): void
+    {
         $path = dirname(__DIR__, 3) . '/resources/fonts/core-catalog.json';
 
         if (! is_file($path)) {

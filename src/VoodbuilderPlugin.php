@@ -10,6 +10,7 @@ use Voodflow\Voodbuilder\Filament\Livewire\AdminDatabaseNotifications;
 use Voodflow\Voodbuilder\Filament\Pages\ThemeStudioPage;
 use Voodflow\Voodbuilder\Filament\Pages\VoodbuilderSettingsPage;
 use Voodflow\Voodbuilder\Filament\Resources\ChromeLayoutResource;
+use Voodflow\Voodbuilder\Filament\Resources\CustomFontResource;
 use Voodflow\Voodbuilder\Filament\Resources\NavigationMenuResource;
 use Voodflow\Voodbuilder\Filament\Resources\SitePageResource;
 
@@ -46,6 +47,10 @@ class VoodbuilderPlugin implements Plugin
 
         if (config('voodbuilder.modules.layouts.enabled', true) && config('voodbuilder.chrome_layouts.enabled', true)) {
             $resources[] = ChromeLayoutResource::class;
+        }
+
+        if (config('voodbuilder.fonts.custom.enabled', true)) {
+            $resources[] = CustomFontResource::class;
         }
 
         // Media library lives in voodflow/vmedia (VmediaPlugin), a hard requirement.

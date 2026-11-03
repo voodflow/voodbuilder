@@ -249,6 +249,48 @@ async function loadFontsource(font) {
 }
 
 /**
+ * Author-installed fonts expose their generated @font-face CSS from the server.
+ * Fall back to building faces from meta when the stylesheet request fails.
+ *
+ * @param {object} font
+ * @returns {Promise<string>}
+ */
+async function loadCustomFont(font) {
+    const cssUrl = String(font?.meta?.css_url ?? font?.meta?.cssUrl ?? '').trim();
+
+    if (cssUrl !== '') {
+        try {
+            const response = await fetch(cssUrl, {
+                credentials: 'same-origin',
+                headers: { Accept: 'text/css' },
+            });
+
+            if (response.ok) {
+                return await response.text();
+            }
+
+            console.warn(`Voodbuilder fonts: custom stylesheet failed (${response.status}) for "${font.id}".`);
+        } catch (error) {
+            console.warn(`Voodbuilder fonts: custom stylesheet unreachable for "${font.id}".`, error);
+        }
+    }
+
+    const faces = Array.isArray(font?.meta?.faces) ? font.meta.faces : [];
+    const family = String(font?.family ?? '').replace(/['"\\]/g, '');
+
+    return faces
+        .filter((face) => face && face.url)
+        .map((face) => `@font-face {
+    font-family: '${family}';
+    font-style: ${face.style || 'normal'};
+    font-weight: ${face.weight || 400};
+    font-display: swap;
+    src: url('${String(face.url).replace(/'/g, "\\'")}') format('${face.format || 'woff2'}');
+}`)
+        .join('\n\n');
+}
+
+/**
  * @param {object} editor
  * @param {string|object} fontOrId
  * @param {{ reassert?: boolean }} [options]
@@ -284,6 +326,8 @@ export async function ensureFontLoaded(editor, fontOrId, options = {}) {
         cssText = typeof custom === 'string' ? custom : String(custom?.cssText ?? '');
     } else if (font.provider === 'fontsource') {
         cssText = await loadFontsource(font);
+    } else if (font.provider === 'custom') {
+        cssText = await loadCustomFont(font);
     } else {
         console.warn(`Voodbuilder fonts: no loader for provider "${font.provider}" (${font.id}).`);
 

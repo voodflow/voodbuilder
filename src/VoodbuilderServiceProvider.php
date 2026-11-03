@@ -27,6 +27,7 @@ use Voodflow\Vmedia\Vmedia;
 use Voodflow\Voodbuilder\Console\BuildSectionsCommand;
 use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
 use Voodflow\Voodbuilder\Console\InstallCommand;
+use Voodflow\Voodbuilder\Console\InstallFontCommand;
 use Voodflow\Voodbuilder\Console\MakeSubThemeCommand;
 use Voodflow\Voodbuilder\Console\SeedDemoLandingCommand;
 use Voodflow\Voodbuilder\Console\SeedMarketingSiteCommand;
@@ -128,6 +129,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             ->runsMigrations()
             ->hasRoutes('web')
             ->hasCommand(InstallCommand::class)
+            ->hasCommand(InstallFontCommand::class)
             ->hasCommand(MakeSubThemeCommand::class)
             ->hasCommand(BuildSectionsCommand::class)
             ->hasCommand(SeedDemoLandingCommand::class)

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-11-03
+
+### Added
+
+- **Custom webfonts.** Authors can install their own font families and use them everywhere the editor or site typography offers a font: Admin → **Fonts** accepts WOFF2/WOFF/TTF/OTF uploads (one record per family, multiple weights/styles) and can also install a whole ZIP package. Uploaded files are copied to the configured public disk, an `@font-face` stylesheet is generated next to them, and the family is registered in the same catalog as the Fontsource set, so it appears in Settings → Typography and in the editor’s font picker. File names are read to detect weight and style (`MyFont-Bold-700.woff2`, `MyFont-Italic.woff2`); the editor loads the generated CSS at runtime and published pages get the usual stylesheet `<link>` (plus WOFF2 preload). CLI: `php artisan voodbuilder:fonts:install /path/to/font.zip --family="My Font"`. Configure with `voodbuilder.fonts.custom` (`enabled`, `disk`, `directory`, `max_size`) or the `VOODBUILDER_CUSTOM_FONTS_*` env vars. New table: `voodbuilder_custom_fonts`.
+
 ## [1.11.88] - 2026-10-27
 
 ### Fixed
