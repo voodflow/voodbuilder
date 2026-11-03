@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.5] - 2026-11-03
+
+### Fixed
+
+- **A page that is never re-saved publishes the healed hero.** The published render path (`EditorRenderer`) ran the placeholder/form/theme normalizers but not the shell heal, so a payload whose media hero content shell had been stripped kept the copy edge-to-edge on the site even though the editor canvas showed the corrected markup. The render path now applies the same `healDynamicBlockContentShells()` pass as save/editor load: a media hero gets its content shell back, while a dynamic block's preview layout row still loses the measure stamps it should never have carried.
+
 ## [1.12.4] - 2026-11-03
 
 ### Fixed

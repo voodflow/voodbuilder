@@ -41,7 +41,14 @@ final class EditorRenderer
                         EditorHeroBackgroundNormalizer::normalize(
                             EditorLibraryLayoutNormalizer::normalize(
                                 VoodbuilderThemeTokenMigrator::migrateHtml(
-                                    EditorHtmlSanitizer::sanitize($html),
+                                    // A payload that was never re-saved still publishes
+                                    // correctly: the same shell heal the editor runs
+                                    // (media heroes get their content shell back, other
+                                    // blocks lose the measure stamps from their preview
+                                    // layout row) is applied on the render path too.
+                                    EditorImportedTailwindSupport::healDynamicBlockContentShells(
+                                        EditorHtmlSanitizer::sanitize($html),
+                                    ),
                                 ),
                             ),
                         ),
