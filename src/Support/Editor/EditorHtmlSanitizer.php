@@ -45,10 +45,12 @@ final class EditorHtmlSanitizer
         }
 
         return FontStylesheets::sanitizeInlineFontFamilies(
-            self::repairAnimatedBlocks(
-                self::normalizeSameOriginUrls(
-                    self::normalizeInlineStyleCamelCase(
-                        self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
+            EditorTailwindConflictNormalizer::normalizeHtml(
+                self::repairAnimatedBlocks(
+                    self::normalizeSameOriginUrls(
+                        self::normalizeInlineStyleCamelCase(
+                            self::stripInvalidAttributes(self::stripLogoScrollRuntimeClones($sanitized)),
+                        ),
                     ),
                 ),
             ),

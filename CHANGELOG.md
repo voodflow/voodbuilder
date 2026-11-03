@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.3] - 2026-11-03
+
+### Fixed
+
+- **Conflicting utilities no longer resolve differently in the editor and on the site.** A `class` attribute could hold two utilities for the same property (`text-white text-vp-brand-2`, `bg-vp-brand-1 bg-vp-divider`): Tailwind emits them in its own stylesheet order, so the canvas (live JIT appends the newest rule last) showed the colour the author picked while the published sheet painted the other one — the classic "orange button in the editor, white button on the site". `EditorHtmlSanitizer` now collapses each colour family/variant to a single utility, keeping the last one (the one the editor paints). Applied on save *and* on render, so existing pages are corrected without a re-save.
+
 ## [1.12.2] - 2026-11-03
 
 ### Fixed
