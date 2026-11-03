@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 return [
+    'headings' => [
+        'locale_subheading' => 'Stai modificando la versione :language (:code) — le altre lingue sono traduzioni collegate.',
+    ],
+
     'navigation' => [
-        'group' => 'Voodbuilder',
+        'group' => 'VoodBuilder',
         'menus' => 'Menu',
         'pages' => 'Pagine',
         'settings' => 'Impostazioni',

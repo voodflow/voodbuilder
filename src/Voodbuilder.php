@@ -8,6 +8,7 @@ use Filament\Forms\Components\Component;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Voodflow\Voodbuilder\Contracts\ConsentGate;
 use Voodflow\Voodbuilder\Contracts\DynamicPageProvider;
 use Voodflow\Voodbuilder\Contracts\EditorBindingSource;
 use Voodflow\Voodbuilder\Contracts\EditorServerBlock;
@@ -19,6 +20,7 @@ use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Modules\ModuleRegistry;
 use Voodflow\Voodbuilder\Support\ChannelStylesheetRegistry;
+use Voodflow\Voodbuilder\Support\Consent;
 use Voodflow\Voodbuilder\Support\ContentChannelRegistry;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRelatedBindingSourceRegistry;
@@ -33,9 +35,13 @@ use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorGate;
 use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\MediaEndpointRegistry;
+use Voodflow\Voodbuilder\Support\Editor\MediaRuntimeRegistry;
 use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\Fonts\FontDefinition;
+use Voodflow\Voodbuilder\Support\LanguageSwitcherRegistry;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
+use Voodflow\Voodbuilder\Support\NavigationRouteParameterTranslator;
 use Voodflow\Voodbuilder\Support\ReadingPreviewRegistry;
 use Voodflow\Voodbuilder\Support\ReservedPathRegistry;
 use Voodflow\Voodbuilder\Support\RichContentBlockRegistry;
@@ -350,5 +356,54 @@ class Voodbuilder
     public static function registerBindingImageResolver(string $modelClass, string $fieldId, callable $resolver): void
     {
         app(BindingImageResolverRegistry::class)->register($modelClass, $fieldId, $resolver);
+    }
+
+    /**
+     * Answer consent questions (marketing/analytics script gating) from a companion
+     * package. Without a gate nothing is gated, so a standalone site keeps working.
+     */
+    public static function consentGate(ConsentGate | \Closure $gate): void
+    {
+        Consent::register($gate);
+    }
+
+    /**
+     * Replace the built-in page-translation switcher with a package-owned view.
+     *
+     * The view receives `variant` (`inline`, `dropdown`, `mobile-tool`) and `labeled`.
+     * Higher `$order` wins among the visible providers.
+     */
+    public static function languageSwitcher(string $id, string $view, ?callable $visible = null, int $order = 0): void
+    {
+        app(LanguageSwitcherRegistry::class)->register($id, $view, $visible, $order);
+    }
+
+    /**
+     * Claim an editor Asset Manager endpoint (`upload`, `replace`, `meta`, `index`,
+     * `galleries`) for a media package's route.
+     */
+    public static function mediaEndpoint(string $capability, string $routeName): void
+    {
+        app(MediaEndpointRegistry::class)->register($capability, $routeName);
+    }
+
+    /**
+     * Bring a media provider's HTTP routes up even when its Filament plugin was not
+     * registered on a panel. Runs once, late in boot.
+     */
+    public static function mediaRuntime(callable $boot): void
+    {
+        app(MediaRuntimeRegistry::class)->register($boot);
+    }
+
+    /**
+     * Localize route parameters of a package-owned route (e.g. an event slug) when a
+     * navigation menu is translated.
+     *
+     * @param  callable(array<string, mixed>, string): array<string, mixed>  $translator
+     */
+    public static function navigationRouteParameters(callable $translator): void
+    {
+        app(NavigationRouteParameterTranslator::class)->register($translator);
     }
 }

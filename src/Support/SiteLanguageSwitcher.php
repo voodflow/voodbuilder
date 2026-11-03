@@ -8,17 +8,18 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
  * Language switcher for the content translations VoodBuilder owns.
  *
- * `voodflow/vtuts` ships its own switcher for tutorial content; a site that only
- * installs VoodBuilder still has two languages in `APP_LOCALES` and translated
- * pages, so the header needs a switcher for those too. This one is deliberately
- * page-only: a translated page links straight to its sibling, everything else keeps
- * the current URL and switches the visitor locale with `?locale=`, letting
- * `SitePageResolver` serve the translation (or fall back to the default language).
+ * A site with two languages in `APP_LOCALES` and translated pages gets a switcher
+ * even when no other package is installed. This one is deliberately page-only: a
+ * translated page links straight to its sibling, everything else keeps the current
+ * URL and switches the visitor locale with `?locale=`, letting `SitePageResolver`
+ * serve the translation (or fall back to the default language).
+ *
+ * A package that owns richer locale routing replaces it through
+ * {@see LanguageSwitcherRegistry} — VoodBuilder never names that package.
  */
 final class SiteLanguageSwitcher
 {
@@ -82,17 +83,33 @@ final class SiteLanguageSwitcher
     }
 
     /**
-     * Drops the visitor language choice (both switchers' session keys).
+     * Session keys holding the visitor language choice.
+     *
+     * Every installed switcher keeps its own key; `config('voodbuilder.localization
+     * .session_keys')` lets companions add theirs so the two stay in sync.
+     *
+     * @return list<string>
+     */
+    public static function sessionKeys(): array
+    {
+        $configured = (array) config('voodbuilder.localization.session_keys', []);
+
+        $keys = array_values(array_filter(
+            $configured,
+            static fn (mixed $key): bool => is_string($key) && $key !== '',
+        ));
+
+        $keys[] = self::SESSION_LOCALE_KEY;
+
+        return array_values(array_unique($keys));
+    }
+
+    /**
+     * Drops the visitor language choice for every installed switcher.
      */
     public static function forgetVisitorLocale(): void
     {
-        $keys = [self::SESSION_LOCALE_KEY];
-
-        if (class_exists(LocaleSwitcher::class)) {
-            $keys[] = LocaleSwitcher::SESSION_LOCALE_KEY;
-        }
-
-        foreach (array_unique($keys) as $key) {
+        foreach (self::sessionKeys() as $key) {
             request()->session()->forget($key);
         }
     }
@@ -186,5 +203,15 @@ final class SiteLanguageSwitcher
         $queryString = http_build_query($query);
 
         return $scheme . $host . $port . $path . ($queryString !== '' ? '?' . $queryString : '') . $fragment;
+    }
+
+    /**
+     * Append (or replace) the locale query parameter on an absolute URL.
+     *
+     * @param  array<string, mixed>  $query
+     */
+    public static function appendLocaleQuery(string $url, string $locale, array $query = []): string
+    {
+        return self::withLocaleQuery($url, $locale, $query);
     }
 }

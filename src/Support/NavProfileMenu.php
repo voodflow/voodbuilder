@@ -6,8 +6,6 @@ namespace Voodflow\Voodbuilder\Support;
 
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-use Voodflow\Vtuts\Support\LocaleSwitcher;
-use Voodflow\Vtuts\VtutsServiceProvider;
 
 /**
  * Visibility and chrome for the desktop profile / preferences dropdown.
@@ -32,30 +30,12 @@ final class NavProfileMenu
     }
 
     /**
-     * vtuts ships a switcher for tutorial content; it also covers site pages when the
-     * package is installed.
+     * Either the built-in page-translation switcher or a companion package that
+     * registered a richer one ({@see LanguageSwitcherRegistry}).
      */
-    public static function vtutsLanguageSwitcherVisible(): bool
-    {
-        return class_exists(LocaleSwitcher::class)
-            && LocaleSwitcher::visible()
-            && app()->providerIsLoaded(VtutsServiceProvider::class)
-            && view()->exists('vtuts::components.language-switcher');
-    }
-
-    /**
-     * Page-translation switcher owned by VoodBuilder, used when vtuts is absent.
-     */
-    public static function nativeLanguageSwitcherVisible(): bool
-    {
-        return ! self::vtutsLanguageSwitcherVisible()
-            && SiteLanguageSwitcher::visible();
-    }
-
     public static function languageSwitcherVisible(): bool
     {
-        return self::vtutsLanguageSwitcherVisible()
-            || self::nativeLanguageSwitcherVisible();
+        return app(LanguageSwitcherRegistry::class)->isVisible();
     }
 
     public static function hasContent(?bool $authenticated = null): bool

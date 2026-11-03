@@ -11,7 +11,6 @@ use Voodflow\Voodbuilder\Database\Seeders\VoodbuilderSeeder;
 use Voodflow\Voodbuilder\Support\ConfigureNpmForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureRoutesForVoodbuilder;
 use Voodflow\Voodbuilder\Support\ConfigureViteForVoodbuilder;
-use Voodflow\Voodbuilder\Support\ConfigureVtutsForVoodbuilder;
 
 /**
  * Artisan command: Install.
@@ -99,8 +98,6 @@ class InstallCommand extends Command
 
         $this->publishNotificationsTableMigration();
 
-        $this->configureVtutsIntegration();
-
         $this->configureRoutesIntegration();
 
         $this->configureViteIntegration();
@@ -162,19 +159,6 @@ class InstallCommand extends Command
         }
 
         return false;
-    }
-
-    protected function configureVtutsIntegration(): void
-    {
-        if (! InstalledVersions::isInstalled('voodflow/vtuts')) {
-            return;
-        }
-
-        if (ConfigureVtutsForVoodbuilder::apply($this->option('force'))) {
-            $this->components->info('Updated config/vtuts.php to use voodbuilder layouts.');
-        } else {
-            $this->components->warn('config/vtuts.php already uses voodbuilder layouts (or file missing).');
-        }
     }
 
     protected function configureRoutesIntegration(): void
@@ -321,13 +305,10 @@ class InstallCommand extends Command
         $this->components->info('Host app checklist (manual steps only):');
         $this->newLine();
 
-        $this->line('  1. Filament panel — register plugins once in your Panel provider:');
+        $this->line('  1. Filament panel — register VoodBuilder, and any companion plugin you install:');
         $this->line('     ->plugins([');
         $this->line('         \\Voodflow\\Voodbuilder\\VoodbuilderPlugin::make(),');
-        $this->line('         \\Voodflow\\Vmedia\\VmediaPlugin::make(), // media admin UI');
-        $this->line('         \\Voodflow\\Vcookiebar\\VcookiebarPlugin::make(), // consent / script gating');
-        $this->line('         // \\Voodflow\\Vpopups\\VpopupsPlugin::make(), // optional popups');
-        $this->line('         // \\Voodflow\\Vforms\\VformsPlugin::make(), // optional forms');
+        $this->line('         // optional companions, e.g. a media library or cookie-consent package');
         $this->line('     ])');
         $this->newLine();
 
@@ -352,7 +333,7 @@ class InstallCommand extends Command
         $this->line('  - package.json npm dependencies (Editor, Tailwind, fonts)');
         $this->line('  - vite.config.js theme + Editor entries');
         $this->line('  - routes/web.php welcome route removal');
-        $this->line('  - media library config + media table migration (via vmedia)');
+        $this->line('  - media library config + media table migration (only when a media package is installed)');
         $this->line('  - migrations and seed data');
         $this->newLine();
 

@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 return [
+    'headings' => [
+        'locale_subheading' => 'Editing the :language (:code) version — the other languages are linked translations.',
+    ],
+
     'navigation' => [
-        'group' => 'Voodbuilder',
+        'group' => 'VoodBuilder',
         'menus' => 'Menus',
         'pages' => 'Pages',
         'settings' => 'Settings',

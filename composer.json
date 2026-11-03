@@ -1,7 +1,7 @@
 {
     "name": "voodflow/voodbuilder",
-    "description": "VoodBuilder \u2014 Filament page builder and public site shell for Laravel.",
-    "version": "1.12.10",
+    "description": "VoodBuilder — Filament page builder and public site shell for Laravel.",
+    "version": "1.13.0",
     "type": "library",
     "license": "MIT",
     "keywords": [
@@ -23,9 +23,7 @@
         "spatie/laravel-medialibrary": "^11.0",
         "spatie/laravel-package-tools": "^1.15",
         "spatie/laravel-settings": "^3.0|^4.0",
-        "spatie/laravel-sluggable": "^3.8",
-        "voodflow/vmedia": "^0.2|^0.3",
-        "voodflow/vcookiebar": "^0.2"
+        "spatie/laravel-sluggable": "^3.8"
     },
     "autoload": {
         "psr-4": {
@@ -72,11 +70,13 @@
         ]
     },
     "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.24",
         "orchestra/testbench": "^10.0|^11.0",
         "phpunit/phpunit": "^11.0",
         "spatie/laravel-markdown": "^2.7",
-        "laravel/pint": "^1.24",
-        "larastan/larastan": "^3.0"
+        "voodflow/vcookiebar": "^0.2",
+        "voodflow/vmedia": "^0.2|^0.3"
     },
     "extra": {
         "laravel": {
@@ -87,14 +87,16 @@
     },
     "suggest": {
         "livewire/livewire": "Required only for EditorLivewireBlock: mounts a Livewire component as a published block. Already present via filament/filament.",
-        "voodflow/voodflow": "Optional Site Visit workflow trigger and other automation nodes.",
-        "voodflow/vpopups": "Popup builder for VoodBuilder (same GrapesJS editor, targeting, analytics).",
+        "voodflow/vcookiebar": "Cookie consent gating for tracking scripts and Site Visit workflows. Without it nothing is gated.",
         "voodflow/vforms": "Managed forms and submissions with optional VoodBuilder blocks.",
-        "voodflow/voodbuilder-elements": "Remote Elements library for the section catalog.",
+        "voodflow/vmedia": "Media library + Filament upload/browser routes for the editor Asset Manager. Without a provider the editor’s media endpoints are unavailable.",
         "voodflow/voodbuilder-components": "Saved components library and global classes.",
+        "voodflow/voodbuilder-dynamic-api": "HTTP/static/eloquent/callback API data sources for page bindings and List repeat.",
         "voodflow/voodbuilder-dynamic-data": "Dynamic Data bindings, Model Integrations, and List repeat.",
+        "voodflow/voodbuilder-elements": "Remote Elements library for the section catalog.",
         "voodflow/voodbuilder-templates": "Page template authoring (save, JSON import/export).",
-        "voodflow/voodbuilder-dynamic-api": "HTTP/static/eloquent/callback API data sources for page bindings and List repeat."
+        "voodflow/voodflow": "Optional Site Visit workflow trigger and other automation nodes.",
+        "voodflow/vpopups": "Popup builder for VoodBuilder (same GrapesJS editor, targeting, analytics)."
     },
     "archive": {
         "exclude": [

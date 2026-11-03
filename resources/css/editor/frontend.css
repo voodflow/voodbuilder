@@ -371,6 +371,20 @@ body.voodbuilder-editor-editing .voodbuilder-editor-frontend__canvas .gjs-blocks
     line-height: 1.2;
 }
 
+.voodbuilder-editor-topbar__editing-locale {
+    display: inline-block;
+    margin-top: 0.125rem;
+    padding: 0.0625rem 0.3125rem;
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--color-vp-text-1, #0f172a) 10%, transparent);
+    color: var(--color-vp-text-2, #475569);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
 .voodbuilder-editor-topbar__brand {
     position: relative;
     display: inline-flex;

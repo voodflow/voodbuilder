@@ -6,7 +6,6 @@ namespace Voodflow\Voodbuilder;
 
 use Illuminate\Support\ServiceProvider;
 use Voodflow\Voodbuilder\Support\VoodflowIntegration;
-use Voodflow\Voodflow\Voodflow;
 
 /**
  * Registers VoodBuilder workflow nodes when voodflow/voodflow is installed.
@@ -21,7 +20,11 @@ class VoodbuilderVoodflowServiceProvider extends ServiceProvider
 
         $nodesPath = VoodflowIntegration::nodesPath();
 
-        Voodflow::nodePath($nodesPath);
+        $voodflow = 'Voodflow\\Voodflow\\Voodflow';
+
+        if (method_exists($voodflow, 'nodePath')) {
+            $voodflow::nodePath($nodesPath);
+        }
 
         config([
             'voodflow.node_paths' => array_values(array_unique([

@@ -1,7 +1,6 @@
 @php
     use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
-    use Voodflow\Vcookiebar\Support\ConsentPayload;
-    use Voodflow\Vcookiebar\Vcookiebar;
+    use Voodflow\Voodbuilder\Support\Consent;
 
     $pixelId = VoodbuilderSettings::get('facebook_pixel_id');
     $gtmId = VoodbuilderSettings::get('google_tag_manager_id');
@@ -11,14 +10,9 @@
 
     $hasTracking = filled($pixelId) || filled($gtmId) || filled($gaId) || filled($headCode) || filled($bodyCode);
 
-    $consentPreferences = null;
-    $consentRequired = false;
-
-    if (class_exists(Vcookiebar::class) && Vcookiebar::isEnabled()) {
-        $consentRequired = true;
-        $cookieName = (string) config('vcookiebar.consent_cookie', 'vcookiebar_consent');
-        $consentPreferences = ConsentPayload::decode(request()->cookie($cookieName));
-    }
+    // Consent is answered by whichever consent package the host installs; none = ungated.
+    $consentRequired = Consent::isGuarded();
+    $consentPreferences = $consentRequired ? Consent::preferences() : null;
 @endphp
 
 @if($hasTracking)

@@ -12,8 +12,6 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Str;
 use Relaticle\Comments\Notifications\CommentRepliedNotification;
 use Relaticle\Comments\Notifications\UserMentionedNotification;
-use Voodflow\Vtuts\Models\Vtut;
-use Voodflow\Vtuts\Support\VtutUrls;
 
 /**
  * Site Notification Presenter.
@@ -159,14 +157,16 @@ final class SiteNotificationPresenter
         return $baseUrl . '#tutorial-comments';
     }
 
+    /**
+     * Any commentable that exposes a public URL is linkable — no package is named here;
+     * a companion model just implements `getUrl()`.
+     */
     protected static function commentableUrl(Model $commentable): ?string
     {
-        if ($commentable instanceof Vtut && class_exists(VtutUrls::class)) {
-            return VtutUrls::show($commentable);
-        }
-
         if (method_exists($commentable, 'getUrl')) {
-            return $commentable->getUrl();
+            $url = $commentable->getUrl();
+
+            return is_string($url) && $url !== '' ? $url : null;
         }
 
         return null;
@@ -183,11 +183,13 @@ final class SiteNotificationPresenter
             return null;
         }
 
-        return match (true) {
-            $commentable instanceof Vtut => $commentable->title,
-            method_exists($commentable, 'getAttribute') => $commentable->getAttribute('title'),
-            default => null,
-        };
+        if (! method_exists($commentable, 'getAttribute')) {
+            return null;
+        }
+
+        $title = $commentable->getAttribute('title');
+
+        return is_string($title) && $title !== '' ? $title : null;
     }
 
     public static function plainExcerpt(mixed $value): string

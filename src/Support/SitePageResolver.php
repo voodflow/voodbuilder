@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Schema;
 use Voodflow\Voodbuilder\Models\SitePage;
-use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
  * Site Page Resolver.
@@ -131,14 +130,16 @@ final class SitePageResolver
     }
 
     /**
-     * Whether URLs are localised per language (prefix or `?locale=`). That routing is
-     * provided by voodflow/vtuts: without it the site serves one locale at a time.
+     * Whether URLs are localised per language (prefix or `?locale=`), i.e. the site
+     * serves every locale on the same routes. Configured by a locale-routing provider
+     * (`vtuts.features.localization` / `SiteLocales::usesUrlPrefix()`); without one a
+     * site renders one locale at a time and `?locale=` only sets the visitor choice.
      */
     public static function localeRoutingEnabled(): bool
     {
         return self::localizationEnabled()
-            && class_exists(LocaleSwitcher::class)
-            && (bool) config('vtuts.features.localization', false);
+            && ((bool) config('vtuts.features.localization', false)
+                || SiteLocales::usesUrlPrefix());
     }
 
     public static function preferredLocale(): string

@@ -31,7 +31,6 @@ use Voodflow\Voodbuilder\Support\AdminAuthorization;
 use Voodflow\Voodbuilder\Support\AppTypography;
 use Voodflow\Voodbuilder\Support\Popups\PopupsOrphanStatus;
 use Voodflow\Voodbuilder\Support\SiteLanguageSwitcher;
-use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
  * @property-read Schema $form
@@ -229,9 +228,7 @@ class VoodbuilderSettingsPage extends Page
                                                     ->helperText(__('voodbuilder::settings.header_nav.language_switcher_help'))
                                                     ->default(true)
                                                     ->live()
-                                                    ->visible(fn (): bool => (class_exists(LocaleSwitcher::class)
-                                                        && LocaleSwitcher::enabled())
-                                                        || SiteLanguageSwitcher::enabled()),
+                                                    ->visible(fn (): bool => SiteLanguageSwitcher::enabled()),
                                             ]),
                                     ]),
                                 Section::make(__('voodbuilder::settings.typography.section'))

@@ -4,28 +4,30 @@
 ])
 
 @php
-    use Voodflow\Voodbuilder\Support\NavProfileMenu;
+    use Voodflow\Voodbuilder\Support\LanguageSwitcherRegistry;
     use Voodflow\Voodbuilder\Support\SiteLanguageSwitcher;
 
-    $vtutsAvailable = NavProfileMenu::vtutsLanguageSwitcherVisible();
-    $nativeAvailable = ! $vtutsAvailable && SiteLanguageSwitcher::visible();
+    // A companion package may replace the built-in page switcher with a richer one
+    // (locale-prefixed routes, tutorials, events…). VoodBuilder names no package.
+    $providerView = app(LanguageSwitcherRegistry::class)->activeView();
+    $nativeAvailable = $providerView === null && SiteLanguageSwitcher::visible();
 @endphp
 
-@if ($vtutsAvailable)
+@if ($providerView !== null)
     @if ($variant === 'mobile-tool')
         <div {{ $attributes->class(['voodbuilder-mobile-nav__tool', 'voodbuilder-mobile-nav__tool--languages']) }}>
-            @include('vtuts::components.language-switcher', ['variant' => 'inline'])
+            @include($providerView, ['variant' => 'inline'])
         </div>
     @elseif ($labeled)
         <div class="px-3.5 py-2">
             <div class="mb-1.5 text-[11px] font-semibold tracking-[0.08em] text-vp-text-3 uppercase">
-                {{ __('vtuts::language_switcher.label') }}
+                {{ __('voodbuilder::nav.languages') }}
             </div>
-            @include('vtuts::components.language-switcher', ['variant' => $variant])
+            @include($providerView, ['variant' => $variant])
         </div>
         <div class="voodbuilder-dropdown-separator" aria-hidden="true"></div>
     @else
-        @include('vtuts::components.language-switcher', ['variant' => $variant])
+        @include($providerView, ['variant' => $variant])
     @endif
 @elseif ($nativeAvailable)
     @php
@@ -39,7 +41,7 @@
             <div class="mb-1.5 text-[11px] font-semibold tracking-[0.08em] text-vp-text-3 uppercase">
                 {{ $label }}
             </div>
-            <div class="vtuts-language-switcher" data-voodbuilder-language-switcher>
+            <div class="voodbuilder-language-switcher" data-voodbuilder-language-switcher>
                 @foreach ($locales as $code => $localeLabel)
                     @if ($code === $current)
                         <span class="inline-flex rounded-md bg-vp-gray-soft px-2.5 py-1 text-xs font-semibold text-vp-brand-1" aria-current="true" title="{{ $localeLabel }}">
@@ -108,7 +110,7 @@
         <nav
             aria-label="{{ $label }}"
             data-voodbuilder-language-switcher
-            {{ $attributes->class(['vtuts-language-switcher flex items-center']) }}
+            {{ $attributes->class(['voodbuilder-language-switcher flex items-center']) }}
         >
             <ul class="flex max-w-full flex-wrap items-center gap-1">
                 @foreach ($locales as $code => $localeLabel)

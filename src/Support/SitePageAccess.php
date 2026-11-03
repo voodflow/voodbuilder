@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Enums\PageVisibility;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\SitePageCredential;
-use Voodflow\Vtuts\Support\SubKit;
-use Voodflow\Vtuts\Support\SubscriberAccess;
 
 /**
  * Page-level visibility + password gate for public site pages.
@@ -25,6 +23,14 @@ use Voodflow\Vtuts\Support\SubscriberAccess;
  */
 final class SitePageAccess
 {
+    /**
+     * Optional membership providers. Resolved by class name so VoodBuilder does not
+     * depend on them; a callable can be registered instead via config if needed.
+     */
+    private const SUBSCRIBER_ACCESS = 'Voodflow\\Vtuts\\Support\\SubscriberAccess';
+
+    private const SUB_KIT = 'Voodflow\\Vtuts\\Support\\SubKit';
+
     public const REASON_REGISTERED = 'registered';
 
     public const REASON_SUBSCRIBER = 'subscriber';
@@ -216,8 +222,8 @@ final class SitePageAccess
             return false;
         }
 
-        if (class_exists(SubscriberAccess::class)) {
-            return SubscriberAccess::canAccess($user);
+        if (class_exists(self::SUBSCRIBER_ACCESS)) {
+            return (bool) self::SUBSCRIBER_ACCESS::canAccess($user);
         }
 
         $ability = (string) config(
@@ -275,11 +281,11 @@ final class SitePageAccess
             return $url;
         }
 
-        if (class_exists(SubscriberAccess::class)
-            && class_exists(SubKit::class)
-            && SubKit::isEnabled()
-            && Route::has(SubKit::pricingRouteName())) {
-            return route(SubKit::pricingRouteName());
+        if (class_exists(self::SUBSCRIBER_ACCESS)
+            && class_exists(self::SUB_KIT)
+            && self::SUB_KIT::isEnabled()
+            && Route::has(self::SUB_KIT::pricingRouteName())) {
+            return route(self::SUB_KIT::pricingRouteName());
         }
 
         return null;

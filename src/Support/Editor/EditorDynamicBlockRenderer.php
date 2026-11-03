@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
-use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Voodbuilder\Contracts\EditorLivewireBlock;
 use Voodflow\Voodbuilder\Models\SitePage;
 
@@ -53,16 +52,20 @@ final class EditorDynamicBlockRenderer
 
         $eventId = null;
 
-        if ($page !== null && class_exists(EventRichContentContext::class)) {
+        // Optional channel context (e.g. events), resolved by class name: no companion
+        // package is required for the editor to render a page.
+        $context = 'Voodflow\\Vevents\\Support\\EventRichContentContext';
+
+        if ($page !== null && class_exists($context)) {
             try {
-                $eventId = EventRichContentContext::resolveEventIdForPageSlug((string) $page->slug);
+                $eventId = $context::resolveEventIdForPageSlug((string) $page->slug);
             } catch (\Throwable) {
                 $eventId = null;
             }
         }
 
         if ($eventId !== null) {
-            $html = EventRichContentContext::injectEventIdIntoEditorHtml($html, $eventId);
+            $html = $context::injectEventIdIntoEditorHtml($html, $eventId);
         }
 
         $document = $this->loadDocument($html);

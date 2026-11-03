@@ -22,7 +22,6 @@ use RalphJSmit\Laravel\SEO\Support\HasSEO;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-use Voodflow\Vevents\Support\EventRichContentContext;
 use Voodflow\Voodbuilder\Casts\AsPageBuilder;
 use Voodflow\Voodbuilder\Enums\PageBuilder;
 use Voodflow\Voodbuilder\Enums\PageVisibility;
@@ -225,6 +224,19 @@ class SitePage extends Model implements HasRichContent
         return VoodbuilderUrls::page($this);
     }
 
+    /**
+     * Public URL that opens this page straight in the visual editor.
+     *
+     * Built from `getUrl()` so it keeps the locale query a home page needs — `/` alone
+     * would resolve (and edit) the default language's home instead of this record.
+     */
+    public function editorUrl(): string
+    {
+        $url = $this->getUrl();
+
+        return $url . (str_contains($url, '?') ? '&' : '?') . 'edit=1';
+    }
+
     public function usesEditorBuilder(): bool
     {
         // Visual Editor is the only supported builder for new pages; blank → Visual.
@@ -243,11 +255,15 @@ class SitePage extends Model implements HasRichContent
 
         $content = $this->content;
 
-        if (class_exists(EventRichContentContext::class)) {
-            $eventId = EventRichContentContext::resolveEventIdForPageSlug((string) $this->slug);
+        // Optional channel context (e.g. events): resolved by class name so this model
+        // never depends on a companion package.
+        $context = 'Voodflow\\Vevents\\Support\\EventRichContentContext';
+
+        if (class_exists($context)) {
+            $eventId = $context::resolveEventIdForPageSlug((string) $this->slug);
 
             if ($eventId !== null) {
-                $content = EventRichContentContext::injectEventId($content, $eventId);
+                $content = $context::injectEventId($content, $eventId);
             }
         }
 

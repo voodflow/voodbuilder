@@ -2710,6 +2710,7 @@ function mountFrontendEditor() {
         previewThemePalettes: config.previewThemePalettes ?? {},
         pageId: config.pageId ?? null,
         pageTitle: config.pageTitle ?? null,
+        pageLocale: config.pageLocale ?? null,
         chromeShellMode: config.chromeShellMode ?? false,
         publishedDarkScope: config.publishedDarkScope !== false,
         publishedDefaultDark: config.publishedDefaultDark !== false,

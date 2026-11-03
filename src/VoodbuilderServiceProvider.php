@@ -22,8 +22,6 @@ use RalphJSmit\Laravel\SEO\Facades\SEOManager;
 use RalphJSmit\Laravel\SEO\TagManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Voodflow\Vmedia\Support\Integration\RegistersPluginVault;
-use Voodflow\Vmedia\Vmedia;
 use Voodflow\Voodbuilder\Console\BuildSectionsCommand;
 use Voodflow\Voodbuilder\Console\CompileThemeAssetsCommand;
 use Voodflow\Voodbuilder\Console\InstallCommand;
@@ -86,6 +84,8 @@ use Voodflow\Voodbuilder\Support\Editor\EditorBlockConfigRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorDynamicBlockRegistry;
 use Voodflow\Voodbuilder\Support\Editor\EditorServerBlockRegistry;
+use Voodflow\Voodbuilder\Support\Editor\MediaEndpointRegistry;
+use Voodflow\Voodbuilder\Support\Editor\MediaRuntimeRegistry;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\Editor\VoodbuilderEditorBlockConfigs;
@@ -96,8 +96,10 @@ use Voodflow\Voodbuilder\Support\Editor\VoodbuilderSectionEditorBlocks;
 use Voodflow\Voodbuilder\Support\FilamentAdminAssets;
 use Voodflow\Voodbuilder\Support\Fonts\FontCatalog;
 use Voodflow\Voodbuilder\Support\IntegrationRegistrar;
+use Voodflow\Voodbuilder\Support\LanguageSwitcherRegistry;
 use Voodflow\Voodbuilder\Support\MenuItemTypeRegistry;
 use Voodflow\Voodbuilder\Support\ModelRegistry;
+use Voodflow\Voodbuilder\Support\NavigationRouteParameterTranslator;
 use Voodflow\Voodbuilder\Support\ReadingPreviewRegistry;
 use Voodflow\Voodbuilder\Support\ReservedPathRegistry;
 use Voodflow\Voodbuilder\Support\ReverseRelationRegistry;
@@ -161,6 +163,10 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
         $this->app->singleton(DynamicPageRegistry::class);
         $this->app->singleton(DynamicPageRelatedBindingSourceRegistry::class);
         $this->app->singleton(ChannelStylesheetRegistry::class);
+        $this->app->singleton(MediaEndpointRegistry::class);
+        $this->app->singleton(MediaRuntimeRegistry::class);
+        $this->app->singleton(LanguageSwitcherRegistry::class);
+        $this->app->singleton(NavigationRouteParameterTranslator::class);
         $this->app->singleton(EditorBlockConfigRegistry::class);
         $this->app->singleton(MenuItemTypeRegistry::class);
         $this->app->singleton(ModuleRegistry::class);
@@ -197,15 +203,7 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
             SitePageRoutes::register();
         });
 
-        if (class_exists(RegistersPluginVault::class)) {
-            RegistersPluginVault::register(
-                'voodbuilder',
-                'voodbuilder',
-                fn (): string => (string) __('vmedia::admin.plugin_roots.voodbuilder'),
-            );
-            RegistersPluginVault::ensureOnBoot($this->app, 'voodbuilder');
-        }
-
+        $this->registerMediaPluginVault();
         $this->app->make(SubThemeRegistry::class)->bootFromConfig();
         $this->app->make(ContentChannelRegistry::class)->bootFromConfig();
         IntegrationRegistrar::boot();
@@ -306,38 +304,69 @@ class VoodbuilderServiceProvider extends PackageServiceProvider
                 Route::post('compile-css', EditorCompileCssController::class)->name('compile-css');
             });
 
-        // Media list/upload/replace/galleries belong to voodflow/vmedia, which is a hard
-        // requirement — see ensureMediaRuntime().
+        // Media list/upload/replace/galleries belong to whichever media package the
+        // host installs; see ensureMediaRuntime().
     }
 
     /**
-     * Make sure the media runtime is up, whether or not the host registered its panel plugin.
+     * Media packages may publish a “plugin vault” root so admins can browse uploads
+     * per package. Resolved lazily by class name: VoodBuilder has no compile-time
+     * dependency on any media package.
+     */
+    protected function registerMediaPluginVault(): void
+    {
+        $vault = 'Voodflow\\Vmedia\\Support\\Integration\\RegistersPluginVault';
+
+        if (! class_exists($vault) || ! method_exists($vault, 'register')) {
+            return;
+        }
+
+        $vault::register(
+            'voodbuilder',
+            'voodbuilder',
+            static fn (): string => (string) __('voodbuilder::settings.brand.site_name'),
+        );
+
+        if (method_exists($vault, 'ensureOnBoot')) {
+            $vault::ensureOnBoot($this->app, 'voodbuilder');
+        }
+    }
+
+    /**
+     * Bring the media runtime up whether or not the host registered its panel plugin.
      *
-     * The editor cannot open without an upload endpoint: EditorGate resolves the URL at boot
-     * and previously 500'd `?edit=1` when the route was missing, so the page never mounted
-     * and saves could not persist. Registering VmediaPlugin on a Filament panel is what
-     * normally activates those routes, but that is a panel concern and the editor is not —
-     * a host can reasonably keep the media resources out of the sidebar and still expect
-     * the canvas to accept an image.
+     * The editor cannot open without an upload endpoint: EditorGate resolves the URL at
+     * boot and previously 500'd `?edit=1` when the route was missing, so the page never
+     * mounted and saves could not persist. Registering the media Filament plugin on a
+     * panel is what normally activates those routes, but that is a panel concern and the
+     * editor is not — a host can reasonably keep media resources out of the sidebar and
+     * still expect the canvas to accept an image.
      *
-     * Activating is idempotent, so doing it here simply removes the ordering question.
+     * Which runtime to activate, and which route proves it is up, come from
+     * `config('voodbuilder.integrations.*')`; a media package can register its own hook
+     * with {@see Voodbuilder::mediaRuntime()}.
      */
     protected function ensureMediaRuntime(): void
     {
-        // Deferred: Vmedia registers its HTTP routes outside Filament's route group, and
-        // calling it mid-boot is how route names ended up nested under `filament.`.
-        $this->app->booted(static function (): void {
-            // The route, not Vmedia::isActive(). The active flag is static and outlives an
-            // application refresh, so between tests it reads true while the router has been
-            // emptied — and the early return then left the editor with no upload endpoint.
-            if (Route::has('vmedia.media.upload')) {
+        // Deferred: media packages register their HTTP routes outside Filament's route
+        // group, and calling them mid-boot nests route names under `filament.`.
+        $this->app->booted(function (): void {
+            if (Route::has($this->mediaUploadRoute())) {
                 return;
             }
 
-            // Clears that same stale flag, which would otherwise make activate() a no-op.
-            Vmedia::reset();
-            Vmedia::activate();
+            $this->app->make(MediaRuntimeRegistry::class)->boot();
         });
+    }
+
+    /**
+     * Route that proves the Asset Manager can accept an upload.
+     */
+    protected function mediaUploadRoute(): string
+    {
+        $route = config('voodbuilder.integrations.media_upload_route', 'vmedia.media.upload');
+
+        return is_string($route) && $route !== '' ? $route : 'vmedia.media.upload';
     }
 
     protected function configureEditorRateLimiters(): void

@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\SiteLanguageSwitcher;
 use Voodflow\Voodbuilder\Support\SiteLocales;
-use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
  * Apply Voodbuilder Site Config.
@@ -23,50 +22,51 @@ class ApplyVoodbuilderSiteConfig
             'seo.canonical_link' => (bool) VoodbuilderSettings::get('seo_canonical_enabled', true),
         ]);
 
-        $sessionKey = $this->sessionKey();
-
-        if ($sessionKey !== null) {
-            app()->setLocale($this->resolveLocale($request, $sessionKey));
-        }
+        app()->setLocale($this->resolveLocale($request));
 
         return $next($request);
     }
 
     /**
-     * vtuts owns the locale session when it is installed; otherwise VoodBuilder's own
-     * switcher does, so `?locale=` still works on a page-translation-only site.
+     * `?locale=` wins, then the remembered visitor choice, then the site default.
+     *
+     * Every installed switcher keeps a session key ({@see SiteLanguageSwitcher::sessionKeys()}),
+     * so the choice is written to all of them and no package owns the resolution.
      */
-    protected function sessionKey(): ?string
+    protected function resolveLocale(Request $request): string
     {
-        if (class_exists(LocaleSwitcher::class)) {
-            return LocaleSwitcher::SESSION_LOCALE_KEY;
-        }
+        $keys = SiteLanguageSwitcher::sessionKeys();
 
-        return SiteLanguageSwitcher::enabled()
-            ? SiteLanguageSwitcher::SESSION_LOCALE_KEY
-            : null;
-    }
-
-    protected function resolveLocale(Request $request, string $sessionKey): string
-    {
         $queryLocale = $request->query(SiteLanguageSwitcher::QUERY_KEY);
 
         if (is_string($queryLocale) && SiteLocales::isValid($queryLocale)) {
-            if ($queryLocale === SiteLocales::default()) {
-                $request->session()->forget($sessionKey);
-            } else {
-                $request->session()->put($sessionKey, $queryLocale);
-            }
+            $this->remember($request, $keys, $queryLocale);
 
             return $queryLocale;
         }
 
-        $sessionLocale = $request->session()->get($sessionKey);
+        foreach ($keys as $key) {
+            $sessionLocale = $request->session()->get($key);
 
-        if (is_string($sessionLocale) && SiteLocales::isValid($sessionLocale)) {
-            return $sessionLocale;
+            if (is_string($sessionLocale) && SiteLocales::isValid($sessionLocale)) {
+                return $sessionLocale;
+            }
         }
 
         return VoodbuilderSettings::primaryLocale();
+    }
+
+    /**
+     * @param  list<string>  $keys
+     */
+    protected function remember(Request $request, array $keys, string $locale): void
+    {
+        foreach ($keys as $key) {
+            if ($locale === SiteLocales::default()) {
+                $request->session()->forget($key);
+            } else {
+                $request->session()->put($key, $locale);
+            }
+        }
     }
 }

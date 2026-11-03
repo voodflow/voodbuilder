@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Str;
-use Voodflow\Vevents\Models\Event;
 use Voodflow\Voodbuilder\Enums\MenuItemType;
 use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
@@ -183,30 +181,11 @@ final class NavigationMenuTranslation
 
         $parameters = is_array($item->route_parameters) ? $item->route_parameters : [];
 
-        if (isset($parameters['slug']) && is_string($parameters['slug']) && class_exists(Event::class)) {
-            try {
-                $event = Event::resolvePublishedSlug($parameters['slug']);
-                $localized = $event->translationFor($targetLocale);
-
-                if ($localized !== null) {
-                    $parameters['slug'] = (string) $localized->slug;
-                }
-            } catch (ModelNotFoundException) {
-                // Keep the original slug when the event cannot be resolved.
-            }
-        }
-
-        if (isset($parameters['eventSlug']) && is_string($parameters['eventSlug']) && class_exists(Event::class)) {
-            try {
-                $event = Event::resolvePublishedSlug($parameters['eventSlug']);
-                $localized = $event->translationFor($targetLocale);
-
-                if ($localized !== null) {
-                    $parameters['eventSlug'] = (string) $localized->slug;
-                }
-            } catch (ModelNotFoundException) {
-                // Keep the original slug when the event cannot be resolved.
-            }
+        if ($parameters !== []) {
+            // Companion routes (events, tutorials, …) localize their own slug through
+            // a registered translator; VoodBuilder names no package here.
+            $parameters = app(NavigationRouteParameterTranslator::class)
+                ->translate($parameters, $targetLocale);
         }
 
         $item->route_parameters = $parameters === [] ? null : $parameters;

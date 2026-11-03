@@ -252,11 +252,6 @@ CSS;
         ];
     }
 
-    private static function editorRoute(string $name, mixed $parameters = []): string
-    {
-        return route($name, $parameters, absolute: false);
-    }
-
     /**
      * @param  array<string, mixed>|object|string|int|null  $parameters
      */
@@ -269,54 +264,64 @@ CSS;
         return self::editorRoute($name, $parameters);
     }
 
-    private static function mediaUploadUrl(): ?string
+    private static function editorRoute(string $name, mixed $parameters = []): string
     {
-        if (! Route::has('vmedia.media.upload')) {
+        return route($name, $parameters, absolute: false);
+    }
+
+    /**
+     * Prefer the media provider's route for the Asset Manager.
+     *
+     * The route *name* comes from {@see MediaEndpointRegistry} (config defaults or a
+     * companion's claim), never from a hard-coded package, so a missing media package
+     * simply reports the capability as unavailable.
+     */
+    private static function mediaEndpointUrl(string $capability): ?string
+    {
+        $registry = app(MediaEndpointRegistry::class);
+        $name = $registry->routeName($capability);
+
+        if ($name === null || ! Route::has($name)) {
             return null;
         }
 
-        return self::editorRoute('vmedia.media.upload');
+        return self::editorRoute($name);
+    }
+
+    private static function mediaUploadUrl(): ?string
+    {
+        return self::mediaEndpointUrl(MediaEndpointRegistry::UPLOAD);
     }
 
     private static function mediaReplaceUrl(): ?string
     {
-        if (! Route::has('vmedia.media.replace')) {
-            return null;
-        }
-
-        return self::editorRoute('vmedia.media.replace');
+        return self::mediaEndpointUrl(MediaEndpointRegistry::REPLACE);
     }
 
     private static function mediaMetaUrl(): ?string
     {
-        if (! Route::has('vmedia.media.meta')) {
-            return null;
-        }
-
-        return self::editorRoute('vmedia.media.meta');
+        return self::mediaEndpointUrl(MediaEndpointRegistry::META);
     }
 
     private static function mediaLibraryIndexUrl(): ?string
     {
-        if (! Route::has('vmedia.media.index')) {
-            return null;
-        }
-
-        return self::editorRoute('vmedia.media.index');
+        return self::mediaEndpointUrl(MediaEndpointRegistry::INDEX);
     }
 
     private static function mediaGalleriesIndexUrl(): ?string
     {
-        if (! Route::has('vmedia.media.galleries')) {
-            return null;
-        }
-
-        return self::editorRoute('vmedia.media.galleries');
+        return self::mediaEndpointUrl(MediaEndpointRegistry::GALLERIES);
     }
 
+    /**
+     * Custom media browser (galleries) requires a media provider that ships one.
+     */
     private static function mediaCompanionBrowserEnabled(): bool
     {
-        return Route::has('vmedia.media.galleries');
+        // The route, not a package flag: media providers defer their HTTP routes out
+        // of Filament's route group, so “installed and active” says nothing about
+        // whether the browser can be called yet.
+        return app(MediaEndpointRegistry::class)->available(MediaEndpointRegistry::GALLERIES);
     }
 
     private static function dynamicDataEnabled(): bool

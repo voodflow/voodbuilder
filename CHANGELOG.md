@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-11-03
+
+### Changed
+
+- **Companion plugins are optional: VoodBuilder never requires one to boot.** `voodflow/vmedia` and `voodflow/vcookiebar` moved from `require` to `require-dev` / `suggest`, and every direct reference to their classes, routes and views became a registry or contract the plugin itself can fill: `ConsentGate` + `Voodbuilder::consentGate()` for cookie consent, `MediaEndpointRegistry` / `MediaRuntimeRegistry` for the editor's Asset Manager, `NavigationRouteParameterTranslator` for translating route parameters in menu links, plus `LanguageSwitcherRegistry`. `config/voodbuilder.php` keeps a soft default bridge under `integrations.*` (class names are only resolved when the package is actually installed), so existing installs behave as before while a site without those packages keeps working. The `vtuts`-only `ConfigureVtutsForVoodbuilder` boot hook and `latest-vtuts` block were removed from core.
+
+### Fixed
+
+- **“Open in editor” edits the page you clicked, not the default-language home.** Every locale shares the `/` route, so the editor URL of a translated home was plain `/`: the request resolved the default language's home and the editor then saved onto that record (opening the English home edited the Italian one). `VoodbuilderUrls::home()` now keeps `?locale=` for any non-default language even when locale routing is off, and the new `SitePage::editorUrl()` builds the `?edit=1` link from it, so the table action and the edit-page header button both land on the right page.
+
+### Added
+
+- **The page locale is visible while editing.** The admin edit page heading reads the page name with its language (`Home (EN)`) plus a subheading, and the editor top bar shows an `EN`/`IT` chip next to the page name, so two translations of the same page are no longer indistinguishable.
+
 ## [1.12.10] - 2026-11-03
 
 ### Fixed

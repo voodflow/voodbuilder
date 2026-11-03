@@ -61,12 +61,15 @@ function escapeHtml(value) {
  * @returns {{ kind: string, name: string } | null}
  */
 export function resolveEditingContext(options = {}, labels = {}) {
+    const locale = String(options.pageLocale ?? '').trim().toUpperCase();
+
     if (options.popupMode) {
         const name = String(options.popupName ?? '').trim();
 
         return {
             kind: labels.editingContextPopup ?? 'Popup',
             name: name !== '' ? name : (labels.editingContextUntitled ?? 'Untitled'),
+            locale,
         };
     }
 
@@ -76,6 +79,7 @@ export function resolveEditingContext(options = {}, labels = {}) {
         return {
             kind: labels.editingContextLayout ?? 'Layout',
             name: name !== '' ? name : (labels.editingContextUntitled ?? 'Untitled'),
+            locale,
         };
     }
 
@@ -88,6 +92,7 @@ export function resolveEditingContext(options = {}, labels = {}) {
     return {
         kind: labels.editingContextPage ?? 'Page',
         name: name !== '' ? name : (labels.editingContextUntitled ?? 'Untitled'),
+        locale,
     };
 }
 
@@ -98,6 +103,7 @@ function editingContextMarkup(context) {
 
     const kind = String(context.kind ?? '').trim();
     const name = String(context.name ?? '').trim();
+    const locale = String(context.locale ?? '').trim();
     const title = name !== '' ? name : kind;
     const hover = kind !== '' && name !== '' ? `${kind} · ${name}` : title;
 
@@ -108,6 +114,7 @@ function editingContextMarkup(context) {
     return `
         <div class="voodbuilder-editor-topbar__editing-context" title="${escapeHtml(hover)}">
             <span class="voodbuilder-editor-topbar__editing-name">${escapeHtml(title)}</span>
+            ${locale !== '' ? `<span class="voodbuilder-editor-topbar__editing-locale">${escapeHtml(locale)}</span>` : ''}
             ${kind !== '' && name !== '' ? `<span class="voodbuilder-editor-topbar__editing-kind sr-only">${escapeHtml(kind)}</span>` : ''}
         </div>
     `;

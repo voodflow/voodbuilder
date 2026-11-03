@@ -281,6 +281,41 @@ return [
     ],
 
     /*
+    | Companion plugins are optional and plug in here — VoodBuilder never requires
+    | one to boot. Registered gates/endpoints win; these class/route names are only
+    | the default bridge for the ecosystem packages that provide them.
+    */
+    'integrations' => [
+        /*
+        | Consent provider (e.g. a cookie bar). Its `allows($category)` answers
+        | “may I run marketing/analytics?”. Null = nothing is gated.
+        | Register your own with Voodbuilder::consentGate().
+        */
+        'consent_gate' => env('VOODBUILDER_CONSENT_GATE', 'Voodflow\\Vcookiebar\\Vcookiebar'),
+        'consent_method' => 'allows',
+        'consent_payload_class' => env('VOODBUILDER_CONSENT_PAYLOAD_CLASS', 'Voodflow\\Vcookiebar\\Support\\ConsentPayload'),
+        'consent_cookie' => env('VOODBUILDER_CONSENT_COOKIE', 'vcookiebar_consent'),
+
+        /*
+        | Media runtime for the editor's Asset Manager: a class exposing
+        | reset()/activate(). Its HTTP route names are claimed under
+        | `editor.media`. Register your own with Voodbuilder::mediaRuntime().
+        */
+        'media_runtime_class' => env('VOODBUILDER_MEDIA_RUNTIME_CLASS', 'Voodflow\\Vmedia\\Vmedia'),
+        'media_runtime_reset_method' => 'reset',
+        'media_runtime_activation_method' => 'activate',
+        'media_upload_route' => 'vmedia.media.upload',
+    ],
+
+    /*
+    | Visitor language choice is remembered in the session. Each language-switcher
+    | provider keeps its own key, so they stay in sync when both are installed.
+    */
+    'localization' => [
+        'session_keys' => [],
+    ],
+
+    /*
     | Self-hosted fonts are bundled via Vite (see resources/css/fonts.css).
     | Install these npm devDependencies in the host app, then run npm run build:
     |
@@ -451,6 +486,18 @@ return [
         | npm dependency `@jodit/image-editor`. Disable with env or config.
         */
         'image_editor' => env('VOODBUILDER_EDITOR_IMAGE_EDITOR', true),
+
+        /*
+        | Asset Manager endpoints. Empty/missing = capability off, and the editor
+        | hides it. A media package claims these with Voodbuilder::mediaEndpoint().
+        */
+        'media' => [
+            'upload' => env('VOODBUILDER_MEDIA_UPLOAD_ROUTE', 'vmedia.media.upload'),
+            'replace' => env('VOODBUILDER_MEDIA_REPLACE_ROUTE', 'vmedia.media.replace'),
+            'meta' => env('VOODBUILDER_MEDIA_META_ROUTE', 'vmedia.media.meta'),
+            'index' => env('VOODBUILDER_MEDIA_INDEX_ROUTE', 'vmedia.media.index'),
+            'galleries' => env('VOODBUILDER_MEDIA_GALLERIES_ROUTE', 'vmedia.media.galleries'),
+        ],
         'include_voodbuilder_blocks' => false,
         'include_landing_blocks' => false,
         'site_blocks' => [

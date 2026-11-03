@@ -12,6 +12,7 @@ use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\NavProfileMenu;
 use Voodflow\Voodbuilder\Support\SiteLanguageSwitcher;
+use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
 /**
@@ -116,6 +117,42 @@ class SiteLanguageSwitcherTest extends TestCase
 
         $this->assertStringContainsString('laboratori', $url);
         $this->assertStringContainsString('locale=en', $url);
+    }
+
+    #[Test]
+    public function the_editor_link_of_a_translated_home_keeps_its_locale(): void
+    {
+        SitePage::query()->create([
+            'title' => 'Home IT',
+            'slug' => 'home-it',
+            'locale' => 'it',
+            'content' => [],
+            'layout' => 'home',
+            'is_home' => true,
+            'published' => true,
+            'published_at' => now(),
+        ]);
+
+        $english = SitePage::query()->create([
+            'title' => 'Home EN',
+            'slug' => 'home-en',
+            'locale' => 'en',
+            'content' => [],
+            'layout' => 'home',
+            'is_home' => true,
+            'published' => true,
+            'published_at' => now(),
+        ]);
+
+        // `/` alone serves the default-language home, so the editor would open the
+        // wrong record: the locale query has to survive into the edit URL.
+        $this->assertStringContainsString('locale=en', VoodbuilderUrls::home('en'));
+        $this->assertStringNotContainsString('locale=', VoodbuilderUrls::home('it'));
+
+        $editorUrl = $english->editorUrl();
+
+        $this->assertStringContainsString('locale=en', $editorUrl);
+        $this->assertStringContainsString('edit=1', $editorUrl);
     }
 
     #[Test]

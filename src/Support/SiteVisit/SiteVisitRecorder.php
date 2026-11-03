@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 use Throwable;
-use Voodflow\Vcookiebar\Vcookiebar;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Support\Consent;
 use Voodflow\Voodbuilder\Support\VoodbuilderUrls;
 use Voodflow\Voodbuilder\Support\VoodflowIntegration;
 
@@ -40,8 +40,8 @@ final class SiteVisitRecorder
             return;
         }
 
-        // Visitor id + site-visit workflows require marketing consent (vcookiebar).
-        if (! Vcookiebar::allows('marketing')) {
+        // Visitor id + site-visit workflows require marketing consent.
+        if (! Consent::allows('marketing')) {
             return;
         }
 

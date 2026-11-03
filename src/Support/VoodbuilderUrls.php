@@ -7,7 +7,6 @@ namespace Voodflow\Voodbuilder\Support;
 use Illuminate\Support\Facades\Route;
 use Voodflow\Voodbuilder\Models\SitePage;
 use Voodflow\Voodbuilder\Support\DynamicPages\DynamicPageRegistry;
-use Voodflow\Vtuts\Support\LocaleSwitcher;
 
 /**
  * Voodbuilder Urls.
@@ -28,14 +27,18 @@ final class VoodbuilderUrls
 
         $url = Route::has('home') ? route('home') : url('/');
 
-        if (
-            SitePageResolver::localeRoutingEnabled()
-            && ! SiteLocales::usesUrlPrefix()
-        ) {
-            return LocaleSwitcher::appendLocaleQuery($url, $locale);
+        if (SitePageResolver::localeRoutingEnabled()) {
+            return SiteLanguageSwitcher::appendLocaleQuery($url, $locale);
         }
 
-        return $url;
+        if ($locale === SiteLocales::default()) {
+            return $url;
+        }
+
+        // The home route is shared by every locale: without the query the request
+        // resolves the default language's home (and its editor), not this one. The
+        // middleware reads `?locale=` even when the site has no locale routing at all.
+        return SiteLanguageSwitcher::appendLocaleQuery($url, $locale);
     }
 
     public static function page(SitePage $page): string

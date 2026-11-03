@@ -10,7 +10,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Voodflow\Vcookiebar\Vcookiebar;
+use Voodflow\Voodbuilder\Support\Consent;
 use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitPath;
 use Voodflow\Voodbuilder\Support\SiteVisit\SiteVisitWorkflowRunner;
 use Voodflow\Voodbuilder\Support\VoodflowIntegration;
@@ -27,7 +27,7 @@ final class SiteVisitPublicController extends Controller
             return response()->json(['queued' => []]);
         }
 
-        if (! Vcookiebar::allows('marketing')) {
+        if (! Consent::allows('marketing')) {
             return response()->json(['queued' => [], 'blocked' => 'marketing_consent']);
         }
 

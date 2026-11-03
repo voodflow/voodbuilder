@@ -499,7 +499,7 @@ class SitePageResource extends Resource
                         ->label(__('voodbuilder::pro.actions.open_visual_editor'))
                         ->icon('heroicon-o-paint-brush')
                         ->color('gray')
-                        ->url(fn (SitePage $record): string => $record->getUrl() . (str_contains($record->getUrl(), '?') ? '&' : '?') . 'edit=1')
+                        ->url(fn (SitePage $record): string => $record->editorUrl())
                         ->openUrlInNewTab()
                         ->visible(fn (SitePage $record): bool => $record->usesEditorBuilder()),
                     CreateSitePageTranslationAction::make(),
