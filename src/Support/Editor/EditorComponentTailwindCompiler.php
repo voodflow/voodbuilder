@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voodflow\Voodbuilder\Support\Editor;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
@@ -13,6 +14,16 @@ use Illuminate\Support\Str;
  */
 final class EditorComponentTailwindCompiler
 {
+    /**
+     * Compiled CSS only depends on the class candidates (and the compiler script),
+     * so the same markup shape can be served from cache. Editing a layout fires a
+     * JIT compile per change; without this each edit pays a Node/Tailwind cold start
+     * and the editor stays on "Compiling styles…".
+     */
+    private const CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+    private const CACHE_PREFIX = 'voodbuilder.tailwind_compile.';
+
     public static function isAvailable(): bool
     {
         if (! is_file(self::scriptPath())) {
@@ -46,6 +57,13 @@ final class EditorComponentTailwindCompiler
 
         $appRoot = self::resolveAppRoot();
 
+        $cacheKey = self::cacheKey($html, $scope, $scriptPath);
+        $cached = Cache::get($cacheKey);
+
+        if (is_string($cached)) {
+            return $cached !== '' ? $cached : null;
+        }
+
         $result = Process::path($appRoot)
             ->timeout(60)
             ->env([
@@ -76,7 +94,38 @@ final class EditorComponentTailwindCompiler
 
         $css = trim((string) ($payload['css'] ?? ''));
 
+        Cache::put($cacheKey, $css, self::CACHE_TTL_SECONDS);
+
         return $css !== '' ? $css : null;
+    }
+
+    /**
+     * Fingerprint of what the compiled CSS actually depends on: the per-element
+     * class lists (the compiler emits interaction/animation overrides per element),
+     * the scope, and the compiler script itself.
+     */
+    private static function cacheKey(string $html, string $scope, string $scriptPath): string
+    {
+        preg_match_all('/\bclass=(["\'])(.*?)\1/is', $html, $matches);
+
+        $lists = [];
+
+        foreach ($matches[2] ?? [] as $raw) {
+            $tokens = array_values(array_filter(
+                preg_split('/\s+/', trim((string) $raw)) ?: [],
+                static fn (string $token): bool => $token !== '',
+            ));
+
+            sort($tokens);
+
+            $lists[] = implode(' ', $tokens);
+        }
+
+        sort($lists);
+
+        $scriptStamp = (string) (@filemtime($scriptPath) ?: '');
+
+        return self::CACHE_PREFIX . sha1($scope . '|' . $scriptStamp . '|' . implode('|', $lists));
     }
 
     public static function scriptPath(): string

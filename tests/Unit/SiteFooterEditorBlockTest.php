@@ -12,6 +12,7 @@ use Voodflow\Voodbuilder\Support\Editor\EditorSlotHydrator;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterColumnsContactBlock;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterColumnsSimpleBlock;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterConfig;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavSimpleBlock;
 use Voodflow\Voodbuilder\Tests\TestCase;
@@ -65,6 +66,45 @@ class SiteFooterEditorBlockTest extends TestCase
         // Two menu columns only, the static columns replace menu columns 3 and 4.
         $this->assertStringContainsString('data-voodbuilder-menu="footer_col_2"', $html);
         $this->assertStringNotContainsString('lg:col-start-1', $html);
+    }
+
+    #[Test]
+    public function it_refreshes_saved_contact_rows_from_the_block_config(): void
+    {
+        $config = static fn (array $items): array => SiteFooterConfig::normalize([
+            'contact_title' => 'Contatti',
+            'contact_items' => $items,
+        ]);
+
+        $saved = SiteFooterColumnsContactBlock::toHtml($config([
+            ['icon' => 'mail', 'text' => 'led@polito.it'],
+            ['icon' => 'phone', 'text' => '+39 011 090 4000'],
+            ['icon' => 'map-pin', 'text' => 'Corso Duca degli Abruzzi, 24'],
+            ['icon' => '', 'text' => '10129 Torino'],
+        ]), []);
+
+        $freshConfig = $config([
+            ['icon' => 'mail', 'text' => 'led@polito.it'],
+            ['icon' => 'phone', 'text' => '+39 011 090 4000'],
+            ['icon' => 'map-pin', 'text' => 'Corso Duca degli Abruzzi, 24 10129 Torino'],
+        ]);
+
+        // GrapesJS serialises the rendered rows into the layout HTML, so the saved
+        // markup still carries the old rows while the config attribute is current.
+        $saved = (string) preg_replace(
+            '/data-voodbuilder-config=([\'"]).*?\1/s',
+            "data-voodbuilder-config='" . htmlspecialchars(
+                json_encode($freshConfig, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                ENT_QUOTES | ENT_HTML5,
+            ) . "'",
+            $saved,
+            1,
+        );
+
+        $hydrated = EditorSlotHydrator::hydrateHtml($saved);
+
+        $this->assertStringContainsString('Corso Duca degli Abruzzi, 24 10129 Torino', $hydrated);
+        $this->assertSame(3, substr_count($hydrated, 'data-voodbuilder-footer-text-item'));
     }
 
     #[Test]

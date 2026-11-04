@@ -20,6 +20,7 @@ final class EditorSlotHydrator
         self::hydrateBrands($document, $root, $preview, $config);
         self::hydrateMenus($document, $root, $preview, $config);
         self::hydrateFooterColumnTitles($document, $root);
+        self::hydrateFooterTextColumns($document, $root, $preview, $config);
         self::hydrateFooterCopy($document, $root, $config);
 
         if ($config !== []) {
@@ -32,7 +33,7 @@ final class EditorSlotHydrator
 
     public static function hydrateHtml(string $html, bool $preview = false, array $config = []): string
     {
-        if ($html === '' || (! str_contains($html, 'data-voodbuilder-menu') && ! str_contains($html, 'data-voodbuilder-brand') && ! str_contains($html, 'data-voodbuilder-chrome'))) {
+        if ($html === '' || (! str_contains($html, 'data-voodbuilder-menu') && ! str_contains($html, 'data-voodbuilder-brand') && ! str_contains($html, 'data-voodbuilder-chrome') && ! str_contains($html, 'data-voodbuilder-footer-text-lines'))) {
             return $html;
         }
 
@@ -41,6 +42,7 @@ final class EditorSlotHydrator
         self::hydrateBrands($document, $document->documentElement, $preview, $config);
         self::hydrateMenus($document, $document->documentElement, $preview, $config);
         self::hydrateFooterColumnTitles($document, $document->documentElement);
+        self::hydrateFooterTextColumns($document, $document->documentElement, $preview, $config);
         self::hydrateFooterCopy($document, $document->documentElement, $config);
 
         if ($config !== []) {
@@ -242,6 +244,96 @@ final class EditorSlotHydrator
                 }
             }
         }
+    }
+
+    /**
+     * Rows of the Contacts / Details text columns.
+     *
+     * Menus and brands are re-rendered from config above, but the contacts rows
+     * used to be trusted as-is. GrapesJS serializes the rendered <li> nodes into
+     * the layout HTML, so editing a contact (e.g. moving the city onto the
+     * address line) updated data-voodbuilder-config while the published footer
+     * kept the old rows forever. The rows are derived data: rebuild them.
+     *
+     * @param  array<string, mixed>  $fallback
+     */
+    protected static function hydrateFooterTextColumns(
+        DOMDocument $document,
+        DOMElement $root,
+        bool $preview,
+        array $fallback = [],
+    ): void {
+        $lists = [];
+        $titles = [];
+
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if (! $element instanceof DOMElement) {
+                continue;
+            }
+
+            if ($element->hasAttribute('data-voodbuilder-footer-text-lines')) {
+                $lists[] = $element;
+            }
+
+            if ($element->hasAttribute('data-voodbuilder-footer-text-title')) {
+                $titles[] = $element;
+            }
+        }
+
+        foreach ($titles as $element) {
+            $column = (string) $element->getAttribute('data-voodbuilder-footer-text-title');
+
+            if ($column === '') {
+                continue;
+            }
+
+            $config = self::resolveConfigForElement($element, $fallback);
+
+            if ($config === []) {
+                continue;
+            }
+
+            self::replaceTextContent(
+                $document,
+                $element,
+                SiteFooterConfig::textColumnTitle($config, $column),
+            );
+        }
+
+        foreach ($lists as $element) {
+            $column = (string) $element->getAttribute('data-voodbuilder-footer-text-lines');
+
+            if ($column === '') {
+                continue;
+            }
+
+            $config = self::resolveConfigForElement($element, $fallback);
+
+            if ($config === []) {
+                continue;
+            }
+
+            self::replaceElementInnerHtml($document, $element, view(
+                'voodbuilder::editor.blocks.footers._text_column_items',
+                [
+                    'config' => SiteFooterConfig::normalize($config),
+                    'column' => $column,
+                    'preview' => $preview,
+                ],
+            )->render());
+        }
+    }
+
+    /**
+     * Replace an element's text while keeping its own classes and data attributes.
+     */
+    protected static function replaceTextContent(DOMDocument $document, DOMElement $element, string $text): void
+    {
+        while ($element->firstChild !== null) {
+            $element->removeChild($element->firstChild);
+        }
+
+        $element->appendChild($document->createTextNode($text));
     }
 
     /**

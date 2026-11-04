@@ -205,6 +205,20 @@ final class SiteFooterConfig
     }
 
     /**
+     * Heading of a footer text column, falling back to the translated default.
+     */
+    public static function textColumnTitle(array $config, string $column): string
+    {
+        $title = self::textColumn($config, $column)['title'];
+
+        if ($title !== '') {
+            return $title;
+        }
+
+        return (string) __('voodbuilder::pro.editor.footer_settings.' . $column . '_default_title');
+    }
+
+    /**
      * Repeatable contacts column rows: `{ icon, text }` pairs.
      *
      * Accepts the stored array, a JSON string (from the editor prop) or a plain

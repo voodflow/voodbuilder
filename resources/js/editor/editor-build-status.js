@@ -113,6 +113,13 @@ const BUILD_SLOW_MS = 4_000;
 let buildElapsedTimer = null;
 let buildElapsedStartedAt = 0;
 let buildSlowTimer = null;
+/**
+ * Compiles that finish fast (cached CSS, tiny class delta) should not flash the
+ * canvas/selectors overlay. Reveal it only once the build has lasted long enough
+ * to be worth showing.
+ */
+const OVERLAY_REVEAL_DELAY_MS = 250;
+const overlayRevealTimers = new WeakMap();
 let buildStatusLabels = {
     slow: 'This is taking longer than usual — still working.',
 };
@@ -386,10 +393,24 @@ export function isEditorBuildBusy() {
 function syncClassesOverlay(editor) {
     const overlay = editor?.__voodbuilderClassesBuildOverlay;
 
-    if (overlay) {
-        const busy = totalBuildCount() > 0;
-        overlay.hidden = ! busy;
-        overlay.setAttribute('aria-busy', busy ? 'true' : 'false');
+    if (! overlay) {
+        return;
+    }
+
+    const isBusy = () => totalBuildCount() > 0;
+
+    if (! isBusy()) {
+        hideOverlayNow(overlay);
+
+        syncCanvasCompileOverlay(editor);
+
+        return;
+    }
+
+    if (! overlay.hidden) {
+        overlay.setAttribute('aria-busy', 'true');
+    } else {
+        scheduleOverlayReveal(overlay, isBusy);
     }
 
     syncCanvasCompileOverlay(editor);
@@ -403,10 +424,50 @@ function syncCanvasCompileOverlay(editor) {
     }
 
     // Any in-flight build (template apply, page JIT, component JIT) — not only CSS scopes.
-    const busy = ! editor?.__voodbuilderBooting && totalBuildCount() > 0;
+    const isBusy = () => ! editor?.__voodbuilderBooting && totalBuildCount() > 0;
 
-    overlay.hidden = ! busy;
-    overlay.setAttribute('aria-busy', busy ? 'true' : 'false');
+    if (! isBusy()) {
+        hideOverlayNow(overlay);
+
+        return;
+    }
+
+    if (! overlay.hidden) {
+        overlay.setAttribute('aria-busy', 'true');
+    } else {
+        scheduleOverlayReveal(overlay, isBusy);
+    }
+}
+
+function hideOverlayNow(overlay) {
+    const timer = overlayRevealTimers.get(overlay);
+
+    if (timer) {
+        window.clearTimeout(timer);
+        overlayRevealTimers.delete(overlay);
+    }
+
+    overlay.hidden = true;
+    overlay.setAttribute('aria-busy', 'false');
+}
+
+function scheduleOverlayReveal(overlay, isBusy) {
+    if (overlayRevealTimers.has(overlay)) {
+        return;
+    }
+
+    const timer = window.setTimeout(() => {
+        overlayRevealTimers.delete(overlay);
+
+        if (! isBusy()) {
+            return;
+        }
+
+        overlay.hidden = false;
+        overlay.setAttribute('aria-busy', 'true');
+    }, OVERLAY_REVEAL_DELAY_MS);
+
+    overlayRevealTimers.set(overlay, timer);
 }
 
 function syncBootOverlay(editor) {

@@ -558,6 +558,69 @@ body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-col].lg\
     grid-column-start: 4;
 }
 
+/*
+ * Contacts footer: postal addresses are much wider than a link column. With four
+ * equal tracks the address wraps right after the street name, so it reads like a
+ * second contact row instead of one line. Give the Contacts column a larger share
+ * and let the other columns keep their own. Flex (not grid-template-columns) so the
+ * ratio follows the number of visible menu columns instead of their track index.
+ *
+ * The scoped layout sheet stamps `[data-voodbuilder-chrome-shell] .grid`, so these
+ * selectors carry the same scope prefix to win the cascade without !important.
+ */
+@media (min-width: 1024px) {
+    [data-voodbuilder-chrome-shell] [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']),
+    [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) {
+        display: flex;
+        flex-wrap: nowrap;
+    }
+
+    [data-voodbuilder-chrome-shell] [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) > *,
+    [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) > * {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    [data-voodbuilder-chrome-shell] [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) > [data-voodbuilder-footer-text-col='contact'],
+    [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) > [data-voodbuilder-footer-text-col='contact'] {
+        flex: 2.2 1 0;
+    }
+}
+
+/* Same shape in the canvas, which forces desktop chrome below the lg breakpoint. */
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) > * {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) > [data-voodbuilder-footer-text-col='contact'] {
+    flex: 2.2 1 0;
+}
+
+/*
+ * Wide desktop: a full postal address ("Corso Duca degli Abruzzi, 24 10129 Torino")
+ * needs ~21.5rem of column width including the icon, so reserve it instead of relying
+ * on the flex ratio. Narrower viewports keep the ratio and let the address wrap.
+ */
+@media (min-width: 1280px) {
+    [data-voodbuilder-chrome-shell] [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']),
+    [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) {
+        column-gap: 1rem;
+        padding-left: 1.5rem;
+    }
+
+    [data-voodbuilder-chrome-shell] [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) > [data-voodbuilder-footer-text-col='contact'],
+    [data-voodbuilder-footer-menu-cols]:has(> [data-voodbuilder-footer-text-col='contact']) > [data-voodbuilder-footer-text-col='contact'] {
+        flex: 0 0 21rem;
+        min-width: 21rem;
+    }
+}
+
 /* Rich Text: restore list markers (Tailwind preflight sets list-style: none). */
 .vb-rich-text ul {
     list-style-type: disc;

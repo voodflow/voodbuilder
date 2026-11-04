@@ -59,20 +59,10 @@
                     ) }}</p>
                     @if ($detailsColumn['lines'] !== [])
                         <ul class="mt-2 list-none space-y-1 text-sm leading-6 text-vp-text-2" data-voodbuilder-footer-text-lines="details">
-                            @foreach ($detailsColumn['lines'] as $line)
-                                @php($href = SiteFooterConfig::lineHref((string) $line))
-                                <li>
-                                    @if ($href)
-                                        <a
-                                            href="{{ $href }}"
-                                            class="transition-colors hover:text-vp-brand-1"
-                                            @if (str_starts_with($href, 'http')) target="_blank" rel="noopener noreferrer" @endif
-                                        >{{ $line }}</a>
-                                    @else
-                                        {{ $line }}
-                                    @endif
-                                </li>
-                            @endforeach
+                            @include('voodbuilder::editor.blocks.footers._text_column_items', [
+                                'config' => $config,
+                                'column' => 'details',
+                            ])
                         </ul>
                     @endif
                 </div>
