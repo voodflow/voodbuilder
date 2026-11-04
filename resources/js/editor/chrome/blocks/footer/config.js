@@ -759,6 +759,21 @@ export function applySiteFooterSettingChange(editor, root, name, value) {
             root.set(name, value, { silent: true });
         }
 
+        // Turning on the split layout promotes legacy plain lines to icon rows, so the
+        // contacts column renders with icons right away.
+        if (name === FOOTER_VERTICAL_DIVIDERS_PROP
+            && value === true
+            && normalizeFooterContactItems(root.get(FOOTER_CONTACT_ITEMS_PROP)).length === 0) {
+            const seeded = splitFooterLines(root.get(FOOTER_CONTACT_LINES_PROP)).map((text) => ({
+                icon: footerContactIconForText(text),
+                text,
+            }));
+
+            if (seeded.length > 0) {
+                root.set(FOOTER_CONTACT_ITEMS_PROP, footerContactItemsJson(seeded), { silent: true });
+            }
+        }
+
         syncSiteFooterConfig(root);
         applySiteFooterSettingsPreview(root, editor, {
             invalidateCss: name === CHROME_LOGO_SIZE_PROP

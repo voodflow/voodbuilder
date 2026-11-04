@@ -285,6 +285,16 @@ function createFooterContactItemsField({ root, applyChange, label }) {
     render();
     field.append(labelEl, list, addButton, hint);
 
+    // The Tabler catalog loads lazily: repaint row icons once it is available so the
+    // buttons show the real glyph instead of the fallback placeholder.
+    void ensureTablerCatalog()
+        .then(() => {
+            if (field.isConnected && ! list.contains(document.activeElement)) {
+                render();
+            }
+        })
+        .catch(() => {});
+
     return field;
 }
 

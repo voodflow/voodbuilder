@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.18.1] - 2026-11-04
+
+### Fixed
+
+- Contact row icon buttons now repaint with the real Tabler glyph once the icon catalog finishes loading (they used to show the fallback placeholder until a picker was opened).
+- Enabling the vertical dividers on a footer that still uses plain `contact_lines` promotes those lines to icon rows (guessed mail/phone/map-pin), so the contacts column renders with icons immediately.
+
 ## [1.18.0] - 2026-11-04
 
 ### Added
