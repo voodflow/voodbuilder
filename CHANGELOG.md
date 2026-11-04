@@ -2,18 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.18.2] - 2026-11-04
+## [1.18.3] - 2026-11-04
 
 ### Fixed
 
 - Footer contacts/details rows are now re-rendered from `data-voodbuilder-config` when a layout is published. Saved layout markup used to keep the `<li>` rows GrapesJS serialized, so editing a contact (for example moving the postal code onto the address line) never reached the live site.
 - The contacts column of the brand + contacts footer reserves enough width on wide desktops (`≥1280px`) to keep a full postal address on one line instead of wrapping right after the street number.
-- The layout editor no longer keeps the page waiting on "Compiling styles…" for every small change: compiled CSS is cached and the overlay only appears for builds that last more than 250ms.
+- The layout editor no longer keeps the page waiting on "Compiling styles…" for every small change: compiled CSS is cached and the overlay only appears for builds that last more than 400ms.
 
 ### Changed
 
 - Page/component Tailwind JIT results are cached by class fingerprint (7 days, invalidated when the compiler script changes). Repeated `compile-css` calls now answer in ~1ms instead of spawning a Node/Tailwind process (~250–350ms).
-- The canvas/selectors build overlay is revealed after 250ms, so cached compiles no longer flash it.
+- The canvas/selectors build overlay is revealed after 400ms, so cached compiles no longer flash it.
 
 ## [1.18.1] - 2026-11-04
 

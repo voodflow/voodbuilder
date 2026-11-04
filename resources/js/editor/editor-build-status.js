@@ -118,7 +118,7 @@ let buildSlowTimer = null;
  * canvas/selectors overlay. Reveal it only once the build has lasted long enough
  * to be worth showing.
  */
-const OVERLAY_REVEAL_DELAY_MS = 250;
+const OVERLAY_REVEAL_DELAY_MS = 400;
 const overlayRevealTimers = new WeakMap();
 let buildStatusLabels = {
     slow: 'This is taking longer than usual — still working.',
