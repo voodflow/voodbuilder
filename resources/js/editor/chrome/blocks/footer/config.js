@@ -44,8 +44,34 @@ export const FOOTER_CONTACT_ITEM_LIMIT = 8;
 export const FOOTER_CONTACT_DEFAULT_ICON = 'point';
 
 /** Icon guessed from the contact text, used when rows are promoted from plain lines. */
-export function footerContactIconForText(text) {
-    const value = String(text ?? '').trim();
+export function footerContactIconForText(text, url = '') {
+    const value = String(url !== '' ? url : (text ?? '')).trim().toLowerCase();
+
+    if (value === '') {
+        return FOOTER_CONTACT_DEFAULT_ICON;
+    }
+
+    /** Social destinations get their own brand glyph, so links read at a glance. */
+    const socials = [
+        ['facebook', 'brand-facebook'],
+        ['instagram', 'brand-instagram'],
+        ['linkedin', 'brand-linkedin'],
+        ['youtube', 'brand-youtube'],
+        ['wa.me', 'brand-whatsapp'],
+        ['whatsapp', 'brand-whatsapp'],
+        ['github', 'brand-github'],
+        ['x.com', 'brand-x'],
+        ['twitter', 'brand-x'],
+        ['t.me', 'brand-telegram'],
+        ['telegram', 'brand-telegram'],
+        ['tiktok', 'brand-tiktok'],
+    ];
+
+    for (const [needle, icon] of socials) {
+        if (value.includes(needle)) {
+            return icon;
+        }
+    }
 
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         return 'mail';
@@ -59,14 +85,21 @@ export function footerContactIconForText(text) {
         return 'phone';
     }
 
+    if (/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,24}(?:[/:?#]\S*)?$/.test(value)) {
+        return 'world';
+    }
+
     return 'map-pin';
 }
 
 /**
- * Repeatable contacts rows (`{ icon, text }`), tolerant to the stored JSON string.
+ * Repeatable contacts rows (`{ icon, text, url }`), tolerant to the stored JSON string.
+ *
+ * `url` is the row destination (social profile, page…), while `text` stays the
+ * readable label. An empty `url` keeps the original "link the text itself" behavior.
  *
  * @param {unknown} value
- * @returns {{ icon: string, text: string }[]}
+ * @returns {{ icon: string, text: string, url: string }[]}
  */
 export function normalizeFooterContactItems(value) {
     let rows = value;
@@ -88,21 +121,29 @@ export function normalizeFooterContactItems(value) {
 
     for (const row of rows) {
         const isStringRow = typeof row === 'string';
-        const text = isStringRow
+        const url = isStringRow
+            ? ''
+            : String(row?.url ?? row?.href ?? row?.link ?? '').trim();
+        let text = isStringRow
             ? row.trim()
             : String(row?.text ?? row?.label ?? row?.line ?? row?.value ?? '').trim();
         // Explicit empty icon keeps the row aligned without showing a glyph.
         const hasIcon = ! isStringRow && row !== null && typeof row === 'object'
             && Object.prototype.hasOwnProperty.call(row, 'icon');
         const icon = isStringRow || ! hasIcon
-            ? FOOTER_CONTACT_DEFAULT_ICON
+            ? (url !== '' ? footerContactIconForText(text, url) : FOOTER_CONTACT_DEFAULT_ICON)
             : (String(row.icon ?? '').trim().toLowerCase());
 
-        if (text === '') {
+        // A link without a label shows the destination itself.
+        if (text === '' && url !== '') {
+            text = url;
+        }
+
+        if (text === '' && url === '') {
             continue;
         }
 
-        items.push({ icon, text });
+        items.push(url !== '' ? { icon, text, url } : { icon, text });
 
         if (items.length >= FOOTER_CONTACT_ITEM_LIMIT) {
             break;
@@ -113,15 +154,16 @@ export function normalizeFooterContactItems(value) {
 }
 
 /**
- * @param {{ icon: string, text: string }[]} items
+ * @param {{ icon: string, text: string, url?: string }[]} items
  * @returns {string}
  */
 export function footerContactItemsJson(items) {
     return JSON.stringify(
-        normalizeFooterContactItems(items).map((item) => ({
-            icon: item.icon,
-            text: item.text,
-        })),
+        normalizeFooterContactItems(items).map((item) => (
+            item.url
+                ? { icon: item.icon, text: item.text, url: item.url }
+                : { icon: item.icon, text: item.text }
+        )),
     );
 }
 

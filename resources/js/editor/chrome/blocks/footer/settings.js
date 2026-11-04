@@ -28,6 +28,7 @@ import {
     normalizeFooterContactItems,
     splitFooterLines,
     FOOTER_CONTACT_ITEM_LIMIT,
+    FOOTER_CONTACT_DEFAULT_ICON,
     FOOTER_CONTACT_ITEMS_PROP,
     FOOTER_VERTICAL_DIVIDERS_PROP,
     FOOTER_CONTACT_TITLE_PROP,
@@ -131,15 +132,19 @@ function createFooterContactIconPicker({ value, label, onChange }) {
 function createFooterContactItemsField({ root, applyChange, label }) {
     const stored = normalizeFooterContactItems(root.get(FOOTER_CONTACT_ITEMS_PROP));
 
-    /** @type {{ icon: string, text: string }[]} */
+    /** @type {{ icon: string, text: string, url: string }[]} */
     let items = stored.length > 0
         ? stored
         : splitFooterLines(root.get(FOOTER_CONTACT_LINES_PROP)).map((text) => ({
             icon: footerContactIconForText(text),
             text,
+            url: '',
         }));
 
     let openPicker = -1;
+    let openLink = -1;
+    /** Rows whose link field was collapsed by hand even though a destination exists. */
+    let collapsedLinks = new Set();
 
     const field = document.createElement('div');
     field.className = 'voodbuilder-editor-form-field';
@@ -156,7 +161,7 @@ function createFooterContactItemsField({ root, applyChange, label }) {
     hint.className = 'voodbuilder-editor-form-hint';
     hint.textContent = label(
         'footerContactItemsHelp',
-        'Emails, phone numbers and URLs become links automatically. Street addresses stay text.',
+        'Emails, phone numbers and URLs become links automatically. Add a link to use a readable title (e.g. Facebook).',
     );
 
     const addButton = document.createElement('button');
@@ -168,7 +173,7 @@ function createFooterContactItemsField({ root, applyChange, label }) {
             return;
         }
 
-        items.push({ icon: 'point', text: '' });
+        items.push({ icon: 'point', text: '', url: '' });
         openPicker = items.length - 1;
         commit();
         render();
@@ -187,6 +192,8 @@ function createFooterContactItemsField({ root, applyChange, label }) {
 
         [items[index], items[target]] = [items[target], items[index]];
         openPicker = -1;
+        openLink = -1;
+        collapsedLinks = new Set();
         commit();
         render();
     };
@@ -194,6 +201,11 @@ function createFooterContactItemsField({ root, applyChange, label }) {
     const row = (item, index) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'voodbuilder-editor-contact-item';
+
+        // Rows carrying a destination keep the link field visible, so an existing
+        // social link is never hidden behind the toggle.
+        const hasUrl = (item.url ?? '') !== '';
+        const linkVisible = openLink === index || (hasUrl && ! collapsedLinks.has(index));
 
         const line = document.createElement('div');
         line.className = 'voodbuilder-editor-contact-item__line';
@@ -217,7 +229,9 @@ function createFooterContactItemsField({ root, applyChange, label }) {
         textInput.type = 'text';
         textInput.className = 'voodbuilder-editor-input voodbuilder-editor-contact-item__text';
         textInput.value = item.text;
-        textInput.placeholder = label('footerContactItemText', 'Email, phone or address');
+        textInput.placeholder = linkVisible
+            ? label('footerContactItemLinkTitle', 'Title (e.g. Facebook)')
+            : label('footerContactItemText', 'Email, phone or address');
         textInput.addEventListener('input', () => {
             items[index] = { ...items[index], text: textInput.value };
         });
@@ -226,7 +240,34 @@ function createFooterContactItemsField({ root, applyChange, label }) {
             commit();
         });
 
-        line.append(iconButton, textInput);
+        const linkButton = document.createElement('button');
+        linkButton.type = 'button';
+        linkButton.className = 'voodbuilder-editor-contact-item__action voodbuilder-editor-contact-item__link-toggle';
+        linkButton.title = label('footerContactItemLink', 'Link');
+        linkButton.setAttribute('aria-label', label('footerContactItemLink', 'Link'));
+        linkButton.setAttribute('aria-expanded', linkVisible ? 'true' : 'false');
+        linkButton.classList.toggle('is-active', linkVisible);
+        linkButton.innerHTML = tablerIconSvg('link', {
+            sizeClass: 'h-4 w-4',
+            className: 'vb-icon__glyph',
+        });
+        linkButton.addEventListener('click', () => {
+            if (linkVisible) {
+                openLink = -1;
+
+                if (hasUrl) {
+                    collapsedLinks.add(index);
+                }
+            } else {
+                collapsedLinks.delete(index);
+                openLink = index;
+            }
+
+            openPicker = -1;
+            render();
+        });
+
+        line.append(iconButton, textInput, linkButton);
 
         for (const [offset, glyph, titleKey, titleFallback] of [
             [-1, '↑', 'footerContactItemMoveUp', 'Move up'],
@@ -252,12 +293,45 @@ function createFooterContactItemsField({ root, applyChange, label }) {
         removeButton.addEventListener('click', () => {
             items = items.filter((_, itemIndex) => itemIndex !== index);
             openPicker = -1;
+            openLink = -1;
+            collapsedLinks = new Set();
             commit();
             render();
         });
         line.append(removeButton);
 
         wrapper.append(line);
+
+        if (linkVisible) {
+            const linkInput = document.createElement('input');
+            linkInput.type = 'url';
+            linkInput.className = 'voodbuilder-editor-input voodbuilder-editor-contact-item__url';
+            linkInput.value = item.url ?? '';
+            linkInput.placeholder = label('footerContactItemLinkPlaceholder', 'https://facebook.com');
+            linkInput.setAttribute('aria-label', label('footerContactItemLink', 'Link'));
+            linkInput.addEventListener('input', () => {
+                items[index] = { ...items[index], url: linkInput.value };
+            });
+            linkInput.addEventListener('change', () => {
+                const url = linkInput.value.trim();
+                items[index] = { ...items[index], url };
+
+                if (url === '') {
+                    collapsedLinks.delete(index);
+                } else if (items[index].icon === '' || items[index].icon === FOOTER_CONTACT_DEFAULT_ICON) {
+                    // Fresh rows take the glyph that matches the destination, so a
+                    // social link is recognizable without opening the icon picker.
+                    items[index] = {
+                        ...items[index],
+                        icon: footerContactIconForText(items[index].text, url),
+                    };
+                }
+
+                commit();
+                render();
+            });
+            wrapper.append(linkInput);
+        }
 
         if (openPicker === index) {
             wrapper.append(createFooterContactIconPicker({

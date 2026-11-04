@@ -3400,6 +3400,17 @@ body.voodbuilder-inner-drop-slots-visible .voodbuilder-editor-inner-drop-slot.gj
     min-width: 0;
 }
 
+.voodbuilder-editor-contact-item__link-toggle.is-active {
+    border-color: color-mix(in srgb, var(--color-vp-brand-1, #4f46e5) 65%, transparent);
+    color: var(--color-vp-brand-1, #4f46e5);
+}
+
+.voodbuilder-editor-contact-item__url {
+    height: 1.9rem;
+    padding-block: 0;
+    font-size: 0.75rem;
+}
+
 .voodbuilder-editor-contact-icon-picker {
     display: flex;
     flex-direction: column;

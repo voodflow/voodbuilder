@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 - Page/component Tailwind JIT results are cached by class fingerprint (7 days, invalidated when the compiler script changes). Repeated `compile-css` calls now answer in ~1ms instead of spawning a Node/Tailwind process (~250–350ms).
 - The canvas/selectors build overlay is revealed after 400ms, so cached compiles no longer flash it.
 
+## [1.19.0] - 2026-11-04
+
+### Added
+
+- Repeatable footer contacts accept an optional link destination (`url`) per row, so a readable title such as "Facebook" stays the label while the row links elsewhere. Bare domains (`facebook.com/led`), `mailto:` and `tel:` are normalized, and the icon picker still wins when the row has its own glyph.
+- The editor contact repeater shows a link toggle per row (auto-open when a destination exists) and guesses the matching brand glyph (Facebook, Instagram, LinkedIn, YouTube, WhatsApp, GitHub, X, Telegram, TikTok) for rows that only have a destination.
+
 ## [1.18.1] - 2026-11-04
 
 ### Fixed

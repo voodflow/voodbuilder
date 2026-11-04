@@ -104,6 +104,92 @@ class SiteFooterContactItemsTest extends TestCase
     }
 
     #[Test]
+    public function contact_rows_can_carry_their_own_link_and_title(): void
+    {
+        $items = SiteFooterConfig::contactItems([
+            'contact_items' => [
+                ['icon' => 'brand-facebook', 'text' => 'Facebook', 'url' => ' https://facebook.com/led '],
+                ['icon' => 'brand-instagram', 'text' => 'Instagram', 'url' => 'instagram.com/led'],
+                ['icon' => 'world', 'text' => 'Sito', 'url' => 'www.polito.it'],
+            ],
+        ]);
+
+        $this->assertSame('Facebook', $items[0]['text']);
+        $this->assertSame('https://facebook.com/led', $items[0]['href']);
+        $this->assertSame('https://instagram.com/led', $items[1]['href']);
+        $this->assertSame('https://www.polito.it', $items[2]['href']);
+    }
+
+    #[Test]
+    public function explicit_links_win_over_the_link_detected_from_the_text(): void
+    {
+        $items = SiteFooterConfig::contactItems([
+            'contact_items' => [
+                ['icon' => 'mail', 'text' => 'led@polito.it', 'url' => 'https://polito.it/led'],
+            ],
+        ]);
+
+        $this->assertSame('https://polito.it/led', $items[0]['href']);
+    }
+
+    #[Test]
+    public function link_normalization_accepts_mail_and_phone_schemes(): void
+    {
+        $this->assertSame('mailto:led@polito.it', SiteFooterConfig::linkHref('mailto:led@polito.it'));
+        $this->assertSame('tel:+390110904000', SiteFooterConfig::linkHref('tel:+390110904000'));
+        $this->assertSame('mailto:led@polito.it', SiteFooterConfig::linkHref('led@polito.it'));
+        $this->assertNull(SiteFooterConfig::linkHref('Corso Duca degli Abruzzi, 24'));
+        $this->assertNull(SiteFooterConfig::linkHref('DET - Dipartimento di Elettronica'));
+        $this->assertNull(SiteFooterConfig::linkHref('   '));
+    }
+
+    #[Test]
+    public function link_rows_guess_their_icon_from_the_destination(): void
+    {
+        $normalized = SiteFooterConfig::normalize([
+            'contact_items' => [
+                ['text' => 'Facebook', 'url' => 'https://facebook.com'],
+                ['text' => 'Canale YouTube', 'url' => 'https://youtube.com/@led'],
+                ['text' => 'Sito', 'url' => 'https://polito.it'],
+                ['text' => 'Corso Duca degli Abruzzi, 24'],
+            ],
+        ]);
+
+        $this->assertSame('brand-facebook', $normalized['contact_items'][0]['icon']);
+        $this->assertSame('brand-youtube', $normalized['contact_items'][1]['icon']);
+        $this->assertSame('world', $normalized['contact_items'][2]['icon']);
+        $this->assertSame(SiteFooterConfig::DEFAULT_CONTACT_ITEM_ICON, $normalized['contact_items'][3]['icon']);
+    }
+
+    #[Test]
+    public function a_link_without_a_title_uses_the_destination_as_text(): void
+    {
+        $items = SiteFooterConfig::contactItems([
+            'contact_items' => [
+                ['icon' => 'world', 'url' => 'https://facebook.com'],
+            ],
+        ]);
+
+        $this->assertSame('https://facebook.com', $items[0]['text']);
+        $this->assertSame('https://facebook.com', $items[0]['href']);
+    }
+
+    #[Test]
+    public function contacts_column_renders_the_title_instead_of_the_raw_url(): void
+    {
+        $html = SiteFooterColumnsContactBlock::toHtml([
+            'contact_items' => [
+                ['icon' => 'brand-facebook', 'text' => 'Facebook', 'url' => 'https://facebook.com/led'],
+            ],
+        ], []);
+
+        $this->assertStringContainsString('href="https://facebook.com/led"', $html);
+        $this->assertStringContainsString('target="_blank"', $html);
+        $this->assertStringContainsString('>Facebook</a>', $html);
+        $this->assertStringContainsString('data-voodbuilder-footer-text-icon="brand-facebook"', $html);
+    }
+
+    #[Test]
     public function contacts_column_renders_rows_with_tabler_icons(): void
     {
         $html = SiteFooterColumnsContactBlock::toHtml([

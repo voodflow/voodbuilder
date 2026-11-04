@@ -58,6 +58,35 @@ describe('footer contact items', () => {
         expect(footerContactIconForText('Corso Duca degli Abruzzi, 24')).toBe('map-pin');
     });
 
+    it('guesses a brand icon from a social destination', () => {
+        expect(footerContactIconForText('Facebook', 'https://facebook.com/led')).toBe('brand-facebook');
+        expect(footerContactIconForText('Profilo', 'linkedin.com/in/led')).toBe('brand-linkedin');
+        expect(footerContactIconForText('Canale', 'https://youtube.com/@led')).toBe('brand-youtube');
+        expect(footerContactIconForText('Sito', 'https://polito.it')).toBe('world');
+    });
+
+    it('keeps a link title separate from its destination', () => {
+        expect(normalizeFooterContactItems([
+            { icon: 'brand-facebook', text: ' Facebook ', url: ' https://facebook.com/led ' },
+            { text: 'Instagram', url: 'https://instagram.com/led' },
+        ])).toEqual([
+            { icon: 'brand-facebook', text: 'Facebook', url: 'https://facebook.com/led' },
+            { icon: 'brand-instagram', text: 'Instagram', url: 'https://instagram.com/led' },
+        ]);
+    });
+
+    it('uses the destination as the title when the label is blank', () => {
+        expect(normalizeFooterContactItems([{ icon: 'world', text: '', url: 'https://facebook.com' }]))
+            .toEqual([{ icon: 'world', text: 'https://facebook.com', url: 'https://facebook.com' }]);
+    });
+
+    it('serializes rows with their link', () => {
+        expect(footerContactItemsJson([
+            { icon: 'brand-facebook', text: 'Facebook', url: 'https://facebook.com' },
+            { icon: 'mail', text: 'led@polito.it' },
+        ])).toBe('[{"icon":"brand-facebook","text":"Facebook","url":"https://facebook.com"},{"icon":"mail","text":"led@polito.it"}]');
+    });
+
     it('writes contact_items and vertical_dividers into the stored config', () => {
         const props = {
             [FOOTER_CONTACT_ITEMS_PROP]: '[{"icon":"mail","text":"led@polito.it"}]',

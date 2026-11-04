@@ -219,12 +219,112 @@ final class SiteFooterConfig
     }
 
     /**
-     * Repeatable contacts column rows: `{ icon, text }` pairs.
+     * Normalize an explicit contact link: full URL, bare domain, mailto: or tel:.
+     *
+     * Used by the repeatable contacts rows, where the label ("Facebook") and the
+     * destination ("https://facebook.com") are stored separately.
+     */
+    public static function linkHref(?string $value): ?string
+    {
+        $trimmed = self::normalizeText($value);
+
+        if ($trimmed === null) {
+            return null;
+        }
+
+        $lower = strtolower($trimmed);
+
+        if (str_starts_with($lower, 'mailto:') || str_starts_with($lower, 'tel:')) {
+            return $trimmed;
+        }
+
+        return self::lineHref($trimmed) ?? self::bareDomainHref($trimmed);
+    }
+
+    /**
+     * Promote a domain typed without a scheme ("facebook.com/led") to a safe URL.
+     */
+    private static function bareDomainHref(string $value): ?string
+    {
+        if (preg_match('/\s/', $value) === 1) {
+            return null;
+        }
+
+        $host = preg_replace('#^https?://#i', '', $value) ?? $value;
+        $host = explode('/', $host)[0];
+        $host = explode('?', $host)[0];
+        $host = explode(':', $host)[0];
+
+        if (preg_match('/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,24}$/i', $host) !== 1) {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $value) === 1) {
+            return $value;
+        }
+
+        return 'https://' . $value;
+    }
+
+    /**
+     * Icon guessed from a contact row label or link, used when the row has no icon.
+     */
+    public static function contactIconForText(?string $text, string $url = ''): string
+    {
+        $candidate = strtolower(trim($url !== '' ? $url : (string) $text));
+
+        if ($candidate === '') {
+            return self::DEFAULT_CONTACT_ITEM_ICON;
+        }
+
+        /** @var array<string, string> $socials */
+        $socials = [
+            'facebook' => 'brand-facebook',
+            'instagram' => 'brand-instagram',
+            'linkedin' => 'brand-linkedin',
+            'youtube' => 'brand-youtube',
+            'wa.me' => 'brand-whatsapp',
+            'whatsapp' => 'brand-whatsapp',
+            'github' => 'brand-github',
+            'x.com' => 'brand-x',
+            'twitter' => 'brand-x',
+            't.me' => 'brand-telegram',
+            'telegram' => 'brand-telegram',
+            'tiktok' => 'brand-tiktok',
+        ];
+
+        foreach ($socials as $needle => $icon) {
+            if (str_contains($candidate, $needle)) {
+                return $icon;
+            }
+        }
+
+        if (filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+            return 'mail';
+        }
+
+        if (preg_match('/^[+\d\s().\/-]{6,}$/', $candidate) === 1) {
+            return 'phone';
+        }
+
+        if (str_starts_with($candidate, 'http://') || str_starts_with($candidate, 'https://') || self::bareDomainHref($candidate) !== null) {
+            return 'world';
+        }
+
+        return 'map-pin';
+    }
+
+    /**
+     * Repeatable contacts column rows: `{ icon, text, url }` triples.
      *
      * Accepts the stored array, a JSON string (from the editor prop) or a plain
      * list of strings (legacy lines promoted to rows without an icon).
      *
-     * @return list<array{icon: string, text: string}>
+     * A row may be a readable label with its own destination ("Facebook" +
+     * "https://facebook.com"); `url` is optional and empty means "link from the
+     * label text", which keeps the original email / phone / address behavior.
+     *
+     * @return list<array{icon: string, text: string, url?: string}>
      */
     public static function normalizeContactItems(mixed $value): array
     {
@@ -241,6 +341,7 @@ final class SiteFooterConfig
 
         foreach ($value as $row) {
             $hasIcon = false;
+            $url = '';
 
             if (is_string($row)) {
                 $text = self::normalizeText($row);
@@ -249,23 +350,37 @@ final class SiteFooterConfig
                 $text = self::normalizeText(
                     $row['text'] ?? $row['label'] ?? $row['line'] ?? $row['value'] ?? null,
                 );
+                $url = self::normalizeText(
+                    $row['url'] ?? $row['href'] ?? $row['link'] ?? null,
+                ) ?? '';
                 // An explicit empty icon hides the icon but keeps the text aligned.
                 $hasIcon = array_key_exists('icon', $row);
                 $icon = $hasIcon
                     ? (self::normalizeText($row['icon']) ?? '')
-                    : self::DEFAULT_CONTACT_ITEM_ICON;
+                    : ($url !== ''
+                        ? self::contactIconForText($text, $url)
+                        : self::DEFAULT_CONTACT_ITEM_ICON);
             } else {
                 continue;
             }
+
+            // A link without a label keeps the raw destination as its text.
+            $text ??= $url !== '' ? $url : null;
 
             if ($text === null) {
                 continue;
             }
 
-            $items[] = [
+            $item = [
                 'icon' => strtolower($icon),
                 'text' => $text,
             ];
+
+            if ($url !== '') {
+                $item['url'] = $url;
+            }
+
+            $items[] = $item;
 
             if (count($items) >= self::MAX_CONTACT_ITEMS) {
                 break;
@@ -276,7 +391,8 @@ final class SiteFooterConfig
     }
 
     /**
-     * Contacts column rows ready for rendering (link auto-detected from the text).
+     * Contacts column rows ready for rendering: an explicit row link wins over the
+     * destination auto-detected from the label text.
      *
      * @param  array<string, mixed>  $config
      * @return list<array{icon: string, text: string, href: string|null}>
@@ -290,7 +406,8 @@ final class SiteFooterConfig
             static fn (array $item): array => [
                 'icon' => (string) ($item['icon'] ?? self::DEFAULT_CONTACT_ITEM_ICON),
                 'text' => (string) ($item['text'] ?? ''),
-                'href' => self::lineHref((string) ($item['text'] ?? '')),
+                'href' => self::linkHref((string) ($item['url'] ?? ''))
+                    ?? self::lineHref((string) ($item['text'] ?? '')),
             ],
             $items,
         );
