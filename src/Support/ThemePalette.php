@@ -980,23 +980,30 @@ CSS;
     private static function parseSubThemeVariableBlock(string $css, string $subThemeId, bool $dark): array
     {
         $quotedId = preg_quote($subThemeId, '/');
+        // Bundled theme.css gates the light block with `:not(.dark)` so the dark block
+        // wins in dark mode; accept both the plain and the gated selector.
         $patterns = $dark
             ? [
                 "/html\\.dark\\[data-voodbuilder-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
                 "/html\\[data-voodbuilder-sub-theme=['\"]{$quotedId}['\"]\\]\\.dark\\s*\\{([^}]+)\\}/s",
             ]
             : [
-                "/html\\[data-voodbuilder-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
+                "/html\\[data-voodbuilder-sub-theme=['\"]{$quotedId}['\"]\\](?::not\\(\\s*\\.dark\\s*\\))?\\s*\\{([^}]+)\\}/s",
+                "/html:not\\(\\s*\\.dark\\s*\\)\\[data-voodbuilder-sub-theme=['\"]{$quotedId}['\"]\\]\\s*\\{([^}]+)\\}/s",
             ];
 
         foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $css, $matches) !== 1) {
+            if (preg_match_all($pattern, $css, $blocks) === false) {
                 continue;
             }
 
             $variables = [];
 
-            if (preg_match_all('/--([\w-]+)\s*:\s*([^;]+);/', $matches[1], $declarations, PREG_SET_ORDER) !== false) {
+            foreach ($blocks[1] as $block) {
+                if (preg_match_all('/--([\w-]+)\s*:\s*([^;]+);/', $block, $declarations, PREG_SET_ORDER) === false) {
+                    continue;
+                }
+
                 foreach ($declarations as $declaration) {
                     $variables['--' . $declaration[1]] = trim($declaration[2]);
                 }

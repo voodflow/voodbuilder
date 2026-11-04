@@ -15,6 +15,17 @@ All notable changes to this project will be documented in this file.
 - Page/component Tailwind JIT results are cached by class fingerprint (7 days, invalidated when the compiler script changes). Repeated `compile-css` calls now answer in ~1ms instead of spawning a Node/Tailwind process (~250–350ms).
 - The canvas/selectors build overlay is revealed after 400ms, so cached compiles no longer flash it.
 
+## [1.19.1] - 2026-11-04
+
+### Fixed
+
+- Bundled sub-theme tokens are parsed again: the `theme.css` light block gated with `:not(.dark)` is merged with the base token block, so canvas CSS and Appearance colors no longer fall back to an empty palette.
+- Published pages keep the layout contract: loose text inside an editor section now moves into its `.voodbuilder-editor-container` measure shell instead of staying full-bleed next to an empty container.
+
+### Tests
+
+- Refresh the stale paste-normalization assertion (roots are no longer pinned to the `dark` class since 1.11.29) and the rendered section assertion, plus a case for text moving into the content shell.
+
 ## [1.19.0] - 2026-11-04
 
 ### Added

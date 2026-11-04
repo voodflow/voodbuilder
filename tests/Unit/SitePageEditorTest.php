@@ -25,7 +25,15 @@ class SitePageEditorTest extends TestCase
         ]);
 
         $this->assertTrue($page->usesEditorBuilder());
-        $this->assertSame('<section class="hero voodbuilder-editor-section">Hello Grapes</section>', $page->renderedContent());
+        // Published sections carry the layout contract: content lives in the
+        // `.voodbuilder-editor-container` measure shell, not loose inside <section>.
+        $this->assertSame(
+            '<section class="hero voodbuilder-editor-section">'
+            . '<div class="voodbuilder-editor-container mx-auto w-full max-w-[80rem]" '
+            . 'data-voodbuilder-role="content" data-voodbuilder-content-width="normal">'
+            . 'Hello Grapes</div></section>',
+            $page->renderedContent(),
+        );
         $this->assertSame('.hero { color: red; }', $page->renderedStyles());
         $this->assertNull($page->renderedScripts());
     }

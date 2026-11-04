@@ -111,7 +111,7 @@ class EditorPastedComponentNormalizerTest extends TestCase
         $this->assertStringContainsString('.voodbuilder-pasted-component .bg-vp-brand-3', (string) $result['css']);
     }
 
-    public function test_adds_dark_scope_for_mamba_style_dark_variant_classes(): void
+    public function test_keeps_dark_variant_classes_without_forcing_a_dark_root(): void
     {
         $result = EditorPastedComponentNormalizer::normalize(<<<'HTML'
             <footer class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
@@ -120,7 +120,17 @@ class EditorPastedComponentNormalizerTest extends TestCase
         HTML);
 
         $this->assertStringContainsString('voodbuilder-pasted-component', $result['html']);
-        $this->assertMatchesRegularExpression('/\bclass="[^"]*\bdark\b[^"]*voodbuilder-pasted-component/', $result['html']);
+        // The light page must stay light: `dark:` utilities are scoped to .dark, the
+        // root itself is never pinned to the dark class (that was 1.11.29's fix).
+        preg_match_all('/\bclass="([^"]*)"/', $result['html'], $classAttributes);
+
+        foreach ($classAttributes[1] as $attribute) {
+            $tokens = preg_split('/\s+/', trim($attribute)) ?: [];
+
+            $this->assertNotContains('dark', $tokens, 'Pasted roots must not be pinned to the dark class.');
+        }
+
+        $this->assertStringContainsString('dark:bg-gray-900', $result['html']);
         $this->assertStringContainsString(':is(.dark', (string) $result['css']);
         $this->assertStringNotContainsString('prefers-color-scheme: dark', (string) $result['css']);
     }

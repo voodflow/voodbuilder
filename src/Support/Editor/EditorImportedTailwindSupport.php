@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Support\Editor;
 
 use DOMDocument;
 use DOMElement;
+use DOMText;
 
 /**
  * Editor Imported Tailwind Support.
@@ -1665,15 +1666,21 @@ final class EditorImportedTailwindSupport
         $move = [];
 
         foreach ($section->childNodes as $child) {
-            if (! $child instanceof DOMElement) {
+            if ($child instanceof DOMElement) {
+                if (self::isDecorativeSectionChild($child)) {
+                    continue;
+                }
+
+                $move[] = $child;
+
                 continue;
             }
 
-            if (self::isDecorativeSectionChild($child)) {
-                continue;
+            // Direct text is content too: leaving it outside the measure shell would
+            // publish it full-bleed next to an empty container.
+            if ($child instanceof DOMText && trim($child->nodeValue ?? '') !== '') {
+                $move[] = $child;
             }
-
-            $move[] = $child;
         }
 
         foreach ($move as $child) {

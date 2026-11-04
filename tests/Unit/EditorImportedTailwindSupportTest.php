@@ -608,4 +608,20 @@ HTML;
         $this->assertStringContainsString('data-voodbuilder-role="content"', $healed);
         $this->assertStringContainsString('Static', $healed);
     }
+
+    public function test_heal_existing_editor_sections_moves_loose_text_into_the_content_shell(): void
+    {
+        $html = <<<'HTML'
+<section class="voodbuilder-editor-section"><h2>Title</h2>Loose copy</section>
+HTML;
+
+        $healed = EditorImportedTailwindSupport::healExistingEditorSections($html);
+
+        // Text directly inside the section must follow the layout contract too: it
+        // belongs to the measure shell, not to a full-bleed sibling of an empty div.
+        $this->assertMatchesRegularExpression(
+            '/<div[^>]*data-voodbuilder-role="content"[^>]*><h2>Title<\/h2>Loose copy<\/div>/',
+            $healed,
+        );
+    }
 }
