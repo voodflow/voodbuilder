@@ -32,6 +32,70 @@ class ThemePaletteTest extends TestCase
     }
 
     #[Test]
+    public function it_picks_a_readable_footer_text_for_the_footer_background(): void
+    {
+        $this->assertSame('#ffffff', ThemePalette::contrastTextFor('#002b49'));
+        $this->assertSame('#111827', ThemePalette::contrastTextFor('#ffffff'));
+        $this->assertSame('#111827', ThemePalette::contrastTextFor('#f4f5f7'));
+        $this->assertNull(ThemePalette::contrastTextFor('not-a-colour'));
+        $this->assertNull(ThemePalette::contrastTextFor(null));
+    }
+
+    #[Test]
+    public function footer_text_tokens_follow_the_footer_background(): void
+    {
+        config()->set('voodbuilder.sub_themes', [
+            'site' => ['label' => 'Site'],
+        ]);
+
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::docss(), [
+                'sub_theme_colors' => [
+                    'site' => [
+                        'light' => [
+                            'footer_bg' => '#002b49',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+        VoodbuilderSettings::clearCache();
+
+        $css = ThemePalette::css();
+
+        $this->assertStringContainsString('--vx-footer-bg:#002b49!important', $css);
+        $this->assertStringContainsString('--vx-footer-text:#ffffff!important', $css);
+        $this->assertStringContainsString('--vx-footer-muted:color-mix(in srgb, #ffffff 76%, #002b49)!important', $css);
+        $this->assertStringContainsString('var(--vx-footer-text,var(--color-vp-text-1))!important', $css);
+    }
+
+    #[Test]
+    public function explicit_footer_text_overrides_the_automatic_contrast(): void
+    {
+        config()->set('voodbuilder.sub_themes', [
+            'site' => ['label' => 'Site'],
+        ]);
+
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::docss(), [
+                'sub_theme_colors' => [
+                    'site' => [
+                        'light' => [
+                            'footer_bg' => '#002b49',
+                            'footer_text' => '#ffe08a',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+        VoodbuilderSettings::clearCache();
+
+        $css = ThemePalette::css();
+
+        $this->assertStringContainsString('--vx-footer-text:#ffe08a!important', $css);
+    }
+
+    #[Test]
     public function it_sanitizes_hex_colors(): void
     {
         $this->assertSame('#3451b2', ThemePalette::sanitizeColor('#3451b2'));

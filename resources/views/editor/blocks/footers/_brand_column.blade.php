@@ -3,11 +3,12 @@
 
     $brandChrome = SiteFooterConfig::chromeAttributes($config, 'brand', $preview);
     $brandColumnChrome = SiteFooterConfig::chromeAttributes($config, 'brand-column', $preview);
+    $brandColumnClass = $brandColumnClass ?? 'mx-auto w-full max-w-xs shrink-0 px-4 text-center lg:mx-0 lg:w-64 lg:max-w-none lg:text-left';
 @endphp
 
 <div
     @class([
-        'mx-auto w-full max-w-xs shrink-0 px-4 text-center lg:mx-0 lg:w-64 lg:max-w-none lg:text-left',
+        $brandColumnClass,
         $brandColumnChrome['class'],
     ])
     data-voodbuilder-footer-brand-col

@@ -327,6 +327,8 @@ return [
     'theme_header_text_help' => 'Menu links on the header bar.',
     'theme_footer_bg' => 'Footer background',
     'theme_footer_bg_help' => 'Site footer bar behind nav columns and copyright.',
+    'theme_footer_text' => 'Footer text',
+    'theme_footer_text_help' => 'Text and links inside the footer. Leave empty to pick a readable colour automatically from the footer background.',
     'theme_body_bg' => 'Page background',
     'theme_body_bg_help' => 'Main content area behind pages.',
     'theme_body_text' => 'Body text',

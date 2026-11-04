@@ -23,6 +23,7 @@ final class SiteFooterBlocks
     {
         return [
             SiteFooterColumnsSimpleBlock::class,
+            SiteFooterColumnsContactBlock::class,
             SiteFooterColumnsNewsletterBlock::class,
             SiteFooterCenteredBlock::class,
             SiteFooterSocialBlock::class,

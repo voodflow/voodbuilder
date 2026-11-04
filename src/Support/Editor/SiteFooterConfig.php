@@ -18,6 +18,12 @@ final class SiteFooterConfig
     /** Official product slogan — default footer tagline. */
     public const DEFAULT_TAGLINE = 'A Visual CMS for Laravel & Filament';
 
+    /** Max editable lines per static footer column (contact / details). */
+    public const MAX_TEXT_LINES = 5;
+
+    /** Static (non-menu) footer columns used by the contact-columns variant. */
+    public const TEXT_COLUMNS = ['contact', 'details'];
+
     /** Default copyright template (resolved via GlobalTextTags). */
     public const DEFAULT_COPYRIGHT = '© {current_year} {brand_name}';
 
@@ -56,6 +62,15 @@ final class SiteFooterConfig
         $normalized['social_align'] = self::normalizeSocialAlign($config['social_align'] ?? $normalized['social_align'] ?? null);
         $normalized['tagline'] = self::normalizeText($config['tagline'] ?? $normalized['tagline'] ?? null);
         $normalized['copyright'] = self::normalizeText($config['copyright'] ?? $normalized['copyright'] ?? null);
+
+        foreach (self::TEXT_COLUMNS as $column) {
+            $normalized[$column . '_title'] = self::normalizeText(
+                $config[$column . '_title'] ?? $normalized[$column . '_title'] ?? null,
+            );
+            $normalized[$column . '_lines'] = self::normalizeLines(
+                $config[$column . '_lines'] ?? $normalized[$column . '_lines'] ?? null,
+            );
+        }
 
         self::normalizeFooterColumnFlags($normalized, $config);
         $normalized['columns'] = max(1, count(array_filter(
@@ -100,6 +115,80 @@ final class SiteFooterConfig
             'logo_size_mobile' => ChromeBrandLogos::DEFAULT_SIZE,
             'logo_full_width' => false,
             'logo_shape' => ChromeBrandLogos::DEFAULT_SHAPE,
+            'contact_title' => null,
+            'contact_lines' => [],
+            'details_title' => null,
+            'details_lines' => [],
+        ];
+    }
+
+    /**
+     * Static column lines accept both an array (stored config) and a newline
+     * separated string (admin textarea), trimmed and capped.
+     *
+     * @return list<string>
+     */
+    public static function normalizeLines(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = preg_split('/\r\n|\r|\n/', $value) ?: [];
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $lines = [];
+
+        foreach ($value as $line) {
+            $text = self::normalizeText($line);
+
+            if ($text !== null) {
+                $lines[] = $text;
+            }
+        }
+
+        return array_slice($lines, 0, self::MAX_TEXT_LINES);
+    }
+
+    /**
+     * Link a static column line when it is clearly a mail, phone or URL.
+     * Plain address lines stay text.
+     */
+    public static function lineHref(string $line): ?string
+    {
+        $trimmed = trim($line);
+
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (filter_var($trimmed, FILTER_VALIDATE_EMAIL)) {
+            return 'mailto:' . $trimmed;
+        }
+
+        if (preg_match('/^[+\d\s().\/-]{6,}$/', $trimmed) === 1) {
+            return 'tel:' . preg_replace('/[^\d+]/', '', $trimmed);
+        }
+
+        if (str_starts_with($trimmed, 'http://') || str_starts_with($trimmed, 'https://')) {
+            return $trimmed;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array{title: string, lines: list<string>}
+     */
+    public static function textColumn(array $config, string $column): array
+    {
+        $normalized = self::normalize($config);
+
+        return [
+            'title' => (string) ($normalized[$column . '_title'] ?? ''),
+            'lines' => is_array($normalized[$column . '_lines'] ?? null) ? $normalized[$column . '_lines'] : [],
         ];
     }
 

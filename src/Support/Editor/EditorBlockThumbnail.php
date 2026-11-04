@@ -37,6 +37,7 @@ final class EditorBlockThumbnail
                 in_array($blockId, ['site_footer_social', 'site_footer_d'], true) => self::wrap(self::footerDSvg()),
                 in_array($blockId, ['site_footer_centered'], true) => self::wrap(self::footerCenteredSvg()),
                 in_array($blockId, ['site_footer_columns_newsletter'], true) => self::wrap(self::footerNewsletterSvg()),
+                in_array($blockId, ['site_footer_columns_contact'], true) => self::wrap(self::footerContactSvg()),
                 default => self::wrap(self::footerColumnsSvg()),
             };
         }
@@ -190,6 +191,27 @@ SVG;
   <rect x="90" y="18" width="22" height="20" rx="3" fill="#e2e8f0"/>
   <rect x="94" y="24" width="14" height="2" rx="1" fill="#cbd5e1"/>
   <rect x="94" y="30" width="10" height="6" rx="2" fill="#3451b2"/>
+</svg>
+SVG;
+    }
+
+    protected static function footerContactSvg(): string
+    {
+        return <<<'SVG'
+<svg viewBox="0 0 120 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="72" rx="6" fill="#f8fafc"/>
+  <circle cx="18" cy="20" r="7" fill="#3451b2"/>
+  <rect x="10" y="32" width="24" height="3" rx="1.5" fill="#cbd5e1"/>
+  <rect x="46" y="14" width="14" height="3" rx="1" fill="#cbd5e1"/>
+  <rect x="46" y="22" width="12" height="2" rx="1" fill="#e2e8f0"/>
+  <rect x="46" y="28" width="13" height="2" rx="1" fill="#e2e8f0"/>
+  <rect x="68" y="14" width="14" height="3" rx="1" fill="#cbd5e1"/>
+  <rect x="68" y="22" width="12" height="2" rx="1" fill="#e2e8f0"/>
+  <rect x="68" y="28" width="13" height="2" rx="1" fill="#e2e8f0"/>
+  <rect x="90" y="14" width="14" height="3" rx="1" fill="#cbd5e1"/>
+  <rect x="90" y="22" width="12" height="2" rx="1" fill="#e2e8f0"/>
+  <rect x="90" y="28" width="13" height="2" rx="1" fill="#e2e8f0"/>
+  <rect x="46" y="44" width="58" height="2" rx="1" fill="#eef2f7"/>
 </svg>
 SVG;
     }

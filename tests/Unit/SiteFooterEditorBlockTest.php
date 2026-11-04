@@ -10,6 +10,7 @@ use Voodflow\Voodbuilder\Models\NavigationMenu;
 use Voodflow\Voodbuilder\Models\NavigationMenuItem;
 use Voodflow\Voodbuilder\Support\Editor\EditorSlotHydrator;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterBlocks;
+use Voodflow\Voodbuilder\Support\Editor\SiteFooterColumnsContactBlock;
 use Voodflow\Voodbuilder\Support\Editor\SiteFooterColumnsSimpleBlock;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavBlocks;
 use Voodflow\Voodbuilder\Support\Editor\SiteNavSimpleBlock;
@@ -42,6 +43,28 @@ class SiteFooterEditorBlockTest extends TestCase
         $this->assertStringContainsString('data-voodbuilder-chrome-part="logo"', $html);
         $this->assertStringContainsString('data-voodbuilder-chrome="footer-tagline"', $html);
         $this->assertStringContainsString('hidden', $html);
+    }
+
+    #[Test]
+    public function it_renders_the_contact_footer_with_static_columns(): void
+    {
+        $html = SiteFooterColumnsContactBlock::toHtml([
+            'contact_title' => 'Contatti',
+            'contact_lines' => ['led@polito.it', '+39 011 090 4000', 'Corso Duca degli Abruzzi, 24'],
+            'details_title' => 'Dettagli',
+            'details_lines' => ['DET - Dipartimento di Elettronica', '© Politecnico di Torino'],
+        ], []);
+
+        $this->assertStringContainsString('data-voodbuilder-footer-text-col="contact"', $html);
+        $this->assertStringContainsString('data-voodbuilder-footer-text-col="details"', $html);
+        $this->assertStringContainsString('mailto:led@polito.it', $html);
+        $this->assertStringContainsString('tel:+390110904000', $html);
+        $this->assertStringContainsString('Corso Duca degli Abruzzi, 24', $html);
+        $this->assertStringNotContainsString('href="Corso Duca degli Abruzzi, 24"', $html);
+        $this->assertStringContainsString('DET - Dipartimento di Elettronica', $html);
+        // Two menu columns only, the static columns replace menu columns 3 and 4.
+        $this->assertStringContainsString('data-voodbuilder-menu="footer_col_2"', $html);
+        $this->assertStringNotContainsString('lg:col-start-1', $html);
     }
 
     #[Test]

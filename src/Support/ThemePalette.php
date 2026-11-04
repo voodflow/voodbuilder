@@ -37,12 +37,21 @@ header[role='banner']{border-bottom:1px solid color-mix(in srgb,var(--vx-header-
 CSS;
 
     private const FOOTER_CHROME_CSS = <<<'CSS'
-html[data-voodbuilder-sub-theme] footer.voodbuilder-editor-footer,html[data-voodbuilder-sub-theme] footer.voodbuilder-editor-dynamic,html[data-voodbuilder-sub-theme] footer[role='contentinfo'],html[data-voodbuilder-sub-theme] [data-voodbuilder-chrome-shell] footer{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important}
+html[data-voodbuilder-sub-theme] footer.voodbuilder-editor-footer,html[data-voodbuilder-sub-theme] footer.voodbuilder-editor-dynamic,html[data-voodbuilder-sub-theme] footer[role='contentinfo'],html[data-voodbuilder-sub-theme] [data-voodbuilder-chrome-shell] footer{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important;color:var(--vx-footer-muted,var(--color-vp-text-2))!important}
+html[data-voodbuilder-sub-theme] footer :is(.text-vp-text-1,.text-vp-text-2,.text-vp-text-3){color:var(--vx-footer-text,var(--color-vp-text-1))!important}
+html[data-voodbuilder-sub-theme] footer .text-vp-text-2{color:var(--vx-footer-muted,var(--color-vp-text-2))!important}
+html[data-voodbuilder-sub-theme] footer .text-vp-text-3{color:var(--vx-footer-subtle,var(--color-vp-text-3))!important}
+html[data-voodbuilder-sub-theme] footer :is(a,button).text-vp-text-1,html[data-voodbuilder-sub-theme] footer :is(a,button).text-vp-text-2,html[data-voodbuilder-sub-theme] footer :is(a,button).text-vp-text-3{color:var(--vx-footer-link,var(--vx-footer-muted,var(--color-vp-text-2)))!important}
+html[data-voodbuilder-sub-theme] footer :is(a,button):is(:hover,:focus-visible):not(.text-vp-brand-1){color:var(--vx-footer-link-hover,var(--vx-footer-text,var(--color-vp-text-1)))!important}
+html[data-voodbuilder-sub-theme] footer :is(.border-vp-divider,[class*='border-vp-divider']){border-color:color-mix(in srgb,var(--vx-footer-text,var(--color-vp-text-1)) 18%,transparent)!important}
 CSS;
 
     private const CANVAS_FOOTER_BACKGROUND_CSS = <<<'CSS'
-[data-voodbuilder-chrome-shell] footer.voodbuilder-editor-footer,[data-voodbuilder-chrome-shell] footer.voodbuilder-editor-dynamic,[data-voodbuilder-chrome-shell] footer[role='contentinfo'],[data-voodbuilder-chrome-shell] footer{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important}
-footer.voodbuilder-editor-footer,footer.voodbuilder-editor-dynamic,footer[role='contentinfo']{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important}
+[data-voodbuilder-chrome-shell] footer.voodbuilder-editor-footer,[data-voodbuilder-chrome-shell] footer.voodbuilder-editor-dynamic,[data-voodbuilder-chrome-shell] footer[role='contentinfo'],[data-voodbuilder-chrome-shell] footer{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important;color:var(--vx-footer-muted,var(--color-vp-text-2))!important}
+footer.voodbuilder-editor-footer,footer.voodbuilder-editor-dynamic,footer[role='contentinfo']{background-color:var(--vx-footer-bg,var(--color-vp-bg))!important;color:var(--vx-footer-muted,var(--color-vp-text-2))!important}
+footer :is(.text-vp-text-1,.text-vp-text-2,.text-vp-text-3){color:var(--vx-footer-text,var(--color-vp-text-1))!important}
+footer .text-vp-text-2{color:var(--vx-footer-muted,var(--color-vp-text-2))!important}
+footer .text-vp-text-3{color:var(--vx-footer-subtle,var(--color-vp-text-3))!important}
 CSS;
 
     /** @var list<string> */
@@ -52,6 +61,7 @@ CSS;
         'header_bg',
         'header_text',
         'footer_bg',
+        'footer_text',
         'body_bg',
         'text',
     ];
@@ -79,6 +89,11 @@ CSS;
         '--vx-header-text',
         '--vx-header-muted',
         '--vx-footer-bg',
+        '--vx-footer-text',
+        '--vx-footer-muted',
+        '--vx-footer-subtle',
+        '--vx-footer-link',
+        '--vx-footer-link-hover',
         '--vx-sidebar-bg',
         '--vx-surface',
         '--vx-text',
@@ -622,6 +637,7 @@ CSS;
             'header_bg' => $variables['--vx-header-bg'] ?? null,
             'header_text' => $variables['--vx-header-text'] ?? null,
             'footer_bg' => $variables['--vx-footer-bg'] ?? null,
+            'footer_text' => $variables['--vx-footer-text'] ?? null,
             'body_bg' => $variables['--color-vp-bg'] ?? null,
             'text' => $variables['--color-vp-text-1'] ?? null,
         ]);
@@ -681,6 +697,35 @@ CSS;
         }
 
         return "color-mix(in srgb, {$base} {$opacity}%, transparent)";
+    }
+
+    /**
+     * Readable text colour for a background, used when a footer is darker (or lighter)
+     * than the page surface so links do not disappear. Explicit `footer_text` wins.
+     */
+    public static function contrastTextFor(?string $background): ?string
+    {
+        $hex = self::sanitizeColor($background);
+
+        if ($hex === null || strlen($hex) !== 7) {
+            return null;
+        }
+
+        $channels = array_map(
+            static fn (string $pair): float => hexdec($pair) / 255,
+            str_split(ltrim($hex, '#'), 2),
+        );
+
+        $linear = array_map(
+            static fn (float $channel): float => $channel <= 0.03928
+                ? $channel / 12.92
+                : (($channel + 0.055) / 1.055) ** 2.4,
+            $channels,
+        );
+
+        $luminance = 0.2126 * $linear[0] + 0.7152 * $linear[1] + 0.0722 * $linear[2];
+
+        return $luminance < 0.45 ? '#ffffff' : '#111827';
     }
 
     /**
@@ -764,8 +809,24 @@ CSS;
             $properties['--vx-header-muted'] = "color-mix(in srgb, {$headerText} 72%, transparent)";
         }
 
-        if (($footerBg = $palette['footer_bg'] ?? null) !== null) {
+        $footerBg = $palette['footer_bg'] ?? null;
+        $footerText = $palette['footer_text'] ?? null;
+
+        if ($footerBg !== null) {
             $properties['--vx-footer-bg'] = $footerBg;
+        }
+
+        if ($footerBg !== null || $footerText !== null) {
+            $footerText ??= self::contrastTextFor($footerBg);
+
+            if ($footerText !== null) {
+                $footerMixBase = $footerBg ?? ($dark ? '#0b1220' : '#ffffff');
+                $properties['--vx-footer-text'] = $footerText;
+                $properties['--vx-footer-muted'] = "color-mix(in srgb, {$footerText} 76%, {$footerMixBase})";
+                $properties['--vx-footer-subtle'] = "color-mix(in srgb, {$footerText} 58%, {$footerMixBase})";
+                $properties['--vx-footer-link'] = $footerText;
+                $properties['--vx-footer-link-hover'] = "color-mix(in srgb, {$footerText} 70%, var(--color-vp-brand-1))";
+            }
         }
 
         if ($properties === []) {
@@ -1107,6 +1168,14 @@ CSS;
 
         if (($mode['footer_bg'] ?? null) !== null) {
             $names[] = '--vx-footer-bg';
+        }
+
+        if (($mode['footer_bg'] ?? null) !== null || ($mode['footer_text'] ?? null) !== null) {
+            $names[] = '--vx-footer-text';
+            $names[] = '--vx-footer-muted';
+            $names[] = '--vx-footer-subtle';
+            $names[] = '--vx-footer-link';
+            $names[] = '--vx-footer-link-hover';
         }
 
         if (($mode['primary'] ?? null) !== null || ($mode['secondary'] ?? null) !== null) {

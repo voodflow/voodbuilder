@@ -209,6 +209,7 @@ export const SECTION_BLOCK_LABELS = {
     'site_nav_simple': 'Header · site navbar',
     'site_footer_columns_simple': 'Footer · 4 columns',
     'site_footer_columns_newsletter': 'Footer · newsletter + columns',
+    'site_footer_columns_contact': 'Footer · brand + contacts',
     'site_footer_centered': 'Footer · centered',
     'site_footer_social': 'Footer · social bar',
     'event_landing_footer': 'Footer · event',
@@ -352,6 +353,11 @@ export const BLOCK_WIREFRAMES = {
         + '<circle cx="10" cy="25" r="2" />'
         + '<path d="M15 23h4M15 27h3M21 23h4M21 27h3M27 23h4" />'
         + '<rect x="34" y="22" width="6" height="6" rx="1" />',
+    )),
+    site_footer_columns_contact: () => thumbWrap(previewSvg(
+        '<rect x="6" y="18" width="36" height="14" rx="2" />'
+        + '<circle cx="11" cy="24" r="2.5" />'
+        + '<path d="M7 30h8M19 22h5M19 26h4M26 22h5M26 26h4M33 22h5M33 26h4" />',
     )),
     site_footer_centered: () => thumbWrap(previewSvg(
         '<rect x="6" y="20" width="36" height="12" rx="2" />'

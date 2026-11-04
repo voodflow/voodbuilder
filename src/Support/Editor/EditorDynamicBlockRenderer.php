@@ -585,7 +585,7 @@ final class EditorDynamicBlockRenderer
 
     protected function isColumnFooterBlock(string $blockId): bool
     {
-        return in_array($blockId, ['site_footer_columns_simple', 'site_footer_columns_newsletter'], true);
+        return in_array($blockId, ['site_footer_columns_simple', 'site_footer_columns_contact', 'site_footer_columns_newsletter'], true);
     }
 
     /**

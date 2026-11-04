@@ -3,6 +3,7 @@
     use Voodflow\Voodbuilder\Support\SiteFooterColumnPlacements;
 
     $redistribute = $redistribute ?? SiteFooterConfig::columnsRedistribute($config);
+    $useColStart = $useColStart ?? true;
     $colStartClasses = [
         1 => 'lg:col-start-1',
         2 => 'lg:col-start-2',
@@ -22,7 +23,7 @@
         @class([
             'min-w-0 px-4 mb-10 w-full',
             'basis-full lg:mb-0 lg:basis-0 lg:flex-1' => $redistribute,
-            $colStartClasses[$index] => ! $redistribute && $columnVisible,
+            $colStartClasses[$index] => $useColStart && ! $redistribute && $columnVisible,
             $columnChrome['class'],
         ])
         data-voodbuilder-footer-col="{{ $index }}"

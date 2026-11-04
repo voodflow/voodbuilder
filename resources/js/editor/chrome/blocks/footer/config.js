@@ -33,6 +33,13 @@ export const FOOTER_TAGLINE_PROP = 'voodbuilderTagline';
 export const FOOTER_COPYRIGHT_PROP = 'voodbuilderCopyright';
 export const FOOTER_DEFAULT_COPYRIGHT = '© {current_year} {brand_name}';
 
+export const FOOTER_CONTACT_TITLE_PROP = 'voodbuilderContactTitle';
+export const FOOTER_CONTACT_LINES_PROP = 'voodbuilderContactLines';
+export const FOOTER_DETAILS_TITLE_PROP = 'voodbuilderDetailsTitle';
+export const FOOTER_DETAILS_LINES_PROP = 'voodbuilderDetailsLines';
+
+export const FOOTER_TEXT_COLUMNS = ['contact', 'details'];
+
 export const FOOTER_SOCIAL_ALIGN_PROP = 'voodbuilderSocialAlign';
 export const FOOTER_SOCIAL_ALIGN_KEY = 'social_align';
 export const FOOTER_SOCIAL_ALIGN_DEFAULT = 'center';
@@ -49,7 +56,49 @@ export function normalizeFooterSocialAlign(value) {
 }
 
 export function footerBlockHasColumns(blockId) {
-    return blockId === 'site_footer_columns_simple' || blockId === 'site_footer_columns_newsletter';
+    return blockId === 'site_footer_columns_simple'
+        || blockId === 'site_footer_columns_contact'
+        || blockId === 'site_footer_columns_newsletter';
+}
+
+/**
+ * Static (non-menu) columns are only available on the contact variant.
+ */
+export function footerBlockHasTextColumns(blockId) {
+    return blockId === 'site_footer_columns_contact';
+}
+
+/**
+ * Menu column count exposed in the settings panel for a footer variant.
+ */
+export function footerBlockMenuColumnCount(blockId) {
+    return footerBlockHasTextColumns(blockId) ? 2 : 4;
+}
+
+/**
+ * Mirror of SiteFooterConfig::lineHref() so the canvas preview matches the
+ * published markup (emails/phones/URLs linked, plain addresses kept as text).
+ */
+export function footerLineHref(line) {
+    const trimmed = String(line ?? '').trim();
+
+    if (trimmed === '') {
+        return null;
+    }
+
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+        return `mailto:${trimmed}`;
+    }
+
+    if (/^[+\d\s().\/-]{6,}$/.test(trimmed)) {
+        return `tel:${trimmed.replace(/[^\d+]/g, '')}`;
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return trimmed;
+    }
+
+    return null;
 }
 
 export function footerBlockHasNewsletter(blockId) {
@@ -154,13 +203,16 @@ function applySiteFooterMenuColumnsLayout(root) {
     const redistribute = root.get('voodbuilderFooterColumnsRedistribute') === true;
     const visibleCount = countVisibleFooterColumns(root);
 
+    const usesFlow = Boolean(el.querySelector('[data-voodbuilder-footer-columns-flow="1"]'));
+
     el.querySelectorAll('[data-voodbuilder-footer-menu-cols]').forEach((node) => {
-        node.classList.toggle('flex', redistribute);
-        node.classList.toggle('flex-wrap', redistribute);
-        node.classList.toggle('lg:flex-nowrap', redistribute);
-        node.classList.toggle('grid', ! redistribute);
-        node.classList.toggle('grid-cols-1', ! redistribute);
-        node.classList.toggle('lg:grid-cols-4', ! redistribute);
+        const flow = node.getAttribute('data-voodbuilder-footer-columns-flow') === '1';
+        node.classList.toggle('flex', redistribute && ! flow);
+        node.classList.toggle('flex-wrap', redistribute && ! flow);
+        node.classList.toggle('lg:flex-nowrap', redistribute && ! flow);
+        node.classList.toggle('grid', ! redistribute || flow);
+        node.classList.toggle('grid-cols-1', ! redistribute || flow);
+        node.classList.toggle('lg:grid-cols-4', ! redistribute || flow);
         node.classList.toggle('lg:justify-end', redistribute && visibleCount === 1);
         node.setAttribute('data-voodbuilder-footer-columns-redistribute', redistribute ? '1' : '0');
     });
@@ -175,8 +227,80 @@ function applySiteFooterMenuColumnsLayout(root) {
         col.classList.toggle('lg:flex-1', redistribute && visible);
 
         for (let columnIndex = 1; columnIndex <= 4; columnIndex++) {
-            col.classList.toggle(`lg:col-start-${columnIndex}`, ! redistribute && visible && index === columnIndex);
+            col.classList.toggle(
+                `lg:col-start-${columnIndex}`,
+                ! usesFlow && ! redistribute && visible && index === columnIndex,
+            );
         }
+    });
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+export function splitFooterLines(value) {
+    if (Array.isArray(value)) {
+        return value.map((line) => String(line ?? '').trim()).filter(Boolean);
+    }
+
+    return String(value ?? '')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+}
+
+/**
+ * @param {HTMLElement} el
+ * @param {object} root
+ */
+export function applyFooterTextColumnsPreview(el, root) {
+    if (! footerBlockHasTextColumns(root.getAttributes()['data-voodbuilder-block'])) {
+        return;
+    }
+
+    FOOTER_TEXT_COLUMNS.forEach((column) => {
+        const titleProp = column === 'contact' ? FOOTER_CONTACT_TITLE_PROP : FOOTER_DETAILS_TITLE_PROP;
+        const linesProp = column === 'contact' ? FOOTER_CONTACT_LINES_PROP : FOOTER_DETAILS_LINES_PROP;
+
+        const titleEl = el.querySelector(`[data-voodbuilder-footer-text-title="${column}"]`);
+
+        if (titleEl) {
+            const title = String(root.get(titleProp) ?? '').trim();
+            titleEl.textContent = title;
+            titleEl.classList.toggle('hidden', title === '');
+        }
+
+        const listEl = el.querySelector(`[data-voodbuilder-footer-text-lines="${column}"]`);
+
+        if (! listEl) {
+            return;
+        }
+
+        const items = splitFooterLines(root.get(linesProp)).map((line) => {
+            const item = document.createElement('li');
+            const href = footerLineHref(line);
+
+            if (href) {
+                const link = document.createElement('a');
+                link.href = href;
+                link.className = 'transition-colors hover:text-vp-brand-1';
+                link.textContent = line;
+
+                if (href.startsWith('http')) {
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                }
+
+                item.appendChild(link);
+            } else {
+                item.textContent = line;
+            }
+
+            return item;
+        });
+
+        listEl.replaceChildren(...items);
     });
 }
 
@@ -256,6 +380,7 @@ export function applySiteFooterSettingsPreview(root, editor = null, options = {}
     applyChromeLogoUrlsPreview(el, root);
     applyFooterCopyPreview(el, root, editor);
     applyFooterSocialAlignPreview(el, socialAlign);
+    applyFooterTextColumnsPreview(el, root);
 
     if (footerBlockHasColumns(blockId)) {
         applySiteFooterMenuColumnsLayout(root);
@@ -490,6 +615,16 @@ export function syncSiteFooterConfig(component) {
             : (config.copyright ?? null);
     }
 
+    if (footerBlockHasTextColumns(blockId)) {
+        for (const column of FOOTER_TEXT_COLUMNS) {
+            const titleProp = column === 'contact' ? FOOTER_CONTACT_TITLE_PROP : FOOTER_DETAILS_TITLE_PROP;
+            const linesProp = column === 'contact' ? FOOTER_CONTACT_LINES_PROP : FOOTER_DETAILS_LINES_PROP;
+
+            config[`${column}_title`] = String(component.get(titleProp) ?? '').trim() || null;
+            config[`${column}_lines`] = splitFooterLines(component.get(linesProp));
+        }
+    }
+
     if (footerBlockHasColumns(blockId)) {
         config.footer_columns_redistribute = component.get('voodbuilderFooterColumnsRedistribute') === true;
 
@@ -642,6 +777,13 @@ export function configureSiteFooterTraits(component, editor = null) {
 
     for (const def of chromeLogoFieldDefs()) {
         component.set(def.prop, config[def.key] ?? '', { silent: true });
+    }
+
+    if (footerBlockHasTextColumns(blockId)) {
+        component.set(FOOTER_CONTACT_TITLE_PROP, typeof config.contact_title === 'string' ? config.contact_title : '', { silent: true });
+        component.set(FOOTER_CONTACT_LINES_PROP, splitFooterLines(config.contact_lines).join('\n'), { silent: true });
+        component.set(FOOTER_DETAILS_TITLE_PROP, typeof config.details_title === 'string' ? config.details_title : '', { silent: true });
+        component.set(FOOTER_DETAILS_LINES_PROP, splitFooterLines(config.details_lines).join('\n'), { silent: true });
     }
 
     component.set(FOOTER_TAGLINE_PROP, typeof config.tagline === 'string' ? config.tagline : '', { silent: true });

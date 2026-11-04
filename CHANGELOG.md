@@ -2,7 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.16.0] - 2026-11-04
+
+### Added
+
+- **Footer with contacts and details columns.** New `site_footer_columns_contact` block: a large brand column on the left, two navigation menu columns, then two *static* columns — contacts (email, phone, address) and other details (organisation, department, legal notes). The static columns are not menus: emails, phone numbers and URLs become links automatically while street addresses stay plain text, and both titles and lines are editable from the footer settings panel.
+
+### Fixed
+
+- **Footer colours now drive text and links too.** When a footer background is set in Theme Studio, `--vx-footer-text`, `--vx-footer-muted`, `--vx-footer-subtle`, `--vx-footer-link` and `--vx-footer-link-hover` are derived from the background luminance, so a dark footer on a light page keeps readable titles, links and dividers. A new `footer_text` control in Theme Studio overrides the computed colour.
+- **Site pages follow the active sub-theme again.** `ChromeLayoutSubThemeResolver::forPagesChannel()` no longer lets a stale `pages` channel binding (`site`) shadow the configured `sub_theme`, so a footer colour set on the active sub-theme is applied to site pages.
 
 ## [1.15.0] - 2026-11-03
 

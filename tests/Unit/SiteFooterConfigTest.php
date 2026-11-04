@@ -42,6 +42,36 @@ class SiteFooterConfigTest extends TestCase
     }
 
     #[Test]
+    public function text_columns_accept_arrays_and_newline_strings(): void
+    {
+        $fromString = SiteFooterConfig::normalize([
+            'contact_title' => ' Contatti ',
+            'contact_lines' => "led@polito.it\n\n+39 011 090 4000\r\nCorso Duca degli Abruzzi, 24",
+            'details_lines' => ['  DET  ', ''],
+        ]);
+
+        $this->assertSame('Contatti', $fromString['contact_title']);
+        $this->assertSame([
+            'led@polito.it',
+            '+39 011 090 4000',
+            'Corso Duca degli Abruzzi, 24',
+        ], $fromString['contact_lines']);
+        $this->assertSame(['DET'], $fromString['details_lines']);
+    }
+
+    #[Test]
+    public function only_clear_contact_values_become_links(): void
+    {
+        $this->assertSame('mailto:led@polito.it', SiteFooterConfig::lineHref('led@polito.it'));
+        $this->assertSame('tel:+390110904000', SiteFooterConfig::lineHref('+39 011 090 4000'));
+        $this->assertSame('tel:+390110904000', SiteFooterConfig::lineHref('(+39) 011 090 4000'));
+        $this->assertSame('https://polito.it', SiteFooterConfig::lineHref('https://polito.it'));
+        $this->assertNull(SiteFooterConfig::lineHref('Corso Duca degli Abruzzi, 24'));
+        $this->assertNull(SiteFooterConfig::lineHref('10129 Torino'));
+        $this->assertNull(SiteFooterConfig::lineHref(''));
+    }
+
+    #[Test]
     public function boolean_flags_are_normalized(): void
     {
         $normalized = SiteFooterConfig::normalize([

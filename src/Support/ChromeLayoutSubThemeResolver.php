@@ -61,9 +61,12 @@ final class ChromeLayoutSubThemeResolver
 
     public static function forPagesChannel(): string
     {
-        $theme = self::themeForChannelId(app(ContentChannelRegistry::class)->get('pages'));
-
-        return $theme ?? SubThemeResolver::siteDefault();
+        // Site pages are bound by the site-wide `sub_theme` (Theme Studio → Pagine
+        // del sito). A legacy `content_channel_sub_themes.pages` row must not shadow
+        // it: the `pages` channel is routing/search/chrome only, so a stale override
+        // made pages render with another skin's palette (e.g. white footer) while
+        // Theme Studio still showed `sub_theme`.
+        return SubThemeResolver::siteDefault();
     }
 
     private static function themeForChannelId(?PublicContentChannel $channel): ?string

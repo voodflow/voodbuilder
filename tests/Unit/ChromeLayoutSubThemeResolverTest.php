@@ -6,6 +6,7 @@ namespace Voodflow\Voodbuilder\Tests\Unit;
 
 use Voodflow\Voodbuilder\Models\ChromeLayout;
 use Voodflow\Voodbuilder\Models\SitePage;
+use Voodflow\Voodbuilder\Models\VoodbuilderSettings;
 use Voodflow\Voodbuilder\Support\ChromeLayoutSubThemeResolver;
 use Voodflow\Voodbuilder\Tests\TestCase;
 
@@ -48,6 +49,24 @@ class ChromeLayoutSubThemeResolverTest extends TestCase
         ]);
 
         $this->assertSame('site', ChromeLayoutSubThemeResolver::forChromeLayout($layout));
+    }
+
+    public function test_site_pages_follow_the_site_sub_theme_over_a_stale_pages_override(): void
+    {
+        config()->set('voodbuilder.sub_themes', [
+            'site' => ['label' => 'Site', 'capabilities' => ['landing']],
+            'docs' => ['label' => 'Docs', 'capabilities' => ['doc']],
+        ]);
+
+        VoodbuilderSettings::query()->create([
+            'data' => array_merge(VoodbuilderSettings::docss(), [
+                'sub_theme' => 'docs',
+                'content_channel_sub_themes' => ['pages' => 'site'],
+            ]),
+        ]);
+        VoodbuilderSettings::clearCache();
+
+        $this->assertSame('docs', ChromeLayoutSubThemeResolver::forPagesChannel());
     }
 
     public function test_it_uses_page_sub_theme_for_site_pages(): void

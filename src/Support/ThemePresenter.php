@@ -18,6 +18,7 @@ final class ThemePresenter
         'header_bg',
         'header_text',
         'footer_bg',
+        'footer_text',
         'body_bg',
         'text',
     ];

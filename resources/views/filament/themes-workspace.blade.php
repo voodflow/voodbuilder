@@ -955,7 +955,7 @@
             letter-spacing: 0.04em;
             text-transform: uppercase;
             background: var(--lp-footer, var(--lp-bg));
-            color: var(--lp-text);
+            color: var(--lp-footer-text, var(--lp-text));
         }
 
         .voodbuilder-themes-ws__live-preview-tag {
@@ -1344,7 +1344,7 @@
                     </div>
                     @php
                         $palette = $previewMode === 'dark' ? $dark : $light;
-                        $previewKeys = ['primary', 'secondary', 'body_bg', 'text', 'header_bg', 'footer_bg'];
+                        $previewKeys = ['primary', 'secondary', 'body_bg', 'text', 'header_bg', 'footer_bg', 'footer_text'];
                     @endphp
                     <div class="voodbuilder-themes-ws__tiles">
                         @foreach ($previewKeys as $key)
@@ -1372,10 +1372,11 @@
                         $hd = $palette['header_bg'] ?? $bg;
                         $ht = $palette['header_text'] ?? $tx;
                         $ft = $palette['footer_bg'] ?? $bg;
+                        $ftt = $palette['footer_text'] ?? \Voodflow\Voodbuilder\Support\ThemePalette::contrastTextFor($palette['footer_bg'] ?? null) ?? $tx;
                     @endphp
                     <div
                         class="voodbuilder-themes-ws__live-preview"
-                        style="--lp-bg: {{ $bg }}; --lp-text: {{ $tx }}; --lp-primary: {{ $p }}; --lp-secondary: {{ $s }}; --lp-header: {{ $hd }}; --lp-header-text: {{ $ht }}; --lp-footer: {{ $ft }};"
+                        style="--lp-bg: {{ $bg }}; --lp-text: {{ $tx }}; --lp-primary: {{ $p }}; --lp-secondary: {{ $s }}; --lp-header: {{ $hd }}; --lp-header-text: {{ $ht }}; --lp-footer: {{ $ft }}; --lp-footer-text: {{ $ftt }};"
                     >
                         <div class="voodbuilder-themes-ws__live-preview-label">
                             {{ __('voodbuilder::settings.theme_studio_live_preview') }}

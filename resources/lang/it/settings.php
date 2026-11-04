@@ -327,6 +327,8 @@ return [
     'theme_header_text_help' => 'Link del menu sulla barra superiore.',
     'theme_footer_bg' => 'Sfondo footer',
     'theme_footer_bg_help' => 'Barra footer dietro colonne menu e copyright.',
+    'theme_footer_text' => 'Testo footer',
+    'theme_footer_text_help' => 'Testi e link dentro il footer. Lascia vuoto per scegliere automaticamente un colore leggibile in base allo sfondo del footer.',
     'theme_body_bg' => 'Sfondo pagina',
     'theme_body_bg_help' => 'Area contenuti principale.',
     'theme_body_text' => 'Testo corpo',

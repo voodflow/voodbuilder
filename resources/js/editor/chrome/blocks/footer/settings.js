@@ -20,7 +20,13 @@ import {
     applySiteFooterSettingChange,
     footerBlockHasMenu,
     footerBlockHasColumns,
+    footerBlockHasTextColumns,
     footerBlockHasNewsletter,
+    footerBlockMenuColumnCount,
+    FOOTER_CONTACT_TITLE_PROP,
+    FOOTER_CONTACT_LINES_PROP,
+    FOOTER_DETAILS_TITLE_PROP,
+    FOOTER_DETAILS_LINES_PROP,
     footerColumnLabel,
     footerSettingLabel,
     FOOTER_SOCIAL_ALIGN_PROP,
@@ -234,7 +240,9 @@ export function registerFooterSettings(editor) {
             });
 
             if (hasColumns && panels.columns) {
-                for (let index = 1; index <= 4; index++) {
+                const menuColumnCount = footerBlockMenuColumnCount(blockId);
+
+                for (let index = 1; index <= menuColumnCount; index++) {
                     panels.columns.append(
                         createCheckboxField({
                             label: footerColumnLabel(index, gjsEditor),
@@ -253,6 +261,62 @@ export function registerFooterSettings(editor) {
                         onChange: (checked) => applyChange('voodbuilderFooterColumnsRedistribute', checked),
                     }),
                 );
+
+                if (footerBlockHasTextColumns(blockId)) {
+                    const { field: contactTitleField, input: contactTitleInput } = createTextField({
+                        label: label('footerContactTitle', 'Contacts column title'),
+                        name: FOOTER_CONTACT_TITLE_PROP,
+                        value: String(root.get(FOOTER_CONTACT_TITLE_PROP) ?? ''),
+                    });
+                    contactTitleInput.addEventListener('input', () => applyChange(FOOTER_CONTACT_TITLE_PROP, contactTitleInput.value));
+                    contactTitleInput.addEventListener('change', () => applyChange(FOOTER_CONTACT_TITLE_PROP, contactTitleInput.value));
+                    panels.columns.append(contactTitleField);
+
+                    const { field: contactLinesField, input: contactLinesInput } = createTextareaField({
+                        label: label('footerContactLines', 'Contacts (one line per item)'),
+                        name: FOOTER_CONTACT_LINES_PROP,
+                        value: String(root.get(FOOTER_CONTACT_LINES_PROP) ?? ''),
+                        rows: 4,
+                    });
+                    contactLinesInput.addEventListener('input', () => applyChange(FOOTER_CONTACT_LINES_PROP, contactLinesInput.value));
+                    contactLinesInput.addEventListener('change', () => applyChange(FOOTER_CONTACT_LINES_PROP, contactLinesInput.value));
+                    panels.columns.append(contactLinesField);
+
+                    const contactHelp = document.createElement('p');
+                    contactHelp.className = 'voodbuilder-editor-form-hint';
+                    contactHelp.textContent = label(
+                        'footerContactLinesHelp',
+                        'Emails, phone numbers and URLs become links. Street addresses stay text.',
+                    );
+                    panels.columns.append(contactHelp);
+
+                    const { field: detailsTitleField, input: detailsTitleInput } = createTextField({
+                        label: label('footerDetailsTitle', 'Details column title'),
+                        name: FOOTER_DETAILS_TITLE_PROP,
+                        value: String(root.get(FOOTER_DETAILS_TITLE_PROP) ?? ''),
+                    });
+                    detailsTitleInput.addEventListener('input', () => applyChange(FOOTER_DETAILS_TITLE_PROP, detailsTitleInput.value));
+                    detailsTitleInput.addEventListener('change', () => applyChange(FOOTER_DETAILS_TITLE_PROP, detailsTitleInput.value));
+                    panels.columns.append(detailsTitleField);
+
+                    const { field: detailsLinesField, input: detailsLinesInput } = createTextareaField({
+                        label: label('footerDetailsLines', 'Details (one line per item)'),
+                        name: FOOTER_DETAILS_LINES_PROP,
+                        value: String(root.get(FOOTER_DETAILS_LINES_PROP) ?? ''),
+                        rows: 4,
+                    });
+                    detailsLinesInput.addEventListener('input', () => applyChange(FOOTER_DETAILS_LINES_PROP, detailsLinesInput.value));
+                    detailsLinesInput.addEventListener('change', () => applyChange(FOOTER_DETAILS_LINES_PROP, detailsLinesInput.value));
+                    panels.columns.append(detailsLinesField);
+
+                    const detailsHelp = document.createElement('p');
+                    detailsHelp.className = 'voodbuilder-editor-form-hint';
+                    detailsHelp.textContent = label(
+                        'footerDetailsLinesHelp',
+                        'Organisations, departments, legal notes: one line per item.',
+                    );
+                    panels.columns.append(detailsHelp);
+                }
             }
 
             fields.appendChild(tabsRoot);
