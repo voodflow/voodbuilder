@@ -19,6 +19,14 @@ import {
     readCounterConfig,
 } from './editor-animated-blocks.js';
 import { createCheckboxField, createCheckboxGrid, createFormSection, createSelectField, createTextField } from './editor-form-ui.js';
+import {
+    applySectionOptional,
+    collectSectionOptionals,
+    optionalVisible,
+} from './section-optionals.js';
+
+// Kept re-exported for existing callers/tests; the implementation lives in section-optionals.js.
+export { applySectionOptional, collectSectionOptionals, optionalVisible };
 
 function componentTag(component) {
     return String(component?.get?.('tagName') ?? '').toLowerCase();
@@ -198,16 +206,6 @@ function clearTableCellCopy(cell, placeholder) {
     }
 }
 
-function setComponentHidden(component, hidden) {
-    if (hidden) {
-        component.addAttributes?.({ hidden: '' });
-        component.addClass?.('hidden');
-    } else {
-        component.removeAttributes?.('hidden');
-        component.removeClass?.('hidden');
-    }
-}
-
 const TABLE_COUNT_SAFETY_MAX = 99;
 
 export function tableColumnBounds(section) {
@@ -287,57 +285,6 @@ export function applyTableColumnCount(section, nextCount) {
         'data-vb-table-columns': String(target),
     });
     section.set?.({ 'data-vb-table-columns': target }, { silent: true });
-}
-
-function optionalVisible(section, key) {
-    const raw = section.getAttributes?.()?.[`data-vb-show-${key}`];
-
-    return raw !== '0' && raw !== 'false';
-}
-
-export function applySectionOptional(section, key, visible) {
-    section.addAttributes?.({
-        [`data-vb-show-${key}`]: visible ? '1' : '0',
-    });
-
-    walkComponents(section, (component) => {
-        if (component === section) {
-            return;
-        }
-
-        const optional = component.getAttributes?.()?.['data-vb-optional'];
-        const colRole = tableColRole(component);
-
-        if (optional === key || (key === 'select' && colRole === 'action')) {
-            setComponentHidden(component, ! visible);
-        }
-    });
-}
-
-function collectSectionOptionals(section) {
-    const found = [];
-    const seen = new Set();
-
-    walkComponents(section, (component) => {
-        if (component === section) {
-            return;
-        }
-
-        const attrs = readAttrs(component);
-        const key = String(attrs['data-vb-optional'] ?? '').trim();
-
-        if (! key || seen.has(key)) {
-            return;
-        }
-
-        seen.add(key);
-        found.push({
-            key,
-            label: String(attrs['data-vb-optional-label'] || attrs['data-vb-field-label'] || key).trim() || key,
-        });
-    });
-
-    return found;
 }
 
 const WIDTH_CLASS_PATTERN = /^(?:sm|md|lg|xl):w-1\/\d+$|^w-1\/\d+$|^w-full$/;
@@ -1145,7 +1092,8 @@ function renderSectionItemCountPanel({
                 && customItemsLabel !== 'Number of rows'
                 ? customItemsLabel
                 : defaultItemsLabel;
-            const { section, fields } = createFormSection(itemsLabel);
+            const panelLabel = String(attrs['data-vb-panel-label'] ?? '').trim();
+            const { section, fields } = createFormSection(panelLabel !== '' ? panelLabel : itemsLabel);
 
             if (table) {
                 appendCountInput(fields, {

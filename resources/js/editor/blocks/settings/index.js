@@ -10,6 +10,8 @@ export {
     findPrimaryBlockInContainer,
     findInspectableRoot,
     findLayoutChromeZoneBlockRoot,
+    findInspectorPanelRoot,
+    PANEL_ATTR,
     resolveInspectableBlockRoot,
     shouldPromoteSelectionToRoot,
     isMediaHeroBackgroundHit,

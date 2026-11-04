@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.17.0] - 2026-11-04
+
+### Added
+
+- **Inspector sub-panels (`data-vb-panel`).** A section can split its Content panel into independent panels: any element inside a `data-vb-panel` container now scopes the inspector to that panel only, and `data-vb-panel-label` names the form heading. Selecting a contact row shows just that row's fields instead of every field of the block, and nested panels never leak fields into their parent panel. Catalog blocks can now group a section header, a details card, map/address slabs and each contact row without any per-block code.
+- **Optional elements panel for panels.** `data-vb-optional` checkboxes moved to `section-optionals.js` so they render for panel roots as well as sections, and the localized heading comes from `sectionOptionalElements` instead of a hardcoded English string.
+- **Container links keep their own content.** A card that is itself a link (`isContainerLink`) no longer gets the `vb-text-link` helper class, so the link UI edits only the destination while the card keeps its declarative text fields (title, description, …).
+
+### Fixed
+
+- **Panel roots name the items form after the panel.** `data-vb-panel-label` wins over the generic "Number of items" heading when a panel inside a section owns a repeater.
+
 ## [1.16.2] - 2026-11-04
 
 ### Fixed

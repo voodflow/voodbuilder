@@ -217,6 +217,39 @@ export function isReadingProgressComponent(component) {
 const READING_PROGRESS_COLORS = readingProgressColorOptions();
 
 /**
+ * Marks a link whose label must not be edited from the Content panel — the anchor
+ * wraps a whole card/section (icon, title, description) so writing a "label" into it
+ * would replace its children. Only the destination stays editable.
+ */
+export const CONTAINER_LINK_ATTR = 'data-vb-link-label';
+
+/**
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+export function isContainerLink(component) {
+    if (! component?.getAttributes) {
+        return false;
+    }
+
+    const attrs = component.getAttributes?.() ?? {};
+
+    if (String(attrs[CONTAINER_LINK_ATTR] ?? '').toLowerCase() === 'none') {
+        return true;
+    }
+
+    // Legacy catalog blocks shipped a whole card inside <a>: the label trait would
+    // flatten it. Any anchor holding element children is treated as a container link.
+    if (typeof component.components !== 'function') {
+        return false;
+    }
+
+    const children = [...(component.components?.() ?? [])];
+
+    return children.some((child) => String(child?.get?.('type') ?? '') !== 'textnode');
+}
+
+/**
  * @param {string} raw
  * @returns {string}
  */
@@ -1546,6 +1579,9 @@ function applyTextLinkToComponent(component, editor, {
 }) {
     const resolvedHref = resolveHref(editor, linkType, linkRef, href, { mailSubject, routeParams });
     const nextLabel = String(label ?? '').trim() || 'Text link';
+    // Container links (whole card wrapped in <a>) must keep their children: the label
+    // is not editable, so writing it here would flatten the card to a single text node.
+    const preserveContent = isContainerLink(component);
 
     runWithSettingsChangeGuard(editor, () => {
         component.set({
@@ -1567,6 +1603,10 @@ function applyTextLinkToComponent(component, editor, {
             [ROUTE_PARAMS_ATTR]: linkType === 'route' ? serializeRouteParams(routeParams) : null,
             [POPUP_OPEN_ATTR]: popupOpenAttrValue(linkType, linkRef),
         });
+
+        if (preserveContent) {
+            return;
+        }
 
         const children = [...(component.components?.() ?? [])];
         const textNode = children.find((child) => child?.get?.('type') === 'textnode');
@@ -1648,9 +1688,25 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
     mount.hidden = false;
     mount.replaceChildren();
 
-    const { section, fields } = createFormSection(labels.textLinkSettingsTitle ?? 'Text link');
+    const containerLink = isContainerLink(component);
+
+    const { section, fields } = createFormSection(
+        containerLink
+            ? (labels.textLinkContainerSettingsTitle ?? 'Link')
+            : (labels.textLinkSettingsTitle ?? 'Text link'),
+    );
     section.setAttribute('data-voodbuilder-text-link-settings', '');
     section.setAttribute('data-component-key', key);
+
+    if (containerLink) {
+        section.setAttribute('data-voodbuilder-container-link-settings', '');
+
+        const hint = document.createElement('p');
+        hint.className = 'voodbuilder-editor-form-hint';
+        hint.textContent = labels.textLinkContainerHint
+            ?? 'This card is a link: set only its destination here. Edit its texts with the fields above.';
+        fields.append(hint);
+    }
 
     const { field: labelField, input: labelInput } = createTextField({
         label: labels.textLinkLabel ?? 'Label',
@@ -1680,11 +1736,13 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
     });
     const { urlInput, mailInput, subjectInput, syncVisibility } = linkFields;
 
-    fields.append(labelField, ...linkFields.fields);
+    fields.append(...(containerLink ? [] : [labelField]), ...linkFields.fields);
     mount.appendChild(section);
 
     const commit = () => {
-        label = String(labelInput.value || 'Text link').trim() || 'Text link';
+        label = containerLink
+            ? readTextLinkLabel(component)
+            : String(labelInput.value || 'Text link').trim() || 'Text link';
 
         applyTextLinkToComponent(component, editor, {
             label,
@@ -1692,8 +1750,10 @@ export function renderTextLinkSettings({ mount, traitsMount = null, component, e
         });
     };
 
-    labelInput.addEventListener('change', commit);
-    labelInput.addEventListener('blur', commit);
+    if (! containerLink) {
+        labelInput.addEventListener('change', commit);
+        labelInput.addEventListener('blur', commit);
+    }
     urlInput.addEventListener('change', commit);
     urlInput.addEventListener('blur', commit);
     mailInput.addEventListener('change', commit);

@@ -17,6 +17,11 @@
 import { debugSwallowed } from './debug-swallowed.js';
 import { registerBlockSettings } from './blocks/settings/index.js';
 import { findBlockRoot } from './core/block-tree.js';
+import {
+    applySectionOptional,
+    collectSectionOptionals,
+    optionalVisible,
+} from './section-optionals.js';
 import { encodeBlockConfig, parseBlockConfig } from './voodbuilder-dynamic-config.js';
 import {
     applyIconToComponent,
@@ -26,6 +31,8 @@ import {
     readIconColor,
 } from './basic-elements-settings.js';
 import {
+    createCheckboxField,
+    createCheckboxGrid,
     createFormSection,
     createTextField,
     createTextareaField,
@@ -97,6 +104,30 @@ function isSectionBlockComponent(component) {
 
     return Object.prototype.hasOwnProperty.call(attrs, SECTION_BLOCK_ATTR)
         || Object.prototype.hasOwnProperty.call(attrs, LEGACY_SECTION_BLOCK_ATTR);
+}
+
+/**
+ * Attributes from a live Grapes component, a plain mock (`attrs`), or both.
+ *
+ * @param {object|null|undefined} component
+ * @returns {Record<string, unknown>}
+ */
+function readAttrs(component) {
+    return {
+        ...(component?.attrs ?? {}),
+        ...(component?.get?.('attributes') ?? {}),
+        ...(component?.getAttributes?.() ?? {}),
+    };
+}
+
+/**
+ * Sub-panel (`data-vb-panel`) owns its own inspector fields.
+ *
+ * @param {object|null|undefined} component
+ * @returns {boolean}
+ */
+function isPanelComponent(component) {
+    return String(readAttrs(component)['data-vb-panel'] ?? '').trim() !== '';
 }
 
 function isTableRowComponent(component) {
@@ -186,7 +217,12 @@ function walkComponents(root, visit) {
 export function findDeclarativeFields(scope) {
     // Always stop at nested data-vb-item trees so section/category panels
     // never dump child item fields (e.g. FAQ questions inside a category).
-    const fields = collectFields(scope, { stopAtNestedItems: true, stopAtNestedSections: true });
+    // Nested sub-panels (`data-vb-panel`) own their fields too.
+    const fields = collectFields(scope, {
+        stopAtNestedItems: true,
+        stopAtNestedSections: true,
+        stopAtNestedPanels: true,
+    });
 
     // A duplicated block can nest its own copy (or a copy of its header) inside
     // the original scope: the same data-vb-field keys would then render twice and
@@ -225,7 +261,7 @@ export function findItemDeclarativeFields(item) {
  * @param {{ stopAtNestedItems?: boolean, stopAtNestedSections?: boolean }} [options]
  * @returns {object[]}
  */
-function collectFields(scope, { stopAtNestedItems = false, stopAtNestedSections = false } = {}) {
+function collectFields(scope, { stopAtNestedItems = false, stopAtNestedSections = false, stopAtNestedPanels = false } = {}) {
     const fields = [];
 
     const walk = (component) => {
@@ -257,6 +293,11 @@ function collectFields(scope, { stopAtNestedItems = false, stopAtNestedSections 
             }
 
             if (stopAtNestedSections && child !== scope && isSectionBlockComponent(child)) {
+                continue;
+            }
+
+            // Sub-panels own their fields: a section panel must not leak a column's inputs.
+            if (stopAtNestedPanels && child !== scope && isPanelComponent(child)) {
                 continue;
             }
 
@@ -1015,6 +1056,42 @@ export function writeFieldText(component, value, editor = null) {
 }
 
 /**
+ * First `data-vb-items-root` owned by `root`, skipping nested sub-panels.
+ *
+ * @param {object|null|undefined} root
+ * @returns {object|null}
+ */
+function findOwnItemsRoot(root) {
+    if (! root) {
+        return null;
+    }
+
+    const visit = (component) => {
+        for (const child of [...(component.components?.() ?? [])]) {
+            if (isPanelComponent(child)) {
+                continue;
+            }
+
+            const attrs = readAttrs(child);
+
+            if (Object.prototype.hasOwnProperty.call(attrs, 'data-vb-items-root')) {
+                return child;
+            }
+
+            const nested = visit(child);
+
+            if (nested) {
+                return nested;
+            }
+        }
+
+        return null;
+    };
+
+    return visit(root);
+}
+
+/**
  * @param {HTMLElement} mount
  * @param {object[]} fields
  * @param {object} editor
@@ -1035,6 +1112,57 @@ export function appendDeclarativeFields(mount, fields, editor, options = {}) {
             liveFields ? createFieldLocator(field, index, liveFields) : null,
         ));
     });
+
+    mount.appendChild(section);
+}
+
+/**
+ * Inspector heading for a panel root: `data-vb-panel-label` wins over the default.
+ *
+ * @param {object} root
+ * @param {string} fallback
+ * @returns {string}
+ */
+export function panelHeading(root, fallback = 'Content') {
+    const attrs = root?.getAttributes?.() ?? {};
+    const label = String(attrs['data-vb-panel-label'] ?? '').trim();
+
+    return label !== '' ? label : fallback;
+}
+
+/**
+ * Checkbox grid for `data-vb-optional` elements owned by `root`.
+ *
+ * @param {HTMLElement} mount
+ * @param {object} root
+ * @param {object} editor
+ * @returns {void}
+ */
+export function appendDeclarativeOptionals(mount, root, editor) {
+    if (! mount || ! root) {
+        return;
+    }
+
+    const optionals = collectSectionOptionals(root);
+
+    if (optionals.length === 0) {
+        return;
+    }
+
+    const labels = editor?.__voodbuilderLabels ?? {};
+    const heading = typeof labels.sectionOptionalElements === 'string' && labels.sectionOptionalElements.trim() !== ''
+        ? labels.sectionOptionalElements
+        : 'Optional elements';
+
+    const { section, fields } = createFormSection(heading);
+    section.setAttribute('data-voodbuilder-optional-settings', '');
+
+    fields.append(createCheckboxGrid(optionals.map(({ key, label }) => createCheckboxField({
+        label,
+        name: `vbShow-${key}`,
+        checked: optionalVisible(root, key),
+        onChange: (checked) => applySectionOptional(root, key, checked),
+    }))));
 
     mount.appendChild(section);
 }
@@ -1473,7 +1601,7 @@ export function registerDeclarativeFieldSettings(editor) {
             // The block root survives a dynamic preview refresh (only its children are
             // replaced), so it is the stable anchor the live field lookup hangs from.
             const liveItems = () => {
-                const itemsRoot = root.find?.('[data-vb-items-root]')?.[0] ?? null;
+                const itemsRoot = findOwnItemsRoot(root);
 
                 return itemsRoot
                     ? [...(itemsRoot.components?.() ?? [])].filter((child) => hasItemAttr(child))
@@ -1497,9 +1625,10 @@ export function registerDeclarativeFieldSettings(editor) {
             }
 
             appendDeclarativeFields(mount, liveSectionFields(), ed, {
-                heading: 'Content',
+                heading: panelHeading(root, 'Content'),
                 liveFields: liveSectionFields,
             });
+            appendDeclarativeOptionals(mount, root, ed);
             appendDeclarativeItemEditors(mount, items, ed, { selected: selection, liveItems });
         },
     });
@@ -1514,6 +1643,14 @@ function findDeclarativeSettingsRoot(component) {
 
     while (current) {
         const attrs = current.getAttributes?.() ?? {};
+
+        // Sub-panel (column/slab): owns its fields and repeaters, never the section.
+        if (
+            String(attrs['data-vb-panel'] ?? '').trim() !== ''
+            && scopeHasDeclarativeFields(current)
+        ) {
+            return current;
+        }
 
         // Prefer the section / block that owns items, then a lone item, then any field host.
         if (

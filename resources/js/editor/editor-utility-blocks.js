@@ -8,7 +8,7 @@ import { hydratePropsFromAttributes } from './component-attr-hydrate.js';
 import { resolveBlockLabel } from './section-block-meta.js';
 import { isEditorBlockAllowed } from './block-allowlist.js';
 import { DEFAULT_TABLER_ICON, tablerIconSvg } from './tabler-icons-catalog.js';
-import { applyIconToComponent, findIconHost, isIconComponent, readIconColor, applyReadingProgressAppearance } from './basic-elements-settings.js';
+import { applyIconToComponent, findIconHost, isContainerLink, isIconComponent, readIconColor, applyReadingProgressAppearance } from './basic-elements-settings.js';
 import {
     buildSocialShareItemDefinitions,
     ensureSocialShareDefaults,
@@ -247,7 +247,9 @@ function registerLinkableType(editor, typeName, defaults = {}) {
 
                 const classes = this.getClasses?.() ?? [];
 
-                if (! classes.includes('vb-text-link')) {
+                // Container links wrap a whole card: the underline helper class would style
+                // (and the text-link UI would rewrite) the card content, so skip it.
+                if (! isContainerLink(this) && ! classes.includes('vb-text-link')) {
                     this.addClass?.('vb-text-link');
                 }
 

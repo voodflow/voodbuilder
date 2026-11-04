@@ -94,6 +94,34 @@ export function isBlockRoot(component) {
     return readBlockId(component) !== '';
 }
 
+/** Attribute that scopes the inspector to one column/slab inside a block. */
+export const PANEL_ATTR = 'data-vb-panel';
+
+/**
+ * Nearest `data-vb-panel` ancestor (or the component itself).
+ *
+ * Sections can split their inspector into independent panels (e.g. three columns):
+ * selecting any descendant renders only that panel's fields and repeaters.
+ *
+ * @param {object|null|undefined} component
+ * @returns {object|null}
+ */
+export function findInspectorPanelRoot(component) {
+    let current = component;
+
+    while (current && current.get?.('type') !== 'wrapper') {
+        const attrs = current.getAttributes?.() ?? {};
+
+        if (String(attrs[PANEL_ATTR] ?? '').trim() !== '') {
+            return current;
+        }
+
+        current = current.parent?.();
+    }
+
+    return null;
+}
+
 /**
  * Restore layer/selection flags on a block root for canvas highlight only.
  * Settings rendering does not require these flags.
@@ -146,6 +174,14 @@ export function findInspectableRoot(component, editor) {
 
     if (nestedInSelection) {
         return nestedInSelection;
+    }
+
+    // Sub-panels (`data-vb-panel`) scope the inspector to one column/slab of a block:
+    // selecting inside them must not promote to the whole section.
+    const panelRoot = findInspectorPanelRoot(component);
+
+    if (panelRoot) {
+        return panelRoot;
     }
 
     const blockRoot = findBlockRoot(component);

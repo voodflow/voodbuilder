@@ -36,6 +36,11 @@ import {
 import { closeAllInspectorSelects } from '../../inspector-select-ui.js';
 import { createInspectorEmptyState } from '../../inspector-empty-state.js';
 import { isValidGrapesComponent } from '../../core/component-model.js';
+import {
+    appendDeclarativeFields,
+    findClosestItem,
+    findItemDeclarativeFields,
+} from '../../declarative-fields.js';
 import { isCtaButtonComponent, renderCtaButtonSettings } from '../../cta-button-settings.js';
 import {
     findIconHost,
@@ -303,6 +308,56 @@ function shouldRenderCustomSettings(editor, component) {
     }
 
     return true;
+}
+
+/**
+ * Text/container link settings for a declared item.
+ *
+ * A card or list row that is itself a link keeps its own declarative fields
+ * (title, description, …) in the Content panel; the destination fields are
+ * appended below instead of replacing them.
+ *
+ * @param {{ mount: HTMLElement, traitsMount?: HTMLElement|null, component: object, editor: object, labels?: object }} args
+ * @returns {void}
+ */
+function renderTextLinkWithItemFields({ mount, traitsMount = null, component, editor, labels = {} }) {
+    const item = findClosestItem(component);
+    const fields = item ? findItemDeclarativeFields(item) : [];
+
+    if (fields.length === 0) {
+        renderTextLinkSettings({ mount, traitsMount, component, editor, labels });
+
+        return;
+    }
+
+    const componentKey = String(component.cid ?? component.getId?.() ?? '');
+    const existing = mount.querySelector?.('[data-voodbuilder-link-item-settings]');
+
+    // Re-renders triggered by the author typing must not rebuild (and blur) the form.
+    if (existing && existing.getAttribute('data-component-key') === componentKey) {
+        mount.hidden = false;
+
+        return;
+    }
+
+    const linkHolder = document.createElement('div');
+    renderTextLinkSettings({ mount: linkHolder, component, editor, labels });
+
+    mount.hidden = false;
+    traitsMount?.classList.add('hidden');
+    traitsMount?.replaceChildren?.();
+    mount.replaceChildren();
+
+    const content = document.createElement('div');
+    content.setAttribute('data-voodbuilder-link-item-settings', '');
+    content.setAttribute('data-component-key', componentKey);
+
+    appendDeclarativeFields(content, fields, editor, {
+        heading: labels.declarativeItemContentTitle ?? 'Content',
+    });
+
+    content.append(...linkHolder.childNodes);
+    mount.append(content);
 }
 
 /**
@@ -684,7 +739,7 @@ export function registerSettingsUi(editor, mount) {
                     }
 
                     closeAllInspectorSelects();
-                    renderTextLinkSettings({
+                    renderTextLinkWithItemFields({
                         mount,
                         traitsMount,
                         component: textLinkHost,
@@ -733,7 +788,7 @@ export function registerSettingsUi(editor, mount) {
 
             if (isTextLinkComponent(rawSelected)) {
                 closeAllInspectorSelects();
-                renderTextLinkSettings({
+                renderTextLinkWithItemFields({
                     mount,
                     traitsMount,
                     component: rawSelected,
