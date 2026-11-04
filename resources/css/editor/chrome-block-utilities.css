@@ -423,6 +423,11 @@
         width: 16rem;
     }
 
+    .voodbuilder-editor-footer .lg\:w-80,
+    [data-voodbuilder-block^='site_footer_'] .lg\:w-80 {
+        width: 20rem;
+    }
+
     .voodbuilder-editor-footer .lg\:max-w-none,
     [data-voodbuilder-block^='site_footer_'] .lg\:max-w-none {
         max-width: none;
@@ -516,6 +521,11 @@ body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_fo
 body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:w-64,
 body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:w-64 {
     width: 16rem;
+}
+
+body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:w-80,
+body[data-voodbuilder-editor-device='desktop'] [data-voodbuilder-block^='site_footer_'] .lg\:w-80 {
+    width: 20rem;
 }
 
 body[data-voodbuilder-editor-device='desktop'] .voodbuilder-editor-footer .lg\:max-w-none,

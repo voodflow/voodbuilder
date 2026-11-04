@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.2] - 2026-11-04
+
+### Fixed
+
+- **Footer layout no longer collapses inside the page editor.** The canvas forces desktop-only `lg:` footer utilities regardless of the iframe width (976px, below the 1024px `lg` breakpoint) so a desktop layout is previewed on a narrow canvas. That whitelist still pinned `lg:w-64` but not `lg:w-80`, so the contacts footer's brand column fell back to `w-full` while the row direction was forced: the brand took the whole width and the four link columns were pushed out of the canvas. `lg:w-80` is now pinned in both the breakpoint block and the desktop-device override.
+
 ## [1.16.1] - 2026-11-04
 
 ### Fixed
