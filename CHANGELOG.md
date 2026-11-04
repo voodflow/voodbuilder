@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.1] - 2026-11-04
+
+### Fixed
+
+- **Colour opacity now survives Save and publish.** The Style panel stores Background colour opacity as `data-vb-bg-color-opacity` plus an `#id` paint on the canvas, while the element keeps the plain `bg-*` utility. A page saved from another session (or a migrated `/10` slash class, which the panel rewrites back to a bare `bg-*`) shipped only the opaque utility, so the requested 10% tint came back as a solid brand colour. Pages and chrome layouts now re-emit `#id { background-color: color-mix(…) !important }` at render time from the attribute, resolving `bg-vp-*` through `var(--color-vp-*)` so the tint follows theme switching instead of freezing a hex.
+- **Footer column titles read as section headings.** The navigation and static (contacts/details) columns now use uppercase, tracked `text-xs` titles with a little more breathing room between links, matching the reference footer layout.
+
 ## [1.16.0] - 2026-11-04
 
 ### Added

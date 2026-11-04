@@ -407,7 +407,10 @@ final class EditorPastedComponentNormalizer
 
             // Re-order utilities so stale concatenated sheets cannot leave
             // `.w-full` after `.md:w-1/3` (pricing columns stacked on public).
-            return self::normalizeUtilitiesCssCascade($cleaned);
+            return self::appendBackgroundOpacityPaintCss(
+                self::normalizeUtilitiesCssCascade($cleaned),
+                $html,
+            );
         }
 
         $manualCss = self::manualPageCssFromStoredCss($storedCss);
@@ -419,11 +422,162 @@ final class EditorPastedComponentNormalizer
             VoodbuilderPackageVersion::current() . "\0" . $pageHtml . "\0" . (string) $manualCss,
         );
 
-        return Cache::remember(
+        $compiled = Cache::remember(
             $cacheKey,
             now()->addDay(),
             static fn (): string => self::compileAndMergePublishedPageCss($pageHtml, $manualCss),
         );
+
+        return self::appendBackgroundOpacityPaintCss($compiled, $html);
+    }
+
+    /**
+     * Paint `data-vb-bg-color-opacity` on published pages.
+     *
+     * The Style panel stores Color opacity as an attribute plus an `#id` rule on the
+     * canvas (`#id{background-color:rgba(…)!important}`) while the element keeps the
+     * plain `bg-*` utility. That canvas paint lives in the editor's CssComposer, so a
+     * page saved from a fresh session (or migrated slash classes) shipped the opaque
+     * utility only: the 10% tint requested in the panel came back solid on publish.
+     *
+     * Re-emitting the rule at render time makes the attribute authoritative again and
+     * keeps the tint stable across saves. Theme palette tokens resolve through
+     * `var(--color-vp-*)` so the paint follows theme switching instead of freezing a hex.
+     */
+    public static function appendBackgroundOpacityPaintCss(string $css, string $html): string
+    {
+        $paint = self::backgroundOpacityPaintCss($html);
+
+        if ($paint === '') {
+            return $css;
+        }
+
+        return trim(trim($css) . "\n" . $paint);
+    }
+
+    /**
+     * Translucent `#id` rules for every element carrying a Color opacity attribute.
+     *
+     * @return string '' when no element needs a paint
+     */
+    public static function backgroundOpacityPaintCss(string $html, string $scope = ''): string
+    {
+        if ($html === '' || ! str_contains($html, 'data-vb-bg-color-opacity')) {
+            return '';
+        }
+
+        if (preg_match_all('/<([a-z][a-z0-9-]*)\b([^>]*)>/i', $html, $tags, PREG_SET_ORDER) < 1) {
+            return '';
+        }
+
+        $rules = [];
+        $seen = [];
+
+        foreach ($tags as $tag) {
+            $attributes = (string) ($tag[2] ?? '');
+
+            if (! str_contains($attributes, 'data-vb-bg-color-opacity')) {
+                continue;
+            }
+
+            $id = self::attributeValue($attributes, 'id');
+
+            if ($id === null || ! preg_match('/^[A-Za-z][A-Za-z0-9_-]*$/', $id)) {
+                continue;
+            }
+
+            $classes = preg_split('/\s+/', (string) self::attributeValue($attributes, 'class')) ?: [];
+            $color = self::solidBackgroundColorCss($classes);
+            $lightPct = self::backgroundOpacityPercent(self::attributeValue($attributes, 'data-vb-bg-color-opacity'));
+            $darkPct = self::backgroundOpacityPercent(self::attributeValue($attributes, 'data-vb-bg-color-opacity-dark'));
+
+            if ($color === '') {
+                continue;
+            }
+
+            if ($lightPct !== null && ! isset($seen['light:' . $id])) {
+                $seen['light:' . $id] = true;
+                $rules[] = self::scopedSelector($scope, '#' . $id)
+                    . '{background-color:color-mix(in srgb, ' . $color . ' ' . $lightPct . '%, transparent)!important}';
+            }
+
+            if ($darkPct !== null && ! isset($seen['dark:' . $id])) {
+                $seen['dark:' . $id] = true;
+                $rules[] = self::scopedSelector($scope, 'html.dark #' . $id)
+                    . '{background-color:color-mix(in srgb, ' . $color . ' ' . $darkPct . '%, transparent)!important}';
+            }
+        }
+
+        return implode("\n", $rules);
+    }
+
+    /**
+     * @param  array<int, string>  $classes
+     */
+    private static function solidBackgroundColorCss(array $classes): string
+    {
+        foreach ($classes as $class) {
+            $token = trim($class);
+
+            if ($token === '') {
+                continue;
+            }
+
+            // Explicit slash opacity is already the published paint.
+            if (preg_match('/^(?:[a-z0-9]+:)*bg-([^\/\s]+)\/\d+$/', $token) === 1) {
+                continue;
+            }
+
+            if (preg_match('/^(?:[a-z0-9]+:)*bg-(vp-[a-z0-9-]+|white|black)$/', $token, $match) === 1) {
+                return match ($match[1]) {
+                    'white' => '#ffffff',
+                    'black' => '#000000',
+                    default => 'var(--color-' . $match[1] . ')',
+                };
+            }
+
+            if (preg_match('/^(?:[a-z0-9]+:)*bg-([a-z]+-\d{2,3})$/', $token, $match) === 1) {
+                return 'var(--color-' . $match[1] . ')';
+            }
+
+            if (preg_match('/^(?:[a-z0-9]+:)*bg-\[(#[0-9a-fA-F]{3,8})\]$/', $token, $match) === 1) {
+                return $match[1];
+            }
+        }
+
+        return '';
+    }
+
+    private static function scopedSelector(string $scope, string $selector): string
+    {
+        $scope = trim($scope);
+
+        return $scope === '' ? $selector : $scope . ' ' . $selector;
+    }
+
+    private static function attributeValue(string $attributes, string $name): ?string
+    {
+        if (preg_match('/(?:^|\s)' . preg_quote($name, '/') . '\s*=\s*(["\'])(.*?)\1/is', $attributes, $match) !== 1) {
+            return null;
+        }
+
+        return trim($match[2]);
+    }
+
+    /**
+     * Opacity percent that needs a paint (1-99), or null when it is unset/100/invalid.
+     */
+    private static function backgroundOpacityPercent(?string $value): ?int
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || ! is_numeric($value)) {
+            return null;
+        }
+
+        $percent = (int) round((float) $value);
+
+        return $percent >= 1 && $percent <= 99 ? $percent : null;
     }
 
     /**

@@ -30,7 +30,8 @@ final class ChromeLayoutRenderer
             ...$this->splitAroundContentSlot($html),
             'css' => ChromeLayoutCssScoper::scope(
                 EditorPastedComponentNormalizer::dedupeCssRules(
-                    ThemePalette::stripEmbeddedPaletteOverrides(trim($payload['css'])),
+                    ThemePalette::stripEmbeddedPaletteOverrides(trim($payload['css']))
+                    . "\n" . EditorPastedComponentNormalizer::backgroundOpacityPaintCss($payload['html']),
                 ),
             ),
             // Chrome layouts have their own `js` column, and chrome-app.blade.php drops it

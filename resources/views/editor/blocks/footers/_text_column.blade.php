@@ -12,12 +12,12 @@
     data-voodbuilder-footer-text-col="{{ $column }}"
 >
     <h2
-        class="title-font font-medium text-vp-text-1 text-sm mb-3"
+        class="title-font text-xs font-semibold uppercase tracking-[0.12em] text-vp-text-1 mb-4"
         data-voodbuilder-footer-text-title="{{ $column }}"
     >
         {{ $title }}
     </h2>
-    <ul class="list-none space-y-2 text-sm text-vp-text-2" data-voodbuilder-footer-text-lines="{{ $column }}">
+    <ul class="list-none space-y-2.5 text-sm leading-6 text-vp-text-2" data-voodbuilder-footer-text-lines="{{ $column }}">
         @foreach ($textColumn['lines'] as $line)
             @php($href = SiteFooterConfig::lineHref((string) $line))
             <li>

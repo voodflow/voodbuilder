@@ -328,6 +328,56 @@ CSS;
         $this->assertStringContainsString('padding', $resolved);
     }
 
+    public function test_bg_color_opacity_attribute_paints_translucent_background(): void
+    {
+        $html = '<div id="panel" data-vb-bg-color-opacity="10" class="rounded-2xl lg:bg-vp-brand-1">Links</div>';
+
+        $css = EditorPastedComponentNormalizer::backgroundOpacityPaintCss($html);
+
+        $this->assertSame(
+            '#panel{background-color:color-mix(in srgb, var(--color-vp-brand-1) 10%, transparent)!important}',
+            $css,
+        );
+    }
+
+    public function test_bg_color_opacity_attribute_paints_dark_companion_and_scope(): void
+    {
+        $html = '<div id="panel" data-vb-bg-color-opacity="10" data-vb-bg-color-opacity-dark="20" class="bg-white">Links</div>';
+
+        $css = EditorPastedComponentNormalizer::backgroundOpacityPaintCss($html, '[data-voodbuilder-chrome-shell]');
+
+        $this->assertStringContainsString(
+            '[data-voodbuilder-chrome-shell] #panel{background-color:color-mix(in srgb, #ffffff 10%, transparent)!important}',
+            $css,
+        );
+        $this->assertStringContainsString(
+            '[data-voodbuilder-chrome-shell] html.dark #panel{background-color:color-mix(in srgb, #ffffff 20%, transparent)!important}',
+            $css,
+        );
+    }
+
+    public function test_bg_color_opacity_attribute_skips_full_or_slash_opacity(): void
+    {
+        $html = '<div id="full" data-vb-bg-color-opacity="100" class="bg-vp-brand-1"></div>'
+            . '<div id="slash" data-vb-bg-color-opacity="10" class="bg-vp-brand-1/10"></div>'
+            . '<div data-vb-bg-color-opacity="10" class="bg-vp-brand-1"></div>';
+
+        $this->assertSame('', EditorPastedComponentNormalizer::backgroundOpacityPaintCss($html));
+    }
+
+    public function test_resolve_published_page_css_keeps_bg_color_opacity_tint(): void
+    {
+        $html = '<div id="panel" data-vb-bg-color-opacity="10" class="lg:bg-vp-brand-1 p-6">Links</div>';
+        $storedCss = '.lg\:bg-vp-brand-1 { background-color: var(--color-vp-brand-1); } .p-6 { padding: 1.5rem; }';
+
+        $resolved = EditorPastedComponentNormalizer::resolvePublishedPageCss($html, $storedCss);
+
+        $this->assertStringContainsString(
+            '#panel{background-color:color-mix(in srgb, var(--color-vp-brand-1) 10%, transparent)!important}',
+            $resolved,
+        );
+    }
+
     public function test_resolve_published_page_css_ignores_component_instance_utilities(): void
     {
         $html = '<section class="p-4">Page</section>'
