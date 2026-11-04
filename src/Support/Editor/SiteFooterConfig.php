@@ -21,6 +21,12 @@ final class SiteFooterConfig
     /** Max editable lines per static footer column (contact / details). */
     public const MAX_TEXT_LINES = 5;
 
+    /** Max repeatable contact rows (icon + text) in the contacts column. */
+    public const MAX_CONTACT_ITEMS = 8;
+
+    /** Icon name used when a contact row has no icon of its own. */
+    public const DEFAULT_CONTACT_ITEM_ICON = 'point';
+
     /** Static (non-menu) footer columns used by the contact-columns variant. */
     public const TEXT_COLUMNS = ['contact', 'details'];
 
@@ -36,7 +42,7 @@ final class SiteFooterConfig
         $provided = $config;
         $normalized = array_merge(self::defaults(), $config);
 
-        foreach (['show_newsletter', 'show_social', 'show_footer_menu', 'show_copyright', 'show_brand', 'show_site_name', 'show_tagline', 'footer_columns_redistribute', 'show_logo_desktop', 'show_logo_mobile', 'show_site_name_desktop', 'show_site_name_mobile'] as $flag) {
+        foreach (['show_newsletter', 'show_social', 'show_footer_menu', 'show_copyright', 'show_brand', 'show_site_name', 'show_tagline', 'footer_columns_redistribute', 'show_logo_desktop', 'show_logo_mobile', 'show_site_name_desktop', 'show_site_name_mobile', 'vertical_dividers'] as $flag) {
             if (array_key_exists($flag, $provided)) {
                 $normalized[$flag] = (bool) $provided[$flag];
             }
@@ -71,6 +77,10 @@ final class SiteFooterConfig
                 $config[$column . '_lines'] ?? $normalized[$column . '_lines'] ?? null,
             );
         }
+
+        $normalized['contact_items'] = self::normalizeContactItems(
+            $config['contact_items'] ?? $normalized['contact_items'] ?? null,
+        );
 
         self::normalizeFooterColumnFlags($normalized, $config);
         $normalized['columns'] = max(1, count(array_filter(
@@ -117,8 +127,10 @@ final class SiteFooterConfig
             'logo_shape' => ChromeBrandLogos::DEFAULT_SHAPE,
             'contact_title' => null,
             'contact_lines' => [],
+            'contact_items' => [],
             'details_title' => null,
             'details_lines' => [],
+            'vertical_dividers' => false,
         ];
     }
 
@@ -190,6 +202,92 @@ final class SiteFooterConfig
             'title' => (string) ($normalized[$column . '_title'] ?? ''),
             'lines' => is_array($normalized[$column . '_lines'] ?? null) ? $normalized[$column . '_lines'] : [],
         ];
+    }
+
+    /**
+     * Repeatable contacts column rows: `{ icon, text }` pairs.
+     *
+     * Accepts the stored array, a JSON string (from the editor prop) or a plain
+     * list of strings (legacy lines promoted to rows without an icon).
+     *
+     * @return list<array{icon: string, text: string}>
+     */
+    public static function normalizeContactItems(mixed $value): array
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : preg_split('/\r\n|\r|\n/', $value);
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $items = [];
+
+        foreach ($value as $row) {
+            $hasIcon = false;
+
+            if (is_string($row)) {
+                $text = self::normalizeText($row);
+                $icon = self::DEFAULT_CONTACT_ITEM_ICON;
+            } elseif (is_array($row)) {
+                $text = self::normalizeText(
+                    $row['text'] ?? $row['label'] ?? $row['line'] ?? $row['value'] ?? null,
+                );
+                // An explicit empty icon hides the icon but keeps the text aligned.
+                $hasIcon = array_key_exists('icon', $row);
+                $icon = $hasIcon
+                    ? (self::normalizeText($row['icon']) ?? '')
+                    : self::DEFAULT_CONTACT_ITEM_ICON;
+            } else {
+                continue;
+            }
+
+            if ($text === null) {
+                continue;
+            }
+
+            $items[] = [
+                'icon' => strtolower($icon),
+                'text' => $text,
+            ];
+
+            if (count($items) >= self::MAX_CONTACT_ITEMS) {
+                break;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Contacts column rows ready for rendering (link auto-detected from the text).
+     *
+     * @param  array<string, mixed>  $config
+     * @return list<array{icon: string, text: string, href: string|null}>
+     */
+    public static function contactItems(array $config): array
+    {
+        $normalized = self::normalize($config);
+        $items = is_array($normalized['contact_items'] ?? null) ? $normalized['contact_items'] : [];
+
+        return array_map(
+            static fn (array $item): array => [
+                'icon' => (string) ($item['icon'] ?? self::DEFAULT_CONTACT_ITEM_ICON),
+                'text' => (string) ($item['text'] ?? ''),
+                'href' => self::lineHref((string) ($item['text'] ?? '')),
+            ],
+            $items,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    public static function verticalDividers(array $config): bool
+    {
+        return (bool) self::normalize($config)['vertical_dividers'];
     }
 
     public static function resolveTagline(?string $value = null): string

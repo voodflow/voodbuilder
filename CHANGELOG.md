@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.18.0] - 2026-11-04
+
+### Added
+
+- **Repeatable contacts in footer settings.** The `Footer · brand + contacts` variant now builds its contacts column from a repeater (`contact_items`) instead of a newline textarea: each row has a Tabler icon picker and the text, emails/phones/URLs become links automatically and street addresses stay text. Opening the settings on a footer that still uses `contact_lines` seeds the rows from those lines with a guessed icon, so existing footers keep their content. The legacy lines still render when no rows exist.
+- **Vertical dividers / split footer layout.** New `Vertical dividers (brand | columns | copyright)` option draws a rule after the brand column and another before a dedicated copyright column; the details lines move under the copyright, matching the classic brand | links | contacts | legal layout. Off by default, so other sites are unaffected.
+- New footer labels in English and Italian (`vertical_dividers`, `contact_items`, `add_contact_item`, icon search, row actions).
+
+### Fixed
+
+- `SiteFooterConfig::normalizeContactItems()` caps the list (8 rows), ignores empty rows and accepts stored arrays, JSON strings and plain lines; an explicit empty icon keeps the row aligned without a glyph.
+
 ## [1.17.0] - 2026-11-04
 
 ### Added

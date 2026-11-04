@@ -4,6 +4,8 @@
     $brandChrome = SiteFooterConfig::chromeAttributes($config, 'brand', $preview);
     $brandColumnChrome = SiteFooterConfig::chromeAttributes($config, 'brand-column', $preview);
     $brandColumnClass = $brandColumnClass ?? 'mx-auto w-full max-w-xs shrink-0 px-4 text-center lg:mx-0 lg:w-64 lg:max-w-none lg:text-left';
+    // Split layouts move the copyright into its own end column.
+    $hideCopyright = (bool) ($hideCopyright ?? false);
 @endphp
 
 <div
@@ -24,11 +26,13 @@
         'chromeKind' => 'footer-tagline',
         'taglineClass' => 'mt-3 text-sm text-vp-text-2',
     ])
-    @include('voodbuilder::editor.blocks.partials.footer-copyright', [
-        'config' => $config,
-        'preview' => $preview,
-        'copyrightClass' => 'mt-4 text-xs text-vp-text-3',
-    ])
+    @unless ($hideCopyright)
+        @include('voodbuilder::editor.blocks.partials.footer-copyright', [
+            'config' => $config,
+            'preview' => $preview,
+            'copyrightClass' => 'mt-4 text-xs text-vp-text-3',
+        ])
+    @endunless
     @include('voodbuilder::editor.blocks.partials.footer-social', [
         'config' => $config,
         'preview' => $preview,

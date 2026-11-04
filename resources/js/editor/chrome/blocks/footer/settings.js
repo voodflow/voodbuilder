@@ -23,6 +23,13 @@ import {
     footerBlockHasTextColumns,
     footerBlockHasNewsletter,
     footerBlockMenuColumnCount,
+    footerContactIconForText,
+    footerContactItemsJson,
+    normalizeFooterContactItems,
+    splitFooterLines,
+    FOOTER_CONTACT_ITEM_LIMIT,
+    FOOTER_CONTACT_ITEMS_PROP,
+    FOOTER_VERTICAL_DIVIDERS_PROP,
     FOOTER_CONTACT_TITLE_PROP,
     FOOTER_CONTACT_LINES_PROP,
     FOOTER_DETAILS_TITLE_PROP,
@@ -35,6 +42,251 @@ import {
     FOOTER_DEFAULT_COPYRIGHT,
     normalizeFooterSocialAlign,
 } from './config.js';
+import {
+    ensureTablerCatalog,
+    queryTablerIcons,
+    resolveTablerIconName,
+    tablerIconSvg,
+} from '../../../tabler-icons-catalog.js';
+
+/**
+ * Compact Tabler picker used by each repeatable contact row.
+ *
+ * @param {{
+ *   value: string,
+ *   label: (key: string, fallback: string) => string,
+ *   onChange: (icon: string) => void,
+ * }} opts
+ * @returns {HTMLElement}
+ */
+function createFooterContactIconPicker({ value, label, onChange }) {
+    const wrap = document.createElement('div');
+    wrap.className = 'voodbuilder-editor-contact-icon-picker';
+
+    const { field: searchField, input: searchInput } = createTextField({
+        label: label('footerContactIconSearch', 'Search icon'),
+        name: 'footerContactIconSearch',
+        value: '',
+        placeholder: label('footerContactIconSearchPlaceholder', 'Type an icon name…'),
+    });
+
+    const grid = document.createElement('div');
+    grid.className = 'voodbuilder-editor-icon-picker__grid voodbuilder-editor-contact-icon-picker__grid';
+
+    let query = '';
+    let activeIcon = resolveTablerIconName(value);
+
+    const render = () => {
+        const { names } = queryTablerIcons({ query, limit: 48 });
+
+        grid.replaceChildren(...names.map((name) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'voodbuilder-editor-icon-picker__item';
+            button.title = name;
+            button.setAttribute('aria-label', name);
+            button.setAttribute('aria-pressed', name === activeIcon ? 'true' : 'false');
+
+            if (name === activeIcon) {
+                button.classList.add('is-active');
+            }
+
+            button.innerHTML = tablerIconSvg(name, {
+                sizeClass: 'h-4 w-4',
+                className: 'vb-icon__glyph',
+            });
+
+            button.addEventListener('click', () => {
+                activeIcon = name;
+                onChange(name);
+            });
+
+            return button;
+        }));
+    };
+
+    searchInput.addEventListener('input', () => {
+        query = searchInput.value.trim().toLowerCase();
+        render();
+    });
+
+    render();
+    void ensureTablerCatalog().then(render).catch(() => {});
+
+    wrap.append(searchField, grid);
+
+    return wrap;
+}
+
+/**
+ * Repeatable contacts column: one row per icon + text entry.
+ *
+ * @param {{
+ *   root: object,
+ *   applyChange: (name: string, value: unknown) => void,
+ *   label: (key: string, fallback: string) => string,
+ * }} opts
+ * @returns {HTMLElement}
+ */
+function createFooterContactItemsField({ root, applyChange, label }) {
+    const stored = normalizeFooterContactItems(root.get(FOOTER_CONTACT_ITEMS_PROP));
+
+    /** @type {{ icon: string, text: string }[]} */
+    let items = stored.length > 0
+        ? stored
+        : splitFooterLines(root.get(FOOTER_CONTACT_LINES_PROP)).map((text) => ({
+            icon: footerContactIconForText(text),
+            text,
+        }));
+
+    let openPicker = -1;
+
+    const field = document.createElement('div');
+    field.className = 'voodbuilder-editor-form-field';
+    field.setAttribute('data-voodbuilder-footer-contact-items', '');
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'voodbuilder-editor-form-label';
+    labelEl.textContent = label('footerContactItems', 'Contacts (icon + text)');
+
+    const list = document.createElement('div');
+    list.className = 'voodbuilder-editor-contact-items';
+
+    const hint = document.createElement('p');
+    hint.className = 'voodbuilder-editor-form-hint';
+    hint.textContent = label(
+        'footerContactItemsHelp',
+        'Emails, phone numbers and URLs become links automatically. Street addresses stay text.',
+    );
+
+    const addButton = document.createElement('button');
+    addButton.type = 'button';
+    addButton.className = 'voodbuilder-editor-form-action';
+    addButton.textContent = label('footerAddContactItem', 'Add contact item');
+    addButton.addEventListener('click', () => {
+        if (items.length >= FOOTER_CONTACT_ITEM_LIMIT) {
+            return;
+        }
+
+        items.push({ icon: 'point', text: '' });
+        openPicker = items.length - 1;
+        commit();
+        render();
+    });
+
+    const commit = () => {
+        applyChange(FOOTER_CONTACT_ITEMS_PROP, footerContactItemsJson(items));
+    };
+
+    const move = (index, offset) => {
+        const target = index + offset;
+
+        if (target < 0 || target >= items.length) {
+            return;
+        }
+
+        [items[index], items[target]] = [items[target], items[index]];
+        openPicker = -1;
+        commit();
+        render();
+    };
+
+    const row = (item, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'voodbuilder-editor-contact-item';
+
+        const line = document.createElement('div');
+        line.className = 'voodbuilder-editor-contact-item__line';
+
+        const iconButton = document.createElement('button');
+        iconButton.type = 'button';
+        iconButton.className = 'voodbuilder-editor-contact-item__icon';
+        iconButton.title = label('footerContactIcon', 'Icon');
+        iconButton.setAttribute('aria-label', label('footerContactIcon', 'Icon'));
+        iconButton.setAttribute('aria-expanded', openPicker === index ? 'true' : 'false');
+        iconButton.innerHTML = tablerIconSvg(item.icon, {
+            sizeClass: 'h-4 w-4',
+            className: 'vb-icon__glyph',
+        });
+        iconButton.addEventListener('click', () => {
+            openPicker = openPicker === index ? -1 : index;
+            render();
+        });
+
+        const textInput = document.createElement('input');
+        textInput.type = 'text';
+        textInput.className = 'voodbuilder-editor-input voodbuilder-editor-contact-item__text';
+        textInput.value = item.text;
+        textInput.placeholder = label('footerContactItemText', 'Email, phone or address');
+        textInput.addEventListener('input', () => {
+            items[index] = { ...items[index], text: textInput.value };
+        });
+        textInput.addEventListener('change', () => {
+            items[index] = { ...items[index], text: textInput.value.trim() };
+            commit();
+        });
+
+        line.append(iconButton, textInput);
+
+        for (const [offset, glyph, titleKey, titleFallback] of [
+            [-1, '↑', 'footerContactItemMoveUp', 'Move up'],
+            [1, '↓', 'footerContactItemMoveDown', 'Move down'],
+        ]) {
+            const moveButton = document.createElement('button');
+            moveButton.type = 'button';
+            moveButton.className = 'voodbuilder-editor-contact-item__action';
+            moveButton.textContent = glyph;
+            moveButton.title = label(titleKey, titleFallback);
+            moveButton.setAttribute('aria-label', label(titleKey, titleFallback));
+            moveButton.disabled = offset === -1 ? index === 0 : index === items.length - 1;
+            moveButton.addEventListener('click', () => move(index, offset));
+            line.append(moveButton);
+        }
+
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'voodbuilder-editor-contact-item__action voodbuilder-editor-contact-item__remove';
+        removeButton.textContent = '×';
+        removeButton.title = label('footerContactItemRemove', 'Remove');
+        removeButton.setAttribute('aria-label', label('footerContactItemRemove', 'Remove'));
+        removeButton.addEventListener('click', () => {
+            items = items.filter((_, itemIndex) => itemIndex !== index);
+            openPicker = -1;
+            commit();
+            render();
+        });
+        line.append(removeButton);
+
+        wrapper.append(line);
+
+        if (openPicker === index) {
+            wrapper.append(createFooterContactIconPicker({
+                value: item.icon,
+                label,
+                onChange: (icon) => {
+                    items[index] = { ...items[index], icon };
+                    openPicker = -1;
+                    commit();
+                    render();
+                },
+            }));
+        }
+
+        return wrapper;
+    };
+
+    const render = () => {
+        list.replaceChildren(...items.map(row));
+
+        addButton.disabled = items.length >= FOOTER_CONTACT_ITEM_LIMIT;
+        list.classList.toggle('is-empty', items.length === 0);
+    };
+
+    render();
+    field.append(labelEl, list, addButton, hint);
+
+    return field;
+}
 
 /**
  * @param {object} editor
@@ -263,6 +515,25 @@ export function registerFooterSettings(editor) {
                 );
 
                 if (footerBlockHasTextColumns(blockId)) {
+                    panels.columns.append(
+                        createCheckboxField({
+                            label: label('footerVerticalDividers', 'Vertical dividers (brand | columns | copyright)'),
+                            name: FOOTER_VERTICAL_DIVIDERS_PROP,
+                            checked: root.get(FOOTER_VERTICAL_DIVIDERS_PROP) === true,
+                            onChange: (checked) => applyChange(FOOTER_VERTICAL_DIVIDERS_PROP, checked),
+                        }),
+                    );
+
+                    const dividersHelp = document.createElement('p');
+                    dividersHelp.className = 'voodbuilder-editor-form-hint';
+                    dividersHelp.textContent = label(
+                        'footerVerticalDividersHelp',
+                        'Splits the footer into brand | link columns | copyright, with a rule between each block. The details column moves under the copyright.',
+                    );
+                    panels.columns.append(dividersHelp);
+                }
+
+                if (footerBlockHasTextColumns(blockId)) {
                     const { field: contactTitleField, input: contactTitleInput } = createTextField({
                         label: label('footerContactTitle', 'Contacts column title'),
                         name: FOOTER_CONTACT_TITLE_PROP,
@@ -272,23 +543,11 @@ export function registerFooterSettings(editor) {
                     contactTitleInput.addEventListener('change', () => applyChange(FOOTER_CONTACT_TITLE_PROP, contactTitleInput.value));
                     panels.columns.append(contactTitleField);
 
-                    const { field: contactLinesField, input: contactLinesInput } = createTextareaField({
-                        label: label('footerContactLines', 'Contacts (one line per item)'),
-                        name: FOOTER_CONTACT_LINES_PROP,
-                        value: String(root.get(FOOTER_CONTACT_LINES_PROP) ?? ''),
-                        rows: 4,
-                    });
-                    contactLinesInput.addEventListener('input', () => applyChange(FOOTER_CONTACT_LINES_PROP, contactLinesInput.value));
-                    contactLinesInput.addEventListener('change', () => applyChange(FOOTER_CONTACT_LINES_PROP, contactLinesInput.value));
-                    panels.columns.append(contactLinesField);
-
-                    const contactHelp = document.createElement('p');
-                    contactHelp.className = 'voodbuilder-editor-form-hint';
-                    contactHelp.textContent = label(
-                        'footerContactLinesHelp',
-                        'Emails, phone numbers and URLs become links. Street addresses stay text.',
-                    );
-                    panels.columns.append(contactHelp);
+                    panels.columns.append(createFooterContactItemsField({
+                        root,
+                        applyChange,
+                        label,
+                    }));
 
                     const { field: detailsTitleField, input: detailsTitleInput } = createTextField({
                         label: label('footerDetailsTitle', 'Details column title'),

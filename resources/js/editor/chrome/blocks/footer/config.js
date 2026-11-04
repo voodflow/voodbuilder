@@ -35,8 +35,95 @@ export const FOOTER_DEFAULT_COPYRIGHT = '© {current_year} {brand_name}';
 
 export const FOOTER_CONTACT_TITLE_PROP = 'voodbuilderContactTitle';
 export const FOOTER_CONTACT_LINES_PROP = 'voodbuilderContactLines';
+export const FOOTER_CONTACT_ITEMS_PROP = 'voodbuilderContactItems';
 export const FOOTER_DETAILS_TITLE_PROP = 'voodbuilderDetailsTitle';
 export const FOOTER_DETAILS_LINES_PROP = 'voodbuilderDetailsLines';
+export const FOOTER_VERTICAL_DIVIDERS_PROP = 'voodbuilderFooterVerticalDividers';
+
+export const FOOTER_CONTACT_ITEM_LIMIT = 8;
+export const FOOTER_CONTACT_DEFAULT_ICON = 'point';
+
+/** Icon guessed from the contact text, used when rows are promoted from plain lines. */
+export function footerContactIconForText(text) {
+    const value = String(text ?? '').trim();
+
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return 'mail';
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+        return 'world';
+    }
+
+    if (/^[+\d\s().\/-]{6,}$/.test(value)) {
+        return 'phone';
+    }
+
+    return 'map-pin';
+}
+
+/**
+ * Repeatable contacts rows (`{ icon, text }`), tolerant to the stored JSON string.
+ *
+ * @param {unknown} value
+ * @returns {{ icon: string, text: string }[]}
+ */
+export function normalizeFooterContactItems(value) {
+    let rows = value;
+
+    if (typeof rows === 'string') {
+        try {
+            const decoded = JSON.parse(rows);
+            rows = Array.isArray(decoded) ? decoded : rows.split(/\r?\n/);
+        } catch {
+            rows = rows.split(/\r?\n/);
+        }
+    }
+
+    if (! Array.isArray(rows)) {
+        return [];
+    }
+
+    const items = [];
+
+    for (const row of rows) {
+        const isStringRow = typeof row === 'string';
+        const text = isStringRow
+            ? row.trim()
+            : String(row?.text ?? row?.label ?? row?.line ?? row?.value ?? '').trim();
+        // Explicit empty icon keeps the row aligned without showing a glyph.
+        const hasIcon = ! isStringRow && row !== null && typeof row === 'object'
+            && Object.prototype.hasOwnProperty.call(row, 'icon');
+        const icon = isStringRow || ! hasIcon
+            ? FOOTER_CONTACT_DEFAULT_ICON
+            : (String(row.icon ?? '').trim().toLowerCase());
+
+        if (text === '') {
+            continue;
+        }
+
+        items.push({ icon, text });
+
+        if (items.length >= FOOTER_CONTACT_ITEM_LIMIT) {
+            break;
+        }
+    }
+
+    return items;
+}
+
+/**
+ * @param {{ icon: string, text: string }[]} items
+ * @returns {string}
+ */
+export function footerContactItemsJson(items) {
+    return JSON.stringify(
+        normalizeFooterContactItems(items).map((item) => ({
+            icon: item.icon,
+            text: item.text,
+        })),
+    );
+}
 
 export const FOOTER_TEXT_COLUMNS = ['contact', 'details'];
 
@@ -262,6 +349,11 @@ export function applyFooterTextColumnsPreview(el, root) {
     FOOTER_TEXT_COLUMNS.forEach((column) => {
         const titleProp = column === 'contact' ? FOOTER_CONTACT_TITLE_PROP : FOOTER_DETAILS_TITLE_PROP;
         const linesProp = column === 'contact' ? FOOTER_CONTACT_LINES_PROP : FOOTER_DETAILS_LINES_PROP;
+
+        if (column === 'contact' && normalizeFooterContactItems(root.get(FOOTER_CONTACT_ITEMS_PROP)).length > 0) {
+            // Rows with icons are rendered by the server; do not overwrite them with plain lines.
+            return;
+        }
 
         const titleEl = el.querySelector(`[data-voodbuilder-footer-text-title="${column}"]`);
 
@@ -586,6 +678,7 @@ export function syncSiteFooterConfig(component) {
         [CHROME_LOGO_SHAPE_KEY]: normalizeChromeLogoShape(
             component.get(CHROME_LOGO_SHAPE_PROP) ?? component.get('voodbuilderConfig')?.[CHROME_LOGO_SHAPE_KEY],
         ),
+        vertical_dividers: component.get(FOOTER_VERTICAL_DIVIDERS_PROP) === true,
     };
 
     for (const def of chromeLogoFieldDefs()) {
@@ -623,6 +716,8 @@ export function syncSiteFooterConfig(component) {
             config[`${column}_title`] = String(component.get(titleProp) ?? '').trim() || null;
             config[`${column}_lines`] = splitFooterLines(component.get(linesProp));
         }
+
+        config.contact_items = normalizeFooterContactItems(component.get(FOOTER_CONTACT_ITEMS_PROP));
     }
 
     if (footerBlockHasColumns(blockId)) {
@@ -676,6 +771,16 @@ export function applySiteFooterSettingChange(editor, root, name, value) {
         // Logo URL changes need a server re-render; visibility toggles are DOM-only
         // so Brand tab state and logo/name independence stay intact.
         if (FOOTER_LOGO_PROPS.has(name)) {
+            scheduleSiteFooterBlockRefresh(editor, root);
+        }
+
+        // Contact rows (icons) and the split layout only exist in the server markup.
+        const needsServerRender = name === FOOTER_CONTACT_ITEMS_PROP
+            || name === FOOTER_VERTICAL_DIVIDERS_PROP
+            || ([FOOTER_CONTACT_LINES_PROP, FOOTER_DETAILS_LINES_PROP].includes(name)
+                && root.get(FOOTER_VERTICAL_DIVIDERS_PROP) === true);
+
+        if (needsServerRender) {
             scheduleSiteFooterBlockRefresh(editor, root);
         }
     });
@@ -782,8 +887,14 @@ export function configureSiteFooterTraits(component, editor = null) {
     if (footerBlockHasTextColumns(blockId)) {
         component.set(FOOTER_CONTACT_TITLE_PROP, typeof config.contact_title === 'string' ? config.contact_title : '', { silent: true });
         component.set(FOOTER_CONTACT_LINES_PROP, splitFooterLines(config.contact_lines).join('\n'), { silent: true });
+        component.set(
+            FOOTER_CONTACT_ITEMS_PROP,
+            footerContactItemsJson(normalizeFooterContactItems(config.contact_items)),
+            { silent: true },
+        );
         component.set(FOOTER_DETAILS_TITLE_PROP, typeof config.details_title === 'string' ? config.details_title : '', { silent: true });
         component.set(FOOTER_DETAILS_LINES_PROP, splitFooterLines(config.details_lines).join('\n'), { silent: true });
+        component.set(FOOTER_VERTICAL_DIVIDERS_PROP, config.vertical_dividers === true, { silent: true });
     }
 
     component.set(FOOTER_TAGLINE_PROP, typeof config.tagline === 'string' ? config.tagline : '', { silent: true });
